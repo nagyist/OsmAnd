@@ -70,7 +70,7 @@ public class SearchHelper {
 		void onClickSearchMore();
 
 		void onSearchDone(@NonNull SearchPhrase phrase, @Nullable List<SearchResult> searchResults,
-						  @Nullable ItemList itemList, int resultsCount);
+		                  @Nullable ItemList itemList, int resultsCount);
 	}
 
 	SearchHelper(@NonNull OsmandApplication app, boolean showDescription, int contentLimit,
@@ -166,6 +166,15 @@ public class SearchHelper {
 		return searchSettings;
 	}
 
+	public SearchSettings setupCitySearch() {
+		SearchSettings settings = new SearchSettings(searchUICore.getSearchSettings())
+				.setEmptyQueryAllowed(true)
+				.setSortByName(true)
+				.setSearchTypes(ObjectType.CITY, ObjectType.VILLAGE);
+		searchUICore.updateSettings(settings);
+		return settings;
+	}
+
 	private void updateSearchHint(@NonNull SearchSettings searchSettings) {
 		Location location = app.getLocationProvider().getLastKnownLocation();
 		LatLon searchLocation = searchSettings.getOriginalLocation();
@@ -179,9 +188,12 @@ public class SearchHelper {
 	}
 
 	public void runSearch(@NonNull String query) {
+		runSearch(query, setupSearchSettings(false));
+	}
+
+	public void runSearch(@NonNull String query, @NonNull SearchSettings searchSettings) {
 		searching = true;
 		searchQuery = query;
-		SearchSettings searchSettings = setupSearchSettings(false);
 		searchUICore.setOnResultsComplete(() -> {
 			ItemList.Builder itemList = new ItemList.Builder();
 			SearchUICore.SearchResultCollection resultCollection = searchUICore.getCurrentSearchResult();
@@ -283,7 +295,7 @@ public class SearchHelper {
 
 	@Nullable
 	public Row.Builder buildSearchRow(@Nullable LatLon searchLocation, @Nullable LatLon placeLocation,
-									  @NonNull String name, @Nullable Drawable icon, @Nullable String typeName) {
+	                                  @NonNull String name, @Nullable Drawable icon, @Nullable String typeName) {
 		Row.Builder builder = new Row.Builder();
 		if (icon != null) {
 			builder.setImage(new CarIcon.Builder(IconCompat.createWithBitmap(AndroidUtils.drawableToBitmap(icon))).build());

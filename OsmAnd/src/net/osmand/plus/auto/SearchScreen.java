@@ -45,6 +45,7 @@ import net.osmand.search.SearchUICore;
 import net.osmand.search.core.ObjectType;
 import net.osmand.search.core.SearchPhrase;
 import net.osmand.search.core.SearchResult;
+import net.osmand.search.core.SearchSettings;
 import net.osmand.search.core.SearchWord;
 import net.osmand.util.Algorithms;
 
@@ -136,13 +137,16 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 		if (loading || getSearchHelper().isSearching()) {
 			builder.setLoading(true);
 		} else {
+			builder.setLoading(false);
 			if (currentStep == SearchStep.MAIN) {
 				showMain();
 			} else if (currentStep == SearchStep.HISTORY) {
 				showRecents();
 				reloadHistory();
+//			} else if(currentStep == SearchStep.ADDRESS_CITY) {
+//				getSearchHelper().setupCitySearch();
+//				getSearchHelper().runSearch("");
 			}
-			builder.setLoading(false);
 			if (itemList != null) {
 				builder.setItemList(itemList);
 			}
@@ -228,6 +232,7 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 			if (resultsCount > 0) {
 				showResult = false;
 			}
+			loading = false;
 			this.itemList = itemList;
 			invalidate();
 		}
@@ -355,7 +360,7 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 	private void showMain() {
 		ItemList.Builder itemList = new ItemList.Builder();
 		itemList.addItem(createRowItem(R.drawable.ic_action_history, R.string.shared_string_history, SearchStep.HISTORY));
-		itemList.addItem(createRowItem(R.drawable.ic_action_building2, R.string.shared_string_address, SearchStep.ADDRESS_STREETS));
+		itemList.addItem(createRowItem(R.drawable.ic_action_building2, R.string.shared_string_address, SearchStep.ADDRESS_CITY));
 		this.itemList = itemList.build();
 	}
 
@@ -367,12 +372,20 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 		builder.setTitle(getApp().getString(titleRes));
 		builder.setBrowsable(true);
 		builder.setOnClickListener(() -> {
-			currentStep = nextStep;
-			invalidate();
+			showStep(nextStep);
 		});
 		return builder.build();
 	}
 
+	private void showStep(SearchStep searchStep) {
+		if(searchStep == SearchStep.ADDRESS_CITY) {
+			loading = true;
+//			getSearchHelper().setupCitySearch();
+			getSearchHelper().runSearch("", getSearchHelper().setupCitySearch());
+		}
+		currentStep = searchStep;
+		invalidate();
+	}
 
 	private void showRecents() {
 		OsmandApplication app = getApp();
