@@ -86,6 +86,11 @@ public class SearchHelper {
 		setupSearchSettings(true);
 	}
 
+	@NonNull
+	public SearchUICore getSearchUICore() {
+		return searchUICore;
+	}
+
 	public int getContentLimit() {
 		return contentLimit;
 	}

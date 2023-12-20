@@ -4,6 +4,7 @@ import android.graphics.drawable.Drawable;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntegerRes;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -378,13 +379,21 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 	}
 
 	private void showStep(SearchStep searchStep) {
-		if(searchStep == SearchStep.ADDRESS_CITY) {
+		if (searchStep == SearchStep.ADDRESS_CITY) {
 			loading = true;
-//			getSearchHelper().setupCitySearch();
-			getSearchHelper().runSearch("", getSearchHelper().setupCitySearch());
+			getSearchHelper().runSearch("", startCitySearch());
 		}
 		currentStep = searchStep;
 		invalidate();
+	}
+
+	@NonNull
+	private SearchSettings startCitySearch() {
+		return getSearchHelper().setupSearchSettings(true)
+				.setEmptyQueryAllowed(true)
+				.setSortByName(true)
+				.setSearchTypes(ObjectType.CITY, ObjectType.VILLAGE)
+				.setRadiusLevel(1);
 	}
 
 	private void showRecents() {
