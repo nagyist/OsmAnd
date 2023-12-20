@@ -3,7 +3,6 @@ package net.osmand.plus.auto;
 import android.graphics.drawable.Drawable;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.IntegerRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -11,7 +10,6 @@ import androidx.car.app.CarContext;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.CarIcon;
 import androidx.car.app.model.ItemList;
-import androidx.car.app.model.Metadata;
 import androidx.car.app.model.Row;
 import androidx.car.app.model.SearchTemplate;
 import androidx.car.app.model.SearchTemplate.SearchCallback;
@@ -378,13 +376,24 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 	}
 
 	private void showStep(SearchStep searchStep) {
-		if(searchStep == SearchStep.ADDRESS_CITY) {
+		if (searchStep == SearchStep.ADDRESS_CITY) {
 			loading = true;
-//			getSearchHelper().setupCitySearch();
-			getSearchHelper().runSearch("", getSearchHelper().setupCitySearch());
+			getSearchHelper().runSearch("", startCitySearch());
 		}
 		currentStep = searchStep;
 		invalidate();
+	}
+
+	private SearchSettings startCitySearch() {
+		SearchUICore searchUICore = getSearchHelper().getSearchUICore();
+		SearchSettings settings = searchUICore.getSearchSettings()
+				.setEmptyQueryAllowed(true)
+				.setSortByName(true)
+				.setSearchTypes(ObjectType.CITY, ObjectType.VILLAGE)
+				.setRadiusLevel(1);
+
+		searchUICore.updateSettings(settings);
+		return settings;
 	}
 
 	private void showRecents() {

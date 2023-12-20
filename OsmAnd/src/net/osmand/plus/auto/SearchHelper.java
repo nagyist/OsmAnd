@@ -86,6 +86,11 @@ public class SearchHelper {
 		setupSearchSettings(true);
 	}
 
+	@NonNull
+	public SearchUICore getSearchUICore() {
+		return searchUICore;
+	}
+
 	public int getContentLimit() {
 		return contentLimit;
 	}
@@ -164,15 +169,6 @@ public class SearchHelper {
 
 		updateSearchHint(searchSettings);
 		return searchSettings;
-	}
-
-	public SearchSettings setupCitySearch() {
-		SearchSettings settings = new SearchSettings(searchUICore.getSearchSettings())
-				.setEmptyQueryAllowed(true)
-				.setSortByName(true)
-				.setSearchTypes(ObjectType.CITY, ObjectType.VILLAGE);
-		searchUICore.updateSettings(settings);
-		return settings;
 	}
 
 	private void updateSearchHint(@NonNull SearchSettings searchSettings) {
@@ -256,7 +252,7 @@ public class SearchHelper {
 				}
 			});
 		});
-		searchUICore.search(searchQuery, true, null, searchSettings);
+		searchUICore.search(searchQuery, true, null);
 	}
 
 	public void completeQueryWithObject(@NonNull SearchResult sr) {
