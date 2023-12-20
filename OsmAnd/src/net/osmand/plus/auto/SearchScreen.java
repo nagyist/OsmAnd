@@ -2,15 +2,21 @@ package net.osmand.plus.auto;
 
 import android.graphics.drawable.Drawable;
 
+import androidx.annotation.DrawableRes;
+import androidx.annotation.IntegerRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.car.app.CarContext;
 import androidx.car.app.model.Action;
+import androidx.car.app.model.CarIcon;
 import androidx.car.app.model.ItemList;
+import androidx.car.app.model.Metadata;
 import androidx.car.app.model.Row;
 import androidx.car.app.model.SearchTemplate;
 import androidx.car.app.model.SearchTemplate.SearchCallback;
 import androidx.car.app.model.Template;
+import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
@@ -33,6 +39,8 @@ import net.osmand.plus.search.listitems.QuickSearchListItem;
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.preferences.OsmandPreference;
 import net.osmand.plus.settings.enums.HistorySource;
+import net.osmand.plus.utils.AndroidUtils;
+import net.osmand.plus.utils.UiUtilities;
 import net.osmand.search.SearchUICore;
 import net.osmand.search.core.ObjectType;
 import net.osmand.search.core.SearchPhrase;
@@ -48,6 +56,10 @@ import java.util.List;
 public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implements DefaultLifecycleObserver,
 		AppInitializeListener, SearchHelperListener {
 
+	enum SearchStep {
+		MAIN, HISTORY, ADDRESS_CITY, ADDRESS_STREETS, ADDRESS_BUILDINGS
+	}
+
 	private static final Log LOG = PlatformUtil.getLog(SearchScreen.class);
 	private static final int MAP_MARKERS_LIMIT = 3;
 
@@ -62,6 +74,9 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 	private boolean destroyed;
 	private List<SearchResult> recentResults;
 	private boolean showResult;
+	private SearchStep currentStep = SearchStep.MAIN;
+	private String selectedCity;
+	private String selectedStreet;
 
 	public SearchScreen(@NonNull CarContext carContext, @NonNull Action settingsAction) {
 		super(carContext);
@@ -69,7 +84,8 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 
 		getLifecycle().addObserver(this);
 		getApp().getAppInitializer().addListener(this);
-		reloadHistory();
+		showMain();
+//		reloadHistory();
 	}
 
 
@@ -89,7 +105,7 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 	@Override
 	public Template onGetTemplate() {
 		String searchQuery = getSearchHelper().getSearchQuery();
-		String searchHint = getSearchHelper().getSearchHint();
+//		String searchHint = getSearchHelper().getSearchHint();
 		SearchTemplate.Builder builder = new SearchTemplate.Builder(
 				new SearchCallback() {
 					@Override
@@ -113,12 +129,19 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 		builder.setHeaderAction(Action.BACK)
 				.setShowKeyboardByDefault(false)
 				.setInitialSearchText(searchQuery == null ? "" : searchQuery);
-		if (!Algorithms.isEmpty(searchHint)) {
-			builder.setSearchHint(searchHint);
-		}
+//		if (!Algorithms.isEmpty(searchHint)) {
+//			builder.setSearchHint(searchHint);
+//		}
+		builder.setSearchHint(getHint());
 		if (loading || getSearchHelper().isSearching()) {
 			builder.setLoading(true);
 		} else {
+			if (currentStep == SearchStep.MAIN) {
+				showMain();
+			} else if (currentStep == SearchStep.HISTORY) {
+				showRecents();
+				reloadHistory();
+			}
 			builder.setLoading(false);
 			if (itemList != null) {
 				builder.setItemList(itemList);
@@ -126,6 +149,27 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 		}
 
 		return builder.build();
+	}
+
+	private String getHint() {
+		switch (currentStep) {
+			case MAIN:
+				return getApp().getString(R.string.shared_string_search);
+			case ADDRESS_STREETS:
+				return Algorithms.isEmpty(selectedCity) ? "" : selectedCity;
+			case ADDRESS_CITY:
+				return getApp().getString(R.string.type_city_town);
+			case HISTORY:
+				return getSearchHelper().getSearchHint();
+			case ADDRESS_BUILDINGS:
+				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.append(selectedCity);
+				stringBuilder.append(", ");
+				stringBuilder.append(selectedStreet);
+				return stringBuilder.toString();
+			default:
+				return "";
+		}
 	}
 
 	private void doSearch(String searchText) {
@@ -307,6 +351,28 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 		}
 		return name;
 	}
+
+	private void showMain() {
+		ItemList.Builder itemList = new ItemList.Builder();
+		itemList.addItem(createRowItem(R.drawable.ic_action_history, R.string.shared_string_history, SearchStep.HISTORY));
+		itemList.addItem(createRowItem(R.drawable.ic_action_building2, R.string.shared_string_address, SearchStep.ADDRESS_STREETS));
+		this.itemList = itemList.build();
+	}
+
+	private Row createRowItem(@DrawableRes Integer iconId, @StringRes int titleRes, @NonNull SearchStep nextStep) {
+		Row.Builder builder = new Row.Builder();
+		UiUtilities uiUtilities = getApp().getUIUtilities();
+		Drawable icon = uiUtilities.getActiveIcon(iconId, !getCarContext().isDarkMode());
+		builder.setImage(new CarIcon.Builder(IconCompat.createWithBitmap(AndroidUtils.drawableToBitmap(icon))).build());
+		builder.setTitle(getApp().getString(titleRes));
+		builder.setBrowsable(true);
+		builder.setOnClickListener(() -> {
+			currentStep = nextStep;
+			invalidate();
+		});
+		return builder.build();
+	}
+
 
 	private void showRecents() {
 		OsmandApplication app = getApp();
