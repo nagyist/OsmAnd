@@ -3,7 +3,6 @@ package net.osmand.plus.auto;
 import android.graphics.drawable.Drawable;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.IntegerRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -11,7 +10,6 @@ import androidx.car.app.CarContext;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.CarIcon;
 import androidx.car.app.model.ItemList;
-import androidx.car.app.model.Metadata;
 import androidx.car.app.model.Row;
 import androidx.car.app.model.SearchTemplate;
 import androidx.car.app.model.SearchTemplate.SearchCallback;
@@ -115,7 +113,6 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 						SearchScreen.this.searchText = searchText;
 						getSearchHelper().resetSearchRadius();
 						doSearch(searchText);
-						invalidate();
 					}
 
 					@Override
