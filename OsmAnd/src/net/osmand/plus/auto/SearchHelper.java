@@ -108,6 +108,10 @@ public class SearchHelper {
 		return searchQuery;
 	}
 
+	public void setSearchQuery(String value) {
+		searchQuery = value;
+	}
+
 	public LatLon getSearchLocation() {
 		return searchLocation;
 	}
@@ -247,7 +251,9 @@ public class SearchHelper {
 						builder.addText(app.getString(R.string.nothing_found_in_radius) + " "
 								+ OsmAndFormatter.getFormattedDistance((float) rd, app, OsmAndFormatter.OsmAndFormatterParams.NO_TRAILING_ZEROS));
 					}
-					builder.setOnClickListener(this::onClickSearchMore);
+					builder.setOnClickListener(() -> {
+						onClickSearchMore(searchSettings);
+					});
 					builder.setBrowsable(true);
 					itemList.addItem(builder.build());
 				}
@@ -327,10 +333,10 @@ public class SearchHelper {
 		return builder;
 	}
 
-	private void onClickSearchMore() {
+	private void onClickSearchMore(SearchSettings searchSettings) {
 		searchRadiusLevel++;
 		if (!Algorithms.isEmpty(searchQuery)) {
-			runSearch(searchQuery);
+			runSearch(searchQuery, searchSettings);
 		}
 		if (listener != null) {
 			listener.onClickSearchMore();

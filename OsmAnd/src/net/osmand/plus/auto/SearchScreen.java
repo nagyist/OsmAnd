@@ -4,7 +4,6 @@ import android.graphics.drawable.Drawable;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntegerRes;
-import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -69,7 +68,7 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 	@NonNull
 	private final Action settingsAction;
 
-	private ItemList itemList = withNoResults(new ItemList.Builder()).build();
+	private ItemList itemList = null;//withNoResults(new ItemList.Builder()).build();
 
 	private String searchText;
 	private boolean loading;
@@ -78,16 +77,19 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 	private boolean showResult;
 	private SearchStep currentStep = SearchStep.MAIN;
 	private String selectedCity;
+	private SearchResult selectedCityResult;
 	private String selectedStreet;
 
 	public SearchScreen(@NonNull CarContext carContext, @NonNull Action settingsAction) {
+		this(carContext, settingsAction, SearchStep.MAIN);
+	}
+
+	public SearchScreen(@NonNull CarContext carContext, @NonNull Action settingsAction, @NonNull SearchStep searchStep) {
 		super(carContext);
 		this.settingsAction = settingsAction;
-
+		currentStep = searchStep;
 		getLifecycle().addObserver(this);
 		getApp().getAppInitializer().addListener(this);
-		showMain();
-//		reloadHistory();
 	}
 
 
@@ -106,8 +108,6 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 	@NonNull
 	@Override
 	public Template onGetTemplate() {
-		String searchQuery = getSearchHelper().getSearchQuery();
-//		String searchHint = getSearchHelper().getSearchHint();
 		SearchTemplate.Builder builder = new SearchTemplate.Builder(
 				new SearchCallback() {
 					@Override
@@ -115,6 +115,7 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 						SearchScreen.this.searchText = searchText;
 						getSearchHelper().resetSearchRadius();
 						doSearch(searchText);
+						invalidate();
 					}
 
 					@Override
@@ -128,31 +129,35 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 					}
 				});
 
-		builder.setHeaderAction(Action.BACK)
-				.setShowKeyboardByDefault(false)
-				.setInitialSearchText(searchQuery == null ? "" : searchQuery);
-//		if (!Algorithms.isEmpty(searchHint)) {
-//			builder.setSearchHint(searchHint);
-//		}
-		builder.setSearchHint(getHint());
+
+		if (currentStep == SearchStep.MAIN) {
+			showMain();
+		} else if (currentStep == SearchStep.ADDRESS_CITY && itemList == null) {
+			loading = true;
+			getSearchHelper().runSearch("", startCitySearch());
+		} else if (currentStep == SearchStep.ADDRESS_STREETS && itemList == null) {
+//			loading = true;
+			startStreetsSearch();
+			getSearchHelper().setSearchQuery(getSearchHelper().getSearchUICore().getPhrase().getText(true));
+			getSearchHelper().completeQueryWithObject(selectedCityResult);
+		}
+//		builder.setSearchHint(getHint());
 		if (loading || getSearchHelper().isSearching()) {
 			builder.setLoading(true);
 		} else {
 			builder.setLoading(false);
-			if (currentStep == SearchStep.MAIN) {
-				showMain();
-			} else if (currentStep == SearchStep.HISTORY) {
-				showRecents();
-				reloadHistory();
-//			} else if(currentStep == SearchStep.ADDRESS_CITY) {
-//				getSearchHelper().setupCitySearch();
-//				getSearchHelper().runSearch("");
-			}
 			if (itemList != null) {
 				builder.setItemList(itemList);
 			}
 		}
+		String searchQuery = getSearchHelper().getSearchQuery();
+		LOG.error("set search text \"" + searchQuery + "\"");
+		builder.setHeaderAction(Action.BACK)
+				.setShowKeyboardByDefault(false);
 
+		if(searchQuery != null) {
+			builder.setInitialSearchText(searchQuery == null ? "" : searchQuery);
+		}
 		return builder.build();
 	}
 
@@ -161,7 +166,7 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 			case MAIN:
 				return getApp().getString(R.string.shared_string_search);
 			case ADDRESS_STREETS:
-				return Algorithms.isEmpty(selectedCity) ? "" : selectedCity;
+				return QuickSearchListItem.getName(getApp(), selectedCityResult);
 			case ADDRESS_CITY:
 				return getApp().getString(R.string.type_city_town);
 			case HISTORY:
@@ -179,13 +184,11 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 
 	private void doSearch(String searchText) {
 		if (!getApp().isApplicationInitializing()) {
-			if (searchText.isEmpty()) {
-				showRecents();
-			} else {
-				getSearchHelper().runSearch(searchText);
-			}
+			getSearchHelper().getSearchUICore().resetPhrase(searchText);
+			getSearchHelper().completeQueryWithObject(selectedCityResult);
+//			getSearchHelper().runSearch(searchText, new SearchSettings(getSearchHelper().getSearchUICore().getSearchSettings()));
+			invalidate();
 		}
-		invalidate();
 	}
 
 	public void onClickSearchResult(@NonNull SearchResult sr) {
@@ -202,14 +205,23 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 
 			showResult(sr);
 		} else {
-			if (sr.objectType == ObjectType.CITY || sr.objectType == ObjectType.VILLAGE || sr.objectType == ObjectType.STREET) {
+			if (sr.objectType == ObjectType.CITY || sr.objectType == ObjectType.VILLAGE) {
+				Action settingsAction = getSettingsAction();
+				if (settingsAction != null) {
+					SearchScreen searchScreen = new SearchScreen(getCarContext(), settingsAction, SearchStep.ADDRESS_STREETS);
+					searchScreen.selectedCityResult = sr;
+					showSearchStep(searchScreen);
+				}
+			}
+
+			if (sr.objectType == ObjectType.STREET) {
 				showResult = true;
 			}
-			getSearchHelper().completeQueryWithObject(sr);
-			if (sr.object instanceof AbstractPoiType || sr.object instanceof PoiUIFilter) {
-				reloadHistory();
-			}
-			invalidate();
+//			getSearchHelper().completeQueryWithObject(sr);
+//			if (sr.object instanceof AbstractPoiType || sr.object instanceof PoiUIFilter) {
+//				reloadHistory();
+//			}
+//			invalidate();
 		}
 	}
 
@@ -379,21 +391,58 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 	}
 
 	private void showStep(SearchStep searchStep) {
-		if (searchStep == SearchStep.ADDRESS_CITY) {
-			loading = true;
-			getSearchHelper().runSearch("", startCitySearch());
+		Action settingsAction = getSettingsAction();
+		if (settingsAction != null) {
+			SearchScreen searchScreen = null;
+			switch (searchStep) {
+				case MAIN:
+					searchScreen = new SearchScreen(getCarContext(), settingsAction);
+					break;
+				case ADDRESS_CITY:
+					searchScreen = new SearchScreen(getCarContext(), settingsAction, SearchStep.ADDRESS_CITY);
+					break;
+				default:
+					break;
+			}
+			if (searchScreen != null) {
+				showSearchStep(searchScreen);
+			}
 		}
-		currentStep = searchStep;
-		invalidate();
+	}
+
+	@Nullable
+	private Action getSettingsAction() {
+		NavigationSession navigationSession = getApp().getCarNavigationSession();
+		if (navigationSession != null) {
+			return navigationSession.getSettingsAction();
+		} else {
+			return null;
+		}
+	}
+
+	private void showSearchStep(@NonNull SearchScreen searchScreen) {
+		getScreenManager().push(searchScreen);
 	}
 
 	@NonNull
 	private SearchSettings startCitySearch() {
-		return getSearchHelper().setupSearchSettings(true)
+		return startSearch(ObjectType.CITY, ObjectType.VILLAGE);
+	}
+
+	@NonNull
+	private SearchSettings startStreetsSearch() {
+		return startSearch(ObjectType.STREET);
+	}
+
+	@NonNull
+	private SearchSettings startSearch(ObjectType... searchTypes) {
+		SearchSettings settings = getSearchHelper().setupSearchSettings(true)
 				.setEmptyQueryAllowed(true)
 				.setSortByName(true)
-				.setSearchTypes(ObjectType.CITY, ObjectType.VILLAGE)
+				.setSearchTypes(searchTypes)
 				.setRadiusLevel(1);
+		getSearchHelper().getSearchUICore().updateSettings(settings);
+		return settings;
 	}
 
 	private void showRecents() {
@@ -430,11 +479,13 @@ public final class SearchScreen extends BaseOsmAndAndroidAutoSearchScreen implem
 	public void onFinish(@NonNull AppInitializer init) {
 		loading = false;
 		if (!destroyed) {
-			reloadHistoryInternal();
-			if (!Algorithms.isEmpty(searchText)) {
-				getSearchHelper().runSearch(searchText);
+			if (currentStep == SearchStep.MAIN) {
+				reloadHistoryInternal();
+				if (!Algorithms.isEmpty(searchText)) {
+					getSearchHelper().runSearch(searchText);
+				}
+				invalidate();
 			}
-			invalidate();
 		}
 	}
 
