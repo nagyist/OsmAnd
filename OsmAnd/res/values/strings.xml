@@ -10,6 +10,9 @@
 	- For wording and consistency, please note https://docs.osmand.net/docs/technical/contributions/translating-osmand
 	Thx - Hardy
 -->
+
+    <string name="navigate_point_format_maidenhead">Maidenhead</string>
+    <string name="maidenhead_format_descr">Maidenhead Locator System (QTH Locator).</string>
 	<string name="favorite_confirm_delete_folder">This will delete folder \"%1$s\", including nested folders and %2$d favorite point(s).</string>
 	<string name="favorite_folder_rename_conflict">A folder with this name already exists.</string>
 	<string name="favorite_folder_invalid_name">Folder name can\'t contain / or _%_</string>
