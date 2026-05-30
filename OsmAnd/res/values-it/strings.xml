@@ -6040,4 +6040,5 @@
     <string name="astro_filter_visible_tonight">Visibile stanotte</string>
     <string name="astro_filter_visible_now">Visibile ora</string>
     <string name="astro_filter_show_all">Mostra tutto</string>
+    <string name="favorite_confirm_delete_folder">Quest\'azione eliminerà la cartella \"%1$s\", incluse le sottocartelle e %2$d punto(i) preferito(i).</string>
 </resources>
