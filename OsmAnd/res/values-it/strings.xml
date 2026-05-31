@@ -6114,7 +6114,7 @@
     <string name="astro_my_data_no_daily_paths_description">Abilita un percorso giornaliero per un oggetto dal suo menu contestuale per visualizzarlo qui</string>
     <string name="astro_search_never_rises">↓ Non sorge mai</string>
     <string name="astro_search_sets_at">↘ Tramonta %1$s</string>
-    <string name="astro_sort_rises_soonest">Sorge per primo</string>
+    <string name="astro_sort_rises_soonest">Sorge prima</string>
     <string name="astro_sort_faintest_first">Più debole prima</string>
     <string name="astro_sort_brightest_first">Più luminoso prima</string>
     <string name="astro_search_empty_description">Provare a modificare i filtri o l\'intervallo di osservazione.</string>
@@ -6144,4 +6144,6 @@
     <string name="pin_folder">Fissa cartella</string>
     <string name="favorite_search_empty_state_description">Modificare la ricerca o i filtri per vedere se questo aiuta</string>
     <string name="astro_search_always_up">↑ Sempre visibile</string>
+    <string name="astro_search_magnitude_short">mag %.1f</string>
+    <string name="astro_sort_sets_soonest">Tramonta prima</string>
 </resources>
