@@ -6143,4 +6143,5 @@
     <string name="gradient_range_type_relative_summary">Scala di colori basata automaticamente sul range min/max della traccia.</string>
     <string name="pin_folder">Fissa cartella</string>
     <string name="favorite_search_empty_state_description">Modificare la ricerca o i filtri per vedere se questo aiuta</string>
+    <string name="astro_search_always_up">↑ Sempre visibile</string>
 </resources>
