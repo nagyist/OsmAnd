@@ -6146,4 +6146,5 @@
     <string name="astro_search_always_up">↑ Sempre visibile</string>
     <string name="astro_search_magnitude_short">mag %.1f</string>
     <string name="astro_sort_sets_soonest">Tramonta prima</string>
+    <string name="remove_step">Elimina passaggio</string>
 </resources>
