@@ -559,6 +559,7 @@ public class OsmandApplication extends MultiDexApplication {
 		if (preferredLocale != null && !Objects.equals(newConfig.locale.getLanguage(), preferredLocale.getLanguage())) {
 			super.onConfigurationChanged(newConfig);
 			Locale.setDefault(preferredLocale);
+			localeHelper.checkPreferredLocale();
 		} else {
 			super.onConfigurationChanged(newConfig);
 		}
