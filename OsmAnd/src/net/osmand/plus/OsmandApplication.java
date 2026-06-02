@@ -297,7 +297,7 @@ public class OsmandApplication extends MultiDexApplication {
 		}
 
 		SearchUICore.setDebugMode(PluginsHelper.isDevelopment());
-		BackupHelper.DEBUG = true;//PluginsHelper.isDevelopment();
+		BackupHelper.DEBUG = PluginsHelper.isDevelopment();
 	}
 
 	public boolean isPlusVersionInApp() {
