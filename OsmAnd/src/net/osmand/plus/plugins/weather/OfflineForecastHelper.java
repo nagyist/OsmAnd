@@ -304,8 +304,8 @@ public class OfflineForecastHelper implements ResetTotalWeatherCacheSizeListener
 		});
 	}
 
-	private int calculateApproxUpdatesSize(@NonNull List<Long> tileIds) {
-		return tileIds.size() * FORECAST_DATES_COUNT * TILE_SIZE;
+	private long calculateApproxUpdatesSize(@NonNull List<Long> tileIds) {
+		return (long) tileIds.size() * FORECAST_DATES_COUNT * TILE_SIZE;
 	}
 
 	public void calculateTotalCacheSizeAsync(boolean forceCalculation) {
