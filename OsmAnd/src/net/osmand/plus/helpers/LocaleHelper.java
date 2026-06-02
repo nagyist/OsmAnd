@@ -220,7 +220,7 @@ public class LocaleHelper {
 		Locale availablePreferredLocale = getAvailablePreferredLocale(localeIds);
 
 		return localeIds.contains(preferredLocaleId)
-				? new Locale(preferredLocaleId)
+				? SupportedLocale.parseLocale(preferredLocaleId)
 				: availablePreferredLocale;
 	}
 
