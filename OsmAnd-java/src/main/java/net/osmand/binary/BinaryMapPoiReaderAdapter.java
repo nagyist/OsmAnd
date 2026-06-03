@@ -253,7 +253,7 @@ public class BinaryMapPoiReaderAdapter {
 			case OsmandOdb.OsmAndCategoryTable.CATEGORY_FIELD_NUMBER:
 				String cat = codedIS.readString().intern();
 				region.categories.add(cat);
-				region.categoriesType.add(poiTypes.getPoiCategoryByName(cat.toLowerCase(), true));
+				region.categoriesType.add(poiTypes.getPoiCategoryByName(cat.toLowerCase(Locale.ROOT), true));
 				region.subcategories.add(new ArrayList<String>());
 				region.subcategoryFreqs.add(new TIntArrayList());
 				break;
@@ -341,7 +341,7 @@ public class BinaryMapPoiReaderAdapter {
 	}
 
 	private String normalizeSearchPoiByNameQuery(String query) {
-		return query.replace("\"", "").toLowerCase();
+		return query.replace("\"", "").toLowerCase(Locale.ROOT);
 	}
 
 	protected void searchPoiByName(PoiRegion region, SearchRequest<Amenity> req) throws IOException {
@@ -766,11 +766,11 @@ public class BinaryMapPoiReaderAdapter {
 				}
 				codedIS.popLimit(oldLim);
 				if (am != null) {
-					boolean matches = matcher.matches(am.getName().toLowerCase())
-							|| matcher.matches(am.getEnName(true).toLowerCase());
+					boolean matches = matcher.matches(am.getName().toLowerCase(Locale.ROOT))
+							|| matcher.matches(am.getEnName(true).toLowerCase(Locale.ROOT));
 					if (!matches) {
 						for (String s : am.getOtherNames()) {
-							matches = matcher.matches(s.toLowerCase());
+							matches = matcher.matches(s.toLowerCase(Locale.ROOT));
 							if (matches) {
 								break;
 							}
