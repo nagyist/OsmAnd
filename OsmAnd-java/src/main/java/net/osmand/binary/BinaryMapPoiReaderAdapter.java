@@ -45,6 +45,7 @@ public class BinaryMapPoiReaderAdapter {
 	public static class PoiSubType {
 		public boolean text;
 		public String name;
+		public int frequency;
 		//int estiatedSize;
 		public List<String> possibleValues = null;
 	}
@@ -269,6 +270,9 @@ public class BinaryMapPoiReaderAdapter {
 						break cycle;
 					case OsmandOdb.OsmAndPoiSubtype.NAME_FIELD_NUMBER:
 						st.name = codedIS.readString().intern();
+						break;
+					case OsmandOdb.OsmAndPoiSubtype.FREQUENCY_FIELD_NUMBER:
+						st.frequency = codedIS.readUInt32();
 						break;
 					case OsmandOdb.OsmAndPoiSubtype.SUBTYPEVALUE_FIELD_NUMBER:
 						if (st.possibleValues == null) {
@@ -947,7 +951,7 @@ public class BinaryMapPoiReaderAdapter {
 						topIndexAdditonalFound = true;
 					}
 				}
-				if (st != null && !topIndex) {
+				if (st != null ) {
 					am.setAdditionalInfo(st.name, retValue.toString());
 				}
 				break;
