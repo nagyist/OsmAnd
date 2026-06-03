@@ -371,6 +371,10 @@ public class OfflineForecastHelper implements ResetTotalWeatherCacheSizeListener
 	}
 
 	private void clearOnlineCache() {
+		if (weatherResourcesManager == null) {
+			LOG.error("[Clear] [All online] Can't clear online cache. WeatherResourcesManager isn't available.");
+			return;
+		}
 		clearOnlineCacheInProgress = true;
 		totalCacheSize.reset(false);
 
@@ -394,6 +398,10 @@ public class OfflineForecastHelper implements ResetTotalWeatherCacheSizeListener
 	}
 
 	private void clearOfflineCache(@Nullable List<String> regionIds) {
+		if (weatherResourcesManager == null) {
+			LOG.error("[Clear] [All offline] Can't clear offline cache. WeatherResourcesManager isn't available.");
+			return;
+		}
 		if (Algorithms.isEmpty(regionIds)) {
 			regionIds = getTempForecastsWithDownloadStates(IN_PROGRESS, FINISHED);
 		}
@@ -482,7 +490,11 @@ public class OfflineForecastHelper implements ResetTotalWeatherCacheSizeListener
 		TileIdList qTileIds = NativeUtilities.convertToQListTileIds(tileIds);
 		ZoomLevel zoom = getGeoTileZoom();
 		if (!qTileIds.isEmpty()) {
-			weatherResourcesManager.clearDbCache(qTileIds, new TileIdList(), zoom);
+			if (weatherResourcesManager == null) {
+				LOG.error("[Clear] Can't remove local forecast tiles. WeatherResourcesManager isn't available.");
+			} else {
+				weatherResourcesManager.clearDbCache(qTileIds, new TileIdList(), zoom);
+			}
 		}
 		if (notifyUserOnFinish) {
 			for (String regionId : regionIds) {
