@@ -656,7 +656,10 @@ public class OfflineForecastHelper implements ResetTotalWeatherCacheSizeListener
 
 	public int getProgressDestination(@NonNull String regionId) {
 		List<Long> tileIds = getTileIds(regionId);
-		return tileIds != null ? tileIds.size() * FORECAST_DATES_COUNT : -1;
+		if (tileIds == null || tileIds.isEmpty()) {
+			return 0;
+		}
+		return tileIds.size() * FORECAST_DATES_COUNT;
 	}
 
 	public void onDownloadStarted(@NonNull WorldRegion region, @Nullable IProgress progress) {
@@ -677,6 +680,9 @@ public class OfflineForecastHelper implements ResetTotalWeatherCacheSizeListener
 			return;
 		}
 		int destinationTilesCount = getProgressDestination(regionId);
+		if (destinationTilesCount <= 0) {
+			return;
+		}
 		int downloadedTilesCount = getOfflineForecastProgressInfo(regionId);
 		setOfflineForecastProgressInfo(regionId, ++downloadedTilesCount);
 
