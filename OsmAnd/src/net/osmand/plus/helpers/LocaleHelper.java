@@ -181,7 +181,7 @@ public class LocaleHelper {
 	public String getLanguage(@NonNull Locale locale) {
 		String lang = locale.getLanguage();
 		if (lang.length() > 3) {
-			lang = lang.substring(0, 2).toLowerCase();
+			lang = lang.substring(0, 2).toLowerCase(Locale.ROOT);
 		}
 		return lang;
 	}
