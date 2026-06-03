@@ -1971,7 +1971,7 @@
     <string name="trip_rec_notification_settings_desc">Afficher une notification système permettant de démarrer l\'enregistrement du trajet.</string>
     <string name="gpx_no_tracks_title">Vous n\'avez aucun fichier de trace pour l\'instant</string>
     <string name="gpx_no_tracks_title_folder">Vous pouvez aussi ajouter des fichiers de trace GPX dans le dossier</string>
-    <string name="gpx_add_track">Ajouter…</string>
+    <string name="gpx_add_track">Ajouter plus…</string>
     <string name="shared_string_appearance">Apparence</string>
     <string name="rendering_value_fine_name">Très fin</string>
     <string name="route_calculation">Calcul de l\'itinéraire</string>
@@ -6066,4 +6066,8 @@
     <string name="favorite_folder_name">Nom du dossier</string>
     <string name="edit_folder">Modifier le dossier</string>
     <string name="no_media_descr">Vous pouvez ajouter des photos, des vidéos ou des notes audio depuis votre appareil photo ou votre bibliothèque.</string>
+    <string name="choose_from_gallery">Faites votre choix dans la Galerie</string>
+    <string name="choose_from_files">Sélectionnez un fichier</string>
+    <string name="shared_string_media">Médias</string>
+    <string name="no_media">Aucun média</string>
 </resources>
