@@ -5981,4 +5981,9 @@
     <string name="favorite_folder_duplicate_message">請使用一個尚不存在的資料夾名稱。</string>
     <string name="favorite_folder_name">資料夾名稱</string>
     <string name="edit_folder">編輯資料夾</string>
+    <string name="choose_from_gallery">從媒體庫中選擇</string>
+    <string name="choose_from_files">從檔案中選擇</string>
+    <string name="shared_string_media">媒體</string>
+    <string name="no_media">無媒體</string>
+    <string name="no_media_descr">您可以從您的相機或媒體庫新增照片、影片或音訊附註。</string>
 </resources>
