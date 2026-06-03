@@ -407,6 +407,8 @@ public class MenuBuilder {
 
 	void onHide() {
 		hidden = true;
+		stopLoadingImagesTask();
+		stopSearchAmenitiesTasks();
 	}
 
 	void onClose() {
