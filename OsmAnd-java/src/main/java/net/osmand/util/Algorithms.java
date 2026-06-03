@@ -598,7 +598,7 @@ public class Algorithms {
 	public static String capitalizeFirstLetterAndLowercase(String s) {
 		if (s != null && s.length() > 1) {
 			// not very efficient algorithm
-			return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase();
+			return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase(Locale.ROOT);
 		} else {
 			return s;
 		}
