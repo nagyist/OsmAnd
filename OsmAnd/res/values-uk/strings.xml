@@ -5261,7 +5261,7 @@
     <string name="maps_that_also_be_used">Мапи, які також будуть використані: %1$s</string>
     <string name="getting_list_of_required_maps">Отримання списку необхідних мап…</string>
     <string name="required_maps">Необхідні мапи</string>
-    <string name="missing_maps_description">Деякі офлайн-мапи, необхідні для прокладання цього маршруту, відсутні або неактуальні. Будь ласка, завантажте або оновіть їх.</string>
+    <string name="missing_maps_description">Деякі офлайн-мапи, необхідні для цього маршруту, відсутні або застарілі. Будь ласка, завантажте або оновіть ці мапи.</string>
     <string name="route_line_use_coloring_speed">Лінія маршруту зафарбована відповідно до швидкості руху.</string>
     <string name="route_line_use_coloring_altitude">Лінія маршруту зафарбована відповідно до висоти над рівнем моря.</string>
     <string name="delete_actions_button">Кнопка видалення</string>
@@ -5269,7 +5269,7 @@
     <string name="wall_color">Колір стіни</string>
     <string name="top">Зверху</string>
     <string name="required_maps_calculate_online_summary">Список відсутніх мап базується на прямому маршруті. Щоб отримати точний список мап, OsmAnd може попередньо обчислити ваш маршрут онлайн.</string>
-    <string name="missing_maps_header">Відсутні або неактуальні мапи</string>
+    <string name="missing_maps_header">Відсутні або застарілі мапи</string>
     <string name="delete_actions_button_confirmation">Ви впевнені, що хочете видалити \"%1$s\" з усіма доданими діями?</string>
     <string name="track_vertical_exaggeration_description">Змінюючи масштаб, ви можете змінювати висоту 3D-трека.</string>
     <string name="gpx_approximation_geo_cpp">На основі геометрії (C++, швидко)</string>
@@ -5408,7 +5408,7 @@
     <string name="add_widget_to_the_right">Додати віджет справа</string>
     <string name="add_widget_above">Додати віджет зверху</string>
     <string name="help_article_map_tracks_name">Доріжки</string>
-    <string name="delete_widget">Видалити віджет?</string>
+    <string name="delete_widget">Вилучити віджет?</string>
     <string name="battery_saving_mode">Режим енергоощадження</string>
     <string name="delete_widget_description">Цей віджет буде видалено. Ви можете відновити його пізніше в розділі \"Налаштування екрана\".</string>
     <string name="route_roundabout_exit">Поверніть на %1$d з\'їзд</string>
@@ -5697,7 +5697,7 @@
     <string name="shared_string_map_center">Центр карти</string>
     <string name="shared_string_manual">Інструкція</string>
     <string name="choose_location_on_map">Виберіть місце на карті.</string>
-    <string name="show_image_previews">Показати попередній перегляд зображення</string>
+    <string name="show_image_previews">Показати попередній перегляд зображень</string>
     <string name="layer_coordinates_grid">Координатна сітка</string>
     <string name="quick_action_showhide_coordinates_grid_descr">Увімкнути/вимкнути видимість координатної сітки на карті.</string>
     <string name="prime_meridian">Нульовий меридіан</string>
@@ -5736,7 +5736,7 @@
     <string name="saved_to_device">Збережено на пристрої</string>
     <string name="save_to_device_error">Помилка збереження на пристрої</string>
     <string name="save_to_device">Зберегти на пристрій</string>
-    <string name="travel_guides">Путівника</string>
+    <string name="travel_guides">Путівники</string>
     <string name="show_debug_tile">Показати інформацію про плитку</string>
     <string name="show_debug_tile_description">Відображати інформацію про символи карти кожної плитки</string>
     <string name="deactivated_map">Деактивована карта</string>
@@ -5916,7 +5916,7 @@
     <string name="is_parking_time_limited">Чи обмежений час паркування?</string>
     <string name="centimeter">см</string>
     <string name="shared_string_centimeters">сантиметри</string>
-    <string name="bicycle_width_limit_description">Враховуйте ширину вашого велосипеда, щоб уникнути вузьких велосипедних доріжок.</string>
+    <string name="bicycle_width_limit_description">Вкажіть ширину вашого велосипеда, щоб уникнути вузьких велосипедних доріжок.</string>
     <string name="copy_link">Копіювати посилання</string>
     <string name="routing_attr_pt_limit_name">Відобразити N найкращих маршрутів</string>
     <string name="routing_attr_pt_limit_description">Вкажіть кількість найкращих маршрутів для відображення</string>
@@ -6113,14 +6113,14 @@
     <string name="gradient_no_data_point_summary">Колір, що застосовується у разі відсутності даних або їх невизначеності.</string>
     <string name="gradient_input_value_too_low_warn">Мінімальне допустиме значення — %1$s.</string>
     <string name="gradient_input_value_too_high_warn">Максимально допустиме значення — %1$s.</string>
-    <string name="gradient_input_value_duplicate_warn">Цей параметр уже існує в палітрі.</string>
+    <string name="gradient_input_value_duplicate_warn">Цей параметр уже є в палітрі.</string>
     <string name="gradient_input_invalid_value_warn">Будь ласка, введіть дійсний номер.</string>
     <string name="value_cannot_be_edited_warn">Це значення не можна редагувати.</string>
     <string name="unexpected_error_occurred_warn">Сталася несподівана помилка.</string>
     <string name="shared_string_ratio">співвідношення</string>
     <string name="shared_string_percentage">відсоток</string>
     <string name="shared_string_value">Значення</string>
-    <string name="gradient_range_type_fixed_summary">Кольори відповідають конкретним абсолютним значенням (наприклад, 50 км/год).</string>
+    <string name="gradient_range_type_fixed_summary">Кольори призначаються певним абсолютним числам (наприклад, 50 км/год).</string>
     <string name="gradient_range_type_fixed">Фіксовані значення</string>
     <string name="edit_palette">Редагувати палітру</string>
     <string name="add_palette">Додати палітру</string>
@@ -6183,4 +6183,5 @@
     <string name="building_3d_high_details_content_desc">3D будівлі заввишки</string>
     <string name="building_3d_near_distance_content_desc">3D будівлі відстань поруч</string>
     <string name="building_3d_far_distance_content_desc">3D будівлі відстань далеко</string>
+    <string name="gradient_range_type_relative">Відносний</string>
 </resources>
