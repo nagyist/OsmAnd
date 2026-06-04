@@ -97,6 +97,7 @@ import net.osmand.plus.settings.backend.menuitems.MainContextMenuItemsSettings;
 import net.osmand.plus.settings.backend.preferences.*;
 import net.osmand.plus.settings.backend.storages.ImpassableRoadsStorage;
 import net.osmand.plus.settings.backend.storages.IntermediatePointsStorage;
+import net.osmand.plus.settings.coordinates.CoordinateFormatIds;
 import net.osmand.plus.settings.enums.*;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.FileUtils;
@@ -3345,6 +3346,13 @@ public class OsmandSettings {
 	public final OsmandPreference<String> CONTRIBUTION_INSTALL_APP_DATE = new StringPreference(this, "CONTRIBUTION_INSTALL_APP_DATE", null).makeGlobal();
 
 	public final OsmandPreference<Integer> COORDINATES_FORMAT = new IntPreference(this, "coordinates_format", PointDescription.FORMAT_DEGREES).makeProfile();
+	public final ListStringPreference PREFERRED_COORDINATE_FORMAT_IDS = (ListStringPreference)
+			new ListStringPreference(this, "preferred_coordinate_format_ids",
+					TextUtils.join(",", CoordinateFormatIds.DEFAULT_FORMAT_IDS),
+					",").makeProfile();
+	public final ListStringPreference RECENTLY_ADDED_COORDINATE_FORMAT_IDS = (ListStringPreference)
+			new ListStringPreference(this, "recently_added_coordinate_format_ids", null,
+					",").makeGlobal();
 
 	public final OsmandPreference<Boolean> FOLLOW_THE_ROUTE = new BooleanPreference(this, "follow_to_route", false).makeGlobal();
 	public final OsmandPreference<String> FOLLOW_THE_GPX_ROUTE = new StringPreference(this, "follow_gpx", null).makeGlobal();

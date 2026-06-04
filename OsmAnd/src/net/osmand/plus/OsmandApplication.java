@@ -87,6 +87,7 @@ import net.osmand.plus.plugins.osmedit.oauth.OsmOAuthHelper;
 import net.osmand.plus.plugins.rastermaps.DownloadTilesHelper;
 import net.osmand.plus.plugins.weather.OfflineForecastHelper;
 import net.osmand.plus.plugins.weather.WeatherHelper;
+import net.osmand.plus.settings.coordinates.CoordinateFormatHelper;
 import net.osmand.plus.poi.PoiFiltersHelper;
 import net.osmand.plus.quickaction.MapButtonsHelper;
 import net.osmand.plus.render.RendererRegistry;
@@ -224,6 +225,7 @@ public class OsmandApplication extends MultiDexApplication {
 	ExplorePlacesOnlineProvider explorePlacesProvider;
 	HelpArticlesHelper helpArticlesHelper;
 	ClickableWayHelper clickableWayHelper;
+	CoordinateFormatHelper coordinateFormatHelper;
 
 	private final Map<String, Builder> customRoutingConfigs = new ConcurrentHashMap<>();
 	private File externalStorageDirectory;
@@ -678,6 +680,14 @@ public class OsmandApplication extends MultiDexApplication {
 	@NonNull
 	public WeatherHelper getWeatherHelper() {
 		return weatherHelper;
+	}
+
+	@NonNull
+	public synchronized CoordinateFormatHelper getCoordinateFormatHelper() {
+		if (coordinateFormatHelper == null) {
+			coordinateFormatHelper = new CoordinateFormatHelper(this);
+		}
+		return coordinateFormatHelper;
 	}
 
 	@NonNull

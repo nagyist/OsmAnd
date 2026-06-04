@@ -62,6 +62,7 @@ import net.osmand.plus.settings.backend.WidgetsAvailabilityHelper;
 import net.osmand.plus.settings.backend.backup.SettingsHelper;
 import net.osmand.plus.settings.backend.backup.exporttype.ExportType;
 import net.osmand.plus.settings.backend.preferences.*;
+import net.osmand.plus.settings.coordinates.CoordinateFormatPreferences;
 import net.osmand.plus.settings.enums.CompassMode;
 import net.osmand.plus.settings.enums.LocalSortMode;
 import net.osmand.plus.settings.enums.ScreenLayoutMode;
@@ -163,8 +164,9 @@ public class AppVersionUpgradeOnInit {
 	public static final int VERSION_5_3_01 = 5301;
 	public static final int VERSION_5_3_02 = 5302;
 	public static final int VERSION_5_3_04 = 5304;
+	public static final int VERSION_5_3_05 = 5305;
 
-	public static final int LAST_APP_VERSION = VERSION_5_3_04;
+	public static final int LAST_APP_VERSION = VERSION_5_3_05;
 
 	private static final String VERSION_INSTALLED = "VERSION_INSTALLED";
 
@@ -330,6 +332,9 @@ public class AppVersionUpgradeOnInit {
 				}
 				if (prevAppVersion < VERSION_5_3_04) {
 					migrateProfileIconsToMx(settings);
+				}
+				if (prevAppVersion < VERSION_5_3_05) {
+					migrateCoordinateFormatPreferences(settings);
 				}
 				startPrefs.edit().putInt(VERSION_INSTALLED_NUMBER, lastVersion).commit();
 				startPrefs.edit().putString(VERSION_INSTALLED, Version.getFullVersion(app)).commit();
@@ -1148,6 +1153,13 @@ public class AppVersionUpgradeOnInit {
 					}
 				}
 			}
+		}
+	}
+
+	private void migrateCoordinateFormatPreferences(@NonNull OsmandSettings settings) {
+		CoordinateFormatPreferences coordinateFormatPreferences = new CoordinateFormatPreferences(settings);
+		for (ApplicationMode appMode : ApplicationMode.allPossibleValues()) {
+			coordinateFormatPreferences.migrateFromLegacyFormat(appMode, settings.COORDINATES_FORMAT.getModeValue(appMode));
 		}
 	}
 
