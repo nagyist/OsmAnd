@@ -33,17 +33,17 @@ public class NameIndexInspector {
 			this.freq = frequency;
 		}
 
-		public List<ValueFreq> getSubvalues(double percent) {
+		public List<ValueFreq> getSubvalues(double percent, int min) {
 			if (subValues == null || subValues.size() == 0) {
 				return Collections.emptyList();
 			}
-			int limit = Math.min(1, subValues.size());
+			int limit = Math.min(min, subValues.size());
 			for (; limit < subValues.size(); limit++) {
 				if (subValues.get(limit).freq < percent * freq) {
 					break;
 				}
 			}
-			return subValues.subList(0, limit - 1);
+			return subValues.subList(0, limit);
 		}
 
 		public static Map<String, ValueFreq> mergeArray(Map<String, ValueFreq> res, List<ValueFreq> m) {
