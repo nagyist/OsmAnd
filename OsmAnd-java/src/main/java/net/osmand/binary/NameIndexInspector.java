@@ -1,13 +1,14 @@
 package net.osmand.binary;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
+import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 
@@ -86,28 +87,37 @@ public class NameIndexInspector {
 		}
 	}
 	
-	public static class PrefixNameValue implements Comparable<PrefixNameValue> {
+	private static class PrefixNameValue implements Comparable<PrefixNameValue> {
 		public String key;
 		public OsmAndPoiNameIndexData data = null;
-		public static double LIMIT_PERCENT = 0.1;
+		public AddressNameIndexData addr = null;
 		
 		@Override
 		public String toString() {
 			List<ValueFreq> suffixes = collectFrequencies();
-			return String.format("%s (%d, %s)", key, data.getAtomsCount(), suffixes);
+			if(data != null) {
+				return String.format("%s (%d, %s)", key, data.getAtomsCount(), suffixes);
+			} else if(addr != null) {
+				return String.format("%s (%d, %s)", key, addr.getAtomCount(), suffixes);
+			} else {
+				return key + " <NOT SET>";
+			}
 		}
 
-		private List<ValueFreq> collectFrequencies() {
+		private List<ValueFreq> collectAddrFrequencies(int f) {
 			List<ValueFreq> suffixes = new ArrayList<>();
-			for (String s : data.getSuffixesDictionaryList()) {
+			for (String s : addr.getSuffixesDictionaryList()) {
 				ValueFreq vf = new ValueFreq(key + s, 0);
 				suffixes.add(vf);
 			}
 			int intBits = 32;
-			for (OsmAndPoiNameIndexDataAtom a : data.getAtomsList()) {
-				for(int i = 0; i < a.getSuffixesBitsetCount(); i++) {
+			for (AddressNameIndexDataAtom a : addr.getAtomList()) {
+				if (a.getType() != f && f >= 0) {
+					continue;
+				}
+				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
 					int suffBit = a.getSuffixesBitset(i);
-					for(int j = 0; j < intBits && suffBit != 0; j++) {
+					for (int j = 0; j < intBits && suffBit != 0; j++) {
 						if (suffBit % 2 == 1) {
 							ValueFreq s = suffixes.get(i * intBits + j);
 							s.freq++;
@@ -115,6 +125,32 @@ public class NameIndexInspector {
 						suffBit >>= 1;
 					}
 				}
+			}
+			return suffixes;
+		}
+		
+		private List<ValueFreq> collectFrequencies() {
+			List<ValueFreq> suffixes = new ArrayList<>();
+			if (data != null) {
+				for (String s : data.getSuffixesDictionaryList()) {
+					ValueFreq vf = new ValueFreq(key + s, 0);
+					suffixes.add(vf);
+				}
+				int intBits = 32;
+				for (OsmAndPoiNameIndexDataAtom a : data.getAtomsList()) {
+					for(int i = 0; i < a.getSuffixesBitsetCount(); i++) {
+						int suffBit = a.getSuffixesBitset(i);
+						for(int j = 0; j < intBits && suffBit != 0; j++) {
+							if (suffBit % 2 == 1) {
+								ValueFreq s = suffixes.get(i * intBits + j);
+								s.freq++;
+							}
+							suffBit >>= 1;
+						}
+					}
+				}
+			} else if (addr != null) {
+				suffixes = collectAddrFrequencies(-1);
 			}
 			Collections.sort(suffixes);
 			return suffixes;
@@ -139,7 +175,7 @@ public class NameIndexInspector {
 	
 	public List<ValueFreq> getPrefixes() {
 		List<ValueFreq> ls = new ArrayList<NameIndexInspector.ValueFreq>();
-		for(PrefixNameValue p : indexByRef.values()) {
+		for (PrefixNameValue p : indexByRef.values()) {
 			ValueFreq vf = new ValueFreq(p.key, p.data.getAtomsCount());
 			vf.subValues = p.collectFrequencies();
 			ls.add(vf);
@@ -147,15 +183,31 @@ public class NameIndexInspector {
 		return ls;
 	}
 	
-	
-	
-	public List<PrefixNameValue> getTop(int limit) {
-		List<PrefixNameValue> r = new ArrayList<>(indexByRef.values());
-		Collections.sort(r);
-		if (r.size() > limit) {
-			r = r.subList(0, limit);
+
+	public List<ValueFreq> getAddrPrefixes(int filter) {
+		List<ValueFreq> ls = new ArrayList<NameIndexInspector.ValueFreq>();
+		for (PrefixNameValue p : indexByRef.values()) {
+			List<ValueFreq> subvalues = p.collectAddrFrequencies(filter);
+			int total = p.addr.getAtomCount();
+			if (filter >= 0) {
+				total = 0;
+				List<ValueFreq> sublist = new ArrayList<>();
+				for (ValueFreq s : subvalues) {
+					total += s.freq;
+					if (s.freq > 0) {
+						sublist.add(s);
+					}
+				}
+				if (sublist.size() == 0) {
+					continue;
+				}
+				subvalues = sublist;
+			}
+			ValueFreq vf = new ValueFreq(p.key, total);
+			vf.subValues = subvalues;
+			ls.add(vf);
 		}
-		return r;
+		return ls;
 	}
 
 	
@@ -170,6 +222,15 @@ public class NameIndexInspector {
 			throw new IllegalStateException(obj.toString());
 		}
 		obj.data = from;
+	}
+
+
+	public void addData(AddressNameIndexData from, long currentShift) {
+		PrefixNameValue obj = indexByRef.get(currentShift);
+		if (obj.addr != null) {
+			throw new IllegalStateException(obj.toString());
+		}
+		obj.addr = from;		
 	}
 
 
