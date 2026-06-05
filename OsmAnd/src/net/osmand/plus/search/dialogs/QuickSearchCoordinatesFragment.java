@@ -866,7 +866,13 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 	}
 
 	private double parseCoordinateValue(@NonNull String value) {
-		return Double.parseDouble(value.replaceAll("\\s+", "").replace(",", ""));
+		String normalized = value.replaceAll("[\\s\\u00A0\\u202F]", "");
+		if (normalized.indexOf(',') >= 0 && normalized.indexOf('.') < 0) {
+			normalized = normalized.replace(',', '.');
+		} else {
+			normalized = normalized.replace(",", "");
+		}
+		return Double.parseDouble(normalized);
 	}
 
 	private Pair<LatLon, LatLon> parseUtmLocations(double northing, double easting, int zoneNumber,

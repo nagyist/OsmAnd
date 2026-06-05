@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -21,6 +22,9 @@ class CoordinateFormatHelper(private val app: OsmandApplication) {
 	fun searchFormats(query: String?, callback: CoordinateSearchCallback) {
 		searchJob?.cancel()
 		searchJob = searchScope.launch {
+			if (!query.isNullOrBlank()) {
+				delay(SEARCH_DEBOUNCE_MS)
+			}
 			val results = if (query.isNullOrBlank()) repository.listAll() else repository.search(query)
 			if (isActive) {
 				app.runInUIThread { callback.onResult(results) }
@@ -56,6 +60,7 @@ class CoordinateFormatHelper(private val app: OsmandApplication) {
 	companion object {
 		const val EXAMPLE_LAT = 50.43855
 		const val EXAMPLE_LON = 30.50124
+		private const val SEARCH_DEBOUNCE_MS = 250L
 	}
 }
 

@@ -1,7 +1,5 @@
 package net.osmand.plus.settings.coordinates
 
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -12,8 +10,9 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatRadioButton
-import androidx.core.widget.NestedScrollView
+import androidx.core.view.doOnPreDraw
 import androidx.core.widget.CompoundButtonCompat
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -80,29 +79,17 @@ class CoordinateFormatSelectorBottomSheet : BaseMaterialModalBottomSheetDialogFr
 		bottomSheet: FrameLayout,
 		behavior: BottomSheetBehavior<FrameLayout>
 	) {
-		bottomSheet.background = ColorDrawable(Color.TRANSPARENT)
-		behavior.halfExpandedRatio = 0.5f
+		val layoutParams = bottomSheet.layoutParams
+		if (layoutParams.height != ViewGroup.LayoutParams.MATCH_PARENT) {
+			layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
+			bottomSheet.layoutParams = layoutParams
+		}
+		behavior.isFitToContents = true
 		behavior.skipCollapsed = false
-		// Decide the expanded behavior once the content is laid out and we know its height.
-		bottomSheet.post {
-			val parentHeight = (bottomSheet.parent as? View)?.height ?: 0
-			val scrollable = getScrollableView() as? NestedScrollView
-			val content = scrollable?.getChildAt(0)
-			val contentHeight = if (content != null) {
-				content.height + scrollable.paddingTop + scrollable.paddingBottom
-			} else {
-				0
-			}
-			if (contentHeight in 1..parentHeight) {
-				// Short list: snap the expanded stop to the content height so the sheet
-				// can't be dragged above its content and expose an empty gap below it.
-				behavior.isFitToContents = true
-				behavior.state = BottomSheetBehavior.STATE_EXPANDED
-			} else {
-				// Tall list: keep the half-expanded, fully scrollable behavior.
-				behavior.isFitToContents = false
-				behavior.state = BottomSheetBehavior.STATE_HALF_EXPANDED
-			}
+		bottomSheet.doOnPreDraw {
+			val parentHeight = (bottomSheet.parent as? View)?.height ?: bottomSheet.height
+			behavior.peekHeight = parentHeight / 2
+			behavior.state = BottomSheetBehavior.STATE_COLLAPSED
 		}
 	}
 
@@ -119,7 +106,7 @@ class CoordinateFormatSelectorBottomSheet : BaseMaterialModalBottomSheetDialogFr
 		val preferredIds = preferences.getPreferredIds(currentAppMode)
 		val selectedId = selectedFormatId ?: preferences.getPrimaryId(currentAppMode)
 		val preferredFormats = resolveFormats(preferredIds)
-		val recentFormats = resolveFormats(preferences.getRecentIds().filterNot { it in preferredIds })
+		val recentFormats = resolveFormats(preferences.getRecentIds())
 
 		val preferredContainer = mainView.findViewById<LinearLayout>(R.id.preferredFormatsContainer)
 		preferredContainer.removeAllViews()
@@ -129,7 +116,7 @@ class CoordinateFormatSelectorBottomSheet : BaseMaterialModalBottomSheetDialogFr
 					parent = preferredContainer,
 					format = format,
 					selected = format.id == selectedId,
-					showDivider = false
+					showDivider = index == 0 && preferredFormats.size > 1
 				)
 			)
 		}
