@@ -61,6 +61,19 @@ public class NameIndexInspector {
 			return res;
 		}
 		
+
+		public static Map<String, ValueFreq> mergeArray(Map<String, ValueFreq> res, Map<String, ValueFreq> ms) {
+			for (ValueFreq s : ms.values()) {
+				ValueFreq vf = res.get(s.value);
+				if (vf != null) {
+					vf.merge(s);
+				} else {
+					res.put(s.value, s);
+				}
+			}
+			return res;
+		}
+		
 		
 		public void merge(ValueFreq s) {
 			this.freq += s.freq;
