@@ -10,6 +10,12 @@
 	- For wording and consistency, please note https://docs.osmand.net/docs/technical/contributions/translating-osmand
 	Thx - Hardy
 -->
+	<string name="tracks_backup_promo_button">Get OsmAnd Pro</string>
+	<string name="tracks_backup_promo_description">Sync your tracks across devices and Web with OsmAnd Pro.</string>
+	<string name="tracks_backup_promo_title">Back up and sync your tracks</string>
+	<string name="free_download_limit_reached">Free download limit reached</string>
+	<string name="free_download_limit_reached_description">Unlock unlimited map downloads and updates</string>
+	<string name="get_unlimited_downloads">Get unlimited downloads</string>
 	<string name="favorite_confirm_delete_folder">This will delete folder \"%1$s\", including nested folders and %2$d favorite point(s).</string>
 	<string name="favorite_folder_rename_conflict">A folder with this name already exists.</string>
 	<string name="favorite_folder_invalid_name">Folder name can\'t contain / or _%_</string>

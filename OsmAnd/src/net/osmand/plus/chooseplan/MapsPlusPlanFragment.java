@@ -68,7 +68,7 @@ public class MapsPlusPlanFragment extends SelectedPlanFragment {
 		return priceButtons;
 	}
 
-	protected static List<InAppSubscription> getVisibleSubscriptions(OsmandApplication app, InAppPurchaseHelper purchaseHelper) {
+	public static List<InAppSubscription> getVisibleSubscriptions(OsmandApplication app, InAppPurchaseHelper purchaseHelper) {
 		InAppPurchases purchases = app.getInAppPurchaseHelper().getInAppPurchases();
 		List<InAppSubscription> subscriptions = new ArrayList<>();
 		List<InAppSubscription> visibleSubscriptions = purchaseHelper.getSubscriptions().getVisibleSubscriptions();
