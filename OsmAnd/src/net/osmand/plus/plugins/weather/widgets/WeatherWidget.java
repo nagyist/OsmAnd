@@ -48,16 +48,6 @@ public class WeatherWidget extends SimpleWidget {
 	private static final int MAX_METERS_TO_PREVIOUS_FORECAST = 30 * 1000;
 	private static final int HIDE_OLD_DATA_DELAY = 1000;
 
-	// SimpleDateFormat is not thread-safe and these formatters are used from background callbacks
-	// as well as the UI thread, so keep a separate instance per thread.
-	private static final ThreadLocal<DateFormat> forecastNamingFormat = ThreadLocal.withInitial(() -> {
-		DateFormat format = new SimpleDateFormat("yyyyMMdd_HH00", Locale.US);
-		format.setTimeZone(TimeZone.getTimeZone("UTC"));
-		return format;
-	});
-	private static final ThreadLocal<DateFormat> timeFormat =
-			ThreadLocal.withInitial(() -> new SimpleDateFormat("d MMM HH:mm", Locale.getDefault()));
-
 	private final WeatherHelper weatherHelper;
 	private final IObtainValueAsyncCallback callback;
 	private final WeatherBand weatherBand;
@@ -245,12 +235,12 @@ public class WeatherWidget extends SimpleWidget {
 		if (lastDisplayedForecastTime != 0) {
 			long forecastTime = lastDisplayedForecastTime / TRUNCATE_MINUTES * TRUNCATE_MINUTES;
 			stringBuilder.append("For date: ")
-					.append(timeFormat.get().format(new Date(forecastTime)));
+					.append(formatDisplayTime(forecastTime));
 
 			long lastDownload = getForecastDbLastDownload(lastDisplayedForecastTime);
 			if (lastDownload != 0) {
 				stringBuilder.append(". Downloaded: ")
-						.append(timeFormat.get().format(new Date(lastDownload)));
+						.append(formatDisplayTime(lastDownload));
 			}
 		}
 
@@ -270,7 +260,7 @@ public class WeatherWidget extends SimpleWidget {
 
 	private long getForecastDbLastDownload(long forecastSystemTime) {
 		File weatherForecastDir = app.getAppPath(IndexConstants.WEATHER_FORECAST_DIR);
-		String forecastDbFileName = forecastNamingFormat.get().format(new Date(forecastSystemTime)) + IndexConstants.TIFF_DB_EXT;
+		String forecastDbFileName = formatForecastDbFileName(forecastSystemTime) + IndexConstants.TIFF_DB_EXT;
 		File usedForecastDb = new File(weatherForecastDir, forecastDbFileName);
 
 		return usedForecastDb.exists() && usedForecastDb.canRead()
@@ -293,5 +283,17 @@ public class WeatherWidget extends SimpleWidget {
 		}
 
 		return "ready";
+	}
+
+	@NonNull
+	private static String formatForecastDbFileName(long forecastSystemTime) {
+		DateFormat format = new SimpleDateFormat("yyyyMMdd_HH00", Locale.US);
+		format.setTimeZone(TimeZone.getTimeZone("UTC"));
+		return format.format(new Date(forecastSystemTime));
+	}
+
+	@NonNull
+	private static String formatDisplayTime(long timeMs) {
+		return new SimpleDateFormat("d MMM HH:mm", Locale.getDefault()).format(new Date(timeMs));
 	}
 }
