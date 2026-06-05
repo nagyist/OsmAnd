@@ -11,6 +11,7 @@ import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
+import net.osmand.util.Algorithms;
 
 public class NameIndexInspector {
 
@@ -173,9 +174,12 @@ public class NameIndexInspector {
 	}
 	
 	
-	public List<ValueFreq> getPrefixes() {
+	public List<ValueFreq> getPrefixes(String prefix) {
 		List<ValueFreq> ls = new ArrayList<NameIndexInspector.ValueFreq>();
 		for (PrefixNameValue p : indexByRef.values()) {
+			if (prefix != null && !(p.key.toLowerCase().startsWith(prefix) || prefix.toLowerCase().startsWith(p.key))) {
+				continue;
+			}
 			ValueFreq vf = new ValueFreq(p.key, p.data.getAtomsCount());
 			vf.subValues = p.collectFrequencies();
 			ls.add(vf);
@@ -184,12 +188,16 @@ public class NameIndexInspector {
 	}
 	
 
-	public List<ValueFreq> getAddrPrefixes(int filter) {
+	public List<ValueFreq> getAddrPrefixes(int filter, String prefix) {
 		List<ValueFreq> ls = new ArrayList<NameIndexInspector.ValueFreq>();
 		for (PrefixNameValue p : indexByRef.values()) {
+			if (prefix != null && !(p.key.toLowerCase().startsWith(prefix) || prefix.toLowerCase().startsWith(p.key))) {
+				continue;
+			}
+
 			List<ValueFreq> subvalues = p.collectAddrFrequencies(filter);
 			int total = p.addr.getAtomCount();
-			if (filter >= 0) {
+			if (filter >= 0 || !Algorithms.isEmpty(prefix)) {
 				total = 0;
 				List<ValueFreq> sublist = new ArrayList<>();
 				for (ValueFreq s : subvalues) {
