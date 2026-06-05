@@ -695,8 +695,7 @@ public class OfflineForecastHelper implements ResetTotalWeatherCacheSizeListener
 		if (destinationTilesCount <= 0) {
 			return;
 		}
-		int downloadedTilesCount = getOfflineForecastProgressInfo(regionId);
-		setOfflineForecastProgressInfo(regionId, ++downloadedTilesCount);
+		int downloadedTilesCount = getOrCreateCachedInfo(regionId).incrementDownloadProgress();
 
 		float currentProgress = (float) downloadedTilesCount / destinationTilesCount;
 		if (progress != null) {
