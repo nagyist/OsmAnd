@@ -12,6 +12,7 @@ import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexDa
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.util.Algorithms;
+import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexInspector {
 
@@ -29,6 +30,7 @@ public class NameIndexInspector {
 		public List<ValueFreq> subValues = null;
 		
 		public static boolean SORT_BY_NAME = false;
+		public static boolean SORT_BY_TOP_FREQ = true;
 		
 		public ValueFreq(String name, int frequency) {
 			this.value = name;
@@ -75,11 +77,22 @@ public class NameIndexInspector {
 		public String toString() {
 			return String.format("%s (%,d)", value ,freq);
 		}
+		
+		public int getTopFreq() {
+			if(subValues != null && subValues.size() > 0) {
+				Collections.sort(subValues);
+				return subValues.get(0).freq;
+			}
+			return freq;
+		}
 
 		@Override
 		public int compareTo(ValueFreq o) {
 			if (!SORT_BY_NAME) {
 				int c = -Integer.compare(freq, o.freq);
+				if (SORT_BY_TOP_FREQ) {
+					c = -Integer.compare(getTopFreq(), o.getTopFreq());
+				}
 				if (c != 0) {
 					return c;
 				}
@@ -107,8 +120,10 @@ public class NameIndexInspector {
 
 		private List<ValueFreq> collectAddrFrequencies(int f) {
 			List<ValueFreq> suffixes = new ArrayList<>();
+			String curSuffix = "";
 			for (String s : addr.getSuffixesDictionaryList()) {
-				ValueFreq vf = new ValueFreq(key + s, 0);
+				curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
+				ValueFreq vf = new ValueFreq(key + curSuffix, 0);
 				suffixes.add(vf);
 			}
 			int intBits = 32;
@@ -133,8 +148,10 @@ public class NameIndexInspector {
 		private List<ValueFreq> collectFrequencies() {
 			List<ValueFreq> suffixes = new ArrayList<>();
 			if (data != null) {
+				String curSuffix = "";
 				for (String s : data.getSuffixesDictionaryList()) {
-					ValueFreq vf = new ValueFreq(key + s, 0);
+					curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
+					ValueFreq vf = new ValueFreq(key + curSuffix, 0);
 					suffixes.add(vf);
 				}
 				int intBits = 32;
