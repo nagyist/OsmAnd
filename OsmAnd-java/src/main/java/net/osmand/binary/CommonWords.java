@@ -29,7 +29,7 @@ public class CommonWords {
 	private static void addFrequent(String string) {
 		String string2 = SearchAlgorithms.replaceGermanSS(string);
 		string2 = UnicodeDiacritics.getInstance().stripDiacritics(string2);
-		if (isCommon(string)) {
+		if (isCommon(string) || frequentlyUsedWordsDictionary.containsKey(string)) {
 			return;
 		}
 		frequentlyUsedWordsDictionary.put(string, frequentlyUsedWordsDictionary.size());
