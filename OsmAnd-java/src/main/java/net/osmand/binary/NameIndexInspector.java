@@ -29,6 +29,8 @@ public class NameIndexInspector {
 	public static class SuffixesStat {
 		List<String> longestSuffixes = new ArrayList<String>();
 		String longestSuffixesKey;
+		int suffixesLenSum;
+		int prefixesCount;
 		int atomOneBitSuffix;
 		int atomTwoBitSuffix;
 		int atomCount;
@@ -37,10 +39,13 @@ public class NameIndexInspector {
 			if (longestSuffixes.size() < suffixesStat.longestSuffixes.size()) {
 				this.longestSuffixes = suffixesStat.longestSuffixes;
 				this.longestSuffixesKey = suffixesStat.longestSuffixesKey;
-				this.atomCount += suffixesStat.atomCount;
-				this.atomOneBitSuffix += suffixesStat.atomOneBitSuffix;
-				this.atomTwoBitSuffix += suffixesStat.atomTwoBitSuffix;
+				
 			}
+			this.atomCount += suffixesStat.atomCount;
+			this.atomOneBitSuffix += suffixesStat.atomOneBitSuffix;
+			this.atomTwoBitSuffix += suffixesStat.atomTwoBitSuffix;
+			this.prefixesCount += suffixesStat.prefixesCount;
+			this.suffixesLenSum += suffixesStat.suffixesLenSum;
 		}
 		
 		@Override
@@ -48,7 +53,10 @@ public class NameIndexInspector {
 			int sz = longestSuffixes.size();
 			String longestStr = String.format("Longest suffixes '%s' (%d): %s...", longestSuffixesKey,
 					longestSuffixes.size(), longestSuffixes.subList(0, Math.min(15, sz)));
-			return String.format("Suffixes stat. Atoms (%,d) - suffix (1 - %,d, 2 - %,d, ...). %s", 
+			return String.format("Suffixes stat."
+					+ "\n\t  Prefixes - %,d, avg suffixes - %.1f. "
+					+ "\n\t  Atoms (%,d) - suffix (1 - %,d, 2 - %,d, ...). %s",
+					prefixesCount, suffixesLenSum * 1.0 / (prefixesCount + 1),
 					atomCount, atomOneBitSuffix, atomTwoBitSuffix, longestStr);
 		}
 		
@@ -169,6 +177,8 @@ public class NameIndexInspector {
 				stats.longestSuffixes = addr.getSuffixesDictionaryList();
 				stats.longestSuffixesKey = key;
 			}
+			stats.prefixesCount++;
+			stats.suffixesLenSum += addr.getSuffixesDictionaryList().size();
 			for (String s : addr.getSuffixesDictionaryList()) {
 				curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
 				ValueFreq vf = new ValueFreq(key + curSuffix, 0);
@@ -212,6 +222,8 @@ public class NameIndexInspector {
 					stats.longestSuffixes = data.getSuffixesDictionaryList();
 					stats.longestSuffixesKey = key;
 				}
+				stats.prefixesCount++;
+				stats.suffixesLenSum += data.getSuffixesDictionaryList().size();
 				for (String s : data.getSuffixesDictionaryList()) {
 					curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
 					ValueFreq vf = new ValueFreq(key + curSuffix, 0);
