@@ -1,8 +1,8 @@
-package net.osmand.plus.gallery.helpers;
+package net.osmand.plus.gallery.attached.helpers;
 
 import static android.app.Activity.RESULT_OK;
+
 import static net.osmand.IndexConstants.MEDIA_INDEX_DIR;
-import static net.osmand.plus.gallery.model.GalleryMediaGroup.OTHER;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -17,10 +17,12 @@ import androidx.activity.result.contract.ActivityResultContract;
 import androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia;
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia;
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult;
+import androidx.annotation.ColorInt;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 
-import net.osmand.OnResultCallback;
 import net.osmand.PlatformUtil;
 import net.osmand.data.FavouritePoint;
 import net.osmand.data.LatLon;
@@ -28,16 +30,10 @@ import net.osmand.plus.OsmAndTaskManager;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
-import net.osmand.plus.gallery.controller.GalleryController;
-import net.osmand.plus.gallery.controller.GalleryItemsHolder;
-import net.osmand.plus.gallery.model.GalleryItem;
-import net.osmand.plus.gallery.ui.GalleryGridFragment;
-import net.osmand.plus.gallery.ui.GalleryPhotoPagerFragment;
 import net.osmand.plus.helpers.IntentHelper;
 import net.osmand.plus.plugins.PluginsHelper;
 import net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin;
 import net.osmand.plus.plugins.audionotes.AVActionType;
-import net.osmand.plus.plugins.audionotes.Recording;
 import net.osmand.plus.settings.enums.ThemeUsageContext;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
@@ -46,19 +42,16 @@ import net.osmand.plus.widgets.popup.PopUpMenu;
 import net.osmand.plus.widgets.popup.PopUpMenuDisplayData;
 import net.osmand.plus.widgets.popup.PopUpMenuItem;
 import net.osmand.plus.widgets.popup.PopUpMenuWidthMode;
-import net.osmand.shared.gpx.primitives.Link;
+import net.osmand.shared.gpx.primitives.Linkable;
 import net.osmand.shared.gpx.primitives.WptPt;
-import net.osmand.shared.media.LinkMediaFactory;
 import net.osmand.shared.media.MediaUriResolver;
 import net.osmand.shared.media.domain.MediaItem;
-import net.osmand.shared.media.domain.MediaType;
 import net.osmand.util.Algorithms;
 
 import org.apache.commons.logging.Log;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class AttachedMediaUiHelper {
@@ -69,6 +62,7 @@ public class AttachedMediaUiHelper {
 
 	private final OsmandApplication app;
 	private final MapActivity mapActivity;
+	private final UiUtilities iconsCache;
 	private final AttachedMediaDataHelper dataHelper;
 	@Nullable
 	private ActivityResultLauncher<?> mediaPickerLauncher;
@@ -76,47 +70,33 @@ public class AttachedMediaUiHelper {
 	public AttachedMediaUiHelper(@NonNull MapActivity mapActivity) {
 		this.mapActivity = mapActivity;
 		this.app = mapActivity.getApp();
+		this.iconsCache = app.getUIUtilities();
 		this.dataHelper = new AttachedMediaDataHelper(app);
 	}
 
-	@NonNull
-	public List<GalleryItem> getGalleryItems(@Nullable List<Link> links) {
-		List<MediaItem> mediaItems = LinkMediaFactory.fromLinks(links);
-		List<GalleryItem> items = new ArrayList<>();
-		if (mediaItems.isEmpty()) {
-			items.add(new GalleryItem.NoMedia(null, R.string.no_media, R.string.no_media_descr, R.drawable.ic_action_image_disabled));
-		} else {
-			for (int i = mediaItems.size() - 1; i >= 0; i--) {
-				items.add(new GalleryItem.Media(mediaItems.get(i), false));
-			}
-		}
-		return items;
-	}
-
-	public void showAddMenu(@NonNull View anchorView, @Nullable Object object,
-			@Nullable LatLon latLon, @Nullable Runnable onMediaChanged) {
-		if (latLon == null || !canAttachMedia(object)) {
+	public void showAddMenu(@NonNull View anchorView, @NonNull Linkable target,
+	                        @Nullable LatLon latLon, @Nullable Runnable onMediaChanged) {
+		if (latLon == null || !canAttachMedia(target)) {
 			return;
 		}
-		UiUtilities uiUtilities = app.getUIUtilities();
 		boolean nightMode = app.getDaynightHelper().isNightMode(ThemeUsageContext.OVER_MAP);
 		int iconColor = ColorUtilities.getDefaultIconColor(app, nightMode);
 		List<PopUpMenuItem> items = new ArrayList<>();
 		items.add(createAddMenuItem(R.string.recording_context_menu_precord,
-				R.drawable.ic_action_photo_dark, uiUtilities, iconColor,
-				() -> takeNote(AVActionType.REC_PHOTO, latLon, object, onMediaChanged), false));
+				R.drawable.ic_action_photo_dark, iconColor,
+				() -> takeNote(AVActionType.REC_PHOTO, latLon, target, onMediaChanged), false));
 		items.add(createAddMenuItem(R.string.recording_context_menu_vrecord,
-				R.drawable.ic_action_video_dark, uiUtilities, iconColor,
-				() -> takeNote(AVActionType.REC_VIDEO, latLon, object, onMediaChanged), false));
+				R.drawable.ic_action_video_dark, iconColor,
+				() -> takeNote(AVActionType.REC_VIDEO, latLon, target, onMediaChanged), false));
 		items.add(createAddMenuItem(R.string.recording_context_menu_arecord,
-				R.drawable.ic_action_micro_dark, uiUtilities, iconColor,
-				() -> takeNote(AVActionType.REC_AUDIO, latLon, object, onMediaChanged), false));
+				R.drawable.ic_action_micro_dark, iconColor,
+				() -> takeNote(AVActionType.REC_AUDIO, latLon, target, onMediaChanged), false));
 		items.add(createAddMenuItem(R.string.choose_from_gallery,
-				R.drawable.ic_action_photo_album, uiUtilities, iconColor,
-				() -> chooseFromGallery(object, latLon, onMediaChanged), true));
+				R.drawable.ic_action_photo_album, iconColor,
+				() -> chooseFromGallery(target, latLon, onMediaChanged), true));
 		items.add(createAddMenuItem(R.string.choose_from_files,
-				R.drawable.ic_action_group_list, uiUtilities, iconColor,
-				() -> chooseFromFiles(object, latLon, onMediaChanged), false));
+				R.drawable.ic_action_group_list, iconColor,
+				() -> chooseFromFiles(target, latLon, onMediaChanged), false));
 
 		PopUpMenuDisplayData data = new PopUpMenuDisplayData();
 		data.anchorView = anchorView;
@@ -127,21 +107,23 @@ public class AttachedMediaUiHelper {
 	}
 
 	@NonNull
-	private PopUpMenuItem createAddMenuItem(int titleId, int iconId, @NonNull UiUtilities uiUtilities,
-			int iconColor, @NonNull Runnable action, boolean showTopDivider) {
+	private PopUpMenuItem createAddMenuItem(@StringRes int titleId, @DrawableRes int iconId,
+	                                        @ColorInt int iconColor, @NonNull Runnable action,
+	                                        boolean showTopDivider) {
 		return new PopUpMenuItem.Builder(app)
 				.setTitleId(titleId)
-				.setIcon(uiUtilities.getPaintedIcon(iconId, iconColor))
+				.setIcon(iconsCache.getPaintedIcon(iconId, iconColor))
 				.setOnClickListener(item -> action.run())
 				.showTopDivider(showTopDivider)
 				.create();
 	}
 
-	private boolean canAttachMedia(@Nullable Object object) {
-		return object instanceof FavouritePoint || object instanceof WptPt;
+	private boolean canAttachMedia(@Nullable Linkable target) {
+		return target instanceof FavouritePoint || target instanceof WptPt;
 	}
 
-	private void takeNote(@NonNull AVActionType type, @NonNull LatLon latLon, @Nullable Object object, @Nullable Runnable onMediaChanged) {
+	private void takeNote(@NonNull AVActionType type, @NonNull LatLon latLon,
+	                      @NonNull Linkable target, @Nullable Runnable onMediaChanged) {
 		AudioVideoNotesPlugin plugin = PluginsHelper.getPlugin(AudioVideoNotesPlugin.class);
 		if (plugin != null && !plugin.isActive()) {
 			PluginsHelper.enablePluginIfNeeded(mapActivity, app, plugin, true);
@@ -150,10 +132,8 @@ public class AttachedMediaUiHelper {
 			if (plugin.isRecording()) {
 				plugin.stopRecording(mapActivity, true, true);
 			} else {
-				OnResultCallback<Recording> callback = createRecordingSavedCallback(object, onMediaChanged);
-				if (callback != null) {
-					plugin.addRecordingCallback(callback);
-				}
+				plugin.addRecordingCallback(recording ->
+						dataHelper.addRecordingLink(target, recording, onMediaChanged));
 				switch (type) {
 					case REC_PHOTO ->
 							plugin.takePhoto(latLon.getLatitude(), latLon.getLongitude(), mapActivity, false, false);
@@ -166,26 +146,19 @@ public class AttachedMediaUiHelper {
 		}
 	}
 
-	@Nullable
-	private OnResultCallback<Recording> createRecordingSavedCallback(@Nullable Object object,
-			@Nullable Runnable onMediaChanged) {
-		return object instanceof FavouritePoint || object instanceof WptPt
-				? recording -> dataHelper.addRecordingLink(object, recording, onMediaChanged) : null;
-	}
-
-	private void chooseFromGallery(@Nullable Object object, @NonNull LatLon latLon, @Nullable Runnable onMediaChanged) {
+	private void chooseFromGallery(@NonNull Linkable target, @NonNull LatLon latLon, @Nullable Runnable onMediaChanged) {
 		PickVisualMediaRequest request = new PickVisualMediaRequest.Builder()
 				.setMediaType(PickVisualMedia.ImageAndVideo.INSTANCE)
 				.build();
 		launchMediaPicker(new PickMultipleVisualMedia(), request,
-				uris -> onMediaPicked(object, latLon, onMediaChanged, uris));
+				uris -> onMediaPicked(target, latLon, onMediaChanged, uris));
 	}
 
-	private void chooseFromFiles(@Nullable Object object, @NonNull LatLon latLon, @Nullable Runnable onMediaChanged) {
+	private void chooseFromFiles(@NonNull Linkable target, @NonNull LatLon latLon, @Nullable Runnable onMediaChanged) {
 		launchMediaPicker(new StartActivityForResult(), createOpenMediaDocumentIntent(), result -> {
 			Intent data = result.getData();
 			if (data != null && result.getResultCode() == RESULT_OK) {
-				onMediaPicked(object, latLon, onMediaChanged, IntentHelper.getIntentUris(data));
+				onMediaPicked(target, latLon, onMediaChanged, IntentHelper.getIntentUris(data));
 			}
 		});
 	}
@@ -225,13 +198,13 @@ public class AttachedMediaUiHelper {
 		}
 	}
 
-	private void onMediaPicked(@Nullable Object object, @NonNull LatLon latLon,
-			@Nullable Runnable onMediaChanged, @NonNull List<Uri> uris) {
+	private void onMediaPicked(@NonNull Linkable target, @NonNull LatLon latLon,
+	                           @Nullable Runnable onMediaChanged, @NonNull List<Uri> uris) {
 		if (uris.isEmpty()) {
 			return;
 		}
 		OsmAndTaskManager.executeTask(new CollectMediaLinksTask(app, latLon, uris, links -> {
-			dataHelper.addMediaLinks(object, links, onMediaChanged);
+			dataHelper.addMediaLinks(target, links, onMediaChanged);
 			return true;
 		}));
 	}
@@ -244,40 +217,6 @@ public class AttachedMediaUiHelper {
 	@NonNull
 	public static String getMediaStorageDir() {
 		return MEDIA_INDEX_DIR;
-	}
-
-	public void showAllMedia(@NonNull GalleryController galleryController, @Nullable Object object,
-			@Nullable LatLon latLon) {
-		if (updateMediaGalleryHolder(galleryController, object, latLon)) {
-			GalleryGridFragment.showInstance(mapActivity, app.getString(R.string.shared_string_media));
-		}
-	}
-
-	public void onMediaItemClicked(@NonNull GalleryController galleryController,
-			@NonNull MediaItem mediaItem, @Nullable Object object, @Nullable LatLon latLon,
-			boolean nightMode) {
-		if (mediaItem.getType() == MediaType.PHOTO && updateMediaGalleryHolder(galleryController, object, latLon)) {
-			int position = galleryController.getPhotoItemIndexById(mediaItem.getId());
-			GalleryPhotoPagerFragment.showInstance(mapActivity, position);
-		} else {
-			openMediaItem(mediaItem, nightMode);
-		}
-	}
-
-	private boolean updateMediaGalleryHolder(@NonNull GalleryController galleryController,
-			@Nullable Object object, @Nullable LatLon latLon) {
-		if (latLon == null) {
-			return false;
-		}
-		GalleryItemsHolder holder = new GalleryItemsHolder(latLon, Collections.emptyMap());
-		List<GalleryItem> galleryItems = getGalleryItems(dataHelper.getMediaLinks(object));
-		for (GalleryItem item : galleryItems) {
-			if (item instanceof GalleryItem.Media media) {
-				holder.addMediaItem(OTHER, media.getMediaItem());
-			}
-		}
-		galleryController.setCurrentGalleryItemsHolder(holder);
-		return !holder.getOrderedGalleryItems().isEmpty();
 	}
 
 	public void openMediaItem(@NonNull MediaItem mediaItem, boolean nightMode) {
