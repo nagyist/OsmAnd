@@ -1,51 +1,42 @@
-package net.osmand.plus.gallery.ui.holders;
+package net.osmand.plus.gallery.ui.holders
 
-import android.graphics.drawable.Drawable;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
+import android.view.View
+import android.widget.ImageView
+import android.widget.ProgressBar
+import androidx.recyclerview.widget.RecyclerView
+import net.osmand.plus.OsmandApplication
+import net.osmand.plus.R
+import net.osmand.plus.helpers.AndroidUiHelper
+import net.osmand.plus.utils.ColorUtilities
+import net.osmand.plus.widgets.dialogbutton.DialogButton
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+class NoInternetHolder(
+	itemView: View,
+	private val app: OsmandApplication,
+	private val onReloadMediaItems: () -> Unit
+) : RecyclerView.ViewHolder(itemView) {
 
-import net.osmand.plus.OsmandApplication;
-import net.osmand.plus.R;
-import net.osmand.plus.helpers.AndroidUiHelper;
-import net.osmand.plus.gallery.contract.IGalleryListener;
-import net.osmand.plus.utils.ColorUtilities;
-import net.osmand.plus.widgets.dialogbutton.DialogButton;
+	private val imageView: ImageView = itemView.findViewById(R.id.icon)
+	private val tryAgainButton: DialogButton = itemView.findViewById(R.id.try_again_button)
+	private val progressBar: ProgressBar = itemView.findViewById(R.id.progress)
 
-public class NoInternetHolder extends RecyclerView.ViewHolder {
-
-	private final OsmandApplication app;
-	private final ImageView imageView;
-	private final DialogButton tryAgainButton;
-	private final ProgressBar progressBar;
-
-	public NoInternetHolder(@NonNull View itemView, @NonNull OsmandApplication app) {
-		super(itemView);
-		this.imageView = itemView.findViewById(R.id.icon);
-		this.app = app;
-		this.tryAgainButton = itemView.findViewById(R.id.try_again_button);
-		this.progressBar = itemView.findViewById(R.id.progress);
+	init {
+		tryAgainButton.setOnClickListener { onReloadMediaItems() }
 	}
 
-	public void bindView(boolean nightMode, @NonNull IGalleryListener listener, boolean loadingImages) {
-		Drawable icon = app.getUIUtilities().getPaintedIcon(R.drawable.ic_action_wifi_off, ColorUtilities.getDefaultIconColor(app, nightMode));
-		imageView.setImageDrawable(icon);
-
-		updateProgressBar(loadingImages);
-		tryAgainButton.setOnClickListener(v -> listener.onReloadMediaItems());
+	fun bindView(nightMode: Boolean, loadingImages: Boolean) {
+		imageView.setImageDrawable(
+			app.uiUtilities.getPaintedIcon(
+				R.drawable.ic_action_wifi_off,
+				ColorUtilities.getDefaultIconColor(app, nightMode)
+			)
+		)
+		updateProgressBar(loadingImages)
 	}
 
-	public void updateProgressBar(boolean loadingImages) {
-		View text = tryAgainButton.findViewById(R.id.button_text);
-		if (loadingImages) {
-			text.setVisibility(View.INVISIBLE);
-			AndroidUiHelper.updateVisibility(progressBar, true);
-		} else {
-			text.setVisibility(View.VISIBLE);
-			AndroidUiHelper.updateVisibility(progressBar, false);
-		}
+	fun updateProgressBar(loadingImages: Boolean) {
+		tryAgainButton.findViewById<View>(R.id.button_text).visibility =
+			if (loadingImages) View.INVISIBLE else View.VISIBLE
+		AndroidUiHelper.updateVisibility(progressBar, loadingImages)
 	}
 }

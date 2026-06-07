@@ -1,276 +1,204 @@
-package net.osmand.plus.gallery.ui;
+package net.osmand.plus.gallery.ui
 
-import android.annotation.SuppressLint;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.ScaleGestureDetector;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.annotation.SuppressLint
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.ScaleGestureDetector
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.widget.Toolbar
+import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
+import androidx.recyclerview.widget.GridLayoutManager
+import net.osmand.plus.R
+import net.osmand.plus.activities.MapActivity
+import net.osmand.plus.base.BaseFullScreenFragment
+import net.osmand.plus.gallery.contract.IGalleryGridView
+import net.osmand.plus.gallery.controller.GalleryGridController
+import net.osmand.plus.gallery.model.GalleryItem
+import net.osmand.plus.helpers.AndroidUiHelper
+import net.osmand.plus.helpers.AndroidUiHelper.isOrientationPortrait
+import net.osmand.plus.utils.AndroidUtils
+import net.osmand.plus.utils.ColorUtilities
+import net.osmand.plus.utils.InsetTarget
+import net.osmand.plus.utils.InsetTargetsCollection
 
-import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.recyclerview.widget.GridLayoutManager;
+class GalleryGridFragment : BaseFullScreenFragment(), IGalleryGridView {
 
-import net.osmand.plus.R;
-import net.osmand.plus.activities.MapActivity;
-import net.osmand.plus.base.BaseFullScreenFragment;
-import net.osmand.plus.gallery.contract.IGalleryGridController;
-import net.osmand.plus.gallery.contract.IGalleryGridView;
-import net.osmand.plus.gallery.controller.GalleryGridController;
-import net.osmand.plus.gallery.data.MediaLoadStateRegistry;
-import net.osmand.plus.gallery.model.GalleryItem;
-import net.osmand.plus.gallery.model.GalleryItem.MediaCount;
-import net.osmand.plus.helpers.AndroidUiHelper;
-import net.osmand.plus.utils.AndroidUtils;
-import net.osmand.plus.utils.ColorUtilities;
-import net.osmand.plus.utils.InsetTarget;
-import net.osmand.plus.utils.InsetTargetsCollection;
-import net.osmand.util.Algorithms;
+	private lateinit var toolbar: Toolbar
+	private lateinit var recyclerView: GalleryGridRecyclerView
+	private lateinit var adapter: GalleryGridAdapter
+	private lateinit var scaleDetector: ScaleGestureDetector
+	private lateinit var layoutManager: GridLayoutManager
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class GalleryGridFragment extends BaseFullScreenFragment implements IGalleryGridView {
-
-	public static final String TAG = GalleryGridFragment.class.getSimpleName();
-	private static final String TITLE_KEY = "title_key";
-
-	protected static final float SCALE_MULTIPLIER = 3f;
-
-	private Toolbar toolbar;
-	private GalleryGridRecyclerView recyclerView;
-
-	private GalleryGridAdapter adapter;
-	private ScaleGestureDetector scaleDetector;
-	private GridLayoutManager layoutManager;
-	private String title = null;
-
-	private IGalleryGridController controller;
-
-	private float newScaleFactor;
-
-	private boolean zoomedForPinch = false;
-
-	private static final int MAX_GALLERY_GRID_SPAN_COUNT = 7;
-	private static final int MIN_GALLERY_GRID_SPAN_COUNT = 2;
+	private var controller: GalleryGridController? = null
 
 	@SuppressLint("ClickableViewAccessibility")
-	@Nullable
-	@Override
-	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-	                         @Nullable Bundle savedInstanceState) {
-		updateNightMode();
+	override fun onCreateView(
+		inflater: LayoutInflater,
+		container: ViewGroup?,
+		savedInstanceState: Bundle?
+	): View? {
+		updateNightMode()
 
-		controller = GalleryGridController.getExistingInstance(app);
-		if (controller == null) return null;
-		controller.attach(this);
+		val controllerId = arguments?.getString(CONTROLLER_ID_KEY) ?: return null
+		controller = app.dialogManager.findController(controllerId) as? GalleryGridController
+			?: return null
+		controller?.attach(this)
 
-		View view = inflate(R.layout.gallery_grid_fragment, container, false);
-		AndroidUtils.addStatusBarPadding21v(requireMyActivity(), view);
+		val view = inflate(R.layout.gallery_grid_fragment, container, false)
+		AndroidUtils.addStatusBarPadding21v(requireMyActivity(), view)
 
-		if (getArguments() != null && getArguments().containsKey(TITLE_KEY)) {
-			title = getArguments().getString(TITLE_KEY);
-		}
+		setupScaleDetector()
+		setupRecyclerView(view)
 
-		if (title == null && savedInstanceState != null && savedInstanceState.containsKey(TITLE_KEY)) {
-			title = savedInstanceState.getString(TITLE_KEY);
-		}
+		toolbar = view.findViewById(R.id.toolbar)
+		setupToolbar()
+		setupOnBackPressedCallback()
 
-		setupScaleDetector();
-		recyclerView = view.findViewById(R.id.content_list);
-		recyclerView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-			@Override
-			public void onGlobalLayout() {
-				MediaLoadStateRegistry loadStateRegistry = app.getGalleryHelper().getLoadStateRegistry();
-				recyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-				adapter = new GalleryGridAdapter(requireMapActivity(), controller, controller,
-						recyclerView.getMeasuredWidth(), nightMode, loadStateRegistry);
-				adapter.setResizeBySpanCount(true);
+		return view
+	}
 
-				List<GalleryItem> items = new ArrayList<>();
-				items.add(MediaCount.INSTANCE);
-				items.addAll(controller.getGalleryItems());
-				adapter.setItems(items);
+	private fun setupRecyclerView(view: View) {
+		recyclerView = view.findViewById(R.id.content_list)
+		recyclerView.viewTreeObserver.addOnGlobalLayoutListener(
+			object : ViewTreeObserver.OnGlobalLayoutListener {
+				override fun onGlobalLayout() {
+					recyclerView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+					val ctrl = controller ?: return
+					val activity = mapActivity ?: return
 
-				recyclerView.setAdapter(adapter);
-				recyclerView.setScaleDetector(scaleDetector);
+					adapter = ctrl.createAdapter(activity, recyclerView.measuredWidth, nightMode)
+					adapter.setItems(ctrl.getGalleryItems())
 
-				layoutManager = new GridLayoutManager(app, GalleryGridSettings.getSpanCount(requireMapActivity()));
-				layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-					@Override
-					public int getSpanSize(int position) {
-						return adapter.isRegularMediaItemOnPosition(position) ? 1 : layoutManager.getSpanCount();
+					recyclerView.adapter = adapter
+					recyclerView.setScaleDetector(scaleDetector)
+
+					val spanCount = ctrl.getSpanCount(isPortrait())
+					layoutManager = GridLayoutManager(app, spanCount).apply {
+						spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+							override fun getSpanSize(position: Int): Int =
+								if (adapter.isRegularMediaItemOnPosition(position)) 1
+								else this@apply.spanCount
+						}
 					}
-				});
-				recyclerView.setLayoutManager(layoutManager);
-				GalleryGridItemDecorator itemDecorator = new GalleryGridItemDecorator(app);
-				recyclerView.addItemDecoration(itemDecorator);
-			}
-		});
-
-		toolbar = view.findViewById(R.id.toolbar);
-		setupToolbar();
-		setupOnBackPressedCallback();
-
-		return view;
-	}
-
-	@Override
-	public void onSaveInstanceState(@NonNull Bundle outState) {
-		super.onSaveInstanceState(outState);
-		if (!Algorithms.isEmpty(title)) {
-			outState.putString(TITLE_KEY, title);
-		}
-	}
-
-	public InsetTargetsCollection getInsetTargets() {
-		InsetTargetsCollection collection = super.getInsetTargets();
-		collection.replace(InsetTarget.createScrollable(R.id.content_list));
-		return collection;
-	}
-
-	private void setupScaleDetector() {
-		scaleDetector = new ScaleGestureDetector(requireMapActivity(), new ScaleGestureDetector.OnScaleGestureListener() {
-			@Override
-			public boolean onScale(@NonNull ScaleGestureDetector detector) {
-				if (zoomedForPinch) {
-					return false;
+					recyclerView.layoutManager = layoutManager
+					recyclerView.addItemDecoration(GalleryGridItemDecorator(app))
 				}
-				if (detector.getScaleFactor() < 1) {
-					float b = (detector.getScaleFactor() - 1) * SCALE_MULTIPLIER;
-					newScaleFactor = newScaleFactor - b;
-				} else {
-					float a = (1 - detector.getScaleFactor()) * SCALE_MULTIPLIER;
-					newScaleFactor = newScaleFactor + a;
+			}
+		)
+	}
+
+	@SuppressLint("ClickableViewAccessibility")
+	private fun setupScaleDetector() {
+		scaleDetector = ScaleGestureDetector(requireMapActivity(),
+			object : ScaleGestureDetector.OnScaleGestureListener {
+				override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+					controller?.onScaleBegin()
+					return true
 				}
-				int previousCount = GalleryGridSettings.getSpanCount(requireMapActivity());
-				int newCount = (int) newScaleFactor + previousCount;
 
-				if (newCount != previousCount) {
-					newScaleFactor = 0;
-					if (newCount <= MAX_GALLERY_GRID_SPAN_COUNT && newCount >= MIN_GALLERY_GRID_SPAN_COUNT) {
-						GalleryGridSettings.setSpanCount(requireMapActivity(), newCount);
-						updateSpan();
-						zoomedForPinch = true;
-					}
+				override fun onScale(detector: ScaleGestureDetector): Boolean {
+					controller?.onScaleChanged(detector.scaleFactor)
+					return true
 				}
-				return true;
-			}
 
-			@Override
-			public boolean onScaleBegin(@NonNull ScaleGestureDetector detector) {
-				newScaleFactor = 0;
-				return true;
+				override fun onScaleEnd(detector: ScaleGestureDetector) {
+					controller?.onScaleEnd()
+				}
 			}
-
-			@Override
-			public void onScaleEnd(@NonNull ScaleGestureDetector detector) {
-				newScaleFactor = 0;
-				zoomedForPinch = false;
-			}
-		});
+		)
 	}
 
-	private void updateSpan() {
-		layoutManager.setSpanCount(GalleryGridSettings.getSpanCount(requireMapActivity()));
-		for (int i = 0; i < adapter.getItemCount(); i++) {
-			GalleryItem item = adapter.getItem(i);
-			if (item instanceof GalleryItem.Media) {
-				adapter.notifyItemChanged(i);
+	override fun updateSpan() {
+		if (!::layoutManager.isInitialized || !::adapter.isInitialized) return
+
+		val ctrl = controller ?: return
+		val newSpanCount = ctrl.getSpanCount(isPortrait())
+		layoutManager.spanCount = newSpanCount
+		for (i in 0 until adapter.itemCount) {
+			if (adapter.getItem(i) is GalleryItem.Media) {
+				adapter.notifyItemChanged(i)
 			}
 		}
 	}
 
-	private void setupToolbar() {
-		TextView tvTitle = toolbar.findViewById(R.id.toolbar_title);
-		if (!Algorithms.isEmpty(title)) {
-			tvTitle.setText(title);
-		} else {
-			tvTitle.setText(requireMapActivity().getContextMenu().getTitleStr());
+	private fun setupToolbar() {
+		toolbar.findViewById<TextView>(R.id.toolbar_title).text = controller?.getScreenTitle()
+		toolbar.findViewById<ImageView>(R.id.back_button).apply {
+			setOnClickListener { onBackPressed() }
+			setImageDrawable(getContentIcon(AndroidUtils.getNavigationIconResId(app)))
 		}
-
-		ImageView navigationIcon = toolbar.findViewById(R.id.back_button);
-		navigationIcon.setOnClickListener(view -> {
-			onBackPressed();
-		});
-		navigationIcon.setImageDrawable(getContentIcon(AndroidUtils.getNavigationIconResId(app)));
-
-		AndroidUiHelper.updateVisibility(toolbar.findViewById(R.id.toolbar_subtitle), false);
+		AndroidUiHelper.updateVisibility(toolbar.findViewById(R.id.toolbar_subtitle), false)
 	}
 
-	private void setupOnBackPressedCallback() {
-		OnBackPressedCallback backPressedCallback = new OnBackPressedCallback(true) {
-			@Override
-			public void handleOnBackPressed() {
-				onBackPressed();
+	private fun setupOnBackPressedCallback() {
+		requireActivity().onBackPressedDispatcher.addCallback(
+			viewLifecycleOwner,
+			object : OnBackPressedCallback(true) {
+				override fun handleOnBackPressed() = onBackPressed()
 			}
-		};
-		requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), backPressedCallback);
+		)
 	}
 
-	private void onBackPressed() {
-		FragmentActivity activity = getActivity();
-		if (activity != null) {
-			activity.getSupportFragmentManager().popBackStack();
+	private fun onBackPressed() {
+		activity?.supportFragmentManager?.popBackStack()
+	}
+
+	override fun getStatusBarColorId(): Int {
+		AndroidUiHelper.setStatusBarContentColor(view, nightMode)
+		return ColorUtilities.getListBgColorId(nightMode)
+	}
+
+	override fun getContentStatusBarNightMode() = nightMode
+
+	override fun onResume() {
+		super.onResume()
+		callMapActivity(MapActivity::disableDrawer)
+	}
+
+	override fun onPause() {
+		super.onPause()
+		callMapActivity(MapActivity::enableDrawer)
+	}
+
+	override fun onDestroy() {
+		super.onDestroy()
+		controller?.onScreenDestroyed(activity)
+	}
+
+	override fun getInsetTargets(): InsetTargetsCollection {
+		return super.getInsetTargets().apply {
+			replace(InsetTarget.createScrollable(R.id.content_list))
 		}
 	}
 
-	@Override
-	public int getStatusBarColorId() {
-		AndroidUiHelper.setStatusBarContentColor(getView(), nightMode);
-		return ColorUtilities.getListBgColorId(nightMode);
-	}
+	// IGalleryGridView
+	override fun getMapActivity(): MapActivity? = super.getMapActivity()
+	override fun isNightMode(): Boolean = nightMode
+	override fun isPortrait(): Boolean = isOrientationPortrait(requireActivity())
 
-	public boolean getContentStatusBarNightMode() {
-		return nightMode;
-	}
+	companion object {
+		const val TAG = "GalleryGridFragment"
+		private const val CONTROLLER_ID_KEY = "controller_id"
 
-	@Override
-	public void onResume() {
-		super.onResume();
-		callMapActivity(MapActivity::disableDrawer);
-	}
-
-	@Override
-	public void onPause() {
-		super.onPause();
-		callMapActivity(MapActivity::enableDrawer);
-	}
-
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		if (controller != null) {
-			controller.detach();
-		}
-	}
-
-	@Nullable
-	@Override
-	public MapActivity getMapActivity() {
-		return super.getMapActivity();
-	}
-
-	public static void showInstance(@NonNull FragmentActivity activity, @Nullable String title) {
-		FragmentManager manager = activity.getSupportFragmentManager();
-		if (AndroidUtils.isFragmentCanBeAdded(manager, TAG)) {
-			GalleryGridFragment fragment = new GalleryGridFragment();
-			if (!Algorithms.isEmpty(title)) {
-				Bundle args = new Bundle();
-				args.putString(TITLE_KEY, title);
-				fragment.setArguments(args);
-			}
-			manager.beginTransaction()
-					.add(R.id.fragmentContainer, fragment, TAG)
+		@JvmStatic
+		fun showInstance(activity: FragmentActivity, controllerId: String) {
+			val manager: FragmentManager = activity.supportFragmentManager
+			if (AndroidUtils.isFragmentCanBeAdded(manager, TAG)) {
+				manager.beginTransaction()
+					.add(R.id.fragmentContainer, newInstance(controllerId), TAG)
 					.addToBackStack(TAG)
-					.commitAllowingStateLoss();
+					.commitAllowingStateLoss()
+			}
+		}
+
+		private fun newInstance(controllerId: String) = GalleryGridFragment().apply {
+			arguments = Bundle().apply { putString(CONTROLLER_ID_KEY, controllerId) }
 		}
 	}
 }

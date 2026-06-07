@@ -5,7 +5,6 @@ import net.osmand.data.LatLon
 import net.osmand.plus.OsmandApplication
 import net.osmand.plus.R
 import net.osmand.plus.gallery.attached.helpers.AttachedMediaUiHelper
-import net.osmand.plus.gallery.controller.GalleryGridController
 import net.osmand.plus.gallery.controller.GalleryPagerController
 import net.osmand.plus.gallery.controller.GalleryRowController
 import net.osmand.plus.gallery.data.GalleryKey
@@ -17,7 +16,6 @@ import net.osmand.plus.gallery.model.MediaHolder
 import net.osmand.shared.gpx.primitives.Linkable
 import net.osmand.shared.media.domain.MediaItem
 import net.osmand.shared.media.domain.MediaType
-import java.util.Objects
 
 
 class AttachedMediaRowController(
@@ -45,7 +43,7 @@ class AttachedMediaRowController(
 	override fun handleGalleryAction(v: View, action: GalleryAction) {
 		view?.mapActivity?.let {
 			when (action) {
-				SHOW_ALL_ACTION -> GalleryGridController.showDialog(it, key)
+				SHOW_ALL_ACTION -> AttachedMediaGridController.show(it, key)
 				ADD_MEDIA_ACTION -> AttachedMediaUiHelper(it).showAddMenu(v, target, latLon) {
 					onMediaChanged()
 				}
@@ -58,7 +56,7 @@ class AttachedMediaRowController(
 		val nightMode = view?.isNightMode() ?: return
 
 		if (mediaItem.type == MediaType.PHOTO) {
-			GalleryPagerController.showDialog(activity, key, mediaItem.id)
+			GalleryPagerController.show(activity, key, mediaItem.id)
 		} else {
 			AttachedMediaUiHelper(activity).openMediaItem(mediaItem, nightMode)
 		}

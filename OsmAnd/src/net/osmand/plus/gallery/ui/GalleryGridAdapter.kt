@@ -8,9 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import net.osmand.plus.OsmandApplication
 import net.osmand.plus.R
 import net.osmand.plus.activities.MapActivity
-import net.osmand.plus.gallery.contract.IGalleryActionListener
-import net.osmand.plus.gallery.contract.IGalleryListener
-import net.osmand.plus.gallery.data.MediaLoadStateRegistry
+import net.osmand.plus.gallery.model.GalleryAction
 import net.osmand.plus.gallery.model.GalleryItem
 import net.osmand.plus.gallery.ui.holders.ActionViewHolder
 import net.osmand.plus.gallery.ui.holders.GalleryMediaViewHolder
@@ -20,14 +18,18 @@ import net.osmand.plus.gallery.ui.holders.NoInternetHolder
 import net.osmand.plus.gallery.ui.holders.NoMediaHolder
 import net.osmand.plus.utils.UiUtilities
 import net.osmand.shared.media.MediaProvider
+import net.osmand.shared.media.domain.MediaItem
 
 class GalleryGridAdapter(
 	private val mapActivity: MapActivity,
-	private val galleryListener: IGalleryListener,
-	private val actionListener: IGalleryActionListener,
-	private val viewWidth: Int?,
-	private val nightMode: Boolean,
-	private val loadStateRegistry: MediaLoadStateRegistry
+	private val onMediaClicked: (MediaItem) -> Unit,
+	private val onReloadMediaItems: () -> Unit,
+	private val onActionClicked: (View, GalleryAction) -> Unit,
+	private val mediaHolderType: (position: Int) -> MediaHolderType,
+	private val resolveResizableImageSize: (() -> Int)? = null,
+	private val isLoadFailed: (MediaItem) -> Boolean,
+	private val onLoadFailed: (MediaItem) -> Unit,
+	private val nightMode: Boolean
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
 	private val app: OsmandApplication = mapActivity.app
@@ -35,7 +37,9 @@ class GalleryGridAdapter(
 	private val mediaProvider = MediaProvider(app)
 	private val items = mutableListOf<GalleryItem>()
 
-	private var resizeBySpanCount = false
+	private val mainPhotoSizePx = app.resources.getDimensionPixelSize(R.dimen.gallery_big_icon_size)
+	private val standardPhotoSizePx = app.resources.getDimensionPixelSize(R.dimen.gallery_standard_icon_size)
+
 	private var loadingImages = false
 
 	fun setItems(newItems: List<GalleryItem>) {
@@ -47,16 +51,22 @@ class GalleryGridAdapter(
 	override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
 		return when (viewType) {
 			MAIN_MEDIA_TYPE, MEDIA_TYPE -> {
-				GalleryMediaViewHolder(app, inflate(R.layout.gallery_card_item, parent))
+				val itemView = inflate(R.layout.gallery_card_item, parent)
+				GalleryMediaViewHolder(
+					app, itemView, onMediaClicked, isLoadFailed,
+					onLoadFailed, mediaProvider
+				)
 			}
 			ACTION_VIEW_TYPE -> {
-				ActionViewHolder(inflate(R.layout.context_menu_card_gallery_action_view, parent))
+				val itemView = inflate(R.layout.context_menu_card_gallery_action_view, parent)
+				ActionViewHolder(itemView, onActionClicked)
 			}
 			NO_MEDIA_TYPE -> {
-				NoMediaHolder(app, inflate(R.layout.no_image_card, parent))
+				NoMediaHolder(inflate(R.layout.no_image_card, parent), app, onActionClicked)
 			}
 			NO_INTERNET_TYPE -> {
-				NoInternetHolder(inflate(R.layout.no_internet_card, parent), app)
+				val itemView = inflate(R.layout.no_internet_card, parent)
+				NoInternetHolder(itemView, app, onReloadMediaItems)
 			}
 			MEDIA_COUNT_TYPE -> {
 				MediaCountHolder(inflate(R.layout.images_count_item, parent), app)
@@ -69,22 +79,20 @@ class GalleryGridAdapter(
 		val item = items[position]
 		when {
 			holder is GalleryMediaViewHolder && item is GalleryItem.Media -> {
-				val type = when {
-					resizeBySpanCount -> MediaHolderType.SPAN_RESIZABLE
-					position == 0 -> MediaHolderType.MAIN
-					else -> MediaHolderType.STANDARD
+				val holderType = mediaHolderType(position)
+				val imageSizePx = when (holderType) {
+					MediaHolderType.SPAN_RESIZABLE -> resolveResizableImageSize?.invoke() ?: standardPhotoSizePx
+					MediaHolderType.MAIN -> mainPhotoSizePx
+					else -> standardPhotoSizePx
 				}
-				holder.bindView(
-					mapActivity, galleryListener, item, type, viewWidth,
-					mediaProvider, nightMode, loadStateRegistry
-				)
+				holder.bindView(mapActivity, item, imageSizePx, holderType, nightMode)
 			}
 			holder is ActionViewHolder && item is GalleryItem.Action ->
-				holder.bindView(nightMode, mapActivity, item, actionListener)
+				holder.bindView(nightMode, mapActivity, item)
 			holder is NoMediaHolder && item is GalleryItem.NoMedia ->
-				holder.bindView(item, nightMode, actionListener)
+				holder.bindView(item, nightMode)
 			holder is NoInternetHolder && item is GalleryItem.NoInternet ->
-				holder.bindView(nightMode, galleryListener, loadingImages)
+				holder.bindView(nightMode, loadingImages)
 			holder is MediaCountHolder && item is GalleryItem.MediaCount ->
 				holder.bindView(getMediaItemsCount(), nightMode)
 		}
@@ -134,10 +142,6 @@ class GalleryGridAdapter(
 
 	fun getAnimator(): RecyclerView.ItemAnimator = object : DefaultItemAnimator() {
 		override fun canReuseUpdatedViewHolder(viewHolder: RecyclerView.ViewHolder) = true
-	}
-
-	fun setResizeBySpanCount(resizeBySpanCount: Boolean) {
-		this.resizeBySpanCount = resizeBySpanCount
 	}
 
 	private fun inflate(resourceId: Int, root: ViewGroup, attachToRoot: Boolean = false): View =

@@ -30,7 +30,7 @@ class GalleryPagerController(
 		const val PROCESS_ID = "gallery_pager"
 
 		@JvmStatic
-		fun showDialog(
+		fun show(
 			activity: FragmentActivity,
 			key: GalleryKey,
 			selectedItemId: String
