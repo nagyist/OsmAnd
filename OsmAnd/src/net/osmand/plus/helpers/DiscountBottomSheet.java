@@ -205,35 +205,10 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 				? getString(selectedFeature.getTitleId()) : getHeaderIconTitle(inAppSku);
 		headerIconTitle.setText(headerIconTitleText);
 		headerIconTitle.setVisibility(Algorithms.isEmpty(headerIconTitleText) ? View.GONE : View.VISIBLE);
-//		((TextView) view.findViewById(R.id.header_title)).setText(selectedFeature != null
-//				? getString(selectedFeature.getTitleId())
-//				: args.getString(TITLE_KEY));
-
-//		int iconBgColor = AndroidUtils.getColorFromAttr(requireContext(), R.attr.purchase_sc_header_icon_bg);
-//		AndroidUtils.setBackground(view.findViewById(R.id.header_icon_background),
-//				createRoundedDrawable(iconBgColor, ButtonBackground.ROUNDED_LARGE));
-
 		((TextView) view.findViewById(R.id.primary_description)).setText(selectedFeature != null
 				? selectedFeature.getDescription(getApp())
 				: args.getString(TITLE_KEY));
-
-//		String mapsPlus = getString(R.string.maps_plus);
-//		String osmAndPro = getString(R.string.osmand_pro);
-//		TextView secondaryDescription = view.findViewById(R.id.secondary_description);
-//		if (selectedFeature != null) {
-//			String availablePlans = osmAndPro;
-//			if (selectedFeature.isAvailableInMapsPlus()) {
-//				availablePlans = getString(R.string.ltr_or_rtl_combine_via_or, mapsPlus, osmAndPro);
-//			}
-//			String secondaryDesc = String.format(getString(R.string.you_can_get_feature_as_part_of_pattern),
-//					getString(selectedFeature.getTitleId()), availablePlans);
-//			SpannableString message = UiUtilities.createSpannableString(secondaryDesc, Typeface.BOLD, mapsPlus, osmAndPro);
-//			secondaryDescription.setText(message);
-//			secondaryDescription.setVisibility(View.VISIBLE);
-//		} else {
-//			secondaryDescription.setVisibility(View.GONE);
-//		}
-
+		
 		FlowLayout listContainer = view.findViewById(R.id.list_container);
 		listContainer.removeAllViews();
 		int spacing = getResources().getDimensionPixelSize(R.dimen.content_padding_half);
