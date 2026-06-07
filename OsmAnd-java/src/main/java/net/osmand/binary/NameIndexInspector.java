@@ -71,6 +71,7 @@ public class NameIndexInspector {
 	public static class ValueFreq implements Comparable<ValueFreq> {
 		public String value;
 		public int freq;
+		public int extra;
 		public List<ValueFreq> subValues = null;
 		
 		public static boolean SORT_BY_NAME = false;
