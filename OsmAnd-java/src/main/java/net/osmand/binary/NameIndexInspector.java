@@ -12,15 +12,54 @@ import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexDa
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.util.Algorithms;
+import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexInspector {
 
 	public Map<Long, PrefixNameValue> indexByRef = new HashMap<>();
 	private long initialShift;
 	
+	private SuffixesStat suffixesStat = new SuffixesStat(); 
+	
 
 	public void setInitialShift(long totalBytesRead) {
 		this.initialShift = totalBytesRead;
+	}
+	
+	public static class SuffixesStat {
+		List<String> longestSuffixes = new ArrayList<String>();
+		String longestSuffixesKey;
+		int suffixesLenSum;
+		int prefixesCount;
+		int atomOneBitSuffix;
+		int atomTwoBitSuffix;
+		int atomCount;
+		
+		public void merge(SuffixesStat suffixesStat) {
+			if (longestSuffixes.size() < suffixesStat.longestSuffixes.size()) {
+				this.longestSuffixes = suffixesStat.longestSuffixes;
+				this.longestSuffixesKey = suffixesStat.longestSuffixesKey;
+				
+			}
+			this.atomCount += suffixesStat.atomCount;
+			this.atomOneBitSuffix += suffixesStat.atomOneBitSuffix;
+			this.atomTwoBitSuffix += suffixesStat.atomTwoBitSuffix;
+			this.prefixesCount += suffixesStat.prefixesCount;
+			this.suffixesLenSum += suffixesStat.suffixesLenSum;
+		}
+		
+		@Override
+		public String toString() {
+			int sz = longestSuffixes.size();
+			String longestStr = String.format("Longest suffixes '%s' (%d): %s...", longestSuffixesKey,
+					longestSuffixes.size(), longestSuffixes.subList(0, Math.min(15, sz)));
+			return String.format("Suffixes stat."
+					+ "\n\t  Prefixes - %,d, avg suffixes - %.1f. "
+					+ "\n\t  Atoms (%,d) - suffix (1 - %,d, 2 - %,d, ...). %s",
+					prefixesCount, suffixesLenSum * 1.0 / (prefixesCount + 1),
+					atomCount, atomOneBitSuffix, atomTwoBitSuffix, longestStr);
+		}
+		
 	}
 	
 	public static class ValueFreq implements Comparable<ValueFreq> {
@@ -29,6 +68,7 @@ public class NameIndexInspector {
 		public List<ValueFreq> subValues = null;
 		
 		public static boolean SORT_BY_NAME = false;
+		public static boolean SORT_BY_TOP_FREQ = true;
 		
 		public ValueFreq(String name, int frequency) {
 			this.value = name;
@@ -59,6 +99,19 @@ public class NameIndexInspector {
 			return res;
 		}
 		
+
+		public static Map<String, ValueFreq> mergeArray(Map<String, ValueFreq> res, Map<String, ValueFreq> ms) {
+			for (ValueFreq s : ms.values()) {
+				ValueFreq vf = res.get(s.value);
+				if (vf != null) {
+					vf.merge(s);
+				} else {
+					res.put(s.value, s);
+				}
+			}
+			return res;
+		}
+		
 		
 		public void merge(ValueFreq s) {
 			this.freq += s.freq;
@@ -75,11 +128,22 @@ public class NameIndexInspector {
 		public String toString() {
 			return String.format("%s (%,d)", value ,freq);
 		}
+		
+		public int getTopFreq() {
+			if(subValues != null && subValues.size() > 0) {
+				Collections.sort(subValues);
+				return subValues.get(0).freq;
+			}
+			return freq;
+		}
 
 		@Override
 		public int compareTo(ValueFreq o) {
 			if (!SORT_BY_NAME) {
 				int c = -Integer.compare(freq, o.freq);
+				if (SORT_BY_TOP_FREQ) {
+					c = -Integer.compare(getTopFreq(), o.getTopFreq());
+				}
 				if (c != 0) {
 					return c;
 				}
@@ -95,7 +159,7 @@ public class NameIndexInspector {
 		
 		@Override
 		public String toString() {
-			List<ValueFreq> suffixes = collectFrequencies();
+			List<ValueFreq> suffixes = collectFrequencies(null);
 			if(data != null) {
 				return String.format("%s (%d, %s)", key, data.getAtomsCount(), suffixes);
 			} else if(addr != null) {
@@ -105,53 +169,91 @@ public class NameIndexInspector {
 			}
 		}
 
-		private List<ValueFreq> collectAddrFrequencies(int f) {
+		private List<ValueFreq> collectAddrFrequencies(SuffixesStat stats, int f) {
 			List<ValueFreq> suffixes = new ArrayList<>();
+			String curSuffix = "";
+//			if(addr.getSuffixesDictionaryCount() > suffixes.lo.si)
+			if (stats != null && stats.longestSuffixes.size() < addr.getSuffixesDictionaryCount()) {
+				stats.longestSuffixes = addr.getSuffixesDictionaryList();
+				stats.longestSuffixesKey = key;
+			}
+			stats.prefixesCount++;
+			stats.suffixesLenSum += addr.getSuffixesDictionaryList().size();
 			for (String s : addr.getSuffixesDictionaryList()) {
-				ValueFreq vf = new ValueFreq(key + s, 0);
+				curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
+				ValueFreq vf = new ValueFreq(key + curSuffix, 0);
 				suffixes.add(vf);
 			}
-			int intBits = 32;
+			int INT_BITS = 32;
 			for (AddressNameIndexDataAtom a : addr.getAtomList()) {
 				if (a.getType() != f && f >= 0) {
 					continue;
 				}
+				int setBits = 0;
 				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
 					int suffBit = a.getSuffixesBitset(i);
-					for (int j = 0; j < intBits && suffBit != 0; j++) {
+					for (int j = 0; j < INT_BITS && suffBit != 0; j++) {
 						if (suffBit % 2 == 1) {
-							ValueFreq s = suffixes.get(i * intBits + j);
+							setBits++;
+							ValueFreq s = suffixes.get(i * INT_BITS + j);
 							s.freq++;
 						}
 						suffBit >>= 1;
 					}
 				}
+				if (stats != null) {
+					if (setBits == 1) {
+						stats.atomOneBitSuffix++;
+					} else if (setBits == 2) {
+						stats.atomTwoBitSuffix++;
+					}
+					stats.atomCount++;
+				}
 			}
+			
 			return suffixes;
 		}
 		
-		private List<ValueFreq> collectFrequencies() {
+		private List<ValueFreq> collectFrequencies(SuffixesStat stats) {
 			List<ValueFreq> suffixes = new ArrayList<>();
 			if (data != null) {
+				String curSuffix = "";
+				if (stats != null && stats.longestSuffixes.size() < data.getSuffixesDictionaryCount()) {
+					stats.longestSuffixes = data.getSuffixesDictionaryList();
+					stats.longestSuffixesKey = key;
+				}
+				stats.prefixesCount++;
+				stats.suffixesLenSum += data.getSuffixesDictionaryList().size();
 				for (String s : data.getSuffixesDictionaryList()) {
-					ValueFreq vf = new ValueFreq(key + s, 0);
+					curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
+					ValueFreq vf = new ValueFreq(key + curSuffix, 0);
 					suffixes.add(vf);
 				}
-				int intBits = 32;
+				int INT_BITS = 32;
 				for (OsmAndPoiNameIndexDataAtom a : data.getAtomsList()) {
+					int setBits = 0;
 					for(int i = 0; i < a.getSuffixesBitsetCount(); i++) {
 						int suffBit = a.getSuffixesBitset(i);
-						for(int j = 0; j < intBits && suffBit != 0; j++) {
+						for(int j = 0; j < INT_BITS && suffBit != 0; j++) {
 							if (suffBit % 2 == 1) {
-								ValueFreq s = suffixes.get(i * intBits + j);
+								ValueFreq s = suffixes.get(i * INT_BITS + j);
 								s.freq++;
+								setBits++;
 							}
 							suffBit >>= 1;
 						}
 					}
+					if (stats != null) {
+						if (setBits == 1) {
+							stats.atomOneBitSuffix++;
+						} else if (setBits == 2) {
+							stats.atomTwoBitSuffix++;
+						}
+						stats.atomCount++;
+					}
 				}
 			} else if (addr != null) {
-				suffixes = collectAddrFrequencies(-1);
+				suffixes = collectAddrFrequencies(stats, -1);
 			}
 			Collections.sort(suffixes);
 			return suffixes;
@@ -165,6 +267,10 @@ public class NameIndexInspector {
 			}
 			return c;
 		}
+	}
+	
+	public SuffixesStat getSuffixesStat() {
+		return suffixesStat;
 	}
 	
 	public void putKey(String key, int val, String prefix) {
@@ -181,7 +287,7 @@ public class NameIndexInspector {
 				continue;
 			}
 			ValueFreq vf = new ValueFreq(p.key, p.data.getAtomsCount());
-			vf.subValues = p.collectFrequencies();
+			vf.subValues = p.collectFrequencies(suffixesStat);
 			ls.add(vf);
 		}
 		return ls;
@@ -195,7 +301,7 @@ public class NameIndexInspector {
 				continue;
 			}
 
-			List<ValueFreq> subvalues = p.collectAddrFrequencies(filter);
+			List<ValueFreq> subvalues = p.collectAddrFrequencies(suffixesStat, filter);
 			int total = p.addr.getAtomCount();
 			if (filter >= 0 || !Algorithms.isEmpty(prefix)) {
 				total = 0;
@@ -240,6 +346,7 @@ public class NameIndexInspector {
 		}
 		obj.addr = from;		
 	}
+
 
 
 
