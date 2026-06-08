@@ -1,6 +1,7 @@
 package net.osmand.binary;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -106,6 +107,18 @@ public class NameIndexInspector {
 			return res;
 		}
 		
+		public static Map<String, ValueFreq> mergeFlatten(Map<String, ValueFreq> r, Collection<ValueFreq> ms) {
+			for (ValueFreq s : ms) {
+				if (s.subValues != null) {
+					mergeFlatten(r, s.subValues);
+				} else if (!r.containsKey(s.value)) {
+					r.put(s.value, s);
+				} else {
+					r.get(s.value).merge(s);
+				}
+			}
+			return r;
+		}
 
 		public static Map<String, ValueFreq> mergeArray(Map<String, ValueFreq> res, Map<String, ValueFreq> ms) {
 			for (ValueFreq s : ms.values()) {
@@ -125,6 +138,7 @@ public class NameIndexInspector {
 			if (subValues == null && s.subValues != null) {
 				s.subValues = new ArrayList<>();
 			}
+			this.extra += s.extra;
 			if (subValues != null) {
 				subValues = new ArrayList<>(
 						mergeArray(mergeArray(new TreeMap<String, ValueFreq>(), subValues), s.subValues).values());
