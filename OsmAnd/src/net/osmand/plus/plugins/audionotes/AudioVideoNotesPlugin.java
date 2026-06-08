@@ -25,7 +25,6 @@ import android.hardware.Camera.PictureCallback;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.CamcorderProfile;
-import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.AudioEncoder;
 import android.media.SoundPool;
@@ -201,9 +200,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 	private CurrentRecording currentRecording;
 	private boolean recordingDone = true;
 
-	private MediaPlayer player;
-	private Recording recordingPlaying;
-	private Timer playerTimer;
+	private final RecordingPlayer recordingPlayer;
 
 	private double actionLat;
 	private double actionLon;
@@ -245,6 +242,8 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 		AV_RS_STORAGE_SIZE = registerIntPreference("av_rs_storage_size", STORAGE_SIZE_DEFAULT);
 
 		NOTES_SORT_BY_MODE = registerEnumStringPreference("notes_sort_by_mode", NotesSortByMode.BY_DATE, NotesSortByMode.values(), NotesSortByMode.class);
+
+		recordingPlayer = new RecordingPlayer(app, this::updateContextMenu);
 	}
 
 	@Override
@@ -264,6 +263,11 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 			loadCameraSoundIfNeeded(true);
 		}));
 		return true;
+	}
+
+	@NonNull
+	public RecordingPlayer getRecordingsPlayer() {
+		return recordingPlayer;
 	}
 
 	private void loadCameraSoundIfNeeded(boolean checkSoundPool) {
@@ -479,7 +483,8 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 		}
 	}
 
-	private static File getBaseFileName(double lat, double lon, OsmandApplication app, String ext) {
+	@NonNull
+	public static File getBaseFileName(double lat, double lon, OsmandApplication app, String ext) {
 		File baseDir = app.getAppPath(IndexConstants.AV_INDEX_DIR);
 		return getBaseFileName(lat, lon, baseDir, ext);
 	}
@@ -1476,40 +1481,6 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 		return recordingByFileName.values();
 	}
 
-	public boolean isPlaying() {
-		try {
-			return player != null && player.isPlaying();
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
-	public boolean isPlaying(Recording r) {
-		return isPlaying() && recordingPlaying == r;
-	}
-
-	public int getPlayingPosition() {
-		if (isPlaying()) {
-			return player.getCurrentPosition();
-		} else if (player != null) {
-			return player.getDuration();
-		} else {
-			return -1;
-		}
-	}
-
-	public void stopPlaying() {
-		if (isPlaying()) {
-			try {
-				player.stop();
-			} finally {
-				player.release();
-				player = null;
-				updateContextMenu();
-			}
-		}
-	}
-
 	private void updateContextMenu() {
 		app.runInUIThread(() -> {
 			MapActivity mapActivity = getMapActivity();
@@ -1528,56 +1499,6 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 				}
 				restoreScreenOrientation();
 			});
-		}
-	}
-
-	public void playRecording(@NonNull Context ctx, @NonNull Recording recording) {
-		if (recording.isVideo() || recording.isPhoto()) {
-			Intent intent = new Intent(Intent.ACTION_VIEW);
-			String type = recording.isVideo() ? "video/*" : "image/*";
-			intent.setDataAndType(AndroidUtils.getUriForFile(ctx, recording.getFile()), type);
-			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-			AndroidUtils.startActivityIfSafe(ctx, intent);
-			return;
-		}
-
-		if (isPlaying()) {
-			stopPlaying();
-		}
-		recordingPlaying = recording;
-		player = new MediaPlayer();
-		try {
-			player.setDataSource(recording.getFile().getAbsolutePath());
-			player.setOnPreparedListener(mp -> {
-				try {
-					player.start();
-
-					if (playerTimer != null) {
-						playerTimer.cancel();
-					}
-					playerTimer = new Timer();
-					playerTimer.schedule(new TimerTask() {
-
-						@Override
-						public void run() {
-							updateContextMenu();
-							if (!isPlaying()) {
-								cancel();
-								playerTimer = null;
-							}
-						}
-
-					}, 10, 1000);
-
-				} catch (Exception e) {
-					logErr(e);
-				}
-			});
-			player.setOnCompletionListener(mp -> recordingPlaying = null);
-			player.prepareAsync();
-		} catch (Exception e) {
-			logErr(e);
 		}
 	}
 
