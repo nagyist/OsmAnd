@@ -243,12 +243,12 @@ public class NameIndexInspector {
 					for(int i = 0; i < a.getSuffixesBitsetCount(); i++) {
 						int suffBit = a.getSuffixesBitset(i);
 						for(int j = 0; j < INT_BITS && suffBit != 0; j++) {
-							if (suffBit % 2 == 1) {
+							if ((suffBit & 1) == 1) {
 								ValueFreq s = suffixes.get(i * INT_BITS + j);
 								s.freq++;
 								setBits++;
 							}
-							suffBit >>= 1;
+							suffBit >>>= 1;
 						}
 					}
 					if (stats != null) {
