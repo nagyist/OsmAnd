@@ -82,6 +82,18 @@ public class NameIndexInspector {
 			this.value = name;
 			this.freq = frequency;
 		}
+		
+		public ValueFreq copy() {
+			ValueFreq vf = new ValueFreq(value, freq);
+			vf.extra = extra;
+			if (subValues != null) {
+				vf.subValues = new ArrayList<>();
+				for (ValueFreq s : subValues) {
+					vf.subValues.add(s.copy());
+				}
+			}
+			return vf;
+		}
 
 		public List<ValueFreq> getSubvalues(double percent, int min) {
 			if (subValues == null || subValues.size() == 0) {
@@ -101,7 +113,7 @@ public class NameIndexInspector {
 				if (res.containsKey(s.value)) {
 					res.get(s.value).merge(s);
 				} else {
-					res.put(s.value, s);
+					res.put(s.value, s.copy());
 				}
 			}
 			return res;
@@ -112,7 +124,7 @@ public class NameIndexInspector {
 				if (s.subValues != null) {
 					mergeFlatten(r, s.subValues);
 				} else if (!r.containsKey(s.value)) {
-					r.put(s.value, s);
+					r.put(s.value, s.copy());
 				} else {
 					r.get(s.value).merge(s);
 				}
@@ -126,7 +138,7 @@ public class NameIndexInspector {
 				if (vf != null) {
 					vf.merge(s);
 				} else {
-					res.put(s.value, s);
+					res.put(s.value, s.copy());
 				}
 			}
 			return res;
