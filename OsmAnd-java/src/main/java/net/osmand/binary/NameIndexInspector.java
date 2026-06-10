@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
-import net.osmand.util.Algorithms;
 import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexInspector {
@@ -20,11 +20,42 @@ public class NameIndexInspector {
 	public Map<Long, PrefixNameValue> indexByRef = new HashMap<>();
 	private long initialShift;
 	
-	private SuffixesStat suffixesStat = new SuffixesStat(); 
+	private SuffixesStat suffixesStat = new SuffixesStat();
+	private StreetsIndexStat streetsStat = new StreetsIndexStat();
 	
 
 	public void setInitialShift(long totalBytesRead) {
 		this.initialShift = totalBytesRead;
+	}
+	
+	public static class StreetsIndexStat {
+
+		Map<String, ValueFreq> values = new HashMap<>();
+		
+		public void merge(StreetsIndexStat streetsStat) {
+			ValueFreq.mergeArray(values, streetsStat.values);
+		}
+
+		public void processAtom(ValueFreq v, ValueFreq sPref, AddressNameIndexDataAtom a) {
+			if (a.getType() == CityBlocks.STREET_TYPE.index) {
+				sPref.extra++;
+				v.extra++;
+				sPref.freq++;
+				v.freq++;
+			} else if (a.getEnclosingObjects() > 0) {
+				sPref.enclosing += a.getEnclosingObjects();
+				v.enclosing += a.getEnclosingObjects();
+				sPref.freq += a.getEnclosingObjects();
+				v.freq += a.getEnclosingObjects();
+				sPref.maxSingleAtomEnc = Math.max(sPref.maxSingleAtomEnc, a.getEnclosingObjects());
+				v.maxSingleAtomEnc = Math.max(v.maxSingleAtomEnc, a.getEnclosingObjects());
+			}
+		}
+		
+		public Map<String, ValueFreq> getValues() {
+			return values;
+		}
+		
 	}
 	
 	public static class SuffixesStat {
@@ -75,6 +106,7 @@ public class NameIndexInspector {
 		public int extra;
 		public int enclosing;
 		public int maxSingleAtomEnc;
+		public int maxSingleSubValueEnc;
 		public List<ValueFreq> subValues = null;
 		
 		public static boolean SORT_BY_NAME = false;
@@ -90,6 +122,7 @@ public class NameIndexInspector {
 			vf.extra = extra;
 			vf.enclosing = enclosing;
 			vf.maxSingleAtomEnc = maxSingleAtomEnc;
+			vf.maxSingleSubValueEnc = maxSingleSubValueEnc;
 			if (subValues != null) {
 				vf.subValues = new ArrayList<>();
 				for (ValueFreq s : subValues) {
@@ -160,13 +193,24 @@ public class NameIndexInspector {
 			if (subValues != null) {
 				subValues = new ArrayList<>(
 						mergeArray(mergeArray(new TreeMap<String, ValueFreq>(), subValues), s.subValues).values());
+				for (ValueFreq v : subValues) {
+					this.maxSingleSubValueEnc = Math.max(this.maxSingleSubValueEnc, v.enclosing);
+				}
 			}
 		}
 
 		@Override
 		public String toString() {
 			if (enclosing > 0) {
-				return String.format("%s (%,d, %,d (%d) enc)", value, freq, enclosing, maxSingleAtomEnc);
+				String enc = String.format(", enc %,d/%,d", enclosing, maxSingleAtomEnc);
+				if (subValues != null) {
+					enc = String.format(", enc %,d/%,d/%,d", enclosing, maxSingleSubValueEnc, maxSingleAtomEnc);
+				}
+				String extraS = "";
+				if (extra > 0) {
+					extraS = String.format(", ex %,d", extra);
+				}
+				return String.format("%s (%,d%s%s)", value, freq, extraS, enc);
 			}
 			return String.format("%s (%,d)", value, freq);
 		}
@@ -182,10 +226,13 @@ public class NameIndexInspector {
 		@Override
 		public int compareTo(ValueFreq o) {
 			if (!SORT_BY_NAME) {
-				int c = -Integer.compare(freq, o.freq);
 				if (SORT_BY_TOP_FREQ) {
-					c = -Integer.compare(getTopFreq(), o.getTopFreq());
+					int c = -Integer.compare(getTopFreq(), o.getTopFreq());
+					if (c != 0) {
+						return c;
+					}
 				}
+				int c = -Integer.compare(freq, o.freq);
 				if (c != 0) {
 					return c;
 				}
@@ -201,31 +248,42 @@ public class NameIndexInspector {
 		
 		@Override
 		public String toString() {
-			List<ValueFreq> suffixes = collectFrequencies(null);
-			if(data != null) {
+			if (data != null) {
+				List<ValueFreq> suffixes = collectPOIFrequencies(null);
 				return String.format("%s (%d, %s)", key, data.getAtomsCount(), suffixes);
-			} else if(addr != null) {
+			} else if (addr != null) {
+				List<ValueFreq> suffixes =  collectAddrFrequencies(key, null, null, -1);
 				return String.format("%s (%d, %s)", key, addr.getAtomCount(), suffixes);
 			} else {
 				return key + " <NOT SET>";
 			}
 		}
 
-		private List<ValueFreq> collectAddrFrequencies(SuffixesStat stats, int f) {
+		private List<ValueFreq> collectAddrFrequencies(String prefix, 
+				SuffixesStat suffStats, StreetsIndexStat streetsStat, int f) {
 			List<ValueFreq> suffixes = new ArrayList<>();
+			ValueFreq streetsPrefix = null;
+			if (streetsStat != null) {
+				streetsPrefix = new ValueFreq(prefix, 0);
+				streetsPrefix.subValues = new ArrayList<>();
+				streetsStat.values.put(prefix, streetsPrefix);
+			}
+			
 			String curSuffix = "";
-			if (stats != null) {
-				stats.prefixesCount++;
-				stats.suffixesLenSum += addr.getSuffixesDictionaryList().size();
+			if (suffStats != null) {
+				suffStats.prefixesCount++;
+				suffStats.suffixesLenSum += addr.getSuffixesDictionaryList().size();
 			}
 			for (String s : addr.getSuffixesDictionaryList()) {
 				curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
-				ValueFreq vf = new ValueFreq(key + curSuffix, 0);
-				suffixes.add(vf);
+				suffixes.add(new ValueFreq(key + curSuffix, 0));
+				if (streetsStat != null) {
+					streetsPrefix.subValues.add(new ValueFreq(key + curSuffix, 0));
+				}
 			}
-			if (stats != null && stats.longestSuffixes.size() < suffixes.size()) {
-				stats.longestSuffixes = suffixes;
-				stats.longestSuffixesKey = key;
+			if (suffStats != null && suffStats.longestSuffixes.size() < suffixes.size()) {
+				suffStats.longestSuffixes = suffixes;
+				suffStats.longestSuffixesKey = key;
 			}
 			int INT_BITS = 32;
 			for (AddressNameIndexDataAtom a : addr.getAtomList()) {
@@ -237,16 +295,62 @@ public class NameIndexInspector {
 					int suffBit = a.getSuffixesBitset(i);
 					for (int j = 0; j < INT_BITS && suffBit != 0; j++) {
 						if (suffBit % 2 == 1) {
+							int ind = i * INT_BITS + j;
 							setBits++;
-							ValueFreq s = suffixes.get(i * INT_BITS + j);
+							ValueFreq s = suffixes.get(ind);
 							s.freq++;
 							s.enclosing += a.getEnclosingObjects();
 							s.maxSingleAtomEnc = Math.max(s.maxSingleAtomEnc, a.getEnclosingObjects());
+							if (streetsStat != null) {
+								ValueFreq sPref = streetsPrefix.subValues.get(ind);
+								streetsStat.processAtom(streetsPrefix, sPref, a);
+							}
 						}
 						suffBit >>= 1;
 					}
 				}
-				if (stats != null && f >= 0) {
+				if (suffStats != null && f >= 0) {
+					if (setBits == 1) {
+						suffStats.atomOneBitSuffix++;
+					} else if (setBits == 2) {
+						suffStats.atomTwoBitSuffix++;
+					}
+					suffStats.atomCount++;
+				}
+			}
+			
+			return suffixes;
+		}
+		
+		private List<ValueFreq> collectPOIFrequencies(SuffixesStat stats) {
+			List<ValueFreq> suffixes = new ArrayList<>();
+			String curSuffix = "";
+			stats.prefixesCount++;
+			stats.suffixesLenSum += data.getSuffixesDictionaryList().size();
+			for (String s : data.getSuffixesDictionaryList()) {
+				curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
+				ValueFreq vf = new ValueFreq(key + curSuffix, 0);
+				suffixes.add(vf);
+			}
+			if (stats != null && stats.longestSuffixes.size() < suffixes.size()) {
+				stats.longestSuffixes = suffixes;
+				stats.longestSuffixesKey = key;
+			}
+			int INT_BITS = 32;
+			for (OsmAndPoiNameIndexDataAtom a : data.getAtomsList()) {
+				int setBits = 0;
+				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
+					int suffBit = a.getSuffixesBitset(i);
+					for (int j = 0; j < INT_BITS && suffBit != 0; j++) {
+						if ((suffBit & 1) == 1) {
+							ValueFreq s = suffixes.get(i * INT_BITS + j);
+							s.freq++;
+							setBits++;
+						}
+						suffBit >>>= 1;
+					}
+				}
+				if (stats != null) {
 					if (setBits == 1) {
 						stats.atomOneBitSuffix++;
 					} else if (setBits == 2) {
@@ -254,51 +358,6 @@ public class NameIndexInspector {
 					}
 					stats.atomCount++;
 				}
-			}
-			
-			return suffixes;
-		}
-		
-		private List<ValueFreq> collectFrequencies(SuffixesStat stats) {
-			List<ValueFreq> suffixes = new ArrayList<>();
-			if (data != null) {
-				String curSuffix = "";
-				stats.prefixesCount++;
-				stats.suffixesLenSum += data.getSuffixesDictionaryList().size();
-				for (String s : data.getSuffixesDictionaryList()) {
-					curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
-					ValueFreq vf = new ValueFreq(key + curSuffix, 0);
-					suffixes.add(vf);
-				}
-				if (stats != null && stats.longestSuffixes.size() < suffixes.size()) {
-					stats.longestSuffixes = suffixes;
-					stats.longestSuffixesKey = key;
-				}
-				int INT_BITS = 32;
-				for (OsmAndPoiNameIndexDataAtom a : data.getAtomsList()) {
-					int setBits = 0;
-					for(int i = 0; i < a.getSuffixesBitsetCount(); i++) {
-						int suffBit = a.getSuffixesBitset(i);
-						for(int j = 0; j < INT_BITS && suffBit != 0; j++) {
-							if ((suffBit & 1) == 1) {
-								ValueFreq s = suffixes.get(i * INT_BITS + j);
-								s.freq++;
-								setBits++;
-							}
-							suffBit >>>= 1;
-						}
-					}
-					if (stats != null) {
-						if (setBits == 1) {
-							stats.atomOneBitSuffix++;
-						} else if (setBits == 2) {
-							stats.atomTwoBitSuffix++;
-						}
-						stats.atomCount++;
-					}
-				}
-			} else if (addr != null) {
-				suffixes = collectAddrFrequencies(stats, -1);
 			}
 			Collections.sort(suffixes);
 			return suffixes;
@@ -318,6 +377,10 @@ public class NameIndexInspector {
 		return suffixesStat;
 	}
 	
+	public StreetsIndexStat getStreetsStat() {
+		return streetsStat;
+	}
+	
 	public void putKey(String key, int val, String prefix) {
 		PrefixNameValue nameValue = new PrefixNameValue();
 		nameValue.key = key;
@@ -325,14 +388,14 @@ public class NameIndexInspector {
 	}
 	
 	
-	public List<ValueFreq> getPrefixes(String prefix) {
+	public List<ValueFreq> getPOIPrefixes(String prefix) {
 		List<ValueFreq> ls = new ArrayList<NameIndexInspector.ValueFreq>();
 		for (PrefixNameValue p : indexByRef.values()) {
 			if (prefix != null && !(p.key.toLowerCase().startsWith(prefix) || prefix.toLowerCase().startsWith(p.key))) {
 				continue;
 			}
 			ValueFreq vf = new ValueFreq(p.key, p.data.getAtomsCount());
-			vf.subValues = p.collectFrequencies(suffixesStat);
+			vf.subValues = p.collectPOIFrequencies(suffixesStat);
 			ls.add(vf);
 		}
 		return ls;
@@ -345,17 +408,20 @@ public class NameIndexInspector {
 			if (prefix != null && !(p.key.toLowerCase().startsWith(prefix) || prefix.toLowerCase().startsWith(p.key))) {
 				continue;
 			}
-			List<ValueFreq> subvalues = p.collectAddrFrequencies(filter == -1 ? suffixesStat : null, filter);
+			List<ValueFreq> subvalues = filter == -1 ? 
+					p.collectAddrFrequencies(p.key, suffixesStat, streetsStat, filter)
+					: p.collectAddrFrequencies(p.key, null, null, filter);
 //			int total = p.addr.getAtomCount();
 			// always recalculate other fields too
 //			if (filter >= 0 || !Algorithms.isEmpty(prefix)) {
-			int enclosing = 0, maxSingleEnc = 0;
+			int enclosing = 0, maxSingleAtomEnc = 0, maxSingleSubValueEnc = 0;
 			int total = 0;
 			List<ValueFreq> sublist = new ArrayList<>();
 			for (ValueFreq s : subvalues) {
 				total += s.freq;
 				enclosing += s.enclosing;
-				maxSingleEnc = Math.max(s.maxSingleAtomEnc, maxSingleEnc);
+				maxSingleSubValueEnc = Math.max(s.enclosing, maxSingleSubValueEnc);
+				maxSingleAtomEnc = Math.max(s.maxSingleAtomEnc, maxSingleAtomEnc);
 				if (s.freq > 0) {
 					sublist.add(s);
 				}
@@ -367,7 +433,8 @@ public class NameIndexInspector {
 			ValueFreq vf = new ValueFreq(p.key, total);
 			vf.subValues = subvalues;
 			vf.enclosing = enclosing;
-			vf.maxSingleAtomEnc = maxSingleEnc;
+			vf.maxSingleAtomEnc = maxSingleAtomEnc;
+			vf.maxSingleSubValueEnc = maxSingleSubValueEnc;
 			ls.add(vf);
 		}
 		return ls;
