@@ -74,6 +74,7 @@ public class NameIndexInspector {
 		public int freq;
 		public int extra;
 		public int enclosing;
+		public int maxSingleAtomEnc;
 		public List<ValueFreq> subValues = null;
 		
 		public static boolean SORT_BY_NAME = false;
@@ -88,6 +89,7 @@ public class NameIndexInspector {
 			ValueFreq vf = new ValueFreq(value, freq);
 			vf.extra = extra;
 			vf.enclosing = enclosing;
+			vf.maxSingleAtomEnc = maxSingleAtomEnc;
 			if (subValues != null) {
 				vf.subValues = new ArrayList<>();
 				for (ValueFreq s : subValues) {
@@ -150,6 +152,7 @@ public class NameIndexInspector {
 		public void merge(ValueFreq s) {
 			this.freq += s.freq;
 			this.enclosing += s.enclosing;
+			this.maxSingleAtomEnc = Math.max(maxSingleAtomEnc, s.maxSingleAtomEnc);
 			if (subValues == null && s.subValues != null) {
 				s.subValues = new ArrayList<>();
 			}
@@ -163,7 +166,7 @@ public class NameIndexInspector {
 		@Override
 		public String toString() {
 			if (enclosing > 0) {
-				return String.format("%s (%,d, %,d enc)", value, freq, enclosing);
+				return String.format("%s (%,d, %,d (%d) enc)", value, freq, enclosing, maxSingleAtomEnc);
 			}
 			return String.format("%s (%,d)", value, freq);
 		}
@@ -238,6 +241,7 @@ public class NameIndexInspector {
 							ValueFreq s = suffixes.get(i * INT_BITS + j);
 							s.freq++;
 							s.enclosing += a.getEnclosingObjects();
+							s.maxSingleAtomEnc = Math.max(s.maxSingleAtomEnc, a.getEnclosingObjects());
 						}
 						suffBit >>= 1;
 					}
@@ -343,13 +347,14 @@ public class NameIndexInspector {
 			}
 			List<ValueFreq> subvalues = p.collectAddrFrequencies(filter == -1 ? suffixesStat : null, filter);
 			int total = p.addr.getAtomCount();
-			int enclosing = 0;
+			int enclosing = 0, maxSingleEnc = 0;;
 			if (filter >= 0 || !Algorithms.isEmpty(prefix)) {
 				total = 0;
 				List<ValueFreq> sublist = new ArrayList<>();
 				for (ValueFreq s : subvalues) {
 					total += s.freq;
 					enclosing += s.enclosing;
+					maxSingleEnc = Math.max(s.maxSingleAtomEnc, maxSingleEnc);
 					if (s.freq > 0) {
 						sublist.add(s);
 					}
@@ -362,6 +367,7 @@ public class NameIndexInspector {
 			ValueFreq vf = new ValueFreq(p.key, total);
 			vf.subValues = subvalues;
 			vf.enclosing = enclosing;
+			vf.maxSingleAtomEnc = maxSingleEnc;
 			ls.add(vf);
 		}
 		return ls;
