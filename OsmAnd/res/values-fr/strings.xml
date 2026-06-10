@@ -5849,8 +5849,8 @@
     <string name="shared_string_azimuth">Azimut</string>
     <string name="shared_string_magnitude">Magnitude</string>
     <string name="gpx_too_many_points_visible_warning">L\'affichage sur la carte d\'un grand nombre de traces GPX provoque une utilisation élevée de la mémoire</string>
-    <string name="sort_highest_first">Les mieux classés en premier</string>
-    <string name="sort_lowest_first">Du moins cher au plus cher</string>
+    <string name="sort_highest_first">Plus grand en premier</string>
+    <string name="sort_lowest_first">Plus petit en premier</string>
     <string name="no_date">Aucune date</string>
     <string name="shared_string_step">Étape</string>
     <string name="set_step_size_summary">Choisissez une étape pour regrouper vos traces.</string>
@@ -5858,7 +5858,7 @@
     <string name="organize_by_summary">Regroupez automatiquement vos parcours en fonction d\'un paramètre de votre choix, tel que l\'activité, la vitesse ou la localisation.</string>
     <string name="organize_by">Trier par</string>
     <string name="group_general">Généralités</string>
-    <string name="group_date_time">Date &amp; Heure</string>
+    <string name="group_date_time">Date &amp; heure</string>
     <string name="group_altitude_elevation">Altitude et dénivelé</string>
     <string name="group_sensors">Capteurs</string>
     <string name="year_of_creation">Année de création</string>
