@@ -11,21 +11,14 @@ import androidx.fragment.app.FragmentActivity;
 
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
-import net.osmand.plus.chooseplan.OsmAndProPlanFragment;
-import net.osmand.plus.chooseplan.button.PurchasingUtils;
-import net.osmand.plus.chooseplan.button.SubscriptionButton;
-import net.osmand.plus.inapp.InAppPurchaseHelper;
+import net.osmand.plus.helpers.DiscountHelper;
 import net.osmand.plus.inapp.InAppPurchaseUtils;
-import net.osmand.plus.inapp.InAppPurchases.InAppSubscription;
 import net.osmand.plus.routepreparationmenu.cards.BaseCard;
 import net.osmand.plus.settings.enums.ThemeUsageContext;
-import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.widgets.TextViewEx;
 import net.osmand.plus.widgets.dialogbutton.DialogButton;
 import net.osmand.shared.gpx.data.TrackFolder;
 import net.osmand.util.Algorithms;
-
-import java.util.List;
 
 public class TracksFreeBackupCard extends BaseCard {
 
@@ -114,19 +107,8 @@ public class TracksFreeBackupCard extends BaseCard {
 	}
 
 	private String getSubscriptionDiscount() {
-		InAppPurchaseHelper purchaseHelper = app.getInAppPurchaseHelper();
-		if (purchaseHelper == null) {
-			return null;
-		}
 		boolean nightMode = app.getDaynightHelper().isNightMode(settings.getApplicationMode(), ThemeUsageContext.APP);
-		List<InAppSubscription> subscriptions = OsmAndProPlanFragment.getVisibleSubscriptions(app, purchaseHelper);
-		List<SubscriptionButton> buttons = PurchasingUtils.collectSubscriptionButtons(app, purchaseHelper, subscriptions, nightMode);
-		for (SubscriptionButton button : buttons) {
-			if (button.isDiscountApplied() && !Algorithms.isEmpty(button.getDiscount())) {
-				return button.getDiscount();
-			}
-		}
-		return null;
+		return DiscountHelper.getCurrentSaleDiscount(getMyApplication(), nightMode, false);
 	}
 
 	private void dismiss() {

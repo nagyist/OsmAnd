@@ -35,6 +35,7 @@ import androidx.annotation.StringRes;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.fragment.app.FragmentManager;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import net.osmand.plus.R;
@@ -398,9 +399,8 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 
 	private void updateDiscountBadge(@NonNull View view) {
 		TextView primaryDescription = view.findViewById(R.id.primary_description);
-		PriceButton<?> discountButton = getDiscountSubscriptionButton();
-		String discount = discountButton != null ? discountButton.getDiscount() : null;
-		if (!Algorithms.isEmpty(discount) && discountButton.isDiscountApplied()) {
+		String discount = DiscountHelper.getCurrentSaleDiscount(getApp(), isNightMode(), true);
+		if (!Algorithms.isEmpty(discount)) {
 			primaryDescription.setText(createDescriptionWithDiscount(primaryDescription.getText(), discount));
 		}
 	}
@@ -413,16 +413,6 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 		int end = builder.length();
 		builder.setSpan(new DiscountBadgeSpan(requireMapActivity()), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 		return builder;
-	}
-
-	@Nullable
-	private PriceButton<?> getDiscountSubscriptionButton() {
-		for (PriceButton<?> button : priceButtons) {
-			if (button instanceof SubscriptionButton && !Algorithms.isEmpty(button.getDiscount())) {
-				return button;
-			}
-		}
-		return null;
 	}
 
 	@NonNull
@@ -628,6 +618,7 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 			applyWindowDim(dialog.getWindow());
 			if (dialog instanceof BottomSheetDialog bottomSheetDialog) {
 				applyDialogTransparency(bottomSheetDialog);
+				setupInitialBottomSheetHeight(bottomSheetDialog);
 			}
 		}
 	}
@@ -653,6 +644,38 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 		}
 	}
 
+	private void setupInitialBottomSheetHeight(@NonNull BottomSheetDialog dialog) {
+		View bottomSheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+		View content = getView();
+		if (bottomSheet == null || content == null) {
+			return;
+		}
+		bottomSheet.post(() -> {
+			ViewGroup.LayoutParams params = bottomSheet.getLayoutParams();
+			params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+			bottomSheet.setLayoutParams(params);
+
+			int contentHeight = 0;
+			int width = bottomSheet.getWidth() > 0 ? bottomSheet.getWidth() : content.getWidth();
+			if (width > 0) {
+				int widthSpec = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY);
+				int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+				content.measure(widthSpec, heightSpec);
+				contentHeight = content.getMeasuredHeight();
+			}
+			if (contentHeight == 0) {
+				contentHeight = content.getHeight();
+			}
+			if (contentHeight > 0) {
+				BottomSheetBehavior<View> behavior = BottomSheetBehavior.from(bottomSheet);
+				behavior.setFitToContents(true);
+				behavior.setSkipCollapsed(false);
+				behavior.setPeekHeight(contentHeight);
+				behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+			}
+		});
+	}
+
 	private void applyTextColor(@NonNull TextView view, int color) {
 		if (color != -1) {
 			view.setTextColor(color);
@@ -663,7 +686,7 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 		if (AndroidUtils.isFragmentCanBeAdded(manager, TAG)) {
 			Bundle args = new Bundle();
 			args.putString(TITLE_KEY, data.message);
-			args.putString(IN_APP_SKU_KEY, data.inAppSku);
+			args.putString(IN_APP_SKU_KEY, data.choosePlanType);
 			args.putString(DESCRIPTION_KEY, data.description);
 			args.putString(ICON_KEY, data.iconId);
 			args.putString(URL_KEY, data.url);

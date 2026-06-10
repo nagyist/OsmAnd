@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
+import net.osmand.plus.inapp.InAppPurchases;
 import net.osmand.plus.settings.enums.ThemeUsageContext;
 import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.plus.widgets.ctxmenu.ContextMenuAdapter;
@@ -135,5 +136,29 @@ public class PurchasingUtils {
 	@DrawableRes
 	public static int getProFeatureIconId(boolean nightMode) {
 		return nightMode ? R.drawable.img_button_pro_night : R.drawable.img_button_pro_day;
+	}
+
+	public static List<InAppSubscription> getVisibleProSubscriptions(OsmandApplication app, InAppPurchaseHelper purchaseHelper) {
+		InAppPurchases purchases = app.getInAppPurchaseHelper().getInAppPurchases();
+		List<InAppSubscription> subscriptions = new ArrayList<>();
+		List<InAppSubscription> visibleSubscriptions = purchaseHelper.getSubscriptions().getVisibleSubscriptions();
+		for (InAppSubscription subscription : visibleSubscriptions) {
+			if (purchases.isOsmAndPro(subscription)) {
+				subscriptions.add(subscription);
+			}
+		}
+		return subscriptions;
+	}
+
+	public static List<InAppSubscription> getVisibleMapsSubscriptions(OsmandApplication app, InAppPurchaseHelper purchaseHelper) {
+		InAppPurchases purchases = app.getInAppPurchaseHelper().getInAppPurchases();
+		List<InAppSubscription> subscriptions = new ArrayList<>();
+		List<InAppSubscription> visibleSubscriptions = purchaseHelper.getSubscriptions().getVisibleSubscriptions();
+		for (InAppSubscription subscription : visibleSubscriptions) {
+			if (purchases.isMaps(subscription)) {
+				subscriptions.add(subscription);
+			}
+		}
+		return subscriptions;
 	}
 }

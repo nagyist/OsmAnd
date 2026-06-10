@@ -13,22 +13,16 @@ import android.widget.Space;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.chooseplan.ChoosePlanFragment;
-import net.osmand.plus.chooseplan.button.PurchasingUtils;
-import net.osmand.plus.chooseplan.button.SubscriptionButton;
 import net.osmand.plus.download.DownloadActivity;
-import net.osmand.plus.inapp.InAppPurchaseHelper;
-import net.osmand.plus.inapp.InAppPurchases.InAppSubscription;
+import net.osmand.plus.helpers.DiscountHelper;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.settings.enums.ThemeUsageContext;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.util.Algorithms;
-
-import java.util.List;
 
 public class FreeVersionBanner {
 
@@ -118,7 +112,7 @@ public class FreeVersionBanner {
 	}
 
 	private boolean updateCtaDiscountBadge(boolean nightMode) {
-		String discount = getSubscriptionIntroductoryDiscount();
+		String discount = DiscountHelper.getCurrentSaleDiscount(app, nightMode, true);
 		boolean hasDiscount = !Algorithms.isEmpty(discount);
 		freeVersionCtaDiscountBadge.setText(discount);
 		freeVersionCtaDiscountBadge.setBackgroundResource(nightMode
@@ -127,26 +121,6 @@ public class FreeVersionBanner {
 		freeVersionCtaDiscountBadge.setVisibility(hasDiscount ? View.VISIBLE : View.GONE);
 		freeVersionCtaArrow.setVisibility(hasDiscount ? View.GONE : View.VISIBLE);
 		return hasDiscount;
-	}
-
-	@Nullable
-	private String getSubscriptionIntroductoryDiscount() {
-		InAppPurchaseHelper purchaseHelper = app.getInAppPurchaseHelper();
-		if (purchaseHelper == null) {
-			return null;
-		}
-		boolean nightMode = app.getDaynightHelper().isNightMode(settings.getApplicationMode(), ThemeUsageContext.APP);
-		List<InAppSubscription> subscriptions = purchaseHelper.getSubscriptions().getVisibleSubscriptions();
-		List<SubscriptionButton> buttons = PurchasingUtils.collectSubscriptionButtons(app, purchaseHelper, subscriptions, nightMode);
-		for (SubscriptionButton button : buttons) {
-			InAppSubscription subscription = button.getPurchaseItem();
-			if (button.isDiscountApplied()
-					&& subscription.getIntroductoryInfo() != null
-					&& !Algorithms.isEmpty(button.getDiscount())) {
-				return button.getDiscount();
-			}
-		}
-		return null;
 	}
 
 	private void updateDownloadsProgress(int downloadsLeft) {

@@ -10,6 +10,8 @@
 	- For wording and consistency, please note https://docs.osmand.net/docs/technical/contributions/translating-osmand
 	Thx - Hardy
 -->
+	<string name="show_discount_bottom_sheet">Show Discount bottom sheet</string>
+	<string name="show_discount_bottom_sheet_description">Display the discount bottom sheet with a custom development response.</string>
 	<string name="auto_copy_media_to_osmand_storage">Auto-copy media to OsmAnd storage</string>
 	<string name="choose_from_gallery">Choose from Gallery</string>
 	<string name="choose_from_files">Choose from Files</string>

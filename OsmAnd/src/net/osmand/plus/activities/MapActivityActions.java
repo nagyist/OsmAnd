@@ -701,7 +701,7 @@ public class MapActivityActions extends MapActions {
 		adapter.addItem(new ContextMenuItem(DRAWER_SALE_ID)
 				.setLayout(R.layout.drawer_sale_list_item)
 				.setTitle(DiscountHelper.getCurrentSaleTitle())
-				.setSecondaryDescription(DiscountHelper.getCurrentSaleDiscount(app, nightMode))
+				.setSecondaryDescription(DiscountHelper.getCurrentSaleDiscount(app, nightMode, true))
 				.setIcon(DiscountHelper.getCurrentSaleDrawerIconId(nightMode))
 				.setUseNaturalIconColor(true)
 				.setListener((uiAdapter, view, item, isChecked) -> {

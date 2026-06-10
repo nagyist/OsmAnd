@@ -69,6 +69,7 @@ public class DiscountHelper {
 	private static PoiUIFilter mFilter;
 	private static boolean mFilterVisible;
 	private static final String URL = "https://osmand.net/api/motd";
+	private static final String CUSTOM_DISCOUNT_RESPONSE = "{\"url_params\":{\"selected_choose_plan_btn\":\"osmand_test_pro_annual\"},\"application\":{\"net.osmand\":true, \"net.osmand.plus\":true},\"show_day_frequency\":10,\"show_start_frequency\":40,\"icon\":\"ic_action_gift\",\"start\":\"22-05-2026 00:20\",\"description\":\"Подпишитесь на годовую подписку Maps+, Pro со скидкой 50% на первый год!\",\"end\":\"28-06-2026 23:59\",\"message\":\"РАСПРОДАЖА годовой подписки!\",\"oneOfConditions\":[{\"condition\":[{ \"not_purchased_feature\" : \"maps\", \"not_purchased_feature\":\"pro\"}]}],\"url\":\"show-choose-plan:osmand-pro\",\"max_total_show\":20,\"discount\":\"50\"}";
 	private static final String INAPP_PREFIX = "osmand-in-app:";
 	private static final String SEARCH_QUERY_PREFIX = "osmand-search-query:";
 	private static final String SHOW_POI_PREFIX = "osmand-show-poi:";
@@ -99,7 +100,7 @@ public class DiscountHelper {
 	public static void checkAndDisplay(MapActivity mapActivity) {
 		OsmandApplication app = mapActivity.getApp();
 		OsmandSettings settings = app.getSettings();
-		if (settings.DO_NOT_SHOW_STARTUP_MESSAGES.get() || !settings.INAPPS_READ.get()) {
+		if (!settings.INAPPS_READ.get()) {
 			return;
 		}
 		if (mBannerVisible) {
@@ -144,6 +145,8 @@ public class DiscountHelper {
 			protected void onPostExecute(String response) {
 				if (!Algorithms.isEmpty(response)) {
 					processDiscountResponse(response, mapActivity);
+				} else if (settings.SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET.get()) {
+					processDiscountResponse(CUSTOM_DISCOUNT_RESPONSE, mapActivity);
 				}
 			}
 		});
@@ -171,7 +174,15 @@ public class DiscountHelper {
 				return;
 			}
 
-			data.inAppSku = getInAppSku(data.url);
+			if (app.getSettings().SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET.get()) {
+				InAppPurchaseHelper purchaseHelper = mapActivity.getPurchaseHelper();
+				if (purchaseHelper != null) {
+					purchaseHelper.requestInventory(false);
+				}
+				showDiscountBanner(mapActivity, data);
+				return;
+			}
+
 			if (data.oneOfConditions != null) {
 				boolean oneOfConditionsMatch = false;
 				try {
@@ -267,7 +278,7 @@ public class DiscountHelper {
 	}
 
 	@Nullable
-	private static String getInAppSku(@NonNull String url) {
+	private static String getChoosePlanType(@NonNull String url) {
 		if (url.startsWith(SHOW_CHOOSE_PLAN_PREFIX) && url.length() > SHOW_CHOOSE_PLAN_PREFIX.length()) {
 			return url.substring(SHOW_CHOOSE_PLAN_PREFIX.length());
 		}
@@ -315,7 +326,7 @@ public class DiscountHelper {
 	}
 
 	@Nullable
-	public static String getCurrentSaleDiscount(@NonNull OsmandApplication app, boolean nightMode) {
+	public static String getCurrentSaleDiscount(@NonNull OsmandApplication app, boolean nightMode, boolean includeMapsPlan) {
 		if (mData == null) {
 			return null;
 		}
@@ -323,7 +334,7 @@ public class DiscountHelper {
 		if (purchaseHelper == null) {
 			return null;
 		}
-		List<InAppSubscription> subscriptions = getCurrentSaleSubscriptions(app, purchaseHelper);
+		List<InAppSubscription> subscriptions = getCurrentSaleSubscriptions(app, purchaseHelper, includeMapsPlan);
 		List<SubscriptionButton> buttons = PurchasingUtils.collectSubscriptionButtons(app, purchaseHelper, subscriptions, nightMode);
 		for (SubscriptionButton button : buttons) {
 			InAppSubscription subscription = button.getPurchaseItem();
@@ -338,16 +349,18 @@ public class DiscountHelper {
 
 	@NonNull
 	private static List<InAppSubscription> getCurrentSaleSubscriptions(@NonNull OsmandApplication app,
-	                                                                   @NonNull InAppPurchaseHelper purchaseHelper) {
-		String planType = getCurrentSalePlanType();
-		if (CHOOSE_PLAN_TYPE_PRO.equals(planType)) {
-			return OsmAndProPlanFragment.getVisibleSubscriptions(app, purchaseHelper);
-		} else if (CHOOSE_PLAN_TYPE_MAPS_PLUS.equals(planType)) {
-			return MapsPlusPlanFragment.getVisibleSubscriptions(app, purchaseHelper);
-		}
-		OsmAndFeature feature = mData != null ? mData.getChoosePlanFeature() : null;
-		if (feature != null) {
-			return getFeatureSubscriptions(app, purchaseHelper, feature);
+	                                                                   @NonNull InAppPurchaseHelper purchaseHelper, boolean includeMapsPlan) {
+		if (mData != null && !Algorithms.isEmpty(mData.choosePlanType)) {
+			String planType = mData.choosePlanType;
+			if (CHOOSE_PLAN_TYPE_PRO.equals(planType)) {
+				return PurchasingUtils.getVisibleProSubscriptions(app, purchaseHelper);
+			} else if (CHOOSE_PLAN_TYPE_MAPS_PLUS.equals(planType) && includeMapsPlan) {
+				return PurchasingUtils.getVisibleMapsSubscriptions(app, purchaseHelper);
+			}
+			OsmAndFeature feature = mData.getChoosePlanFeature();
+			if (feature != null && (!feature.isAvailableInMapsPlus() || includeMapsPlan)) {
+				return getFeatureSubscriptions(app, purchaseHelper, feature);
+			}
 		}
 		return Collections.emptyList();
 	}
@@ -358,9 +371,9 @@ public class DiscountHelper {
 	                                                               @NonNull OsmAndFeature feature) {
 		List<InAppSubscription> result = new ArrayList<>();
 		if (feature.isAvailableInMapsPlus()) {
-			result.addAll(MapsPlusPlanFragment.getVisibleSubscriptions(app, purchaseHelper));
+			result.addAll(PurchasingUtils.getVisibleMapsSubscriptions(app, purchaseHelper));
 		}
-		result.addAll(OsmAndProPlanFragment.getVisibleSubscriptions(app, purchaseHelper));
+		result.addAll(PurchasingUtils.getVisibleProSubscriptions(app, purchaseHelper));
 		return result;
 	}
 
@@ -574,7 +587,7 @@ public class DiscountHelper {
 
 	static class ControllerData {
 
-		String inAppSku;
+		String choosePlanType;
 		String message;
 		String description;
 		String iconId;
@@ -600,10 +613,10 @@ public class DiscountHelper {
 
 		@Nullable
 		OsmAndFeature getChoosePlanFeature() {
-			if (Algorithms.isEmpty(url) || !url.startsWith(SHOW_CHOOSE_PLAN_PREFIX)) {
+			String planType = choosePlanType;
+			if (Algorithms.isEmpty(planType)) {
 				return null;
 			}
-			String planType = url.substring(SHOW_CHOOSE_PLAN_PREFIX.length()).trim();
 			switch (planType) {
 				case CHOOSE_PLAN_TYPE_SEA_DEPTH:
 					return OsmAndFeature.NAUTICAL;
@@ -638,6 +651,7 @@ public class DiscountHelper {
 			res.description = obj.getString("description");
 			res.iconId = obj.getString("icon");
 			res.url = parseUrl(app, obj.getString("url"));
+			res.choosePlanType = getChoosePlanType(res.url);
 			res.textBtnTitle = obj.optString("button_title");
 			res.iconColor = parseColor("icon_color_default_light", obj);
 			res.bgColor = parseColor("bg_color", obj);
@@ -692,7 +706,8 @@ public class DiscountHelper {
 		@Override
 		boolean matches(@NonNull String value) {
 			return switch (value) {
-				case FEATURE_PRO -> !InAppPurchaseUtils.isOsmAndProPurchased(app) && !InAppPurchaseUtils.isPromoSubscribed(app);
+				case FEATURE_PRO ->
+						!InAppPurchaseUtils.isOsmAndProPurchased(app) && !InAppPurchaseUtils.isPromoSubscribed(app);
 				case FEATURE_MAPS ->
 						!InAppPurchaseUtils.isMapsPlusPurchased(app) && !InAppPurchaseUtils.isFullVersionPurchased(app);
 				case FEATURE_LIVE -> !InAppPurchaseUtils.isLiveUpdatesPurchased(app);
