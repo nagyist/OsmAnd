@@ -246,7 +246,7 @@ public class NameIndexInspector {
 						suffBit >>= 1;
 					}
 				}
-				if (stats != null) {
+				if (stats != null && f >= 0) {
 					if (setBits == 1) {
 						stats.atomOneBitSuffix++;
 					} else if (setBits == 2) {
@@ -346,24 +346,24 @@ public class NameIndexInspector {
 				continue;
 			}
 			List<ValueFreq> subvalues = p.collectAddrFrequencies(filter == -1 ? suffixesStat : null, filter);
-			int total = p.addr.getAtomCount();
-			int enclosing = 0, maxSingleEnc = 0;;
-			if (filter >= 0 || !Algorithms.isEmpty(prefix)) {
-				total = 0;
-				List<ValueFreq> sublist = new ArrayList<>();
-				for (ValueFreq s : subvalues) {
-					total += s.freq;
-					enclosing += s.enclosing;
-					maxSingleEnc = Math.max(s.maxSingleAtomEnc, maxSingleEnc);
-					if (s.freq > 0) {
-						sublist.add(s);
-					}
+//			int total = p.addr.getAtomCount();
+			// always recalculate other fields too
+//			if (filter >= 0 || !Algorithms.isEmpty(prefix)) {
+			int enclosing = 0, maxSingleEnc = 0;
+			int total = 0;
+			List<ValueFreq> sublist = new ArrayList<>();
+			for (ValueFreq s : subvalues) {
+				total += s.freq;
+				enclosing += s.enclosing;
+				maxSingleEnc = Math.max(s.maxSingleAtomEnc, maxSingleEnc);
+				if (s.freq > 0) {
+					sublist.add(s);
 				}
-				if (sublist.size() == 0) {
-					continue;
-				}
-				subvalues = sublist;
 			}
+			if (sublist.size() == 0) {
+				continue;
+			}
+			subvalues = sublist;
 			ValueFreq vf = new ValueFreq(p.key, total);
 			vf.subValues = subvalues;
 			vf.enclosing = enclosing;
