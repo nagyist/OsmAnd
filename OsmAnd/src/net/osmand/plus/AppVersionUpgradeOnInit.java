@@ -65,7 +65,8 @@ import net.osmand.plus.settings.backend.WidgetsAvailabilityHelper;
 import net.osmand.plus.settings.backend.backup.SettingsHelper;
 import net.osmand.plus.settings.backend.backup.exporttype.ExportType;
 import net.osmand.plus.settings.backend.preferences.*;
-import net.osmand.plus.settings.coordinates.CoordinateFormatPreferences;
+import net.osmand.plus.settings.coordinates.CoordinateFormatIds;
+import net.osmand.plus.settings.coordinates.CoordinateFormatSettingsStorage;
 import net.osmand.plus.settings.enums.CompassMode;
 import net.osmand.plus.settings.enums.LocalSortMode;
 import net.osmand.plus.settings.enums.ScreenLayoutMode;
@@ -341,7 +342,7 @@ public class AppVersionUpgradeOnInit {
 					app.getAppInitializer().addOnFinishListener(init -> migrateAudioVideoNotesToFavorites());
 				}
 				if (prevAppVersion < VERSION_5_3_06) {
-					migrateCoordinateFormatPreferences(settings);
+					migrateCoordinateFormatSettings(settings);
 				}
 				startPrefs.edit().putInt(VERSION_INSTALLED_NUMBER, lastVersion).commit();
 				startPrefs.edit().putString(VERSION_INSTALLED, Version.getFullVersion(app)).commit();
@@ -1171,11 +1172,25 @@ public class AppVersionUpgradeOnInit {
 		}
 	}
 
-	private void migrateCoordinateFormatPreferences(@NonNull OsmandSettings settings) {
-		CoordinateFormatPreferences coordinateFormatPreferences = new CoordinateFormatPreferences(settings);
+	private void migrateCoordinateFormatSettings(@NonNull OsmandSettings settings) {
+		CoordinateFormatSettingsStorage storage = settings.getCoordinateFormatSettingsStorage();
 		for (ApplicationMode appMode : ApplicationMode.allPossibleValues()) {
-			coordinateFormatPreferences.migrateFromLegacyFormat(appMode, settings.COORDINATES_FORMAT.getModeValue(appMode));
+			if (!storage.isPreferredIdsSetForMode(appMode)) {
+				int legacyFormat = storage.getLegacyFormatPreference().getModeValue(appMode);
+				storage.setPreferredIds(appMode, getLegacyCoordinateFormatPreferredIds(legacyFormat));
+			}
 		}
+	}
+
+	@NonNull
+	public static List<String> getLegacyCoordinateFormatPreferredIds(int legacyFormat) {
+		LinkedHashSet<String> ids = new LinkedHashSet<>();
+		String primaryId = CoordinateFormatIds.fromOldFormat(legacyFormat);
+		if (primaryId != null) {
+			ids.add(primaryId);
+		}
+		ids.addAll(CoordinateFormatIds.ALL_BUILT_IN_FORMAT_IDS);
+		return Collections.unmodifiableList(new ArrayList<>(ids));
 	}
 
 	private static final String DISABLE_MODE_STRING = "-1.0";

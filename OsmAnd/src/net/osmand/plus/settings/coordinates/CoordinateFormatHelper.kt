@@ -1,7 +1,6 @@
 package net.osmand.plus.settings.coordinates
 
 import net.osmand.plus.OsmandApplication
-import net.osmand.plus.settings.backend.ApplicationMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -47,14 +46,6 @@ class CoordinateFormatHelper(private val app: OsmandApplication) {
 		val lat = location?.latitude ?: EXAMPLE_LAT
 		val lon = location?.longitude ?: EXAMPLE_LON
 		return formatter.formatExample(format, lat, lon)
-	}
-
-	fun syncLegacyPrimary(mode: ApplicationMode, ids: List<String>) {
-		if (ids.isEmpty()) {
-			return
-		}
-		val legacyFormat = BuiltInCoordinateFormat.resolve(app, ids[0])?.legacyFormat ?: return
-		app.settings.COORDINATES_FORMAT.setModeValue(mode, legacyFormat)
 	}
 
 	companion object {

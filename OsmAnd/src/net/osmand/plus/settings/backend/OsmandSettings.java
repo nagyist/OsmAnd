@@ -97,7 +97,7 @@ import net.osmand.plus.settings.backend.menuitems.MainContextMenuItemsSettings;
 import net.osmand.plus.settings.backend.preferences.*;
 import net.osmand.plus.settings.backend.storages.ImpassableRoadsStorage;
 import net.osmand.plus.settings.backend.storages.IntermediatePointsStorage;
-import net.osmand.plus.settings.coordinates.CoordinateFormatIds;
+import net.osmand.plus.settings.coordinates.CoordinateFormatSettingsStorage;
 import net.osmand.plus.settings.enums.*;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.FileUtils;
@@ -164,6 +164,7 @@ public class OsmandSettings {
 
 	private final ImpassableRoadsStorage impassableRoadsStorage = new ImpassableRoadsStorage(this);
 	private final IntermediatePointsStorage intermediatePointsStorage = new IntermediatePointsStorage(this);
+	private final CoordinateFormatSettingsStorage coordinateFormatSettingsStorage = new CoordinateFormatSettingsStorage(this);
 
 	private StateChangedListener<ApplicationMode> appModeListener;
 
@@ -244,6 +245,11 @@ public class OsmandSettings {
 			}
 		}
 		return map;
+	}
+
+	@NonNull
+	public CoordinateFormatSettingsStorage getCoordinateFormatSettingsStorage() {
+		return coordinateFormatSettingsStorage;
 	}
 
 	public static boolean isRendererPreference(String key) {
@@ -1162,8 +1168,6 @@ public class OsmandSettings {
 			return AltitudeMetrics.Companion.fromMetricsConstant(mc);
 		}
 	}.makeProfile();
-
-	//public final OsmandPreference<Integer> COORDINATES_FORMAT = new IntPreference("coordinates_format", PointDescription.FORMAT_DEGREES).makeGlobal();
 
 	public final OsmandPreference<AngularConstants> ANGULAR_UNITS = new EnumStringPreference<AngularConstants>(this,
 			"angular_measurement", AngularConstants.DEGREES, AngularConstants.values()).makeProfile();
@@ -3346,15 +3350,6 @@ public class OsmandSettings {
 
 	public final OsmandPreference<String> CONTRIBUTION_INSTALL_APP_DATE = new StringPreference(this, "CONTRIBUTION_INSTALL_APP_DATE", null).makeGlobal();
 
-	public final OsmandPreference<Integer> COORDINATES_FORMAT = new IntPreference(this, "coordinates_format", PointDescription.FORMAT_DEGREES).makeProfile();
-	public final ListStringPreference PREFERRED_COORDINATE_FORMAT_IDS = (ListStringPreference)
-			new ListStringPreference(this, "preferred_coordinate_format_ids",
-					TextUtils.join(",", CoordinateFormatIds.DEFAULT_FORMAT_IDS),
-					",").makeProfile();
-	public final ListStringPreference RECENTLY_ADDED_COORDINATE_FORMAT_IDS = (ListStringPreference)
-			new ListStringPreference(this, "recently_added_coordinate_format_ids", null,
-					",").makeGlobal();
-
 	public final OsmandPreference<Boolean> FOLLOW_THE_ROUTE = new BooleanPreference(this, "follow_to_route", false).makeGlobal();
 	public final OsmandPreference<String> FOLLOW_THE_GPX_ROUTE = new StringPreference(this, "follow_gpx", null).makeGlobal();
 	public final OsmandPreference<Boolean> SHOW_RESTART_NAVIGATION_DIALOG = new BooleanPreference(this, "show_restart_navigation_dialog", true).makeGlobal().makeShared();
@@ -3487,7 +3482,7 @@ public class OsmandSettings {
 			new EnumStringPreference<>(this, "coordinates_grid_format", GridFormat.DMS, GridFormat.values()) {
 				@Override
 				public GridFormat getProfileDefaultValue(@Nullable ApplicationMode mode) {
-					int formatId = COORDINATES_FORMAT.getModeValue(mode);
+					int formatId = coordinateFormatSettingsStorage.getLegacyFormatPreference().getModeValue(mode);
 					return GridFormat.valueOf(formatId);
 				}
 			}.makeProfile();

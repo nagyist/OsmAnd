@@ -77,7 +77,7 @@ class CoordinateFormatFormatter @JvmOverloads constructor(
 
 		@JvmStatic
 		fun getPrimaryFormat(app: OsmandApplication, mode: ApplicationMode): CoordinateFormat {
-			val primaryId = CoordinateFormatPreferences(app.settings).getPrimaryId(mode)
+			val primaryId = app.settings.coordinateFormatSettingsStorage.getPrimaryId(mode)
 			return resolve(app, primaryId)
 		}
 
@@ -95,7 +95,7 @@ class CoordinateFormatFormatter @JvmOverloads constructor(
 		@JvmStatic
 		fun getPreferredFormats(app: OsmandApplication): List<CoordinateFormat> {
 			val repository = app.coordinateFormatHelper.repository
-			return CoordinateFormatPreferences(app.settings).getPreferredIds()
+			return app.settings.coordinateFormatSettingsStorage.getPreferredIds()
 				.map { id ->
 					BuiltInCoordinateFormat.resolve(app, id) ?: repository.resolveFormat(id)
 				}

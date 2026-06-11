@@ -162,6 +162,7 @@ public class OsmandApplication extends MultiDexApplication {
 	private final UiUtilities iconsCache = new UiUtilities(this);
 	private final LocaleHelper localeHelper = new LocaleHelper(this);
 	private final ToastHelper toastHelper = new ToastHelper(this);
+	private final CoordinateFormatHelper coordinateFormatHelper = new CoordinateFormatHelper(this);
 
 	// start variables
 	ResourceManager resourceManager;
@@ -225,7 +226,6 @@ public class OsmandApplication extends MultiDexApplication {
 	ExplorePlacesOnlineProvider explorePlacesProvider;
 	HelpArticlesHelper helpArticlesHelper;
 	ClickableWayHelper clickableWayHelper;
-	CoordinateFormatHelper coordinateFormatHelper;
 
 	private final Map<String, Builder> customRoutingConfigs = new ConcurrentHashMap<>();
 	private File externalStorageDirectory;
@@ -684,10 +684,7 @@ public class OsmandApplication extends MultiDexApplication {
 	}
 
 	@NonNull
-	public synchronized CoordinateFormatHelper getCoordinateFormatHelper() {
-		if (coordinateFormatHelper == null) {
-			coordinateFormatHelper = new CoordinateFormatHelper(this);
-		}
+	public CoordinateFormatHelper getCoordinateFormatHelper() {
 		return coordinateFormatHelper;
 	}
 

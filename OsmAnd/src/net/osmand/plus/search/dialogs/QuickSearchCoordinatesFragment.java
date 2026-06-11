@@ -56,7 +56,6 @@ import net.osmand.plus.settings.coordinates.BuiltInCoordinateFormat;
 import net.osmand.plus.settings.coordinates.CoordinateFormat;
 import net.osmand.plus.settings.coordinates.CoordinateFormatFormatter;
 import net.osmand.plus.settings.coordinates.CoordinateFormatIds;
-import net.osmand.plus.settings.coordinates.CoordinateFormatPreferences;
 import net.osmand.plus.settings.coordinates.CoordinateFormatSelectorBottomSheet;
 import net.osmand.plus.settings.coordinates.EpsgCoordinateTransformer;
 import net.osmand.plus.settings.coordinates.EpsgPoint;
@@ -414,8 +413,7 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 		if (normalizedId != null) {
 			return normalizedId;
 		}
-		CoordinateFormatPreferences preferences = new CoordinateFormatPreferences(settings);
-		return preferences.getPrimaryId(settings.getApplicationMode());
+		return settings.getCoordinateFormatSettingsStorage().getPrimaryId(settings.getApplicationMode());
 	}
 
 	private void setupFormatSelector() {
@@ -436,7 +434,7 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 
 	private void showFormatSelector() {
 		CoordinateFormatSelectorBottomSheet.showInstance(getChildFragmentManager(),
-				COORDINATE_SEARCH_FORMAT_REQUEST_KEY, currentFormatId, true);
+				COORDINATE_SEARCH_FORMAT_REQUEST_KEY, settings.getApplicationMode(), currentFormatId, true);
 	}
 
 	private void startLocationUpdate() {

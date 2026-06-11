@@ -75,7 +75,7 @@ public class CoordinatesWidgetInfoFragment extends WidgetInfoBaseFragment {
 	private void showFormatSelector() {
 		CoordinateFormat selectedFormat = getSelectedFormat();
 		CoordinateFormatSelectorBottomSheet.showInstance(getChildFragmentManager(),
-				REQUEST_COORDINATES_WIDGET_FORMAT, selectedFormat.getId(), true);
+				REQUEST_COORDINATES_WIDGET_FORMAT, appMode, selectedFormat.getId(), true);
 	}
 
 	@NonNull

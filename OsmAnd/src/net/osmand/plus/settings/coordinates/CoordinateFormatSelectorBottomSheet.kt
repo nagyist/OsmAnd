@@ -19,6 +19,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import net.osmand.plus.R
 import net.osmand.plus.base.BaseMaterialModalBottomSheetDialogFragment
 import net.osmand.plus.helpers.AndroidUiHelper
+import net.osmand.plus.settings.backend.ApplicationMode
 import net.osmand.plus.utils.AndroidUtils
 import net.osmand.plus.utils.ColorUtilities
 import net.osmand.plus.utils.InsetTarget
@@ -30,12 +31,15 @@ class CoordinateFormatSelectorBottomSheet : BaseMaterialModalBottomSheetDialogFr
 
 	private lateinit var mainView: View
 	private lateinit var requestKey: String
+	private lateinit var targetAppMode: ApplicationMode
 	private var selectedFormatId: String? = null
 	private var showSelectOtherFormat: Boolean = true
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		requestKey = arguments?.getString(ARG_REQUEST_KEY) ?: DEFAULT_REQUEST_KEY
+		targetAppMode = ApplicationMode.valueOfStringKey(arguments?.getString(ARG_APP_MODE_KEY), currentAppMode)
+			?: currentAppMode
 		selectedFormatId = CoordinateFormatIds.normalize(arguments?.getString(ARG_SELECTED_FORMAT_ID))
 		showSelectOtherFormat = arguments?.getBoolean(ARG_SHOW_SELECT_OTHER_FORMAT, true) ?: true
 	}
@@ -102,9 +106,9 @@ class CoordinateFormatSelectorBottomSheet : BaseMaterialModalBottomSheetDialogFr
 	}
 
 	private fun bindFormats() {
-		val preferences = CoordinateFormatPreferences(osmandSettings)
-		val preferredIds = preferences.getPreferredIds(currentAppMode)
-		val selectedId = selectedFormatId ?: preferences.getPrimaryId(currentAppMode)
+		val preferences = osmandSettings.coordinateFormatSettingsStorage
+		val preferredIds = preferences.getPreferredIds(targetAppMode)
+		val selectedId = selectedFormatId ?: preferences.getPrimaryId(targetAppMode)
 		val preferredFormats = resolveFormats(preferredIds)
 		val recentFormats = resolveFormats(preferences.getRecentIds())
 
@@ -253,6 +257,7 @@ class CoordinateFormatSelectorBottomSheet : BaseMaterialModalBottomSheetDialogFr
 		const val RESULT_SELECT_OTHER_FORMAT = "select_other_format"
 
 		private const val ARG_REQUEST_KEY = "request_key"
+		private const val ARG_APP_MODE_KEY = "app_mode_key"
 		private const val ARG_SELECTED_FORMAT_ID = "selected_format_id"
 		private const val ARG_SHOW_SELECT_OTHER_FORMAT = "show_select_other_format"
 
@@ -261,6 +266,7 @@ class CoordinateFormatSelectorBottomSheet : BaseMaterialModalBottomSheetDialogFr
 		fun showInstance(
 			fragmentManager: FragmentManager,
 			requestKey: String = DEFAULT_REQUEST_KEY,
+			appMode: ApplicationMode? = null,
 			selectedFormatId: String? = null,
 			showSelectOtherFormat: Boolean = true
 		) {
@@ -268,6 +274,7 @@ class CoordinateFormatSelectorBottomSheet : BaseMaterialModalBottomSheetDialogFr
 				CoordinateFormatSelectorBottomSheet().apply {
 					arguments = Bundle().apply {
 						putString(ARG_REQUEST_KEY, requestKey)
+						putString(ARG_APP_MODE_KEY, appMode?.stringKey)
 						putString(ARG_SELECTED_FORMAT_ID, selectedFormatId)
 						putBoolean(ARG_SHOW_SELECT_OTHER_FORMAT, showSelectOtherFormat)
 					}

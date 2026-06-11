@@ -18,7 +18,7 @@ import net.osmand.plus.R;
 import net.osmand.plus.base.BaseFullScreenFragment;
 import net.osmand.plus.settings.coordinates.CoordinateFormat;
 import net.osmand.plus.settings.coordinates.CoordinateFormatHelper;
-import net.osmand.plus.settings.coordinates.CoordinateFormatPreferences;
+import net.osmand.plus.settings.coordinates.CoordinateFormatSettingsStorage;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.UiUtilities;
 
@@ -26,13 +26,13 @@ import java.util.List;
 
 public abstract class BaseCoordinateFormatFragment extends BaseFullScreenFragment {
 
-	protected CoordinateFormatPreferences formatPreferences;
+	protected CoordinateFormatSettingsStorage formatPreferences;
 	protected CoordinateFormatHelper coordinateFormatHelper;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		formatPreferences = new CoordinateFormatPreferences(settings);
+		formatPreferences = settings.getCoordinateFormatSettingsStorage();
 		coordinateFormatHelper = app.getCoordinateFormatHelper();
 	}
 
@@ -57,7 +57,7 @@ public abstract class BaseCoordinateFormatFragment extends BaseFullScreenFragmen
 	}
 
 	protected void syncLegacyPrimary(@NonNull List<String> ids) {
-		coordinateFormatHelper.syncLegacyPrimary(appMode, ids);
+		formatPreferences.syncLegacyPrimary(appMode, ids);
 	}
 
 	@NonNull
