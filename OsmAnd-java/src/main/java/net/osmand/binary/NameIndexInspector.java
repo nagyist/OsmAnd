@@ -3,6 +3,7 @@ package net.osmand.binary;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
+import net.osmand.data.City;
 import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexInspector {
@@ -22,10 +24,70 @@ public class NameIndexInspector {
 	
 	private SuffixesStat suffixesStat = new SuffixesStat();
 	private StreetsIndexStat streetsStat = new StreetsIndexStat();
+	private BoundariesIndexStat bndsStat = new BoundariesIndexStat();
 	
 
 	public void setInitialShift(long totalBytesRead) {
 		this.initialShift = totalBytesRead;
+	}
+	
+	public static class BoundariesIndexStat {
+		Map<String, ValueFreq> bnds = new HashMap<>();
+		
+		public Map<String, ValueFreq> getBoundaries() {
+			return bnds;
+		}
+		
+		public void registerBoundaries(List<City> cities) {
+			for (City c : cities) {
+				long oid = ObfConstants.getOsmObjectId(c);
+				addSubValue(ValueFreq.get(bnds, c.getName()), oid);
+				for (String s : c.getOtherNames()) {
+					addSubValue(ValueFreq.get(bnds, s), oid);
+				}
+			}
+		}
+
+		private void addSubValue(ValueFreq mainWord, long oid) {
+			if (mainWord.subValues == null) {
+				mainWord.subValues = new ArrayList<>();
+			}
+			for (ValueFreq v : mainWord.subValues) {
+				if (v.extra == oid) {
+					v.freq++;
+					return;
+				}
+			}
+			ValueFreq v = new ValueFreq(mainWord.value, 1);
+			v.extra = oid;
+			mainWord.subValues.add(v);
+			mainWord.freq++;
+		}
+
+		public void merge(BoundariesIndexStat bndsStat) {
+			for (ValueFreq from : bndsStat.bnds.values()) {
+				ValueFreq to = bnds.get(from.value);
+				if (to == null) {
+					bnds.put(from.value, from);
+				} else {
+					for (ValueFreq fromSub : from.subValues) {
+						ValueFreq toSub = null;
+						for (ValueFreq t : from.subValues) {
+							if (t.extra == fromSub.extra) {
+								toSub = t;
+								toSub.extra += fromSub.extra;
+								break;
+							}
+						}
+						if (toSub == null) {
+							to.subValues.add(fromSub);
+							to.freq++;
+						}
+					}
+				}
+			}
+		}
+
 	}
 	
 	public static class StreetsIndexStat {
@@ -55,6 +117,7 @@ public class NameIndexInspector {
 		public Map<String, ValueFreq> getValues() {
 			return values;
 		}
+		
 		
 	}
 	
@@ -103,7 +166,7 @@ public class NameIndexInspector {
 	public static class ValueFreq implements Comparable<ValueFreq> {
 		public String value;
 		public int freq;
-		public int extra;
+		public long extra;
 		public int enclosing;
 		public int maxSingleAtomEnc;
 		public int maxSingleSubValueEnc;
@@ -115,6 +178,22 @@ public class NameIndexInspector {
 		public ValueFreq(String name, int frequency) {
 			this.value = name;
 			this.freq = frequency;
+		}
+		
+		
+		public static void sort(List<ValueFreq> lst) {
+			Collections.sort(lst);
+		}
+		
+		public static void sortMain(List<ValueFreq> lst) {
+			Collections.sort(lst, new Comparator<ValueFreq>() {
+
+				@Override
+				public int compare(ValueFreq o1, ValueFreq o2) {
+					return -Integer.compare(o1.freq, o2.freq);
+				}
+				
+			});
 		}
 		
 		public ValueFreq copy() {
@@ -143,6 +222,15 @@ public class NameIndexInspector {
 				}
 			}
 			return subValues.subList(0, limit);
+		}
+		
+		public static ValueFreq get(Map<String, ValueFreq> values, String key) {
+			ValueFreq vf = values.get(key);
+			if (vf == null) {
+				vf = new ValueFreq(key, 0);
+				values.put(key, vf);
+			}
+			return vf;
 		}
 
 		public static Map<String, ValueFreq> mergeArray(Map<String, ValueFreq> res, List<ValueFreq> m) {
@@ -381,6 +469,23 @@ public class NameIndexInspector {
 		return streetsStat;
 	}
 	
+
+	public void setStreetsStat(StreetsIndexStat streetsStat) {
+		this.streetsStat = streetsStat;
+	}
+	
+	public void setSuffixesStat(SuffixesStat suffixesStat) {
+		this.suffixesStat = suffixesStat;
+	}
+	
+	public void setBoundariesStat(BoundariesIndexStat bndsStat) {
+		this.bndsStat = bndsStat;
+	}
+	
+	public BoundariesIndexStat getBoundariesStat() {
+		return bndsStat;
+	}
+	
 	public void putKey(String key, int val, String prefix) {
 		PrefixNameValue nameValue = new PrefixNameValue();
 		nameValue.key = key;
@@ -462,8 +567,6 @@ public class NameIndexInspector {
 		}
 		obj.addr = from;		
 	}
-
-
 
 
 }
