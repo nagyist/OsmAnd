@@ -60,7 +60,7 @@ import net.osmand.plus.settings.coordinates.CoordinateFormatSelectorBottomSheet;
 import net.osmand.plus.settings.coordinates.EpsgCoordinateTransformer;
 import net.osmand.plus.settings.coordinates.EpsgPoint;
 import net.osmand.plus.settings.coordinates.EpsgTransformResult;
-import net.osmand.plus.settings.fragments.CoordinatesFormatFragment;
+import net.osmand.plus.settings.fragments.AddCoordinateFormatFragment;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.plus.utils.OsmAndFormatter;
@@ -95,6 +95,7 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 	private static final String QUICK_SEARCH_COORDS_LATITUDE_KEY = "quick_search_coords_latitude_key";
 	private static final String QUICK_SEARCH_COORDS_LONGITUDE_KEY = "quick_search_coords_longitude_key";
 	private static final String COORDINATE_SEARCH_FORMAT_REQUEST_KEY = "quick_search_coordinate_format";
+	private static final String COORDINATE_SEARCH_ADD_FORMAT_REQUEST_KEY = "quick_search_add_coordinate_format";
 
 	public static int CURRENT_FORMAT = -1;
 
@@ -417,6 +418,8 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 	}
 
 	private void setupFormatSelector() {
+		getChildFragmentManager().setFragmentResultListener(COORDINATE_SEARCH_ADD_FORMAT_REQUEST_KEY, this,
+				(requestKey, result) -> view.post(this::showFormatSelector));
 		CoordinateFormatSelectorBottomSheet.setupResultListener(getChildFragmentManager(), this,
 				new CoordinateFormatSelectorBottomSheet.FormatSelectionListener() {
 					@Override
@@ -426,10 +429,15 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 
 					@Override
 					public void onSelectOtherFormat() {
-						CoordinatesFormatFragment.showAddFormat(requireActivity(), settings.getApplicationMode());
+						view.post(QuickSearchCoordinatesFragment.this::showAddFormat);
 					}
 				}, COORDINATE_SEARCH_FORMAT_REQUEST_KEY);
 		formatEdit.setOnClickListener(v -> showFormatSelector());
+	}
+
+	private void showAddFormat() {
+		AddCoordinateFormatFragment.showDialog(getChildFragmentManager(), settings.getApplicationMode(), true,
+				COORDINATE_SEARCH_ADD_FORMAT_REQUEST_KEY);
 	}
 
 	private void showFormatSelector() {

@@ -1,6 +1,10 @@
 package net.osmand.plus.settings.fragments;
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.Editable;
 import android.view.LayoutInflater;
@@ -8,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -25,21 +30,26 @@ import com.google.android.material.search.SearchBar;
 import com.google.android.material.search.SearchView;
 
 import net.osmand.plus.R;
+import net.osmand.plus.base.BaseFullScreenDialogFragment;
 import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.coordinates.BuiltInCoordinateFormat;
 import net.osmand.plus.settings.coordinates.CoordinateFormat;
+import net.osmand.plus.settings.coordinates.CoordinateFormatHelper;
 import net.osmand.plus.settings.coordinates.CoordinateFormatIds;
+import net.osmand.plus.settings.coordinates.CoordinateFormatSettingsStorage;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.plus.utils.InsetTarget;
 import net.osmand.plus.utils.InsetTargetsCollection;
+import net.osmand.plus.utils.UiUtilities;
 import net.osmand.plus.widgets.tools.SimpleTextWatcher;
+import net.osmand.util.Algorithms;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
+public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 
 	public static final String TAG = AddCoordinateFormatFragment.class.getSimpleName();
 
@@ -49,8 +59,12 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 	private static final String ARG_FOCUS_SEARCH = "focus_search";
 	private static final String ARG_ADD_TO_EDIT_DRAFT = "add_to_edit_draft";
 	private static final String ARG_EXCLUDED_IDS = "excluded_ids";
+	private static final String ARG_CLOSE_RESULT_KEY = "close_result_key";
 	private static final String STATE_SEARCH_QUERY = "search_query";
 	private static final int SOFT_INPUT_MODE_NOT_SET = Integer.MIN_VALUE;
+
+	private CoordinateFormatSettingsStorage formatPreferences;
+	private CoordinateFormatHelper coordinateFormatHelper;
 
 	private final List<String> excludedIds = new ArrayList<>();
 	private final List<CoordinateFormat> searchItems = new ArrayList<>();
@@ -62,6 +76,7 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 	private SearchResultsAdapter searchResultsAdapter;
 
 	private String searchQuery = "";
+	private String closeResultKey;
 	private boolean addToEditDraft;
 	private boolean focusSearch;
 	private int previousSoftInputMode = SOFT_INPUT_MODE_NOT_SET;
@@ -69,10 +84,13 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		formatPreferences = settings.getCoordinateFormatSettingsStorage();
+		coordinateFormatHelper = app.getCoordinateFormatHelper();
 
 		Bundle args = getArguments();
 		addToEditDraft = args != null && args.getBoolean(ARG_ADD_TO_EDIT_DRAFT);
 		focusSearch = args != null && args.getBoolean(ARG_FOCUS_SEARCH);
+		closeResultKey = args != null ? args.getString(ARG_CLOSE_RESULT_KEY) : null;
 		ArrayList<String> argExcludedIds = args != null ? args.getStringArrayList(ARG_EXCLUDED_IDS) : null;
 		if (addToEditDraft && argExcludedIds != null) {
 			excludedIds.addAll(argExcludedIds);
@@ -88,7 +106,7 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 			}
 		}
 
-		requireMyActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+		requireActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 			@Override
 			public void handleOnBackPressed() {
 				onBackPressed();
@@ -113,7 +131,6 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		AndroidUiHelper.setStatusBarContentColor(view, nightMode);
 		if (focusSearch) {
 			focusSearch = false;
 			searchBar.post(() -> {
@@ -125,8 +142,14 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 	}
 
 	@Override
+	public void onStart() {
+		super.onStart();
+	}
+
+	@Override
 	public void onResume() {
 		super.onResume();
+		updateStatusBarContentColor();
 		if (!addToEditDraft) {
 			excludedIds.clear();
 			excludedIds.addAll(formatPreferences.getPreferredIds(appMode));
@@ -164,6 +187,15 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 		return nightMode ? R.color.activity_background_color_dark : R.color.activity_background_color_light;
 	}
 
+	private void updateStatusBarContentColor() {
+		Dialog dialog = getDialog();
+		if (dialog != null && dialog.getWindow() != null) {
+			AndroidUiHelper.setStatusBarContentColor(dialog.getWindow().getDecorView(), nightMode);
+		} else {
+			AndroidUiHelper.setStatusBarContentColor(getView(), nightMode);
+		}
+	}
+
 	private void setupToolbar(@NonNull View view) {
 		TextView title = view.findViewById(R.id.toolbar_title);
 		title.setText(R.string.coordinate_format_add_title);
@@ -182,7 +214,7 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 			@Override
 			public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
 				if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-					AndroidUtils.hideSoftKeyboard(requireMyActivity(), searchInputView.getEditText());
+					AndroidUtils.hideSoftKeyboard(requireActivity(), searchInputView.getEditText());
 				}
 			}
 		});
@@ -208,9 +240,11 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 		}
 		searchInputView.addTransitionListener((searchView, previousState, newState) -> {
 			if (newState == SearchView.TransitionState.SHOWN) {
+				AndroidUiHelper.setStatusBarContentColor(searchView, nightMode);
 				applySearchSoftInputMode();
 				searchInputView.getEditText().setSelection(searchInputView.getEditText().length());
 			} else if (newState == SearchView.TransitionState.HIDDEN) {
+				AndroidUiHelper.setStatusBarContentColor(searchView, nightMode);
 				restoreSearchSoftInputMode();
 			}
 		});
@@ -295,10 +329,7 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 			Bundle result = new Bundle();
 			result.putString(REQUEST_ADD_TO_EDIT, id);
 			getParentFragmentManager().setFragmentResult(REQUEST_ADD_TO_EDIT, result);
-			FragmentManager fragmentManager = getParentFragmentManager();
-			if (!fragmentManager.isStateSaved()) {
-				fragmentManager.popBackStack(ADD_SCREEN_BACK_STACK_TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-			}
+			closeAddScreen();
 			return;
 		}
 		boolean added = formatPreferences.addPreferredId(appMode, id);
@@ -315,19 +346,28 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 		if (searchInputView != null && searchInputView.isShowing()) {
 			searchInputView.hide();
 		} else {
-			dismiss();
+			closeAddScreen();
 		}
 	}
 
-	private void dismiss() {
-		FragmentActivity activity = getActivity();
-		if (activity == null) {
-			return;
+	private void closeAddScreen() {
+		if (getShowsDialog()) {
+			dismissAllowingStateLoss();
+		} else {
+			FragmentManager fragmentManager = getParentFragmentManager();
+			if (!fragmentManager.isStateSaved()) {
+				fragmentManager.popBackStack();
+			}
 		}
-		FragmentManager fragmentManager = activity.getSupportFragmentManager();
-		if (!fragmentManager.isStateSaved()) {
-			fragmentManager.popBackStack();
+	}
+
+	@Override
+	public void onDismiss(@NonNull DialogInterface dialog) {
+		restoreSearchSoftInputMode();
+		if (!Algorithms.isEmpty(closeResultKey)) {
+			getParentFragmentManager().setFragmentResult(closeResultKey, new Bundle());
 		}
+		super.onDismiss(dialog);
 	}
 
 	private void applySearchSoftInputMode() {
@@ -355,21 +395,147 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 		previousSoftInputMode = SOFT_INPUT_MODE_NOT_SET;
 	}
 
-	public static void show(@NonNull FragmentActivity activity, @NonNull ApplicationMode appMode,
-	                        boolean addToEditDraft, boolean focusSearch, @Nullable List<String> editableIds) {
-		AddCoordinateFormatFragment fragment = new AddCoordinateFormatFragment();
+	@NonNull
+	private Context getMaterialThemedContext() {
+		return UiUtilities.getThemedContext(requireContext(), nightMode,
+				R.style.OsmandMaterialLightTheme, R.style.OsmandMaterialDarkTheme);
+	}
+
+	private int dp(float value) {
+		return AndroidUtils.dpToPx(app, value);
+	}
+
+	@NonNull
+	private String getFormatSummary(@NonNull CoordinateFormat format) {
+		return coordinateFormatHelper.getFormatSummary(format);
+	}
+
+	@NonNull
+	private MaterialCardView createCard(int marginStart, int marginTop, int marginEnd, int marginBottom) {
+		MaterialCardView card = new MaterialCardView(getMaterialThemedContext());
+		card.setCardElevation(0);
+		card.setRadius(dp(12));
+		card.setStrokeWidth(0);
+		card.setUseCompatPadding(false);
+		card.setCardBackgroundColor(AndroidUtils.getColorFromAttr(requireContext(), R.attr.list_background_color));
+		LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+		params.setMargins(dp(marginStart), dp(marginTop), dp(marginEnd), dp(marginBottom));
+		card.setLayoutParams(params);
+		return card;
+	}
+
+	@NonNull
+	private LinearLayout createVerticalContainer() {
+		LinearLayout layout = new LinearLayout(requireContext());
+		layout.setOrientation(LinearLayout.VERTICAL);
+		layout.setLayoutParams(new LinearLayout.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+		return layout;
+	}
+
+	@NonNull
+	private TextView createTitleText(@NonNull String text) {
+		TextView textView = new TextView(requireContext());
+		textView.setText(text);
+		textView.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
+		textView.setTextSize(16);
+		textView.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+		return textView;
+	}
+
+	@NonNull
+	private View createFormatRow(@NonNull CoordinateFormat format, boolean addRow, boolean primary,
+	                             boolean showDivider, @NonNull View.OnClickListener clickListener) {
+		View row = inflate(R.layout.coordinate_format_settings_item, null, false);
+		bindFormatRow(row, format, addRow, primary, showDivider, clickListener);
+		return row;
+	}
+
+	private void bindFormatRow(@NonNull View row, @NonNull CoordinateFormat format, boolean addRow, boolean primary,
+	                           boolean showDivider, @NonNull View.OnClickListener clickListener) {
+		TextView title = row.findViewById(android.R.id.title);
+		TextView summary = row.findViewById(android.R.id.summary);
+		View divider = row.findViewById(R.id.divider);
+		View iconContainer = row.findViewById(R.id.iconContainer);
+		ImageView icon = row.findViewById(R.id.icon);
+		View selectable = row.findViewById(R.id.selectable_list_item);
+
+		title.setText(format.getTitle());
+		String description = getFormatSummary(format);
+		if (primary) {
+			description = description + " - " + getString(R.string.coordinate_format_primary);
+		}
+		summary.setText(description);
+		divider.setVisibility(showDivider ? View.VISIBLE : View.GONE);
+		if (addRow) {
+			iconContainer.setVisibility(View.VISIBLE);
+			iconContainer.setBackground(null);
+			icon.setImageDrawable(getIcon(R.drawable.ic_action_add, R.color.color_osm_edit_create));
+			setDividerTextStartMargin(divider);
+		} else {
+			iconContainer.setVisibility(View.GONE);
+			setDividerDefaultMargin(divider);
+		}
+		selectable.setOnClickListener(clickListener);
+	}
+
+	private void setDividerTextStartMargin(@NonNull View divider) {
+		setDividerStartMargin(divider, dp(72));
+	}
+
+	private void setDividerDefaultMargin(@NonNull View divider) {
+		setDividerStartMargin(divider, dp(16));
+	}
+
+	private void setDividerStartMargin(@NonNull View divider, int marginStart) {
+		ViewGroup.LayoutParams params = divider.getLayoutParams();
+		if (params instanceof ViewGroup.MarginLayoutParams marginParams) {
+			marginParams.setMarginStart(marginStart);
+			divider.setLayoutParams(marginParams);
+		}
+	}
+
+	private static void applyArguments(@NonNull AddCoordinateFormatFragment fragment,
+	                                   @NonNull ApplicationMode appMode,
+	                                   boolean addToEditDraft,
+	                                   boolean focusSearch,
+	                                   @Nullable List<String> editableIds,
+	                                   @Nullable String closeResultKey) {
 		Bundle args = new Bundle();
 		args.putString(APP_MODE_KEY, appMode.getStringKey());
 		args.putBoolean(ARG_ADD_TO_EDIT_DRAFT, addToEditDraft);
 		args.putBoolean(ARG_FOCUS_SEARCH, focusSearch);
+		args.putString(ARG_CLOSE_RESULT_KEY, closeResultKey);
 		if (addToEditDraft && editableIds != null) {
 			args.putStringArrayList(ARG_EXCLUDED_IDS, new ArrayList<>(editableIds));
 		}
 		fragment.setArguments(args);
-		activity.getSupportFragmentManager().beginTransaction()
-				.replace(R.id.fragmentContainer, fragment, TAG)
-				.addToBackStack(ADD_SCREEN_BACK_STACK_TAG)
-				.commitAllowingStateLoss();
+	}
+
+	public static void showDialog(@NonNull FragmentManager fragmentManager,
+	                              @NonNull ApplicationMode appMode,
+	                              boolean focusSearch,
+	                              @Nullable String closeResultKey) {
+		if (AndroidUtils.isFragmentCanBeAdded(fragmentManager, TAG)) {
+			AddCoordinateFormatFragment fragment = new AddCoordinateFormatFragment();
+			applyArguments(fragment, appMode, false, focusSearch, null, closeResultKey);
+			fragment.show(fragmentManager, TAG);
+		}
+	}
+
+	public static void show(@NonNull FragmentActivity activity, @NonNull ApplicationMode appMode,
+	                        boolean addToEditDraft, boolean focusSearch, @Nullable List<String> editableIds) {
+		AddCoordinateFormatFragment fragment = new AddCoordinateFormatFragment();
+		fragment.setShowsDialog(false);
+		applyArguments(fragment, appMode, addToEditDraft, focusSearch, editableIds, null);
+		FragmentManager fragmentManager = activity.getSupportFragmentManager();
+		if (!fragmentManager.isStateSaved()) {
+			fragmentManager.beginTransaction()
+					.replace(R.id.fragmentContainer, fragment, TAG)
+					.addToBackStack(ADD_SCREEN_BACK_STACK_TAG)
+					.commitAllowingStateLoss();
+		}
 	}
 
 	private class SearchResultsAdapter extends RecyclerView.Adapter<SearchResultsAdapter.FormatViewHolder> {

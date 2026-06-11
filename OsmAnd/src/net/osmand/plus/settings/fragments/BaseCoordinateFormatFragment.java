@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -16,6 +17,7 @@ import com.google.android.material.card.MaterialCardView;
 
 import net.osmand.plus.R;
 import net.osmand.plus.base.BaseFullScreenFragment;
+import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.settings.coordinates.CoordinateFormat;
 import net.osmand.plus.settings.coordinates.CoordinateFormatHelper;
 import net.osmand.plus.settings.coordinates.CoordinateFormatSettingsStorage;
@@ -34,6 +36,18 @@ public abstract class BaseCoordinateFormatFragment extends BaseFullScreenFragmen
 		super.onCreate(savedInstanceState);
 		formatPreferences = settings.getCoordinateFormatSettingsStorage();
 		coordinateFormatHelper = app.getCoordinateFormatHelper();
+	}
+
+	@Override
+	@ColorRes
+	public int getStatusBarColorId() {
+		AndroidUiHelper.setStatusBarContentColor(getView(), nightMode);
+		return nightMode ? R.color.activity_background_color_dark : R.color.activity_background_color_light;
+	}
+
+	@Override
+	public boolean getContentStatusBarNightMode() {
+		return nightMode;
 	}
 
 	@NonNull
