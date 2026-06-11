@@ -31,6 +31,7 @@ public class CoordinatesFormatFragment extends BaseCoordinateFormatFragment
 		implements SelectCopyAppModeBottomSheet.CopyAppModePrefsListener {
 
 	public static final String TAG = CoordinatesFormatFragment.class.getSimpleName();
+	public static final String SETTINGS_PREF_ID = "coordinate_formats";
 
 	private LinearLayout contentContainer;
 	private FloatingActionButton fab;
@@ -122,13 +123,11 @@ public class CoordinatesFormatFragment extends BaseCoordinateFormatFragment
 	@Override
 	public void copyAppModePrefs(@NonNull ApplicationMode fromMode) {
 		formatPreferences.copyPreferredIds(fromMode, appMode);
-		syncLegacyPrimary(formatPreferences.getPreferredIds(appMode));
 		renderMainScreen();
 	}
 
 	private void resetToDefault() {
 		formatPreferences.resetPreferredIds(appMode);
-		syncLegacyPrimary(formatPreferences.getPreferredIds(appMode));
 		renderMainScreen();
 	}
 

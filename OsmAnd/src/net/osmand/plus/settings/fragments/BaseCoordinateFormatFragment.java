@@ -56,10 +56,6 @@ public abstract class BaseCoordinateFormatFragment extends BaseFullScreenFragmen
 		return coordinateFormatHelper.getFormatSummary(format);
 	}
 
-	protected void syncLegacyPrimary(@NonNull List<String> ids) {
-		formatPreferences.syncLegacyPrimary(appMode, ids);
-	}
-
 	@NonNull
 	protected MaterialCardView createCard(int marginStart, int marginTop, int marginEnd, int marginBottom) {
 		MaterialCardView card = new MaterialCardView(getMaterialThemedContext());

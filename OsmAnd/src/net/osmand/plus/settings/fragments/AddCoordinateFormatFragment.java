@@ -306,7 +306,6 @@ public class AddCoordinateFormatFragment extends BaseCoordinateFormatFragment {
 			String normalizedId = CoordinateFormatIds.normalize(id);
 			excludedIds.add(normalizedId != null ? normalizedId : id);
 			formatPreferences.addRecentId(id);
-			syncLegacyPrimary(formatPreferences.getPreferredIds(appMode));
 			renderAddContent();
 			renderSearchResults();
 		}

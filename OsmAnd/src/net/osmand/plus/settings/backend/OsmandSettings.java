@@ -494,7 +494,9 @@ public class OsmandSettings {
 	}
 
 	public boolean isExportAvailableForPref(@NonNull OsmandPreference<?> preference) {
-		if (APPLICATION_MODE.getId().equals(preference.getId())) {
+		if (CoordinateFormatSettingsStorage.LEGACY_FORMAT_ID.equals(preference.getId())) {
+			return false;
+		} else if (APPLICATION_MODE.getId().equals(preference.getId())) {
 			return true;
 		} else if (preference instanceof CommonPreference) {
 			CommonPreference<?> commonPreference = (CommonPreference<?>) preference;
@@ -3479,13 +3481,7 @@ public class OsmandSettings {
 			new BooleanPreference(this, "show_coordinates_grid", false).makeProfile();
 
 	public final OsmandPreference<GridFormat> COORDINATE_GRID_FORMAT =
-			new EnumStringPreference<>(this, "coordinates_grid_format", GridFormat.DMS, GridFormat.values()) {
-				@Override
-				public GridFormat getProfileDefaultValue(@Nullable ApplicationMode mode) {
-					int formatId = coordinateFormatSettingsStorage.getLegacyFormatPreference().getModeValue(mode);
-					return GridFormat.valueOf(formatId);
-				}
-			}.makeProfile();
+			new EnumStringPreference<>(this, "coordinates_grid_format", GridFormat.DIGITAL, GridFormat.values()).makeProfile();
 
 	public final CommonPreference<Integer> COORDINATE_GRID_MIN_ZOOM =
 			new IntPreference(this, "coordinate_grid_min_zoom", 0).makeProfile();

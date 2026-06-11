@@ -157,7 +157,6 @@ public class CoordinatesFormatEditFragment extends BaseCoordinateFormatFragment 
 				formatPreferences.addRecentId(id);
 			}
 		}
-		syncLegacyPrimary(editableIds);
 		dismiss();
 	}
 

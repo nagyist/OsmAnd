@@ -68,6 +68,7 @@ import net.osmand.plus.settings.backend.preferences.*;
 import net.osmand.plus.settings.coordinates.CoordinateFormatIds;
 import net.osmand.plus.settings.coordinates.CoordinateFormatSettingsStorage;
 import net.osmand.plus.settings.enums.CompassMode;
+import net.osmand.plus.settings.enums.GridFormat;
 import net.osmand.plus.settings.enums.LocalSortMode;
 import net.osmand.plus.settings.enums.ScreenLayoutMode;
 import net.osmand.plus.settings.enums.WidgetSize;
@@ -1175,9 +1176,12 @@ public class AppVersionUpgradeOnInit {
 	private void migrateCoordinateFormatSettings(@NonNull OsmandSettings settings) {
 		CoordinateFormatSettingsStorage storage = settings.getCoordinateFormatSettingsStorage();
 		for (ApplicationMode appMode : ApplicationMode.allPossibleValues()) {
+			int legacyFormat = storage.getLegacyFormatPreference().getModeValue(appMode);
 			if (!storage.isPreferredIdsSetForMode(appMode)) {
-				int legacyFormat = storage.getLegacyFormatPreference().getModeValue(appMode);
 				storage.setPreferredIds(appMode, getLegacyCoordinateFormatPreferredIds(legacyFormat));
+			}
+			if (!settings.COORDINATE_GRID_FORMAT.isSetForMode(appMode)) {
+				settings.COORDINATE_GRID_FORMAT.setModeValue(appMode, getLegacyCoordinateGridFormat(legacyFormat));
 			}
 		}
 	}
@@ -1191,6 +1195,11 @@ public class AppVersionUpgradeOnInit {
 		}
 		ids.addAll(CoordinateFormatIds.ALL_BUILT_IN_FORMAT_IDS);
 		return Collections.unmodifiableList(new ArrayList<>(ids));
+	}
+
+	@NonNull
+	public static GridFormat getLegacyCoordinateGridFormat(int legacyFormat) {
+		return GridFormat.valueOf(legacyFormat);
 	}
 
 	private static final String DISABLE_MODE_STRING = "-1.0";

@@ -203,8 +203,7 @@ public class GeneralProfileSettingsFragment extends BaseSettingsFragment {
 	}
 
 	private void setupCoordinatesFormatPref() {
-		Preference coordinatesFormat = findPreference(
-				settings.getCoordinateFormatSettingsStorage().getLegacyFormatPreference().getId());
+		Preference coordinatesFormat = findPreference(CoordinatesFormatFragment.SETTINGS_PREF_ID);
 		coordinatesFormat.setIcon(getActiveIcon(R.drawable.ic_action_coordinates_widget));
 		coordinatesFormat.setSummary(CoordinateFormatFormatter.getPrimaryTitle(app, getSelectedAppMode()));
 	}

@@ -79,14 +79,6 @@ class CoordinateFormatSettingsStorage(private val settings: OsmandSettings) {
 		return recentlyAddedCoordinateFormatIdsPreference.setModeValues(settings.applicationMode, ids)
 	}
 
-	fun syncLegacyPrimary(mode: ApplicationMode, ids: List<String>) {
-		if (ids.isEmpty()) {
-			return
-		}
-		val legacyFormat = BuiltInCoordinateFormat.fromId(ids[0])?.legacyFormat ?: return
-		legacyFormatPreference.setModeValue(mode, legacyFormat)
-	}
-
 	fun isPreferredIdsSetForMode(mode: ApplicationMode): Boolean {
 		return preferredCoordinateFormatIdsPreference.isSetForMode(mode)
 	}
