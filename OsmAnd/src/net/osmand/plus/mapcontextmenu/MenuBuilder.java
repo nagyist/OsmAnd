@@ -719,69 +719,6 @@ public class MenuBuilder {
 		return app.getString(R.string.coordinates);
 	}
 
-	public void startLoadingImages() {
-		startLoadingImagesTask();
-	}
-
-	private void startLoadingImagesTask() {
-		if (galleryController == null) {
-			return;
-		}
-
-		onlinePhotoItems = new ArrayList<>();
-		LatLon latLon = getLatLon();
-		Map<String, String> params = getAdditionalImageParams();
-
-		PhotoCacheManager cacheManager = new PhotoCacheManager(app);
-		WikiHelper.WikiTagData wikiTagData = WikiHelper.INSTANCE.extractWikiTagData(params);
-		String wikidataId = wikiTagData.getWikidataId();
-		String wikiCategory = wikiTagData.getWikiCategory();
-		String wikiTitle = wikiTagData.getWikiTitle();
-		String rawKey = PhotoCacheManager.buildRawKey(wikidataId, wikiCategory, wikiTitle);
-
-		if (galleryController.isCurrentHolderEquals(latLon, params)) {
-			imageCardListener.onFinish(galleryController.getCurrentGalleryItemsHolder());
-		} else if(!app.getSettings().isInternetConnectionAvailable()){
-			loadFromCache(cacheManager, rawKey, params, wikiTagData, latLon);
-		} else {
-			stopLoadingImagesTask();
-			galleryController.clearHolder();
-			getOnlineImagesTask = new GetOnlineImagesTask(app, getLatLon(),
-					getAdditionalImageParams(), imageCardListener,
-					response -> savePhotoListToCache(cacheManager, rawKey, response));
-			OsmAndTaskManager.executeTask(getOnlineImagesTask);
-		}
-	}
-
-	private void savePhotoListToCache(@NonNull PhotoCacheManager cacheManager, @NonNull String rawKey, @NonNull String response){
-		if (!Algorithms.isEmpty(response)) {
-			CacheWriteTask cacheWriteTask = new CacheWriteTask(cacheManager, rawKey, response);
-			OsmAndTaskManager.executeTask(cacheWriteTask);
-		}
-	}
-
-	private void loadFromCache(@NonNull PhotoCacheManager cacheManager, @NonNull String rawKey,
-	                           @NonNull Map<String, String> params, @NonNull WikiHelper.WikiTagData wikiTagData,
-	                           @NonNull LatLon latLon){
-		if (cacheManager.exists(rawKey)) {
-			imageCardListener.onTaskStarted();
-			CacheReadTask cacheReadTask = new CacheReadTask(cacheManager, rawKey, json -> {
-				if (!Algorithms.isEmpty(json)) {
-					GalleryItemsHolder holder = new GalleryItemsHolder(latLon, params);
-					List<WikiImage> wikimediaImageList = WikiCoreHelper.INSTANCE.getImagesFromJson(json, wikiTagData.getWikiImages());
-					for (WikiImage wikiImage : wikimediaImageList) {
-						holder.addMediaItem(WIKIMEDIA, RemoteMediaFactory.fromWikiImage(wikiImage));
-					}
-					imageCardListener.onFinish(holder);
-				} else {
-					imageCardListener.onFinish(null);
-				}
-				return true;
-			});
-			OsmAndTaskManager.executeTask(cacheReadTask);
-		}
-	}
-
 	private void stopSearchAmenitiesTasks() {
 		if (!Algorithms.isEmpty(searchAmenitiesTasks)) {
 			for (SearchAmenitiesTask task : searchAmenitiesTasks) {
