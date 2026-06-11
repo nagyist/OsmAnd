@@ -49,7 +49,6 @@ import androidx.core.app.ActivityCompat;
 
 import net.osmand.IProgress;
 import net.osmand.Location;
-import net.osmand.OnResultCallback;
 import net.osmand.PlatformUtil;
 import net.osmand.data.DataTileManager;
 import net.osmand.data.LatLon;
@@ -58,6 +57,7 @@ import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.activities.TabActivity.TabItem;
 import net.osmand.plus.dashboard.tools.DashFragmentData;
+import net.osmand.plus.gallery.attached.helpers.AttachedMediaDataHelper;
 import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.keyevent.assignment.KeyAssignment;
 import net.osmand.plus.keyevent.commands.KeyEventCommand;
@@ -184,11 +184,12 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 	private final AudioRecorder audioRecorder;
 	private final RecordingPlayer recordingPlayer;
 	private final RecordingsFileHelper recordingsFileHelper;
+	private final AttachedMediaDataHelper attachedMediaDataHelper;
 
 	private double actionLat;
 	private double actionLon;
 	private int runAction = -1;
-	private List<OnResultCallback<Recording>> recordingCallbacks = new ArrayList<>();
+	private List<RecordingsListener> recordingsListeners = new ArrayList<>();
 
 	@Override
 	public String getId() {
@@ -197,6 +198,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 
 	public AudioVideoNotesPlugin(@NonNull OsmandApplication app) {
 		super(app);
+		attachedMediaDataHelper = new AttachedMediaDataHelper(app);
 
 		ApplicationMode[] noAppMode = {};
 		WidgetsAvailabilityHelper.regWidgetVisibility(AV_NOTES_ON_REQUEST, noAppMode);
@@ -314,12 +316,12 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 		return currentRecording;
 	}
 
-	public void addRecordingCallback(@NonNull OnResultCallback<Recording> callback) {
-		recordingCallbacks = CollectionUtils.addToList(recordingCallbacks, callback);
+	public void addRecordingsListener(@NonNull RecordingsListener listener) {
+		recordingsListeners = CollectionUtils.addToList(recordingsListeners, listener);
 	}
 
-	public void removeRecordingCallback(@NonNull OnResultCallback<Recording> callback) {
-		recordingCallbacks = CollectionUtils.removeFromList(recordingCallbacks, callback);
+	public void removeRecordingsListener(@NonNull RecordingsListener listener) {
+		recordingsListeners = CollectionUtils.removeFromList(recordingsListeners, listener);
 	}
 
 	@Override
@@ -486,7 +488,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 		intent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1); // set the video image quality to high
 		// start the video capture Intent
 		if (!AndroidUtils.startActivityForResultIfSafe(mapActivity, intent, 205)) {
-			clearNextRecordingSavedCallbacks();
+			cancelPendingRecordingListeners();
 		}
 	}
 
@@ -594,7 +596,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 					initRecMenu(AVActionType.REC_VIDEO, lat, lon);
 					recordVideoCamera(lat, lon, mapActivity);
 				} else {
-					clearNextRecordingSavedCallbacks();
+					cancelPendingRecordingListeners();
 				}
 			}
 		} else {
@@ -636,7 +638,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 					logErr(e);
 					closeRecordingMenu();
 					closeCamera();
-					clearNextRecordingSavedCallbacks();
+					cancelPendingRecordingListeners();
 					finishRecording();
 					return;
 				}
@@ -649,7 +651,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 					}
 					runMediaRecorder(mapActivity, mr, f);
 				} catch (Exception e) {
-					clearNextRecordingSavedCallbacks();
+					cancelPendingRecordingListeners();
 					logErr(e);
 				}
 			}
@@ -806,7 +808,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 			if (save) {
 				indexRecordingFile(mediaRecFile, notifyOnSaved);
 			} else {
-				clearNextRecordingSavedCallbacks();
+				cancelPendingRecordingListeners();
 				finishRecording();
 			}
 			mediaRec.release();
@@ -825,7 +827,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 				MediaRecorder recorder = audioRecorder.createRecorder(file);
 				runMediaRecorder(activity, recorder, file);
 			} catch (Exception e) {
-				clearNextRecordingSavedCallbacks();
+				cancelPendingRecordingListeners();
 				audioRecorder.unmuteStreamMusicAndOutputGuidance();
 				log.error("Error starting audio recorder ", e);
 				app.showToastMessage(app.getString(R.string.recording_error) + " : " + e.getMessage());
@@ -961,7 +963,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 						logErr(e);
 						closeRecordingMenu();
 						closeCamera();
-						clearNextRecordingSavedCallbacks();
+						cancelPendingRecordingListeners();
 						finishRecording();
 					}
 				}
@@ -976,7 +978,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 		} catch (RuntimeException e) {
 			logErr(e);
 			closeCamera();
-			clearNextRecordingSavedCallbacks();
+			cancelPendingRecordingListeners();
 		}
 	}
 
@@ -1061,7 +1063,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 				} catch (RuntimeException e) {
 					closeRecordingMenu();
 					closeCamera();
-					clearNextRecordingSavedCallbacks();
+					cancelPendingRecordingListeners();
 					finishRecording();
 				}
 			}
@@ -1076,7 +1078,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 				logErr(e);
 				closeRecordingMenu();
 				closeCamera();
-				clearNextRecordingSavedCallbacks();
+				cancelPendingRecordingListeners();
 				finishRecording();
 			}
 		});
@@ -1095,10 +1097,10 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 		takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 		try {
 			if (!AndroidUtils.startActivityForResultIfSafe(mapActivity, takePictureIntent, 205)) {
-				clearNextRecordingSavedCallbacks();
+				cancelPendingRecordingListeners();
 			}
 		} catch (Exception e) {
-			clearNextRecordingSavedCallbacks();
+			cancelPendingRecordingListeners();
 			log.error("Error taking a picture ", e);
 			app.showToastMessage(app.getString(R.string.recording_error) + " : " + e.getMessage());
 		}
@@ -1229,22 +1231,34 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 		}
 	}
 
-	private void notifyRecordingSaved(@NonNull Recording recording) {
-		List<OnResultCallback<Recording>> callbacks = recordingCallbacks;
-		clearNextRecordingSavedCallbacks();
+	private void notifyRecordingSaved(@NonNull Recording recording, boolean updateMenu) {
 		app.runInUIThread(() -> {
-			if (callbacks.isEmpty()) {
-				updateContextMenu(recording);
-			} else {
-				for (OnResultCallback<Recording> callback : callbacks) {
-					callback.onResult(recording);
-				}
+			boolean handled = notifyRecordingsAdded(Collections.singletonList(recording));
+			if (updateMenu && !handled) {
+				app.runInUIThread(() -> updateContextMenu(recording), 200);
 			}
-		}, 200);
+		});
 	}
 
-	private void clearNextRecordingSavedCallbacks() {
-		recordingCallbacks = new ArrayList<>();
+	private boolean notifyRecordingsAdded(@NonNull List<Recording> recordings) {
+		if (recordings.isEmpty()) {
+			return false;
+		}
+		attachedMediaDataHelper.convertRecordingsToFavorites(recordings);
+
+		boolean handled = false;
+		for (RecordingsListener listener : recordingsListeners) {
+			handled |= listener.onRecordingsAdded(recordings);
+		}
+		return handled;
+	}
+
+	private void cancelPendingRecordingListeners() {
+		List<RecordingsListener> listeners = recordingsListeners;
+		recordingsListeners = new ArrayList<>();
+		for (RecordingsListener listener : listeners) {
+			listener.onRecordingsCancelled();
+		}
 	}
 
 	private void indexRecordingFile(@NonNull File file, boolean notifyOnSaved) {
@@ -1254,13 +1268,28 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 			lastTakingPhoto = null;
 		}
 		Recording recording = newFileIndexed ? recordingsFileHelper.getRecordingByFileName().get(file.getName()) : null;
-		if (recording != null && isRecording()) {
+		if (recording == null) {
+			return;
+		}
+		if (recording.getFile().length() == 0) {
+			if (notifyOnSaved) {
+				cancelPendingRecordingListeners();
+			}
+			if (isRecording()) {
+				finishRecording();
+			}
+			return;
+		}
+		boolean updateMenu = false;
+		if (isRecording()) {
 			AVActionType type = currentRecording.getType();
 			finishRecording();
-			if (notifyOnSaved && (!recordingCallbacks.isEmpty()
-					|| !type.isAudio() && (!recordingsFileHelper.AV_RECORDER_SPLIT.get() || !type.isVideo()))) {
-				notifyRecordingSaved(recording);
-			}
+			updateMenu = !type.isAudio() && (!recordingsFileHelper.AV_RECORDER_SPLIT.get() || !type.isVideo());
+		}
+		if (notifyOnSaved) {
+			notifyRecordingSaved(recording, updateMenu);
+		} else {
+			notifyRecordingsAdded(Collections.singletonList(recording));
 		}
 	}
 
@@ -1280,7 +1309,12 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 
 	@Nullable
 	public List<String> indexingFiles(boolean reIndexAndKeepOld, boolean registerNew) {
-		return recordingsFileHelper.indexingFiles(reIndexAndKeepOld, registerNew);
+		Set<String> indexedFiles = registerNew ? getIndexedRecordingFileNames() : null;
+		List<String> res = recordingsFileHelper.indexingFiles(reIndexAndKeepOld, registerNew);
+		if (indexedFiles != null) {
+			notifyRecordingsAdded(getNewRecordings(indexedFiles));
+		}
+		return res;
 	}
 
 	@NonNull
@@ -1313,26 +1347,46 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 	@Override
 	public void onMapActivityExternalResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == 205 || requestCode == 105) {
-			Set<String> indexedFiles = !recordingCallbacks.isEmpty() ? new HashSet<>(recordingsFileHelper.getRecordingByFileName().keySet()) : null;
 			if (lastTakingPhoto != null && lastTakingPhoto.exists()) {
-				recordingsFileHelper.indexFile(true, lastTakingPhoto, true);
+				indexRecordingFile(lastTakingPhoto, true);
 			} else {
+				Set<String> indexedFiles = getIndexedRecordingFileNames();
 				recordingsFileHelper.indexingFiles(true, true);
-			}
-			lastTakingPhoto = null;
-			if (indexedFiles != null) {
 				Recording recording = recordingsFileHelper.getNewRecording(indexedFiles);
-				if (recording != null && recording.getFile().length() > 0) {
-					notifyRecordingSaved(recording);
+				if (recording == null || recording.getFile().length() == 0) {
+					cancelPendingRecordingListeners();
 				} else {
-					clearNextRecordingSavedCallbacks();
+					notifyRecordingsAdded(Collections.singletonList(recording));
 				}
 			}
+			lastTakingPhoto = null;
 		}
 	}
 
 	public Collection<Recording> getAllRecordings() {
 		return recordingsFileHelper.getRecordingByFileName().values();
+	}
+
+	@NonNull
+	private Set<String> getIndexedRecordingFileNames() {
+		return new HashSet<>(recordingsFileHelper.getRecordingByFileName().keySet());
+	}
+
+	private List<Recording> getNewRecordings(@NonNull Set<String> indexedFiles) {
+		List<Recording> newRecordings = new ArrayList<>();
+		for (Recording recording : recordingsFileHelper.getRecordingByFileName().values()) {
+			if (!indexedFiles.contains(recording.getFileName()) && recording.getFile().length() > 0) {
+				newRecordings.add(recording);
+			}
+		}
+		return newRecordings;
+	}
+
+	public interface RecordingsListener {
+		boolean onRecordingsAdded(@NonNull List<Recording> recordings);
+
+		default void onRecordingsCancelled() {
+		}
 	}
 
 	private void updateContextMenu() {
@@ -1376,21 +1430,21 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 			if (grantResults[0] == PERMISSION_GRANTED && grantResults[1] == PERMISSION_GRANTED) {
 				runAction = AV_DEFAULT_ACTION_VIDEO;
 			} else {
-				clearNextRecordingSavedCallbacks();
+				cancelPendingRecordingListeners();
 				app.showToastMessage(R.string.no_camera_permission);
 			}
 		} else if (requestCode == CAMERA_FOR_PHOTO_REQUEST_CODE) {
 			if (grantResults[0] == PERMISSION_GRANTED) {
 				runAction = AV_DEFAULT_ACTION_PHOTO;
 			} else {
-				clearNextRecordingSavedCallbacks();
+				cancelPendingRecordingListeners();
 				app.showToastMessage(R.string.no_camera_permission);
 			}
 		} else if (requestCode == AUDIO_REQUEST_CODE) {
 			if (grantResults[0] == PERMISSION_GRANTED) {
 				runAction = AV_DEFAULT_ACTION_AUDIO;
 			} else {
-				clearNextRecordingSavedCallbacks();
+				cancelPendingRecordingListeners();
 				app.showToastMessage(R.string.no_microphone_permission);
 			}
 		}
@@ -1451,7 +1505,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 				logErr(e);
 				closeRecordingMenu();
 				closeCamera();
-				clearNextRecordingSavedCallbacks();
+				cancelPendingRecordingListeners();
 				finishRecording();
 			}
 		}
@@ -1468,7 +1522,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 					indexRecordingFile(lastTakingPhoto, true);
 				}
 			} catch (Exception error) {
-				clearNextRecordingSavedCallbacks();
+				cancelPendingRecordingListeners();
 				logErr(error);
 			} finally {
 				photoJpegData = null;
@@ -1478,7 +1532,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 				}
 			}
 		} else {
-			clearNextRecordingSavedCallbacks();
+			cancelPendingRecordingListeners();
 			if (cancel) {
 				closeRecordingMenu();
 			}
