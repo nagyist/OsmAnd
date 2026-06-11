@@ -3,6 +3,7 @@ package net.osmand.plus.search.dialogs;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.ListView;
 
 import androidx.annotation.LayoutRes;
@@ -32,9 +33,12 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 		NearbyItemClickListener, DownloadIndexesThread.DownloadEvents {
 
 	public static final int TITLE = R.string.shared_string_explore;
+	private static final String HISTORY_COLLAPSED_KEY = "history_collapsed_key";
 
 	private boolean selectionMode;
 	private NearbyPlacesCard nearbyPlacesCard;
+	private boolean historyCollapsed;
+	private ImageView historyCollapseIndicator;
 
 	@Override
 	public void onUpdatedIndexesList() {
@@ -86,6 +90,10 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
+		if (savedInstanceState != null) {
+			historyCollapsed = savedInstanceState.getBoolean(HISTORY_COLLAPSED_KEY, false);
+			updateHistoryCollapseIndicator();
+		}
 		getListView().setOnItemLongClickListener((parent, view, position, id) -> {
 			int index = position - ((ListView) parent).getHeaderViewsCount();
 			QuickSearchDialogFragment dialogFragment = getDialogFragment();
@@ -112,6 +120,12 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 				getDialogFragment().reloadHistory();
 			}
 		});
+	}
+
+	@Override
+	public void onSaveInstanceState(@NonNull Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putBoolean(HISTORY_COLLAPSED_KEY, historyCollapsed);
 	}
 
 	@Nullable
@@ -149,7 +163,26 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 		QuickSearchDialogFragment dialogFragment = (QuickSearchDialogFragment) getParentFragment();
 		nearbyPlacesCard = new NearbyPlacesCard(requireMapActivity(), this, nightMode, !dialogFragment.isSearchHidden());
 		getListView().addHeaderView(nearbyPlacesCard, null, false);
-		getListView().addHeaderView(inflate(R.layout.recently_visited_header, getListView(), false));
+		View historyHeader = inflate(R.layout.recently_visited_header, getListView(), false);
+		historyCollapseIndicator = historyHeader.findViewById(R.id.explicit_indicator);
+		historyHeader.setOnClickListener(v -> {
+			historyCollapsed = !historyCollapsed;
+			updateHistoryCollapseIndicator();
+			getDialogFragment().reloadHistory();
+		});
+		updateHistoryCollapseIndicator();
+		getListView().addHeaderView(historyHeader, null, false);
+	}
+
+	public boolean isHistoryCollapsed() {
+		return historyCollapsed;
+	}
+
+	private void updateHistoryCollapseIndicator() {
+		if (historyCollapseIndicator != null) {
+			int iconRes = historyCollapsed ? R.drawable.ic_action_arrow_down : R.drawable.ic_action_arrow_up;
+			historyCollapseIndicator.setImageDrawable(app.getUIUtilities().getIcon(iconRes, nightMode));
+		}
 	}
 
 	@Override

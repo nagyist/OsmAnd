@@ -130,8 +130,7 @@
                     android:id="@+id/buttonToolbar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
+                    android:clickable="false"
                     android:minHeight="48dp"
                     android:orientation="horizontal">
 
@@ -140,6 +139,7 @@
                         android:layout_width="54dp"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
+                        android:visibility="gone"
                         app:srcCompat="@drawable/ic_action_marker_dark"/>
 
                     <TextView
@@ -154,7 +154,8 @@
                         android:singleLine="true"
                         android:text="@string/shared_string_show_on_map"
                         android:textColor="?attr/color_dialog_buttons"
-                        android:textSize="@dimen/default_desc_text_size"/>
+                        android:textSize="@dimen/default_desc_text_size"
+                        android:visibility="invisible"/>
 
                     <ImageButton
                         android:id="@+id/filterButton"
@@ -278,20 +279,36 @@
 
 	</LinearLayout>
 
-	<androidx.appcompat.widget.AppCompatImageView
+	<com.google.android.material.floatingactionbutton.FloatingActionButton
+		android:id="@+id/show_on_map_fab"
+		style="@style/MaterialOsmandFab"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="bottom|end"
+		android:layout_margin="16dp"
+		android:contentDescription="@string/shared_string_show_on_map"
+		android:visibility="gone"
+		app:elevation="6dp"
+		app:pressedTranslationZ="8dp"
+		app:shapeAppearanceOverlay="@style/MaterialOsmandFab"
+		app:srcCompat="@drawable/ic_show_on_map_outlined"
+		tools:visibility="visible" />
+
+	<com.google.android.material.floatingactionbutton.FloatingActionButton
 		android:id="@+id/fab"
-		android:layout_width="@dimen/fab_size_with_shadow"
-		android:layout_height="@dimen/fab_size_with_shadow"
-		android:layout_gravity="end|bottom"
+		style="@style/MaterialOsmandFab"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
 		android:layout_marginBottom="@dimen/fab_margin_right"
 		android:layout_marginRight="@dimen/fab_margin_right"
-		android:background="@drawable/fab_background_style"
-		android:clickable="true"
-		android:contentDescription="@string/save_filter"
-		android:scaleType="fitXY"
-		android:padding="@dimen/fab_icon_padding"
+		android:layout_gravity="bottom|end"
+		android:layout_margin="16dp"
+		android:contentDescription="@string/shared_string_show_on_map"
+		android:visibility="gone"
+		app:elevation="6dp"
+		app:pressedTranslationZ="8dp"
+		app:shapeAppearanceOverlay="@style/MaterialOsmandFab"
 		app:srcCompat="@drawable/ic_action_save"
-		tools:layout_marginBottom="@dimen/action_bar_image_top_margin_land"
-		android:layout_marginEnd="@dimen/fab_margin_right" />
+		tools:visibility="visible" />
 
 </FrameLayout>

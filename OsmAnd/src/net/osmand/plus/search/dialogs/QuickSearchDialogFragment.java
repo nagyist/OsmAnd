@@ -125,6 +125,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private static final String QUICK_SEARCH_SHOW_TAB_KEY = "quick_search_show_tab_key";
 	private static final String QUICK_SEARCH_TYPE_KEY = "quick_search_type_key";
 	private static final double MIN_COMPASS_DEGREES_TO_UPDATE_CONTENT = 5.0;
+	private static final int EXPLORE_HISTORY_ITEMS_LIMIT = 25;
 
 	private Toolbar toolbar;
 	private LockableViewPager viewPager;
@@ -134,7 +135,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private View buttonToolbarView;
 	private View sendEmptySearchView;
 	private ImageButton buttonToolbarFilter;
-	private View buttonToolbarMap;
 	private TextView buttonToolbarText;
 	private TextView sendEmptySearchText;
 	private FrameLayout sendEmptySearchButton;
@@ -147,6 +147,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private Toolbar toolbarEdit;
 	private TextView titleEdit;
 	private View fab;
+	private View showOnMapFab;
 
 	private EditText searchEditText;
 	private ProgressBar progressBar;
@@ -283,7 +284,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 
 		buttonToolbarView = view.findViewById(R.id.button_toolbar_layout);
 		ImageView buttonToolbarImage = view.findViewById(R.id.buttonToolbarImage);
-		buttonToolbarImage.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_marker_dark));
+		buttonToolbarImage.setVisibility(View.GONE);
 		buttonToolbarFilter = view.findViewById(R.id.filterButton);
 		buttonToolbarFilter.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_filter_dark));
 		buttonToolbarFilter.setOnClickListener(v -> {
@@ -319,96 +320,8 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		});
 
 		buttonToolbarText = view.findViewById(R.id.buttonToolbarTitle);
-		buttonToolbarMap = view.findViewById(R.id.buttonToolbar);
-		buttonToolbarMap.setOnClickListener(v -> {
-					cancelSearch();
-					SearchPhrase searchPhrase = searchUICore.getPhrase();
-					PoiUIFilter poiUIFilter = ((QuickSearchListAdapter) mainSearchFragment.getAdapter()).getPoiUIFilter();
-					if (poiUIFilter != null) {
-						showFilterOnMap(poiUIFilter, getString(R.string.popular_places));
-					} else if (foundPartialLocation) {
-						QuickSearchCoordinatesFragment.showInstance(QuickSearchDialogFragment.this, searchPhrase.getFirstUnknownSearchWord());
-					} else if (searchPhrase.isNoSelectedType() || searchPhrase.isLastWord(POI_TYPE)) {
-						PoiUIFilter filter;
-						Object object = searchPhrase.isLastWord(POI_TYPE) ? searchPhrase.getLastSelectedWord().getResult().object : null;
-						if (object instanceof TopIndexFilter topIndexFilter) {
-							filter = initPoiUIFilter(topIndexFilter, ProcessTopIndex.MAP);
-							if (filter != null) {
-								filter.setFilterByName(topIndexFilter.getValue());
-								filter.setFilterByKey(topIndexFilter.getTag());
-							} else {
-								return;
-							}
-						} else {
-							filter = app.getPoiFilters().getShowOnMapFilter(searchPhrase);
-						}
-						showFilterOnMap(filter, getText());
-					} else {
-						SearchWord word = searchPhrase.getLastSelectedWord();
-						if (word != null) {
-							if (searchType.isTargetPoint() && word.getLocation() != null) {
-								if (mainSearchFragment != null) {
-									mainSearchFragment.showResult(word.getResult());
-								}
-							} else if (word.getLocation() != null) {
-								SearchResult searchResult = word.getResult();
-								Object object = searchResult.object;
-
-								if (word.getType() == ObjectType.CITY || word.getType() == ObjectType.VILLAGE) {
-									Amenity amenity = app.getSearchUICore().findAmenity(searchResult.localeName,
-											searchResult.location.getLatitude(), searchResult.location.getLongitude());
-									if (amenity != null) {
-										object = amenity;
-									}
-								}
-
-								String name = QuickSearchListItem.getName(app, searchResult);
-								String typeName = QuickSearchListItem.getTypeName(app, searchResult);
-								PointDescription pointDescription = new PointDescription(
-										PointDescription.POINT_TYPE_ADDRESS, typeName, name);
-								settings.setMapLocationToShow(
-										searchResult.location.getLatitude(), searchResult.location.getLongitude(),
-										searchResult.preferredZoom, pointDescription, true, object);
-
-								hideToolbar();
-								MapActivity.launchMapActivityMoveToTop(requireActivity());
-								reloadHistory();
-								hide();
-							} else if (word.getType() == ObjectType.FAVORITE_GROUP) {
-								FavoriteGroup group = (FavoriteGroup) word.getResult().object;
-								if (group.getPoints().size() > 1) {
-									double left = 0, right = 0;
-									double top = 0, bottom = 0;
-									for (FavouritePoint p : group.getPoints()) {
-										if (left == 0) {
-											left = p.getLongitude();
-											right = p.getLongitude();
-											top = p.getLatitude();
-											bottom = p.getLatitude();
-										} else {
-											left = Math.min(left, p.getLongitude());
-											right = Math.max(right, p.getLongitude());
-											top = Math.max(top, p.getLatitude());
-											bottom = Math.min(bottom, p.getLatitude());
-										}
-									}
-									getMapActivity().getMapView().fitRectToMap(left, right, top, bottom, 0, 0, 0);
-									hideToolbar();
-									MapActivity.launchMapActivityMoveToTop(requireActivity());
-									hide();
-								} else if (group.getPoints().size() == 1) {
-									FavouritePoint p = group.getPoints().get(0);
-									app.getSettings().setMapLocationToShow(p.getLatitude(), p.getLongitude(), word.getResult().preferredZoom);
-									hideToolbar();
-									MapActivity.launchMapActivityMoveToTop(requireActivity());
-									hide();
-								}
-							}
-						}
-					}
-				}
-
-		);
+		buttonToolbarText.setVisibility(View.INVISIBLE);
+		view.findViewById(R.id.buttonToolbar).setClickable(false);
 
 		toolbar = view.findViewById(R.id.toolbar);
 		if (nightMode) {
@@ -563,6 +476,10 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		fab.setOnClickListener(v -> saveCustomFilter());
 		updateFab();
 
+		showOnMapFab = view.findViewById(R.id.show_on_map_fab);
+		showOnMapFab.setOnClickListener(v -> onShowOnMapButtonClick());
+		updateShowOnMapFab();
+
 		setupSearch(mapActivity);
 
 		sendEmptySearchView = view.findViewById(R.id.no_search_results_bottom_bar);
@@ -587,6 +504,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		InsetTargetsCollection targetsCollection = super.getInsetTargets();
 		targetsCollection.replace(InsetTarget.createHorizontalLandscape(R.id.tab_toolbar_layout, R.id.toolbar, R.id.toolbar_edit, R.id.button_toolbar_layout));
 		targetsCollection.replace(InsetTarget.createFab(R.id.fab));
+		targetsCollection.replace(InsetTarget.createFab(R.id.show_on_map_fab));
 		return targetsCollection;
 	}
 
@@ -828,6 +746,94 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		childFragmentManager.beginTransaction()
 				.replace(R.id.search_view, mainSearchFragment, tag)
 				.commitAllowingStateLoss();
+	}
+
+	private void onShowOnMapButtonClick() {
+		cancelSearch();
+		SearchPhrase searchPhrase = searchUICore.getPhrase();
+		PoiUIFilter poiUIFilter = ((QuickSearchListAdapter) mainSearchFragment.getAdapter()).getPoiUIFilter();
+		if (poiUIFilter != null) {
+			showFilterOnMap(poiUIFilter, getString(R.string.popular_places));
+		} else if (foundPartialLocation) {
+			QuickSearchCoordinatesFragment.showInstance(QuickSearchDialogFragment.this, searchPhrase.getFirstUnknownSearchWord());
+		} else if (searchPhrase.isNoSelectedType() || searchPhrase.isLastWord(POI_TYPE)) {
+			PoiUIFilter filter;
+			Object object = searchPhrase.isLastWord(POI_TYPE) ? searchPhrase.getLastSelectedWord().getResult().object : null;
+			if (object instanceof TopIndexFilter topIndexFilter) {
+				filter = initPoiUIFilter(topIndexFilter, ProcessTopIndex.MAP);
+				if (filter != null) {
+					filter.setFilterByName(topIndexFilter.getValue());
+					filter.setFilterByKey(topIndexFilter.getTag());
+				} else {
+					return;
+				}
+			} else {
+				filter = app.getPoiFilters().getShowOnMapFilter(searchPhrase);
+			}
+			showFilterOnMap(filter, getText());
+		} else {
+			SearchWord word = searchPhrase.getLastSelectedWord();
+			if (word != null) {
+				if (searchType.isTargetPoint() && word.getLocation() != null) {
+					if (mainSearchFragment != null) {
+						mainSearchFragment.showResult(word.getResult());
+					}
+				} else if (word.getLocation() != null) {
+					SearchResult searchResult = word.getResult();
+					Object object = searchResult.object;
+
+					if (word.getType() == ObjectType.CITY || word.getType() == ObjectType.VILLAGE) {
+						Amenity amenity = app.getSearchUICore().findAmenity(searchResult.localeName,
+								searchResult.location.getLatitude(), searchResult.location.getLongitude());
+						if (amenity != null) {
+							object = amenity;
+						}
+					}
+
+					String name = QuickSearchListItem.getName(app, searchResult);
+					String typeName = QuickSearchListItem.getTypeName(app, searchResult);
+					PointDescription pointDescription = new PointDescription(
+							PointDescription.POINT_TYPE_ADDRESS, typeName, name);
+					settings.setMapLocationToShow(
+							searchResult.location.getLatitude(), searchResult.location.getLongitude(),
+							searchResult.preferredZoom, pointDescription, true, object);
+
+					hideToolbar();
+					MapActivity.launchMapActivityMoveToTop(requireActivity());
+					reloadHistory();
+					hide();
+				} else if (word.getType() == ObjectType.FAVORITE_GROUP) {
+					FavoriteGroup group = (FavoriteGroup) word.getResult().object;
+					if (group.getPoints().size() > 1) {
+						double left = 0, right = 0;
+						double top = 0, bottom = 0;
+						for (FavouritePoint p : group.getPoints()) {
+							if (left == 0) {
+								left = p.getLongitude();
+								right = p.getLongitude();
+								top = p.getLatitude();
+								bottom = p.getLatitude();
+							} else {
+								left = Math.min(left, p.getLongitude());
+								right = Math.max(right, p.getLongitude());
+								top = Math.max(top, p.getLatitude());
+								bottom = Math.min(bottom, p.getLatitude());
+							}
+						}
+						getMapActivity().getMapView().fitRectToMap(left, right, top, bottom, 0, 0, 0);
+						hideToolbar();
+						MapActivity.launchMapActivityMoveToTop(requireActivity());
+						hide();
+					} else if (group.getPoints().size() == 1) {
+						FavouritePoint p = group.getPoints().get(0);
+						app.getSettings().setMapLocationToShow(p.getLatitude(), p.getLongitude(), word.getResult().preferredZoom);
+						hideToolbar();
+						MapActivity.launchMapActivityMoveToTop(requireActivity());
+						hide();
+					}
+				}
+			}
+		}
 	}
 
 	private void updateToolbarButton() {
@@ -1077,7 +1083,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		tabBarHidden = !show;
 		if (show) {
 			tabToolbarView.setVisibility(View.VISIBLE);
-			buttonToolbarView.setVisibility(View.GONE);
+			setButtonToolbarVisible(false);
 			tabsView.setVisibility(View.VISIBLE);
 			searchView.setVisibility(View.GONE);
 		} else {
@@ -1088,10 +1094,15 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			if (searchType.isTargetPoint() && (lastWord == null || lastWord.getLocation() == null)) {
 				buttonToolbarVisible = false;
 			}
-			buttonToolbarView.setVisibility(buttonToolbarVisible ? View.VISIBLE : View.GONE);
+			setButtonToolbarVisible(buttonToolbarVisible);
 			tabsView.setVisibility(View.GONE);
 			searchView.setVisibility(View.VISIBLE);
 		}
+	}
+
+	private void setButtonToolbarVisible(boolean visible) {
+		buttonToolbarView.setVisibility(visible ? View.VISIBLE : View.GONE);
+		updateShowOnMapFab();
 	}
 
 	private boolean isSearchViewVisible() {
@@ -1433,13 +1444,25 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			try {
 				List<QuickSearchListItem> rows = new ArrayList<>();
 				boolean historyEnabled = settings.SEARCH_HISTORY.get();
-				if (historyEnabled) {
+				if (historyEnabled && !historySearchFragment.isHistoryCollapsed()) {
 					SearchResultCollection res = searchUICore.shallowSearch(SearchHistoryAPI.class, "", null, false, false);
 					if (res != null) {
+						int count = 0;
 						for (SearchResult sr : res.getCurrentSearchResults()) {
+							if (count >= EXPLORE_HISTORY_ITEMS_LIMIT) {
+								break;
+							}
 							rows.add(new QuickSearchListItem(app, sr));
+							count++;
 						}
 					}
+					rows.add(new QuickSearchButtonListItem(app, R.drawable.ic_action_history,
+							getString(R.string.shared_string_view_all), v -> {
+						FragmentManager fragmentManager = getFragmentManager();
+						if (fragmentManager != null) {
+							SearchHistorySettingsFragment.showInstance(fragmentManager, this);
+						}
+					}));
 				} else {
 					OnClickListener listener = v -> {
 						FragmentManager fragmentManager = getFragmentManager();
@@ -1447,7 +1470,9 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 							SearchHistorySettingsFragment.showInstance(fragmentManager, this);
 						}
 					};
-					rows.add(new QuickSearchDisabledHistoryItem(app, listener));
+					if (!historySearchFragment.isHistoryCollapsed()) {
+						rows.add(new QuickSearchDisabledHistoryItem(app, listener));
+					}
 				}
 				historySearchFragment.updateListAdapter(rows, false, historyEnabled);
 			} catch (Exception e) {
@@ -1641,9 +1666,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 								});
 								break;
 							case MAP:
-								app.runInUIThread(() -> {
-									buttonToolbarMap.performClick();
-								});
+								app.runInUIThread(() -> onShowOnMapButtonClick());
 								break;
 						}
 						processTopIndexAfterLoad = ProcessTopIndex.NO;
@@ -1827,7 +1850,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 				buttonToolbarVisible = true;
 			}
 		}
-		buttonToolbarView.setVisibility(buttonToolbarVisible ? View.VISIBLE : View.GONE);
+		setButtonToolbarVisible(buttonToolbarVisible);
 		updateToolbarButton();
 		SearchSettings settings = searchUICore.getSearchSettings();
 		if (settings.getRadiusLevel() != 1) {
@@ -2061,7 +2084,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	public void enableSelectionMode(boolean selectionMode, int position) {
 		historySearchFragment.setSelectionMode(selectionMode, position);
 		tabToolbarView.setVisibility(selectionMode ? View.GONE : View.VISIBLE);
-		buttonToolbarView.setVisibility(View.GONE);
+		setButtonToolbarVisible(false);
 		toolbar.setVisibility(selectionMode ? View.GONE : View.VISIBLE);
 		toolbarEdit.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
 		viewPager.setSwipeLocked(selectionMode);
@@ -2132,16 +2155,32 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 
 	private void updateFab() {
 		fab.setVisibility(fabVisible ? View.VISIBLE : View.GONE);
-		updateFabHeight();
+		updateFabMargins();
 	}
 
-	private void updateFabHeight() {
+	private void updateShowOnMapFab() {
+		if (showOnMapFab != null && buttonToolbarView != null) {
+			boolean visible = buttonToolbarView.getVisibility() == View.VISIBLE;
+			showOnMapFab.setVisibility(visible ? View.VISIBLE : View.GONE);
+			updateFabMargins();
+		}
+	}
+
+	private void updateFabMargins() {
+		int bottomMargin = sendEmptySearchBottomBarVisible
+				? getDimensionPixelSize(R.dimen.fab_margin_bottom_big)
+				: getDimensionPixelSize(R.dimen.fab_margin_right);
+
+		boolean showOnMapVisible = showOnMapFab != null && showOnMapFab.getVisibility() == View.VISIBLE;
+		if (showOnMapVisible) {
+			FrameLayout.LayoutParams parameter = (FrameLayout.LayoutParams) showOnMapFab.getLayoutParams();
+			parameter.setMargins(parameter.leftMargin, parameter.topMargin, parameter.rightMargin, bottomMargin);
+			showOnMapFab.setLayoutParams(parameter);
+		}
+
 		if (fabVisible) {
-			int bottomMargin;
-			if (sendEmptySearchBottomBarVisible) {
-				bottomMargin = getDimensionPixelSize(R.dimen.fab_margin_bottom_big);
-			} else {
-				bottomMargin = getDimensionPixelSize(R.dimen.fab_margin_right);
+			if (showOnMapVisible) {
+				bottomMargin += getDimensionPixelSize(R.dimen.fab_size_with_shadow);
 			}
 			FrameLayout.LayoutParams parameter = (FrameLayout.LayoutParams) fab.getLayoutParams();
 			parameter.setMargins(parameter.leftMargin, parameter.topMargin, parameter.rightMargin, bottomMargin);
@@ -2154,7 +2193,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		sendEmptySearchText.setVisibility(sendSearchQueryVisible ? View.VISIBLE : View.GONE);
 		sendEmptySearchButton.setVisibility(sendSearchQueryVisible ? View.VISIBLE : View.GONE);
 		sendEmptySearchBottomBarVisible = sendSearchQueryVisible;
-		updateFabHeight();
+		updateFabMargins();
 	}
 
 	@Override
