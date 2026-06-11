@@ -9,12 +9,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.City;
+import net.osmand.data.QuadRect;
+import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexInspector {
@@ -32,7 +35,10 @@ public class NameIndexInspector {
 	}
 	
 	public static class BoundariesIndexStat {
+		
 		Map<String, ValueFreq> bnds = new HashMap<>();
+		
+		TLongObjectHashMap<QuadRect> rects = new TLongObjectHashMap<QuadRect>();
 		
 		public Map<String, ValueFreq> getBoundaries() {
 			return bnds;
@@ -41,9 +47,14 @@ public class NameIndexInspector {
 		public void registerBoundaries(List<City> cities) {
 			for (City c : cities) {
 				long oid = ObfConstants.getOsmObjectId(c);
-				addSubValue(ValueFreq.get(bnds, c.getName()), oid);
+				int[] bbox31 = c.getBbox31();
+				if (bbox31 == null) {
+					continue;
+				}
+				rects.put(oid, new QuadRect(bbox31[0], bbox31[1], bbox31[2], bbox31[3]));
+				addSubValue(ValueFreq.get(bnds, c.getName(), 0), oid);
 				for (String s : c.getOtherNames()) {
-					addSubValue(ValueFreq.get(bnds, s), oid);
+					addSubValue(ValueFreq.get(bnds, s, 0), oid);
 				}
 			}
 		}
@@ -63,8 +74,36 @@ public class NameIndexInspector {
 			mainWord.subValues.add(v);
 			mainWord.freq++;
 		}
+		
+		public int calculateNumberOfDistinctBBox(List<ValueFreq> vls) {
+			if(vls.size() < 2) {
+				return vls.size();
+			}
+			List<List<QuadRect>> groups = new ArrayList<List<QuadRect>>();
+			int KM15_IN31Z = 1_000_000;
+			for (int i = 0; i < vls.size(); i++) {
+				QuadRect q = rects.get(vls.get(i).extra);
+				q.inset(-Math.max(KM15_IN31Z, q.width() / 6), -Math.max(KM15_IN31Z, q.height() / 6));
+				List<QuadRect> group = null;
+				main: for (List<QuadRect> gr : groups) {
+					for (QuadRect r : gr) {
+						if (QuadRect.trivialOverlap(r, q)) {
+							group = gr;
+							break main;
+						}
+					}
+				}
+				if (group == null) {
+					group = new ArrayList<QuadRect>();
+					groups.add(group);
+				}
+				group.add(q);
+			}
+			return groups.size();
+		}
 
 		public void merge(BoundariesIndexStat bndsStat) {
+			rects.putAll(bndsStat.rects);
 			for (ValueFreq from : bndsStat.bnds.values()) {
 				ValueFreq to = bnds.get(from.value);
 				if (to == null) {
@@ -75,7 +114,7 @@ public class NameIndexInspector {
 						for (ValueFreq t : from.subValues) {
 							if (t.extra == fromSub.extra) {
 								toSub = t;
-								toSub.extra += fromSub.extra;
+								toSub.freq += fromSub.freq;
 								break;
 							}
 						}
@@ -224,10 +263,10 @@ public class NameIndexInspector {
 			return subValues.subList(0, limit);
 		}
 		
-		public static ValueFreq get(Map<String, ValueFreq> values, String key) {
+		public static ValueFreq get(Map<String, ValueFreq> values, String key, int def) {
 			ValueFreq vf = values.get(key);
 			if (vf == null) {
-				vf = new ValueFreq(key, 0);
+				vf = new ValueFreq(key, def);
 				values.put(key, vf);
 			}
 			return vf;
