@@ -160,6 +160,8 @@ public abstract class CoordinatesBaseWidget extends MapWidget {
 			showSwissGrid(lat, lon, false);
 		} else if (format == PointDescription.SWISS_GRID_PLUS_FORMAT) {
 			showSwissGrid(lat, lon, true);
+		} else if (format == PointDescription.MAIDENHEAD_FORMAT) {
+			showMaidenheadCoordinates(lat, lon);
 		} else {
 			showStandardCoordinates(lat, lon, format);
 		}
@@ -180,6 +182,11 @@ public abstract class CoordinatesBaseWidget extends MapWidget {
 	private void showOlcCoordinates(double lat, double lon) {
 		setupForNonStandardFormat();
 		setFirstCoordinateText(OsmAndFormatter.getOpenLocationCode(lat, lon));
+	}
+
+	private void showMaidenheadCoordinates(double lat, double lon) {
+		setupForNonStandardFormat();
+		setFirstCoordinateText(OsmAndFormatter.getFormattedCoordinates(lat, lon, OsmAndFormatter.MAIDENHEAD_FORMAT, false));
 	}
 
 	private void showSwissGrid(double lat, double lon, boolean swissGridPlus) {
