@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.google.protobuf.ByteString;
+
 import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
@@ -17,6 +19,7 @@ import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.City;
 import net.osmand.data.QuadRect;
+import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexInspector {
@@ -431,6 +434,17 @@ public class NameIndexInspector {
 								ValueFreq sPref = streetsPrefix.subValues.get(ind);
 								streetsStat.processAtom(streetsPrefix, sPref, a);
 							}
+							// test bbox
+//							ByteString bbox = a.getBbox();
+//							if (bbox != null && a.hasBbox() && a.getXy16Count() >= 1) {
+//								int xy16 = a.getXy16(0);
+//								int x16 = (xy16 >>> 16);
+//								int y16 = (xy16 & ((1 << 16) - 1));
+//								int[] vls = SearchAlgorithms.decodeBboxForNameAtomsBytes(bbox, x16, y16);
+//								System.out.println(String.format("%s %.5f %.5f %.5f %.5f", s.value,
+//										MapUtils.get31LatitudeY(vls[1]), MapUtils.get31LongitudeX(vls[0]),
+//										MapUtils.get31LatitudeY(vls[3]), MapUtils.get31LongitudeX(vls[2])));
+//							}
 						}
 						suffBit >>= 1;
 					}
