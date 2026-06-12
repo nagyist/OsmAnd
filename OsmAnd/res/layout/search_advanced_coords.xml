@@ -284,9 +284,9 @@
                                 android:layout_height="wrap_content"
                                 android:hint="@string/navigate_point_zone"
                                 android:imeOptions="actionNext"
-                                android:inputType="textCapCharacters|textNoSuggestions"
                                 android:minHeight="56dp"
                                 android:textSize="16sp"
+                                android:inputType="text|textCapCharacters|textNoSuggestions"
                                 tools:text="22.12345"/>
 
                         </com.google.android.material.textfield.TextInputLayout>
@@ -348,7 +348,7 @@
                                 android:layout_height="wrap_content"
                                 android:hint="@string/navigate_point_easting"
                                 android:imeOptions="actionDone"
-                                android:inputType="textCapCharacters|textNoSuggestions"
+                                android:inputType="text|textCapCharacters|textNoSuggestions"
                                 android:minHeight="56dp"
                                 android:textSize="16sp"
                                 tools:text="22.12345"/>
@@ -413,9 +413,9 @@
                                 android:layout_height="wrap_content"
                                 android:hint="@string/navigate_point_northing"
                                 android:imeOptions="actionNext"
-                                android:inputType="textCapCharacters|textNoSuggestions"
                                 android:minHeight="56dp"
                                 android:textSize="16sp"
+                                android:inputType="text|textCapCharacters|textNoSuggestions"
                                 tools:text="22.12345"/>
 
                         </com.google.android.material.textfield.TextInputLayout>
@@ -471,9 +471,9 @@
                                 android:layout_height="wrap_content"
                                 android:hint="@string/navigate_point_mgrs"
                                 android:imeOptions="actionDone"
-                                android:inputType="textCapCharacters|textNoSuggestions"
                                 android:minHeight="56dp"
                                 android:textSize="16sp"
+                                android:inputType="text|textCapCharacters|textNoSuggestions"
                                 tools:text="22.12345"/>
 
                         </com.google.android.material.textfield.TextInputLayout>
@@ -529,9 +529,9 @@
                                 android:layout_height="wrap_content"
                                 android:hint="@string/navigate_point_olc"
                                 android:imeOptions="actionDone"
-                                android:inputType="textCapCharacters|textNoSuggestions"
                                 android:minHeight="56dp"
                                 android:textSize="16sp"
+                                android:inputType="text|textCapCharacters|textNoSuggestions"
                                 tools:text="6PH57VP3+PQ"/>
 
                         </com.google.android.material.textfield.TextInputLayout>
@@ -574,6 +574,52 @@
                             android:layout_height="wrap_content"
                             tools:text="OLC area information"
                             android:inputType="textMultiLine"/>
+
+                    </FrameLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/maidenheadLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingTop="16dp"
+                    android:visibility="gone">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="54dp"
+                            android:layout_marginRight="16dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="16dp">
+
+                            <EditText
+                                android:id="@+id/maidenheadEditText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/navigate_point_format_maidenhead"
+                                android:imeOptions="actionDone"
+                                android:inputType="textVisiblePassword|textCapCharacters|textNoSuggestions"
+                                tools:text="IO91AA 28UC"/>
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <ImageButton
+                            android:id="@+id/maidenheadClearButton"
+                            style="@style/Widget.AppCompat.ActionButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:layout_gravity="end"
+                            android:layout_marginRight="4dp"
+                            android:contentDescription="@string/shared_string_clear"
+                            app:srcCompat="@drawable/ic_action_remove_dark"
+                            android:layout_marginEnd="4dp" />
 
                     </FrameLayout>
 
