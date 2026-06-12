@@ -58,6 +58,10 @@ public class SearchManyWordsAlgorithm {
 
 	}
 	
+	// special cases
+	// 1. Abbrevations
+	// 2. Street intersection match
+	
 	public void search(String input, List<BinaryMapIndexReader> files) {
 		// TODO dot shouldn't split
 		List<SearchToken> tokens = splitWords(input);
@@ -80,6 +84,14 @@ public class SearchManyWordsAlgorithm {
 		// 5.1 Run rare words (by counts & labels)
 		// 5.2 Run with frequent words
 		// 5.3 Expand poi categories
+		
+		// Search categories
+		// Phase I - only rare + words replaced abbrrevations
+		// Phase II - all words + replaced abbrevations
+		// Phase III - all words + replaced abbrevations
+		
+		// After search operations
+		// Expand POI Type filters for results
 		
 		Collections.sort(tokens, new Comparator<>() {
 
