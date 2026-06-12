@@ -17,7 +17,6 @@ import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.City;
 import net.osmand.data.QuadRect;
-import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexInspector {
@@ -436,7 +435,7 @@ public class NameIndexInspector {
 						suffBit >>= 1;
 					}
 				}
-				if (suffStats != null && f >= 0) {
+				if (suffStats != null && f == -1) {
 					if (setBits == 1) {
 						suffStats.atomOneBitSuffix++;
 					} else if (setBits == 2) {
