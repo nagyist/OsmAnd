@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.google.protobuf.ByteString;
 
 import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
@@ -19,12 +18,11 @@ import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.City;
 import net.osmand.data.QuadRect;
-import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexInspector {
 
-	public Map<Long, PrefixNameValue> indexByRef = new HashMap<>();
+	private Map<Long, PrefixNameValue> indexByRef = new HashMap<>();
 	private long initialShift;
 	
 	private SuffixesStat suffixesStat = new SuffixesStat();
@@ -370,16 +368,16 @@ public class NameIndexInspector {
 		}
 	}
 	
-	private static class PrefixNameValue implements Comparable<PrefixNameValue> {
+	public static class PrefixNameValue implements Comparable<PrefixNameValue> {
 		public String key;
-		public OsmAndPoiNameIndexData data = null;
+		public OsmAndPoiNameIndexData poi = null;
 		public AddressNameIndexData addr = null;
 		
 		@Override
 		public String toString() {
-			if (data != null) {
+			if (poi != null) {
 				List<ValueFreq> suffixes = collectPOIFrequencies(null);
-				return String.format("%s (%d, %s)", key, data.getAtomsCount(), suffixes);
+				return String.format("%s (%d, %s)", key, poi.getAtomsCount(), suffixes);
 			} else if (addr != null) {
 				List<ValueFreq> suffixes =  collectAddrFrequencies(key, null, null, -1);
 				return String.format("%s (%d, %s)", key, addr.getAtomCount(), suffixes);
@@ -466,8 +464,8 @@ public class NameIndexInspector {
 			List<ValueFreq> suffixes = new ArrayList<>();
 			String curSuffix = "";
 			stats.prefixesCount++;
-			stats.suffixesLenSum += data.getSuffixesDictionaryList().size();
-			for (String s : data.getSuffixesDictionaryList()) {
+			stats.suffixesLenSum += poi.getSuffixesDictionaryList().size();
+			for (String s : poi.getSuffixesDictionaryList()) {
 				curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
 				ValueFreq vf = new ValueFreq(key + curSuffix, 0);
 				suffixes.add(vf);
@@ -477,7 +475,7 @@ public class NameIndexInspector {
 				stats.longestSuffixesKey = key;
 			}
 			int INT_BITS = 32;
-			for (OsmAndPoiNameIndexDataAtom a : data.getAtomsList()) {
+			for (OsmAndPoiNameIndexDataAtom a : poi.getAtomsList()) {
 				int setBits = 0;
 				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
 					int suffBit = a.getSuffixesBitset(i);
@@ -505,7 +503,7 @@ public class NameIndexInspector {
 
 		@Override
 		public int compareTo(PrefixNameValue o) {
-			int c = -Integer.compare(data.getAtomsCount(), o.data.getAtomsCount());
+			int c = -Integer.compare(poi.getAtomsCount(), o.poi.getAtomsCount());
 			if (c == 0) {
 				c = key.compareTo(o.key);
 			}
@@ -551,7 +549,7 @@ public class NameIndexInspector {
 			if (prefix != null && !(p.key.toLowerCase().startsWith(prefix) || prefix.toLowerCase().startsWith(p.key))) {
 				continue;
 			}
-			ValueFreq vf = new ValueFreq(p.key, p.data.getAtomsCount());
+			ValueFreq vf = new ValueFreq(p.key, p.poi.getAtomsCount());
 			vf.subValues = p.collectPOIFrequencies(suffixesStat);
 			ls.add(vf);
 		}
@@ -605,10 +603,14 @@ public class NameIndexInspector {
 
 	public void addData(OsmAndPoiNameIndexData from, long currentShift) {
 		PrefixNameValue obj = indexByRef.get(currentShift);
-		if (obj.data != null) {
+		if (obj.poi != null) {
 			throw new IllegalStateException(obj.toString());
 		}
-		obj.data = from;
+		obj.poi = from;
+	}
+	
+	public Map<Long, PrefixNameValue> getIndexByRef() {
+		return indexByRef;
 	}
 
 
@@ -617,7 +619,11 @@ public class NameIndexInspector {
 		if (obj.addr != null) {
 			throw new IllegalStateException(obj.toString());
 		}
-		obj.addr = from;		
+		obj.addr = from;
+	}
+	
+	public Collection<PrefixNameValue> getPrefixes() {
+		return indexByRef.values();
 	}
 
 
