@@ -5,7 +5,6 @@ import static net.osmand.shared.gpx.GpxParameter.JOIN_SEGMENTS;
 import static net.osmand.shared.gpx.GpxParameter.SHOW_AS_MARKERS;
 
 import android.app.Activity;
-import android.os.AsyncTask;
 import android.os.AsyncTask.Status;
 
 import androidx.annotation.NonNull;
@@ -22,7 +21,6 @@ import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.plugins.PluginsHelper;
 import net.osmand.plus.plugins.development.OsmandDevelopmentPlugin;
-import net.osmand.plus.search.history.SearchHistoryHelper;
 import net.osmand.plus.mapmarkers.MapMarkersGroup;
 import net.osmand.plus.mapmarkers.MapMarkersHelper;
 import net.osmand.plus.plugins.monitoring.SavingTrackHelper;
@@ -260,7 +258,6 @@ public class GpxSelectionHelper {
 	}
 
 	public void loadGPXTracks(@Nullable IProgress progress) {
-		logIssue24873("GPXSelectionHelper loadGPXTracks");
 		String load = app.getSettings().SELECTED_GPX.get();
 		if (!Algorithms.isEmpty(load)) {
 			try {
@@ -310,7 +307,6 @@ public class GpxSelectionHelper {
 					saveCurrentSelections();
 				}
 			} catch (Exception e) {
-				logIssue24873("GPXSelectionHelper loadGPXTracks exception " + e);
 				app.getSettings().SELECTED_GPX.set("");
 				log.error(e);
 			}
@@ -580,12 +576,5 @@ public class GpxSelectionHelper {
 				}
 			}
 		};
-	}
-
-	private void logIssue24873(@NonNull String msg) {
-		OsmandDevelopmentPlugin plugin = PluginsHelper.getActivePlugin(OsmandDevelopmentPlugin.class);
-		if (plugin != null) {
-			log.debug("Issue24873 " + msg);
-		}
 	}
 }
