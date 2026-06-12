@@ -45,20 +45,21 @@ public class Street extends MapObject {
 	public QuadRect getBboxPoints() {
 		LatLon ll = getLocation();
 		if (ll != null) {
-			QuadRect qr = new QuadRect(ll.getLongitude(), ll.getLatitude(), ll.getLongitude(), ll.getLatitude());
+			QuadRect qr = new QuadRect(ll.getLongitude(), ll.getLatitude(), 
+					ll.getLongitude() + 0.00001, ll.getLatitude() - 0.00001);
 			if (buildings.isEmpty()) {
 				// use intersected streets however it's much larger
 				for (Street is : getIntersectedStreets()) {
 					LatLon l2 = is.getLocation();
 					if (l2 != null) {
-						qr.expand(l2.getLongitude(), l2.getLatitude(), l2.getLongitude(), l2.getLatitude());
+						qr.include(l2.getLongitude(), l2.getLatitude());
 					}
 				}
 			}
 			for (Building b : buildings) {
 				LatLon l2 = b.getLocation();
 				if (l2 != null) {
-					qr.expand(l2.getLongitude(), l2.getLatitude(), l2.getLongitude(), l2.getLatitude());
+					qr.include(l2.getLongitude(), l2.getLatitude());
 				}
 			}
 			return qr;
