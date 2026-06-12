@@ -53,6 +53,7 @@ import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.search.dialogs.SearchCitiesTask.SearchCitiesListener;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
+import net.osmand.plus.utils.MaidenheadPoint;
 import net.osmand.plus.utils.OsmAndFormatter;
 import net.osmand.plus.utils.UiUtilities;
 import net.osmand.plus.utils.UpdateLocationUtils;
@@ -163,6 +164,7 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 		String defaultOlc = "";
 		String defaultSwissGridEast = "";
 		String defaultSwissGridNorth = "";
+		String defaultMaidenhead = "";
 		boolean coordinatesApplied = false;
 		if (getArguments() != null) {
 			String text = getArguments().getString(QUICK_SEARCH_COORDS_TEXT_KEY);
@@ -176,7 +178,7 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 				} else if (CURRENT_FORMAT == PointDescription.SWISS_GRID_FORMAT || CURRENT_FORMAT == PointDescription.SWISS_GRID_PLUS_FORMAT) {
 					defaultSwissGridEast = text.trim();
 				} else if (CURRENT_FORMAT == PointDescription.MAIDENHEAD_FORMAT) {
-					defaultLat = text.trim(); // Maidenhead gets set to latEdit as default fallback usually, or we can use a dedicated default variable. Let's create defaultMaidenhead.
+					defaultMaidenhead = text.trim();
 				}
 			} else {
 				double latitude = getArguments().getDouble(QUICK_SEARCH_COORDS_LATITUDE_KEY, Double.NaN);
@@ -199,7 +201,7 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 		String olcInfoStr = getStringValue(savedInstanceState, QUICK_SEARCH_COORDS_OLC_INFO_KEY, defaultOlc);
 		String swissGridEastStr = getStringValue(savedInstanceState, QUICK_SEARCH_COORDS_SWISS_GRID_EAST_KEY, defaultSwissGridEast);
 		String swissGridNorthStr = getStringValue(savedInstanceState, QUICK_SEARCH_COORDS_SWISS_GRID_NORTH_KEY, defaultSwissGridNorth);
-		String maidenheadStr = getStringValue(savedInstanceState, QUICK_SEARCH_COORDS_MAIDENHEAD_KEY, "");
+		String maidenheadStr = getStringValue(savedInstanceState, QUICK_SEARCH_COORDS_MAIDENHEAD_KEY, defaultMaidenhead);
 
 		if (!coordinatesApplied) {
 			latEdit.setText(latStr);
@@ -764,7 +766,7 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 				double northCoordinate = Double.parseDouble(swissGridNorthEdit.getText().toString().replaceAll("\\s+", ""));
 				loc = SwissGridApproximation.convertLV95ToWGS84(eastCoordinate, northCoordinate);
 			} else if (CURRENT_FORMAT == LocationConvert.MAIDENHEAD_FORMAT) {
-				loc = parseMaidenhead(maidenheadEdit.getText().toString().trim());
+				loc = MaidenheadPoint.parse(maidenheadEdit.getText().toString());
 			} else {
 				double lat = LocationConvert.convert(latEdit.getText().toString(), true);
 				double lon = LocationConvert.convert(lonEdit.getText().toString(), true);
@@ -786,52 +788,6 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 		LatLon first = parseZonedUtmPoint(northing, easting, zoneNumber, zoneLetter);
 		LatLon second = parseUtmPoint(northing, easting, zoneNumber, zoneLetter);
 		return Pair.create(first, second);
-	}
-
-	private LatLon parseMaidenhead(String maidenhead) {
-		if (maidenhead == null) return null;
-		maidenhead = maidenhead.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.US);
-		if (maidenhead.length() < 2) return null;
-		double lon = -180.0;
-		double lat = -90.0;
-		if (maidenhead.length() >= 2) {
-			lon += (maidenhead.charAt(0) - 'A') * 20.0;
-			lat += (maidenhead.charAt(1) - 'A') * 10.0;
-		}
-		if (maidenhead.length() >= 4) {
-			lon += (maidenhead.charAt(2) - '0') * 2.0;
-			lat += (maidenhead.charAt(3) - '0') * 1.0;
-		} else {
-			lon += 10.0;
-			lat += 5.0;
-			return new LatLon(lat, lon);
-		}
-		if (maidenhead.length() >= 6) {
-			lon += (maidenhead.charAt(4) - 'A') * (5.0 / 60.0);
-			lat += (maidenhead.charAt(5) - 'A') * (2.5 / 60.0);
-		} else {
-			lon += 1.0;
-			lat += 0.5;
-			return new LatLon(lat, lon);
-		}
-		if (maidenhead.length() >= 8) {
-			lon += (maidenhead.charAt(6) - '0') * (5.0 / 600.0);
-			lat += (maidenhead.charAt(7) - '0') * (2.5 / 600.0);
-		} else {
-			lon += 2.5 / 60.0;
-			lat += 1.25 / 60.0;
-			return new LatLon(lat, lon);
-		}
-		if (maidenhead.length() >= 10) {
-			lon += (maidenhead.charAt(8) - 'A') * (5.0 / 14400.0);
-			lat += (maidenhead.charAt(9) - 'A') * (2.5 / 14400.0);
-			lon += 2.5 / 14400.0;
-			lat += 1.25 / 14400.0;
-		} else {
-			lon += 2.5 / 600.0;
-			lat += 1.25 / 600.0;
-		}
-		return new LatLon(lat, lon);
 	}
 
 	private LatLon parseZonedUtmPoint(double northing, double easting, int zoneNumber,

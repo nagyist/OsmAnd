@@ -981,44 +981,10 @@ public class OsmAndFormatter {
 			DecimalFormat swissGridFormat = new DecimalFormat("###,###.##", formatSymbols);
 			result.append(swissGridFormat.format(swissGrid[0])).append(", ").append(swissGridFormat.format(swissGrid[1]));
 		} else if (outputFormat == MAIDENHEAD_FORMAT) {
-			result.append(toMaidenhead(lat, lon));
+			result.append(MaidenheadPoint.toMaidenhead(lat, lon));
 		}
 		String formattedCoordinates = result.toString();
 		return forceLTR ? TextDirectionUtil.markAsLTR(formattedCoordinates) : formattedCoordinates;
-	}
-
-
-	private static String toMaidenhead(double lat, double lon) {
-		lon += 180.0;
-		lat += 90.0;
-		lon = Math.max(0, Math.min(lon, 360.0 - 1e-6));
-		lat = Math.max(0, Math.min(lat, 180.0 - 1e-6));
-		StringBuilder sb = new StringBuilder();
-		int lonField = (int) (lon / 20 + 1e-6);
-		int latField = (int) (lat / 10 + 1e-6);
-		lon -= lonField * 20;
-		lat -= latField * 10;
-		sb.append((char) ('A' + lonField)).append((char) ('A' + latField));
-		int lonSquare = (int) (lon / 2 + 1e-6);
-		int latSquare = (int) (lat / 1 + 1e-6);
-		lon -= lonSquare * 2;
-		lat -= latSquare * 1;
-		sb.append((char) ('0' + lonSquare)).append((char) ('0' + latSquare));
-		int lonSub = (int) (lon * 12 + 1e-6);
-		int latSub = (int) (lat * 24 + 1e-6);
-		lon -= lonSub / 12.0;
-		lat -= latSub / 24.0;
-		sb.append((char) ('A' + lonSub)).append((char) ('A' + latSub));
-		sb.append(' ');
-		int lonExtSquare = (int) (lon * 120 + 1e-6);
-		int latExtSquare = (int) (lat * 240 + 1e-6);
-		lon -= lonExtSquare / 120.0;
-		lat -= latExtSquare / 240.0;
-		sb.append((char) ('0' + lonExtSquare)).append((char) ('0' + latExtSquare));
-		int lonExtSub = (int) (lon * 2880 + 1e-6);
-		int latExtSub = (int) (lat * 5760 + 1e-6);
-		sb.append((char) ('A' + lonExtSub)).append((char) ('A' + latExtSub));
-		return sb.toString();
 	}
 
 	private static String formatCoordinate(double coordinate, int outputType) {

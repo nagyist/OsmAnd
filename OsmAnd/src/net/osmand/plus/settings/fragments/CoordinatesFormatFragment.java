@@ -161,7 +161,7 @@ public class CoordinatesFormatFragment extends BaseSettingsFragment {
 				public void onClick(@NonNull View widget) {
 					Context ctx = getContext();
 					if (ctx != null) {
-						AndroidUtils.openUrl(ctx, "https://en.wikipedia.org/wiki/Maidenhead_Locator_System", isNightMode());
+						AndroidUtils.openUrl(ctx, R.string.url_wikipedia_maidenhead_format, isNightMode());
 					}
 				}
 			};
