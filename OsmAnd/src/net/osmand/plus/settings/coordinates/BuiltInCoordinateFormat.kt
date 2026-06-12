@@ -12,7 +12,8 @@ enum class BuiltInCoordinateFormat(val id: String, val legacyFormat: Int) {
 	OLC(CoordinateFormatIds.BUILTIN_OLC, LocationConvert.OLC_FORMAT),
 	MGRS(CoordinateFormatIds.BUILTIN_MGRS, LocationConvert.MGRS_FORMAT),
 	SWISS_GRID(CoordinateFormatIds.BUILTIN_SWISS_GRID, LocationConvert.SWISS_GRID_FORMAT),
-	SWISS_GRID_PLUS(CoordinateFormatIds.BUILTIN_SWISS_GRID_PLUS, LocationConvert.SWISS_GRID_PLUS_FORMAT);
+	SWISS_GRID_PLUS(CoordinateFormatIds.BUILTIN_SWISS_GRID_PLUS, LocationConvert.SWISS_GRID_PLUS_FORMAT),
+	MAIDENHEAD(CoordinateFormatIds.BUILTIN_MAIDENHEAD, LocationConvert.MAIDENHEAD_FORMAT);
 
 	fun toCoordinateFormat(app: OsmandApplication): CoordinateFormat {
 		return CoordinateFormat.builtIn(id, PointDescription.formatToHumanString(app, legacyFormat), legacyFormat)

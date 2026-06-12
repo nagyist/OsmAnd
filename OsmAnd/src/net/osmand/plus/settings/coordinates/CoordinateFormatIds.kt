@@ -14,6 +14,7 @@ object CoordinateFormatIds {
 	const val BUILTIN_MGRS = "builtin:mgrs"
 	const val BUILTIN_SWISS_GRID = "builtin:swiss_grid"
 	const val BUILTIN_SWISS_GRID_PLUS = "builtin:swiss_grid_plus"
+	const val BUILTIN_MAIDENHEAD = "builtin:maidenhead"
 
 	const val EPSG_PREFIX = "epsg:"
 
@@ -32,7 +33,8 @@ object CoordinateFormatIds {
 			BUILTIN_OLC,
 			BUILTIN_MGRS,
 			BUILTIN_SWISS_GRID,
-			BUILTIN_SWISS_GRID_PLUS
+			BUILTIN_SWISS_GRID_PLUS,
+			BUILTIN_MAIDENHEAD
 		)
 	)
 
@@ -67,6 +69,7 @@ object CoordinateFormatIds {
 		LocationConvert.MGRS_FORMAT -> BUILTIN_MGRS
 		LocationConvert.SWISS_GRID_FORMAT -> BUILTIN_SWISS_GRID
 		LocationConvert.SWISS_GRID_PLUS_FORMAT -> BUILTIN_SWISS_GRID_PLUS
+		LocationConvert.MAIDENHEAD_FORMAT -> BUILTIN_MAIDENHEAD
 		else -> null
 	}
 

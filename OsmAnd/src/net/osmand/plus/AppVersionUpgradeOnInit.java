@@ -38,6 +38,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
+import net.osmand.LocationConvert;
 import net.osmand.data.LatLon;
 import net.osmand.data.SpecialPointType;
 import net.osmand.plus.api.SettingsAPI;
@@ -1199,7 +1200,14 @@ public class AppVersionUpgradeOnInit {
 
 	@NonNull
 	public static GridFormat getLegacyCoordinateGridFormat(int legacyFormat) {
-		return GridFormat.valueOf(legacyFormat);
+		return switch (legacyFormat) {
+			case LocationConvert.FORMAT_SECONDS -> GridFormat.DMS;
+			case LocationConvert.FORMAT_MINUTES -> GridFormat.DM;
+			case LocationConvert.FORMAT_DEGREES -> GridFormat.DIGITAL;
+			case LocationConvert.UTM_FORMAT -> GridFormat.UTM;
+			case LocationConvert.MGRS_FORMAT -> GridFormat.MGRS;
+			default -> GridFormat.DIGITAL;
+		};
 	}
 
 	private static final String DISABLE_MODE_STRING = "-1.0";

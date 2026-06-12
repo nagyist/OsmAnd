@@ -584,7 +584,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:paddingTop="16dp"
+                    android:paddingTop="8dp"
                     android:visibility="gone">
 
                     <FrameLayout
@@ -594,18 +594,29 @@
                         <com.google.android.material.textfield.TextInputLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginLeft="54dp"
+                            android:layout_marginLeft="16dp"
                             android:layout_marginRight="16dp"
-                            android:layout_marginStart="54dp"
-                            android:layout_marginEnd="16dp">
+                            android:layout_marginStart="16dp"
+                            android:layout_marginEnd="16dp"
+                            android:minHeight="56dp"
+                            app:boxBackgroundMode="outline"
+                            app:boxBackgroundColor="?attr/list_background_color"
+                            app:endIconContentDescription="@string/shared_string_clear"
+                            app:endIconDrawable="@drawable/ic_action_remove_dark"
+                            app:endIconMode="clear_text"
+                            app:endIconTint="?attr/default_icon_color"
+                            app:startIconDrawable="@drawable/ic_action_data_grid"
+                            app:startIconTint="@color/icon_color_active_light">
 
-                            <EditText
+                            <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/maidenheadEditText"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:hint="@string/navigate_point_format_maidenhead"
                                 android:imeOptions="actionDone"
-                                android:inputType="textVisiblePassword|textCapCharacters|textNoSuggestions"
+                                android:inputType="text|textCapCharacters|textNoSuggestions"
+                                android:minHeight="56dp"
+                                android:textSize="16sp"
                                 tools:text="IO91AA 28UC"/>
 
                         </com.google.android.material.textfield.TextInputLayout>
@@ -615,11 +626,12 @@
                             style="@style/Widget.AppCompat.ActionButton"
                             android:layout_width="48dp"
                             android:layout_height="48dp"
-                            android:layout_gravity="end"
-                            android:layout_marginRight="4dp"
+                            android:layout_gravity="end|center_vertical"
+                            android:layout_marginRight="16dp"
                             android:contentDescription="@string/shared_string_clear"
+                            android:visibility="gone"
                             app:srcCompat="@drawable/ic_action_remove_dark"
-                            android:layout_marginEnd="4dp" />
+                            android:layout_marginEnd="16dp" />
 
                     </FrameLayout>
 
