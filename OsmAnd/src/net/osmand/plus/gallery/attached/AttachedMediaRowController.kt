@@ -43,7 +43,7 @@ class AttachedMediaRowController(
 	override fun handleGalleryAction(v: View, action: GalleryAction) {
 		view?.mapActivity?.let {
 			when (action) {
-				SHOW_ALL_ACTION -> AttachedMediaGridController.show(it, key)
+				SHOW_ALL_ACTION -> AttachedMediaGridController.show(it, key, target, latLon)
 				ADD_MEDIA_ACTION -> AttachedMediaUiHelper(it).showAddMenu(v, target, latLon) {
 					onMediaChanged()
 				}

@@ -10,6 +10,16 @@
 	- For wording and consistency, please note https://docs.osmand.net/docs/technical/contributions/translating-osmand
 	Thx - Hardy
 -->
+	<string name="gallery_stats_counts">Photos %1$d, videos %2$d, audio %3$d.</string>
+	<string name="gallery_stats_size">Size %1$s.</string>
+	<string name="gallery_sort_nearest">Nearest</string>
+	<string name="gallery_sort_last_modified">Last modified</string>
+	<string name="gallery_sort_name_a_z">Name A - Z</string>
+	<string name="gallery_sort_name_z_a">Name Z - A</string>
+	<string name="gallery_sort_newest_first">Newest date first</string>
+	<string name="gallery_sort_oldest_first">Oldest date first</string>
+	<string name="gallery_sort_duration_long_short">Longest duration first</string>
+	<string name="gallery_sort_duration_short_long">Shortest duration first</string>
 	<string name="auto_copy_media_to_osmand_storage">Auto-copy media to OsmAnd storage</string>
 	<string name="choose_from_gallery">Choose from Gallery</string>
 	<string name="choose_from_files">Choose from Files</string>

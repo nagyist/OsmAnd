@@ -56,5 +56,7 @@ class GalleryGridItemDecorator(
 
 	companion object {
 		const val GRID_SCREEN_ITEM_SPACE_DP = 3
+
+		const val GRID_SIDE_PADDING_DP = 13f
 	}
 }

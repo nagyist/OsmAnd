@@ -11,8 +11,11 @@ import net.osmand.plus.gallery.contract.IGalleryGridController
 import net.osmand.plus.gallery.contract.IGalleryGridView
 import net.osmand.plus.gallery.data.GalleryKey
 import net.osmand.plus.gallery.model.GalleryAction
+import net.osmand.plus.gallery.model.GalleryDisplayMode
 import net.osmand.plus.gallery.model.GalleryItem
+import net.osmand.plus.myplaces.tracks.ItemsSelectionHelper
 import net.osmand.plus.gallery.ui.GalleryGridAdapter
+import net.osmand.plus.gallery.ui.GalleryGridItemDecorator
 import net.osmand.plus.gallery.ui.GalleryGridItemDecorator.Companion.GRID_SCREEN_ITEM_SPACE_DP
 import net.osmand.plus.gallery.ui.GalleryGridSettings
 import net.osmand.plus.gallery.ui.holders.MediaHolderType
@@ -30,6 +33,11 @@ abstract class GalleryGridController(
 
 	private var newScaleFactor = 0f
 	private var zoomedForPinch = false
+
+	private var displayMode = GalleryDisplayMode.GRID
+
+	private var selectionMode = false
+	protected val selectionHelper = ItemsSelectionHelper<MediaItem>(true)
 
 	private val standardPhotoSizePx =
 		app.resources.getDimensionPixelSize(R.dimen.gallery_standard_icon_size)
@@ -51,10 +59,7 @@ abstract class GalleryGridController(
 
 	override fun getGalleryItems(): List<GalleryItem> {
 		val items = mutableListOf<GalleryItem>()
-		val mediaItems = app.galleryHelper.repository.get(key)
-			?.getItems()
-			?.map { toGalleryItem(it) }
-			?: emptyList()
+		val mediaItems = getMediaItems().map { toGalleryItem(it) }
 
 		if (mediaItems.isNotEmpty()) {
 			items.add(GalleryItem.MediaCount)
@@ -62,6 +67,9 @@ abstract class GalleryGridController(
 		items.addAll(mediaItems)
 		return items
 	}
+
+	protected fun getMediaItems(): List<MediaItem> =
+		app.galleryHelper.repository.get(key)?.getItems() ?: emptyList()
 
 	override fun getSpanCount(isPortrait: Boolean): Int {
 		return GalleryGridSettings.getSpanCount(app, isPortrait)
@@ -78,7 +86,7 @@ abstract class GalleryGridController(
 		val isPortrait = view?.isPortrait() ?: return standardPhotoSizePx
 
 		val spanCount = getSpanCount(isPortrait)
-		val padding = AndroidUtils.dpToPx(app, 13f)
+		val padding = AndroidUtils.dpToPx(app, GalleryGridItemDecorator.GRID_SIDE_PADDING_DP)
 		val itemSpace = AndroidUtils.dpToPx(app, GRID_SCREEN_ITEM_SPACE_DP * 2f)
 		val screenWidth = viewWidth ?: if (isPortrait) {
 			AndroidUtils.getScreenWidth(mapActivity)
@@ -96,6 +104,13 @@ abstract class GalleryGridController(
 	}
 
 	override fun onScaleEnd() {
+		// Only reset the accumulated factor: zoomedForPinch stays latched until
+		// the touch gesture fully ends, so a single pinch can change the zoom
+		// by at most one step even if the detector restarts mid-gesture.
+		newScaleFactor = 0f
+	}
+
+	override fun onPinchGestureFinished() {
 		newScaleFactor = 0f
 		zoomedForPinch = false
 	}
@@ -110,10 +125,34 @@ abstract class GalleryGridController(
 		}
 
 		val isPortrait = view?.isPortrait() ?: return false
+
+		// In list mode the only zoom gesture we react to is zoom-out, which
+		// returns to the most zoomed-in grid state.
+		if (displayMode == GalleryDisplayMode.LIST) {
+			if (newScaleFactor >= 1f) {
+				newScaleFactor = 0f
+				zoomedForPinch = true
+				setDisplayMode(GalleryDisplayMode.GRID)
+				return true
+			}
+			return false
+		}
+
 		val previousCount = getSpanCount(isPortrait)
 		val newCount = newScaleFactor.toInt() + previousCount
+		if (newCount == previousCount) {
+			return false
+		}
 
-		if (newCount != previousCount && newCount in MIN_SPAN_COUNT..MAX_SPAN_COUNT) {
+		// Further zoom-in past the most zoomed-in grid switches to the list.
+		if (newCount < MIN_SPAN_COUNT && previousCount == MIN_SPAN_COUNT && isListModeSupported()) {
+			newScaleFactor = 0f
+			zoomedForPinch = true
+			setDisplayMode(GalleryDisplayMode.LIST)
+			return true
+		}
+
+		if (newCount in MIN_SPAN_COUNT..MAX_SPAN_COUNT) {
 			newScaleFactor = 0f
 			setSpanCount(isPortrait, newCount)
 			zoomedForPinch = true
@@ -121,6 +160,84 @@ abstract class GalleryGridController(
 			return true
 		}
 		return false
+	}
+
+	// --- Display mode ---
+
+	override fun getDisplayMode(): GalleryDisplayMode = displayMode
+
+	override fun isListModeSupported(): Boolean = false
+
+	private fun setDisplayMode(mode: GalleryDisplayMode) {
+		if (displayMode != mode) {
+			displayMode = mode
+			view?.updateDisplayMode()
+		}
+	}
+
+	// --- Selection mode ---
+
+	override fun isSelectionModeSupported(): Boolean = false
+
+	override fun isSelectionMode(): Boolean = selectionMode
+
+	override fun enterSelectionMode(seed: MediaItem?) {
+		if (!isSelectionModeSupported() || selectionMode) {
+			seed?.let { toggleSelection(it) }
+			return
+		}
+		selectionMode = true
+		selectionHelper.setAllItems(getMediaItems())
+		selectionHelper.clearSelectedItems()
+		seed?.let { selectionHelper.onItemsSelected(listOf(it), true) }
+		view?.updateToolbar()
+		view?.updateSelection()
+	}
+
+	override fun exitSelectionMode() {
+		if (!selectionMode) return
+		selectionMode = false
+		selectionHelper.clearSelectedItems()
+		view?.updateToolbar()
+		view?.updateSelection()
+	}
+
+	override fun toggleSelection(item: MediaItem) {
+		if (!selectionMode) return
+		val selected = selectionHelper.isItemSelected(item)
+		selectionHelper.onItemsSelected(listOf(item), !selected)
+		view?.updateToolbar()
+		view?.updateSelection()
+	}
+
+	override fun isSelected(item: MediaItem): Boolean = selectionHelper.isItemSelected(item)
+
+	override fun toggleSelectAll() {
+		if (!selectionMode) return
+		selectionHelper.setAllItems(getMediaItems())
+		if (selectionHelper.isAllItemsSelected) {
+			selectionHelper.clearSelectedItems()
+		} else {
+			selectionHelper.selectAllItems()
+		}
+		view?.updateToolbar()
+		view?.updateSelection()
+	}
+
+	override fun isAllSelected(): Boolean =
+		selectionHelper.hasAnyItems() && selectionHelper.isAllItemsSelected
+
+	override fun getSelectedCount(): Int = selectionHelper.selectedItemsSize
+
+	protected fun getSelectedItems(): Set<MediaItem> = selectionHelper.selectedItems
+
+	override fun onMediaItemLongClicked(item: MediaItem) {
+		if (!isSelectionModeSupported()) return
+		if (selectionMode) {
+			toggleSelection(item)
+		} else {
+			enterSelectionMode(item)
+		}
 	}
 
 	// --- Media ---
@@ -155,13 +272,17 @@ abstract class GalleryGridController(
 			resolveResizableImageSize = { resolveSpanResizableSize(viewWidth) },
 			isLoadFailed = registry::isFailed,
 			onLoadFailed = registry::markFailed,
-			nightMode = nightMode
+			nightMode = nightMode,
+			onMediaLongClicked = ::onMediaItemLongClicked,
+			isItemSelected = ::isSelected,
+			onToggleSelection = ::toggleSelection,
+			posterLoader = app.galleryHelper.posterLoader
 		)
 	}
 
 	companion object {
 		const val MIN_SPAN_COUNT = 2
-		const val MAX_SPAN_COUNT = 7
+		const val MAX_SPAN_COUNT = 4
 		const val SCALE_MULTIPLIER = 3f
 	}
 }

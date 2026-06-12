@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.view.Gravity
 import android.view.View
+import android.widget.CompoundButton
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -12,10 +13,12 @@ import androidx.recyclerview.widget.RecyclerView
 import net.osmand.plus.OsmandApplication
 import net.osmand.plus.R
 import net.osmand.plus.activities.MapActivity
+import net.osmand.plus.gallery.data.MediaPosterLoader
 import net.osmand.plus.gallery.model.GalleryItem
 import net.osmand.plus.helpers.AndroidUiHelper
 import net.osmand.plus.utils.AndroidUtils
 import net.osmand.plus.utils.ColorUtilities
+import net.osmand.plus.utils.UiUtilities
 import net.osmand.shared.media.MediaProvider
 import net.osmand.shared.media.MediaUriResolver
 import net.osmand.shared.media.domain.MediaItem
@@ -31,16 +34,31 @@ class GalleryMediaViewHolder(
 	private val onMediaItemClicked: (MediaItem) -> Unit,
 	private val isLoadFailed: (MediaItem) -> Boolean,
 	private val onLoadFailed: (MediaItem) -> Unit,
-	private val mediaProvider: MediaProvider
+	private val mediaProvider: MediaProvider,
+	private val onMediaItemLongClicked: (MediaItem) -> Unit = {},
+	private val onToggleSelection: (MediaItem) -> Unit = {},
+	posterLoader: MediaPosterLoader? = null
 ) : RecyclerView.ViewHolder(itemView) {
 
 	private val ivImage: ImageView = itemView.findViewById(R.id.image)
 	private val ivSourceType: ImageView = itemView.findViewById(R.id.source_type)
 	private val ivLoadSourceType: ImageView = itemView.findViewById(R.id.load_source_type)
 
+	private val previewDelegate = MediaPreviewDelegate(
+		app, ivImage,
+		videoScrim = itemView.findViewById(R.id.video_scrim),
+		playIcon = itemView.findViewById(R.id.play_icon),
+		durationText = itemView.findViewById(R.id.duration_text),
+		large = true,
+		posterLoader = posterLoader
+	)
+
 	private val tvUrl: TextView = itemView.findViewById(R.id.url)
 	private val border: View = itemView.findViewById(R.id.card_outline)
 	private val progressBar: ProgressBar = itemView.findViewById(R.id.progress)
+	private val selectionOverlay: View = itemView.findViewById(R.id.selection_overlay)
+	private val selectionCheck: CompoundButton = itemView.findViewById(R.id.selection_check)
+	private val clickOverlay: View = itemView.findViewById(R.id.click_overlay)
 
 	private val iconsCache = app.uiUtilities
 
@@ -51,12 +69,38 @@ class GalleryMediaViewHolder(
 	private var imageSizePx: Int = 0
 	var holderType: MediaHolderType = MediaHolderType.STANDARD
 
+	private var boundMediaItem: MediaItem? = null
+	private var selectionMode: Boolean = false
+
+	val boundItemId: String?
+		get() = boundMediaItem?.id
+
+	val morphPlaceholderIcon
+		get() = previewDelegate.morphIcon
+
+	val morphBgColor: Int
+		get() = previewDelegate.placeholderBgColor
+
+	init {
+		clickOverlay.setOnClickListener {
+			val item = boundMediaItem ?: return@setOnClickListener
+			if (selectionMode) onToggleSelection(item) else onMediaItemClicked(item)
+		}
+		clickOverlay.setOnLongClickListener {
+			val item = boundMediaItem ?: return@setOnLongClickListener false
+			onMediaItemLongClicked(item)
+			true
+		}
+	}
+
 	fun bindView(
 		mapActivity: MapActivity,
 		galleryItem: GalleryItem.Media,
 		imageSizePx: Int,
 		holderType: MediaHolderType,
-		nightMode: Boolean
+		nightMode: Boolean,
+		selectionMode: Boolean = false,
+		selected: Boolean = false
 	) {
 		this.mapActivity = mapActivity
 		this.nightMode = nightMode
@@ -64,8 +108,10 @@ class GalleryMediaViewHolder(
 		this.holderType = holderType
 
 		val mediaItem = galleryItem.mediaItem
+		boundMediaItem = mediaItem
 		cancelLoadingImage()
 		setupView(imageSizePx, nightMode)
+		bindSelection(selectionMode, selected, nightMode)
 
 		val iconName = mediaItem.origin.iconName
 		val topIconId = AndroidUtils.getDrawableId(app, iconName)
@@ -78,23 +124,39 @@ class GalleryMediaViewHolder(
 
 		AndroidUtils.setBackground(mapActivity, border, getBackgroundId(nightMode))
 		progressBar.visibility = if (galleryItem.showLoadingProgress) View.VISIBLE else View.GONE
-		ivImage.setImageDrawable(null)
 		ivImage.setOnClickListener(null)
 		ivLoadSourceType.visibility = View.GONE
 
+		previewDelegate.bind(mediaItem, nightMode, galleryItem.presentation?.durationLabel) {
+			onPosterShown()
+		}
+		tvUrl.visibility = View.GONE
+		border.visibility = View.VISIBLE
+
 		if (isLoadFailed(mediaItem)) {
 			bindUrl(mediaItem)
-		} else {
+		} else if (mediaItem.type == MediaType.PHOTO) {
 			tryLoadImage(mediaItem)
 		}
 	}
 
-	private fun tryLoadImage(mediaItem: MediaItem) {
-		if (mediaItem.type != MediaType.PHOTO) {
-			bindMediaIcon(mediaItem)
-			return
-		}
+	fun updateMetadata(galleryItem: GalleryItem.Media) {
+		if (boundMediaItem?.id != galleryItem.mediaItem.id) return
+		previewDelegate.updateDurationLabel(galleryItem.presentation?.durationLabel)
+	}
 
+	private fun onPosterShown() {
+		val layoutParams = FrameLayout.LayoutParams(
+			FrameLayout.LayoutParams.MATCH_PARENT,
+			FrameLayout.LayoutParams.MATCH_PARENT
+		)
+		layoutParams.gravity = Gravity.CENTER
+		ivImage.layoutParams = layoutParams
+		border.visibility = View.GONE
+		progressBar.visibility = View.GONE
+	}
+
+	private fun tryLoadImage(mediaItem: MediaItem) {
 		loadingImage = mediaProvider.loadStandardSizeImage(mediaItem, object : ImageLoaderCallback {
 			override fun onStart(bitmap: Bitmap?) {}
 
@@ -155,29 +217,11 @@ class GalleryMediaViewHolder(
 		ivImage.visibility = View.VISIBLE
 		ivImage.layoutParams = layoutParams
 		ivImage.scaleType = ImageView.ScaleType.CENTER_CROP
-		ivImage.setOnClickListener { onMediaItemClicked(mediaItem) }
+		previewDelegate.onPhotoPreviewShown()
 
 		tvUrl.visibility = View.GONE
 		border.visibility = View.GONE
 		progressBar.visibility = View.GONE
-	}
-
-	private fun bindMediaIcon(mediaItem: MediaItem) {
-		val iconId = when (mediaItem.type) {
-			MediaType.VIDEO -> R.drawable.ic_action_video_dark
-			MediaType.AUDIO -> R.drawable.ic_action_micro_dark
-			else -> R.drawable.ic_action_image_disabled
-		}
-		ivImage.visibility = View.VISIBLE
-		ivImage.setImageDrawable(iconsCache.getIcon(iconId))
-		ivImage.scaleType = ImageView.ScaleType.CENTER
-		ivImage.setOnClickListener { onMediaItemClicked(mediaItem) }
-
-		tvUrl.visibility = View.GONE
-		border.visibility = View.VISIBLE
-		progressBar.visibility = View.GONE
-		updateLoadSource(null)
-		setSourceTypeIcon(null)
 	}
 
 	private fun bindUrl(mediaItem: MediaItem) {
@@ -203,9 +247,24 @@ class GalleryMediaViewHolder(
 		ivSourceType.setImageDrawable(icon)
 	}
 
+	fun updateSelection(selectionMode: Boolean, selected: Boolean, nightMode: Boolean) {
+		bindSelection(selectionMode, selected, nightMode)
+	}
+
+	private fun bindSelection(selectionMode: Boolean, selected: Boolean, nightMode: Boolean) {
+		this.selectionMode = selectionMode
+		val activeColor = ColorUtilities.getActiveColor(app, nightMode)
+		selectionOverlay.setBackgroundColor(ColorUtilities.getColorWithAlpha(activeColor, SELECTION_TINT_ALPHA))
+		AndroidUiHelper.updateVisibility(selectionOverlay, selectionMode && selected)
+		AndroidUiHelper.updateVisibility(selectionCheck, selectionMode)
+		selectionCheck.isChecked = selected
+		UiUtilities.setupCompoundButton(nightMode, activeColor, selectionCheck)
+	}
+
 	fun cancelLoadingImage() {
 		loadingImage?.cancel()
 		loadingImage = null
+		previewDelegate.cancel()
 	}
 
 	private fun setupView(sizeInPx: Int, nightMode: Boolean) {
@@ -216,4 +275,8 @@ class GalleryMediaViewHolder(
 
 	private fun getBackgroundId(nightMode: Boolean) =
 		if (nightMode) R.drawable.context_menu_card_dark else R.drawable.context_menu_card_light
+
+	companion object {
+		private const val SELECTION_TINT_ALPHA = 0.3f
+	}
 }
