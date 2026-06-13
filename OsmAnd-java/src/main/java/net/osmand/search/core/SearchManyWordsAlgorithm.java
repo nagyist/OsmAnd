@@ -9,12 +9,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Consumer;
 
 import com.google.protobuf.ByteString;
 
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
@@ -25,9 +22,15 @@ import net.osmand.binary.NameIndexInspector;
 import net.osmand.binary.NameIndexInspector.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
+import net.osmand.map.OsmandRegions;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
+
+// TODO global cache
+// 2.1 Global cache Read common words for files
+// 2.2 Global cache Read all top poi categories for files
+// TODO read buildings
 // TODO duplicate words
 // TODO replace last dot as incomplete
 // TODO sort tokens by actual frequency
@@ -39,60 +42,8 @@ public class SearchManyWordsAlgorithm {
 	static int SHIFT_FILE_IND = 12;
 	static boolean SEARCH_POI = true;
 	
-	static class HashQuadTree<T> {
-		TLongObjectHashMap<List<T>>[] indexByTileId;
-		
-		@SuppressWarnings("unchecked")
-		public HashQuadTree(int maxZoom) {
-			indexByTileId = new TLongObjectHashMap[maxZoom +1];
-		}
-		
-		public void put(int z, long tileId, T value) {
-	        if (indexByTileId[z] == null) {
-	            indexByTileId[z] = new TLongObjectHashMap<>();
-	        }
-	        List<T> list = indexByTileId[z].get(tileId);
-	        if (list == null) {
-	            list = new ArrayList<>();
-	            indexByTileId[z].put(tileId, list);
-	        }
-	        list.add(value);
-	    }
-		
-		public void forEachMatchHigherZoom(int startZoom, long tileId, Consumer<List<T>> action) {
-			startZoom --;
-			tileId >>=2;
-			forEachMatch(startZoom, tileId, action);
-		}
-		
-		public void forEachMatch(int startZoom, long tileId, Consumer<List<T>> action) {
-	        forEachMatch(startZoom, 0, tileId, action);
-	    }
-		
-		public void forEachMatch(int startZoom, int endZoom, long tileId, Consumer<List<T>> action) {
-			for (int z = startZoom; z >= endZoom; z--) {
-	            if (indexByTileId[z] != null) {
-	                List<T> res = indexByTileId[z].get(tileId);
-	                if (res != null) {
-	                    action.accept(res); 
-	                }
-	            }
-	            tileId >>= 2;
-	        }
-		}
-		
-		public static long encodeTileId(int z, int x, int y) {
-			if (z > 20) {
-				throw new UnsupportedOperationException();
-			}
-			long il = (MapUtils.interleaveBits(x, y));
-			return il;
-		}
-	}
 	
 	static class NameIndexAtom {
-		
-		int[] bbox;
 		String name;
 		AddressNameIndexDataAtom addr;
 		OsmAndPoiNameIndexDataAtom poi;
@@ -149,16 +100,6 @@ public class SearchManyWordsAlgorithm {
 		}
 		
 		
-//		public int[] getBBox15() {
-//			if(poi != null) {
-//				x = poi.getX() << 15;
-//				y = poi.getY() << 15;
-//				return new int[] {poi.getX() << 15,  
-//						
-//				}
-//			}
-//		}
-		
 		@Override
 		public final String toString() {
 			String type = "";
@@ -172,134 +113,6 @@ public class SearchManyWordsAlgorithm {
 					name, id >> SHIFT_FILE_IND);
 		}
 	};
-	
-
-	static class SearchManyStats {
-		long time = System.nanoTime();
-		long readTime = 0;
-		long combTime = 0;
-		
-		@Override
-		public String toString() {
-			return String.format("Search Stats %.1f ms - read %.1f ms, comp %.1f ms", time / 1e6, 
-					readTime / 1e6, combTime / 1e6);
-		}
-		
-		public void finish() {
-			time = System.nanoTime() - time;
-		}
-	}
-	
-	static class SearchManyContext {
-		List<BinaryMapIndexReader> files;
-		SearchManyStats stats = new SearchManyStats();
-		
-	}
-	
-	static class SearchTokenCombination implements Comparable<SearchTokenCombination> {
-		List<SearchToken> tokens = new ArrayList<>();
-		
-		// NameIndexAtom[][] -- should be double array to store list of combinations  
-		List<NameIndexAtom> linearResults = new ArrayList<>();
-		TLongArrayList tileIds = new TLongArrayList();
-		TIntArrayList tileZooms = new TIntArrayList();
-		HashQuadTree<Integer> quadTree = new HashQuadTree<>(16);
-		
-
-		public NameIndexAtom getAtom(int combination, int pos) {
-			return linearResults.get(combination * tokens.size() + pos);
-		}
-		
-		public List<NameIndexAtom> getAtoms(int combination) {
-			int st = combination * tokens.size();
-			return linearResults.subList(st, st + tokens.size());
-		}
-		public int getCombinations() {
-			return tileIds.size();
-		}
-
-		private void addResult(List<NameIndexAtom> atoms) {
-			addResult(null, 0, atoms);
-		}
-
-		private void addResult(SearchTokenCombination parent, int indx, List<NameIndexAtom> atoms) {
-			for (NameIndexAtom a : atoms) {
-				addResult(parent, indx, a);
-			}
-		}
-		
-		public int sumTokenAtomSize() {
-			int sum = 0;
-			for (SearchToken s : tokens) {
-				sum += s.atoms.size();
-			}
-			return sum;
-		}
-		
-		private void addResult(SearchTokenCombination parent, int pindx, NameIndexAtom a) {
-			int pzoom = parent == null ? 0 : parent.tileZooms.get(pindx);
-			int zoom = Math.max(pzoom, a.bboxTileZoom);
-			long tileId = pzoom > a.bboxTileZoom ? parent.tileIds.get(pindx) : a.bboxTileId;
-			int insIndx = this.tileIds.size();
-			boolean dup = checkDuplicate(parent, pindx, a, zoom, tileId);
-			if (dup) {
-				return;
-			}
-			for (int i = 0; parent != null && i < parent.tokens.size(); i++) {
-				this.linearResults.add(parent.linearResults.get(pindx * parent.tokens.size() + i));
-			}
-			
-			this.linearResults.add(a);
-			this.tileIds.add(tileId);
-			this.tileZooms.add(zoom);
-			quadTree.put(zoom, tileId, insIndx);
-		}
-
-		private boolean checkDuplicate(SearchTokenCombination parent, int pindx, NameIndexAtom a, int zoom, long tileId) {
-			final boolean[] matched = new boolean[1];
-			quadTree.forEachMatch(zoom, zoom, tileId, indxs -> {
-				for (int indx : indxs) {
-					boolean m = linearResults.get((indx + 1) * tokens.size() - 1).id == a.id;
-					for (int i = 0; m && parent != null && i < parent.tokens.size(); i++) {
-						NameIndexAtom p = parent.linearResults.get(pindx * parent.tokens.size() + i);
-						NameIndexAtom p2 = linearResults.get(indx * tokens.size() + i);
-						if (p.id != p2.id) {
-							m = false;
-						}
-					}
-					matched[0] |= m;
-				}
-			});
-			return matched[0];
-		}
-
-		@Override
-		public int compareTo(SearchTokenCombination o) {
-			int s1 = tokens.size();
-			int s2 = o.tokens.size();
-			if (s1 != s2) {
-				return -Integer.compare(s1, s2);
-			}
-			s1 = sumTokenAtomSize();
-			s2 = o.sumTokenAtomSize();
-			return Integer.compare(s1, s2);
-		}
-		
-		public String toString(boolean extended) {
-			List<String> words = new ArrayList<>();
-			for (SearchToken t : tokens) {
-				words.add(t.originalWord);
-			}
-			return String.format("Combination %d %s - %d atoms: %s", 
-					tokens.size(), words, getCombinations(), extended ? linearResults : Collections.EMPTY_LIST);
-		}
-		
-		@Override
-		public String toString() {
-			return toString(false);
-		}
-	}
-	
 	
 	
 	static class SearchToken {
@@ -369,7 +182,7 @@ public class SearchManyWordsAlgorithm {
 			File fl = new File(subArgsArray[i]);
 			if (fl.isFile()) {
 				if (i == 1) {
-					initFile(ls, new File(fl.getParentFile(), "regions.ocbf"));
+					initFile(ls, new File(fl.getParentFile(), OsmandRegions.REGIONS_OCBF));
 				}
 				initFile(ls, fl);
 			} else {
@@ -384,7 +197,7 @@ public class SearchManyWordsAlgorithm {
 	}
 
 	private static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {
-		if (f.exists() && (f.getName().endsWith(".obf") || f.getName().equals("regions.ocbf"))) {
+		if (f.exists() && (f.getName().endsWith(".obf") || f.getName().equals(OsmandRegions.REGIONS_OCBF))) {
 			BinaryMapIndexReader bir = new BinaryMapIndexReader(new RandomAccessFile(f, "r"), f);
 			ls.add(bir);
 		}
@@ -395,24 +208,24 @@ public class SearchManyWordsAlgorithm {
 		String pattern = "Germany_baden";
 		String query = "Berlin hauptstrasse";
 		query = "Kelterstraße Kernen im Remstal";
-		query = "Deutschland Kelterstraße Kernen im Remstal";
+		query = "Germany Kelterstraße Kernen im Remstal";
 		
 //		pattern = "Us_";
-		query = "USA Salt Lake City Pennsylvania Street";
-//		"бровари Сільпо"
-		// "пузата хата саксанського"
+//		query = "Salt Lake City Pennsylvania Street";
+		
+		pattern = "Ukraine_";
+		query = "бровари Сільпо";
+		query = "пузата хата саксанського";
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
 		for (File f : folder.listFiles()) {
-			if (f.getName().startsWith(pattern)) {
+			if (f.getName().startsWith(pattern) || f.getName().equals(OsmandRegions.REGIONS_OCBF)) {
 				initFile(ls, f);
 			}
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 		SearchManyWordsAlgorithm a = new SearchManyWordsAlgorithm();
-		a.searchTest(query, ls);
-		// 2nd run
 		a.searchTest(query, ls);
 	}
 	
@@ -454,22 +267,21 @@ public class SearchManyWordsAlgorithm {
 	}
 	
 
-	private List<SearchTokenCombination> findObjCombinations(List<SearchToken> tokens) {
-		LinkedList<SearchTokenCombination> candidates = new LinkedList<>();
-		candidates.add(new SearchTokenCombination());
-		List<SearchTokenCombination> result = new ArrayList<>();
+	private List<SearchManyResultsList> findObjCombinations(List<SearchToken> tokens) {
+		LinkedList<SearchManyResultsList> candidates = new LinkedList<>();
+		candidates.add(new SearchManyResultsList());
+		List<SearchManyResultsList> result = new ArrayList<>();
+//		System.out.println("TOKENS " + tokens);
 		while (!candidates.isEmpty()) {
-			SearchTokenCombination parent = candidates.removeFirst();
+			SearchManyResultsList parent = candidates.removeFirst();
 			if (parent.getCombinations() > 0) {
 				result.add(parent);
 			}
 			for (SearchToken token : tokens) {
-				if (parent.tokens.isEmpty() || token.sortedOrder < parent.tokens.get(0).sortedOrder) {
-//					System.out.println("REVIEW " + parent + " " + token);
-					SearchTokenCombination next = new SearchTokenCombination();
-					next.tokens.add(token);
-					next.tokens.addAll(parent.tokens);
-					if (parent.tokens.isEmpty()) {
+				if (parent.getTokenCount() == 0 || token.sortedOrder < parent.getFirstToken().sortedOrder) {
+//					System.out.println("ITERATION Token [ " + token + " ] + " + parent);
+					SearchManyResultsList next = new SearchManyResultsList(token, parent);
+					if (parent.getTokenCount() == 0) {
 						next.addResult(token.atoms);
 					} else {
 						for (int i = 0; i < parent.tileIds.size(); i++) {
@@ -482,7 +294,7 @@ public class SearchManyWordsAlgorithm {
 						}
 					}
 					// reverse search quad tree 
-					final SearchTokenCombination p = parent;
+					final SearchManyResultsList p = parent;
 					for (final NameIndexAtom a : token.atoms) {
 						parent.quadTree.forEachMatchHigherZoom(a.bboxTileZoom, a.bboxTileId, indxs -> {
 							for (int indx : indxs) {
@@ -500,8 +312,6 @@ public class SearchManyWordsAlgorithm {
 	}
 
 
-
-	
 	public void searchTest(String input, List<BinaryMapIndexReader> files) throws IOException {
 		SearchManyContext ctx = new SearchManyContext();
 		ctx.files = files;
@@ -514,13 +324,14 @@ public class SearchManyWordsAlgorithm {
 		// 3. sort tokens 
 		sortTokens(tokens);
 		// 4. find combinations
-		ctx.stats.combTime -= System.nanoTime();
-		List<SearchTokenCombination> combinations = findObjCombinations(tokens);
-		ctx.stats.combTime += System.nanoTime();
+		ctx.stats.computeTime -= System.nanoTime();
+		List<SearchManyResultsList> combinations = findObjCombinations(tokens);
+		ctx.stats.computeTime += System.nanoTime();
 		
 		Collections.sort(combinations);
 		if (combinations.size() > 0) {
-			SearchTokenCombination result = combinations.get(0);
+			SearchManyResultsList result = combinations.get(0);
+			result.sortResults();
 			System.out.println("--------");
 			System.out.println("Main: " + result);
 			for(int i = 0; i < result.getCombinations(); i++) {
@@ -531,8 +342,8 @@ public class SearchManyWordsAlgorithm {
 		
 		System.out.println("\nTokens: " + tokens);
 		System.out.println("All Results: ");
-		for (SearchTokenCombination s : combinations) {
-			if (s.tokens.size() >= 2) {
+		for (SearchManyResultsList s : combinations) {
+			if (s.getTokenCount() >= 2) {
 				System.out.println("  " + s.toString(false));
 			}
 		}
@@ -553,7 +364,7 @@ public class SearchManyWordsAlgorithm {
 				NameIndexInspector indx = b.readFullNameIndex(m, t.word);
 				ctx.stats.readTime += System.nanoTime();
 				for (PrefixNameValue prefix : indx.getPrefixes()) {
-					addAtoms(t, b, fileInd, prefix);
+					readAtomSuffixes(t, b, fileInd, prefix);
 				}
 			}
 			for (PoiRegion m : b.getPoiIndexes()) {
@@ -561,14 +372,14 @@ public class SearchManyWordsAlgorithm {
 				NameIndexInspector indx = b.readFullNameIndex(m, t.word);
 				ctx.stats.readTime += System.nanoTime();
 				for (PrefixNameValue prefix : indx.getPrefixes()) {
-					addAtoms(t, b, fileInd, prefix);
+					readAtomSuffixes(t, b, fileInd, prefix);
 				}
 			}
 			fileInd++;
 		}
 	}
 
-	private void addAtoms(SearchToken t, BinaryMapIndexReader b, int fileInd, PrefixNameValue prefix) {
+	private void readAtomSuffixes(SearchToken t, BinaryMapIndexReader b, int fileInd, PrefixNameValue prefix) {
 		int INT_BITS = 32;
 		String curSuffix = null;
 		List<String> suffixes = new ArrayList<>();
@@ -610,8 +421,7 @@ public class SearchManyWordsAlgorithm {
 
 	public void documentation(String input, List<BinaryMapIndexReader> files) {
 		// 1. Split words
-		// 2.1 Global cache Read common words for files
-		// 2.2 Global cache Read all top poi categories for files
+		
 		
 		// 3. Sort words & meta information for words
 		// 3.1 Calculate poi categories for words & combinations!
