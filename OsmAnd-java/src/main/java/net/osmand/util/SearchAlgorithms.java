@@ -12,6 +12,7 @@ import com.google.protobuf.CodedInputStream;
 import gnu.trove.list.array.TIntArrayList;
 import net.osmand.binary.Abbreviations;
 import net.osmand.binary.CommonWords;
+import net.osmand.search.core.SearchPhrase;
 
 /**
  * Basic algorithms that are used in Search
@@ -93,6 +94,34 @@ public class SearchAlgorithms {
         return new ArrayList<>(namesToAdd);
     }
     
+    
+	public static List<String> splitAndNormalizeSearchQuery(String query, List<String> original) {
+		String normalizedQuery = canonicalizePunctuation(query);
+		List<String> o = SearchPhrase.splitWords(normalizedQuery, new ArrayList<String>(), SearchPhrase.ALLDELIMITERS);
+		List<String> queryTokens = new ArrayList<String>();
+		for (String token : o) {
+			String normalizedToken = normalizeToken(token);
+			if (!normalizedToken.isEmpty()) {
+				queryTokens.add(normalizedToken);
+				original.add(token);
+			}
+		}
+		if (ArabicNormalizer.isSpecialArabic(normalizedQuery)) {
+			String arabic = ArabicNormalizer.normalize(normalizedQuery);
+			if (arabic != null && !arabic.equals(normalizedQuery)) {
+				queryTokens.clear();
+				original.clear();
+				for (String token : SearchPhrase.splitWords(arabic, new ArrayList<String>(), SearchPhrase.ALLDELIMITERS)) {
+					String normalizedToken = normalizeToken(token);
+					if (!normalizedToken.isEmpty()) {
+						queryTokens.add(normalizedToken);
+						original.add(token);
+					}
+				}
+			}
+		}
+		return queryTokens;
+	}
     
 
     /**

@@ -23,16 +23,40 @@ import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 
-// TODO global cache
-// 2.1 Global cache Read common words for files
-// 2.2 Global cache Read all top poi categories for files
+// TODO Lazy load tokens from full name index !
+// TODO global cache - Read common words for files
+// TODO Read all top poi categories for files
 // TODO read buildings
 // TODO duplicate words
-// TODO replace last dot as incomplete
+// TODO collator +replace last dot as incomplete
 // TODO sort tokens by actual frequency
+// TODO Special split by -
 // special cases
 // 1. Abbrevations
 // 2. Street intersection match
+// -------------
+//////////////SEARCH ALGORITHM //////////////
+// 1. Split words
+// 2.Reinit caches
+// 3. Sort words & meta information for words
+// 3.1 Calculate poi categories for words & combinations!
+// 3.2 Calculate common & frequent numbers based on files
+// 3.3 Assign Common & frequent labels from Global file
+
+// 4. Read 
+// 4.1 Incomplete words? assign prefix ?
+// 4.2 Read Per word List<AddressNameIndexDataAtom>, List<OsmAndPoiNameIndexDataAtom>
+// 4.3 Read & Cache for non-frequent common words
+
+// After search operations - Expand POI Type filters for results
+// 5.1 Run rare words (by counts & labels)
+// 5.2 Run with frequent words
+// 5.3 Expand poi categories
+
+// Search categories
+// Phase I - only rare + words replaced abbrrevations
+// Phase II - all words + replaced abbrevations
+// Phase III - all words + replaced abbrevations
 public class SearchManyWordsAlgorithm {
 	
 	
@@ -137,7 +161,9 @@ public class SearchManyWordsAlgorithm {
 		}
 
 		private boolean match(String name) {
-			// TODO collator, dot
+			if (word.endsWith(".")) {
+				return name.toLowerCase().startsWith(word.substring(0, word.length() - 1));
+			}
 			return word.equalsIgnoreCase(name);
 		}
 	}
@@ -178,14 +204,16 @@ public class SearchManyWordsAlgorithm {
 		String pattern = "Germany_baden";
 		String query = "Berlin hauptstrasse";
 		query = "Kelterstraße Kernen im Remstal";
-		query = "Germany Kelterstraße Kernen im Remstal";
+		query = "Germany Kelter. Kernen im Remstal";
 		
-//		pattern = "Us_";
-//		query = "Salt Lake City Pennsylvania Street";
+		pattern = "Us_";
+		query = "Salt Lake City Pennsylvania Street";
+		query = "USA Salt Lake City Pennsylvania Street 41";
 		
 		pattern = "Ukraine_";
-		query = "бровари Сільпо";
-		query = "пузата хата сакс";
+//		query = "бровари Сільпо";
+		query = "пузата хата mcdonal.";
+		query = "kyiv нова пошта 53";
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
@@ -205,14 +233,14 @@ public class SearchManyWordsAlgorithm {
 	
 	
 
-	// TODO '.' shouldn't split words, '-' - should
+
 	private List<SearchToken> splitWords(String input) {
-		List<String> words = SearchAlgorithms.splitAndNormalize(input);
-		String[] sp = input.split(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
+		List<String> owords =new ArrayList<String>();
+		List<String> words = SearchAlgorithms.splitAndNormalizeSearchQuery(input, owords);
 		List<SearchToken> tokens = new ArrayList<>();
-		int order = 0;
-		for (String w : words) {
-			tokens.add(new SearchToken(w, words.size() == sp.length? sp[order] : w, order++));
+		for (int order = 0; order < words.size(); order++) {
+			String w = words.get(order);
+			tokens.add(new SearchToken(w, owords.get(order), order));
 		}
 		return tokens;
 	}
@@ -327,43 +355,5 @@ public class SearchManyWordsAlgorithm {
 
 	
 
-
-	
-
-	
-
-	public void documentation(String input, List<BinaryMapIndexReader> files) {
-		// 1. Split words
-		
-		
-		// 3. Sort words & meta information for words
-		// 3.1 Calculate poi categories for words & combinations!
-		// 3.2 Calculate common & frequent numbers based on files
-		// 3.3 Assign Common & frequent labels from Global file
-		
-		////////////// Iteration on 1st group Files? 100km ////////////
-		// 4. Read 
-		// 4.1 Incomplete words? assign prefix ?
-		// 4.2 Read Per word List<AddressNameIndexDataAtom>, List<OsmAndPoiNameIndexDataAtom>
-		// 4.3 Read & Cache for non-frequent common words
-		
-		////////////// SEARCH ALGORITHM //////////////
-		// 5.1 Run rare words (by counts & labels)
-		// 5.2 Run with frequent words
-		// 5.3 Expand poi categories
-		
-		// Search categories
-		// Phase I - only rare + words replaced abbrrevations
-		// Phase II - all words + replaced abbrevations
-		// Phase III - all words + replaced abbrevations
-		
-		// After search operations - Expand POI Type filters for results
-		
-	}
-
-
-
-	
-	
 	
 }

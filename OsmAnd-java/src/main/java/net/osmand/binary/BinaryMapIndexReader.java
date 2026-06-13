@@ -2692,11 +2692,15 @@ public class BinaryMapIndexReader {
 				if (prefix != null) {
 					key = prefix + key;
 				}
-				match = filter == null || filter.startsWith(key); 
+				match = filter == null || filter.startsWith(key);
+				if (!match && filter.endsWith(".")) {
+					String pr = filter.substring(0, filter.length() - 1);
+					match = key.startsWith(pr) || pr.startsWith(key);
+				}
 				break;
 			case OsmandOdb.IndexedStringTable.VAL_FIELD_NUMBER :
 				int val = (int) readInt(); // FIXME for 64 bit support
-				if(match) {
+				if (match) {
 					inspector.putKey(key, val, prefix);
 				}
 				break;
