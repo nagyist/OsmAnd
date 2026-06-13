@@ -127,6 +127,8 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 
 	private static final String QUICK_SEARCH_SHOW_TAB_KEY = "quick_search_show_tab_key";
 	private static final String QUICK_SEARCH_TYPE_KEY = "quick_search_type_key";
+	private static final String NEAREST_POIS_FILTER_ID = "nearest_pois";
+	private static final String NEAREST_POIS_UI_FILTER_ID = PoiUIFilter.STD_PREFIX + "null";
 	private static final double MIN_COMPASS_DEGREES_TO_UPDATE_CONTENT = 5.0;
 	private static final int EXPLORE_HISTORY_ITEMS_LIMIT = 25;
 
@@ -194,6 +196,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private boolean phraseDefined;
 	private boolean addressSearch;
 	private SortByOption selectedSortByOption = SortByOption.RELEVANCE;
+	private String selectedSortContextId;
 	private List<SearchResult> nearestCities;
 	private LatLon storedOriginalLocation;
 
@@ -213,13 +216,15 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	private enum SortByOption {
-		RELEVANCE(R.string.sort_by_relevance),
-		NEAREST(R.string.shared_string_nearest);
+		RELEVANCE(R.string.sort_by_relevance, SearchSettings.SortType.BY_RELEVANCE),
+		NEAREST(R.string.shared_string_nearest, SearchSettings.SortType.ONLY_BY_DISTANCE);
 
 		final int titleId;
+		final SearchSettings.SortType sortType;
 
-		SortByOption(int titleId) {
+		SortByOption(int titleId, SearchSettings.SortType sortType) {
 			this.titleId = titleId;
+			this.sortType = sortType;
 		}
 	}
 
@@ -882,6 +887,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 
 	private void updateToolbarButton() {
 		SearchWord word = searchUICore.getPhrase().getLastSelectedWord();
+		updateDefaultSortOption(word);
 		boolean filterButtonVisible = word != null && word.getType() != null && word.getType().equals(POI_TYPE);
 		filterChip.setVisibility(filterButtonVisible ? View.VISIBLE : View.GONE);
 		if (filterButtonVisible) {
@@ -892,6 +898,35 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		}
 		updateSearchAroundChip();
 		updateSortChip();
+	}
+
+	private void updateDefaultSortOption(@Nullable SearchWord word) {
+		String sortContextId = getSortContextId(word);
+		if (isNearestPoiSearch(sortContextId)) {
+			selectedSortContextId = sortContextId;
+			selectedSortByOption = SortByOption.NEAREST;
+		} else if (!Algorithms.objectEquals(selectedSortContextId, sortContextId)) {
+			selectedSortContextId = sortContextId;
+			selectedSortByOption = SortByOption.RELEVANCE;
+		}
+	}
+
+	@Nullable
+	private String getSortContextId(@Nullable SearchWord word) {
+		if (word == null || word.getResult() == null || word.getType() != POI_TYPE) {
+			return null;
+		}
+		Object object = word.getResult().object;
+		if (object instanceof PoiUIFilter filter) {
+			return filter.getFilterId();
+		} else if (object instanceof CustomSearchPoiFilter filter) {
+			return filter.getFilterId();
+		} else if (object instanceof TopIndexFilter topIndexFilter) {
+			return topIndexFilter.getFilterId();
+		} else if (object instanceof AbstractPoiType abstractPoiType) {
+			return abstractPoiType.getKeyName();
+		}
+		return null;
 	}
 
 	private void updateSearchAroundChip() {
@@ -1125,7 +1160,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		updateClearButtonAndHint();
 		updateClearButtonVisibility(true);
 		updateToolbarButton();
-		runSearchAroundCurrentQuery();
+		rerunCurrentSearchQuery();
 	}
 
 	private void searchAroundMyLocation() {
@@ -1143,10 +1178,10 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		updateClearButtonVisibility(true);
 		startLocationUpdate();
 		updateToolbarButton();
-		runSearchAroundCurrentQuery();
+		rerunCurrentSearchQuery();
 	}
 
-	private void runSearchAroundCurrentQuery() {
+	private void rerunCurrentSearchQuery() {
 		String text = searchEditText.getText().toString();
 		if (!Algorithms.isEmpty(text)) {
 			searchQuery = text;
@@ -1156,6 +1191,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 
 	private void addSortOption(@NonNull LinearLayout content, @NonNull PopupWindow popupWindow,
 			@NonNull SortByOption option) {
+		boolean enabled = !isNearestPoiSearch() || option == SortByOption.NEAREST;
 		LinearLayout row = new LinearLayout(requireContext());
 		row.setGravity(Gravity.CENTER_VERTICAL);
 		row.setOrientation(LinearLayout.HORIZONTAL);
@@ -1163,9 +1199,12 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 				AndroidUtils.dpToPx(requireContext(), 24), 0);
 		row.setMinimumHeight(AndroidUtils.dpToPx(requireContext(), 56));
 		row.setBackgroundResource(AndroidUtils.resolveAttribute(requireContext(), android.R.attr.selectableItemBackground));
+		row.setEnabled(enabled);
+		row.setAlpha(enabled ? 1f : .5f);
 
 		RadioButton radioButton = new RadioButton(requireContext());
 		radioButton.setClickable(false);
+		radioButton.setEnabled(enabled);
 		radioButton.setChecked(selectedSortByOption == option);
 		row.addView(radioButton, new LinearLayout.LayoutParams(
 				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -1173,6 +1212,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		TextView text = new TextView(requireContext());
 		text.setText(option.titleId);
 		text.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
+		text.setEnabled(enabled);
 		text.setTextSize(18);
 		LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
 				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -1180,9 +1220,17 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		row.addView(text, textParams);
 
 		row.setOnClickListener(v -> {
+			if (!enabled) {
+				return;
+			}
+			boolean changed = selectedSortByOption != option;
 			selectedSortByOption = option;
 			updateSortChip();
 			popupWindow.dismiss();
+			if (changed) {
+				applySelectedSortSetting();
+				rerunCurrentSearchQuery();
+			}
 		});
 		content.addView(row, new LinearLayout.LayoutParams(
 				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -1192,6 +1240,25 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		if (sortChipTitle != null) {
 			sortChipTitle.setText(selectedSortByOption.titleId);
 		}
+	}
+
+	private void applySelectedSortSetting() {
+		if (isNearestPoiSearch()) {
+			selectedSortByOption = SortByOption.NEAREST;
+		}
+		SearchSettings settings = searchUICore.getSearchSettings();
+		if (settings.getSortType() != selectedSortByOption.sortType) {
+			settings.setSortType(selectedSortByOption.sortType);
+			searchUICore.updateSettings(settings);
+		}
+	}
+
+	private boolean isNearestPoiSearch() {
+		return isNearestPoiSearch(getSortContextId(searchUICore.getPhrase().getLastSelectedWord()));
+	}
+
+	private boolean isNearestPoiSearch(@Nullable String sortContextId) {
+		return NEAREST_POIS_FILTER_ID.equals(sortContextId) || NEAREST_POIS_UI_FILTER_ID.equals(sortContextId);
 	}
 
 	private void setupSearch(MapActivity mapActivity) {
@@ -1903,6 +1970,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		if (settings.getRadiusLevel() != 1) {
 			searchUICore.updateSettings(settings.setRadiusLevel(1));
 		}
+		applySelectedSortSetting();
 		runCoreSearch(text, true, false);
 	}
 
@@ -2180,6 +2248,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		if (settings.getRadiusLevel() != 1) {
 			searchUICore.updateSettings(settings.setRadiusLevel(1));
 		}
+		applySelectedSortSetting();
 		runCoreSearch(txt, false, false);
 	}
 
@@ -2197,6 +2266,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			searchEditText.setText(txt);
 			searchEditText.setSelection(txt.length());
 			updateToolbarButton();
+			applySelectedSortSetting();
 			runCoreSearch(txt, false, false);
 		}
 	}
@@ -2232,6 +2302,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 					startOnlineSearch();
 					mainSearchFragment.getAdapter().clear();
 					updateTabBarVisibility(false);
+					applySelectedSortSetting();
 					runCoreSearch(searchQuery, false, true);
 				}
 			});
@@ -2249,6 +2320,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			SearchSettings settings = searchUICore.getSearchSettings();
 			searchUICore.updateSettings(settings.setRadiusLevel(settings.getRadiusLevel() + 1));
 		}
+		applySelectedSortSetting();
 		runCoreSearch(searchQuery, false, true);
 	}
 
@@ -2474,6 +2546,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		if (settings.getRadiusLevel() != 1) {
 			searchUICore.updateSettings(settings.setRadiusLevel(1));
 		}
+		applySelectedSortSetting();
 		runCoreSearch(txt, false, false);
 	}
 
