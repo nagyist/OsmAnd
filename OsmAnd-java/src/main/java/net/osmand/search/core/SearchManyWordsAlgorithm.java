@@ -141,8 +141,8 @@ public class SearchManyWordsAlgorithm {
 					}
 				}
 			} else if (poi != null) {
-				this.x16 = poi.getX() << 15;
-				this.y16 = poi.getY() << 15;
+				this.x16 = poi.getX();
+				this.y16 = poi.getY();
 				bboxTileZoom = 16;
 				bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16, y16);
 			}			
@@ -398,7 +398,9 @@ public class SearchManyWordsAlgorithm {
 		query = "Deutschland Kelterstraße Kernen im Remstal";
 		
 //		pattern = "Us_";
-//		query = "USA Salt Lake City Pennsylvania Street";
+		query = "USA Salt Lake City Pennsylvania Street";
+//		"бровари Сільпо"
+		// "пузата хата саксанського"
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
