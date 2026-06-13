@@ -372,6 +372,7 @@ public class NameIndexInspector {
 		public String key;
 		public OsmAndPoiNameIndexData poi = null;
 		public AddressNameIndexData addr = null;
+		public long shift;
 		
 		@Override
 		public String toString() {
@@ -606,6 +607,7 @@ public class NameIndexInspector {
 		if (obj.poi != null) {
 			throw new IllegalStateException(obj.toString());
 		}
+		obj.shift = currentShift;
 		obj.poi = from;
 	}
 	
@@ -619,6 +621,7 @@ public class NameIndexInspector {
 		if (obj.addr != null) {
 			throw new IllegalStateException(obj.toString());
 		}
+		obj.shift = currentShift;
 		obj.addr = from;
 	}
 	

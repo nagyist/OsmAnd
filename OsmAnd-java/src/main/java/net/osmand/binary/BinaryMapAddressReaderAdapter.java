@@ -947,8 +947,8 @@ public class BinaryMapAddressReaderAdapter {
 					} else if (loffsets.get(ind) != shift) {
 						codedIS.skipRawBytes(loffsets.get(ind) - shift);
 						shift = codedIS.getTotalBytesRead();
-						ind++;
 					}
+					ind++;
 				}
 				int len = codedIS.readRawVarint32();
 				oldLimit = codedIS.pushLimitLong((long) len);
