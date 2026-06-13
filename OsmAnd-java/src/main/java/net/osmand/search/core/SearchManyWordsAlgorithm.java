@@ -13,13 +13,9 @@ import java.util.List;
 import com.google.protobuf.ByteString;
 
 import gnu.trove.map.hash.TLongObjectHashMap;
-import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.BinaryMapIndexReader;
-import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.CommonWords;
-import net.osmand.binary.NameIndexInspector;
-import net.osmand.binary.NameIndexInspector.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.map.OsmandRegions;
@@ -39,28 +35,22 @@ import net.osmand.util.SearchAlgorithms;
 // 2. Street intersection match
 public class SearchManyWordsAlgorithm {
 	
-	static int SHIFT_FILE_IND = 12;
-	static boolean SEARCH_POI = true;
-	
 	
 	static class NameIndexAtom {
 		String name;
 		AddressNameIndexDataAtom addr;
 		OsmAndPoiNameIndexDataAtom poi;
-		BinaryMapIndexReader file;
 		long id;
 		
 		int[] bbox31; // if exists [xleft, yleft, xright, yright]
 		long bboxTileId; // encodes zoom, tileX, tileY
 		int bboxTileZoom;
 		int x16, y16;
-		
-		NameIndexAtom(String name, AddressNameIndexDataAtom addr, OsmAndPoiNameIndexDataAtom poi,
-				BinaryMapIndexReader file, long id) {
+
+		NameIndexAtom(String name, AddressNameIndexDataAtom addr, OsmAndPoiNameIndexDataAtom poi, long id) {
 			this.name = name;
 			this.addr = addr;
 			this.poi = poi;
-			this.file = file;
 			this.id = id;
 			calculateBbox(addr, poi);
 		}
@@ -108,9 +98,9 @@ public class SearchManyWordsAlgorithm {
 			} else if (poi != null) {
 				type = "POI";
 			}
-			return String.format("%s (%.4f, %.4f) ",  type + " " + name, 
-					MapUtils.get31LatitudeY(y16 << 15), MapUtils.get31LongitudeX(x16 << 15),
-					name, id >> SHIFT_FILE_IND);
+			return String.format("%s (%.4f, %.4f) ", type + " " + name + " " + (id % 0xffff), 
+					MapUtils.get31LatitudeY(y16 << 15),
+					MapUtils.get31LongitudeX(x16 << 15));
 		}
 	};
 	
@@ -137,29 +127,8 @@ public class SearchManyWordsAlgorithm {
 			return String.format("%d. %s - %d atoms", originalOrder, originalWord, atoms.size());
 		}
 		
-		private long makeId(int fileInd,long shiftToIndex) {
-			if (fileInd > 1 << SHIFT_FILE_IND) {
-				throw new IllegalStateException();
-			}
-			long id = (shiftToIndex << SHIFT_FILE_IND) + SHIFT_FILE_IND;
-			return id;
-		}
 
-		// TODO properly calculate shiftToIndex (test)
-		public void addAtom(String name, BinaryMapIndexReader b, int fileInd, AddressNameIndexDataAtom a, long shift) {
-			long lid = makeId(fileInd, shift - a.getShiftToIndex(0));
-			NameIndexAtom atom = new NameIndexAtom(name, a, null, b, lid);
-			addAtom(name, atom);
-		}
-
-		// TODO properly calculate shiftToIndex
-		public void addAtom(String name, BinaryMapIndexReader b, int fileInd, OsmAndPoiNameIndexDataAtom a, long shift) {
-			long lid = makeId(fileInd, a.getShiftTo());
-			NameIndexAtom atom = new NameIndexAtom(name, null, a, b, lid);
-			addAtom(name, atom);
-		}
-		
-		private void addAtom(String name, NameIndexAtom atom) {
+		void addAtom(String name, NameIndexAtom atom) {
 			if (match(name)) {
 				index.put(atom.id, atom);
 				atoms.add(atom);
@@ -193,7 +162,8 @@ public class SearchManyWordsAlgorithm {
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 		SearchManyWordsAlgorithm a = new SearchManyWordsAlgorithm();
-		a.searchTest(query, ls);
+		SearchManyContext searchContext = new SearchManyContext(ls);
+		a.searchTest(query, searchContext);
 	}
 
 	private static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {
@@ -215,7 +185,7 @@ public class SearchManyWordsAlgorithm {
 		
 		pattern = "Ukraine_";
 		query = "бровари Сільпо";
-		query = "пузата хата саксанського";
+		query = "пузата хата сакс";
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
@@ -225,8 +195,12 @@ public class SearchManyWordsAlgorithm {
 			}
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
+		SearchManyContext searchContext = new SearchManyContext(ls);
 		SearchManyWordsAlgorithm a = new SearchManyWordsAlgorithm();
-		a.searchTest(query, ls);
+		a.searchTest(query, searchContext);
+		
+		searchContext = new SearchManyContext(ls, searchContext.cache);
+		a.searchTest(query, searchContext);
 	}
 	
 	
@@ -312,14 +286,12 @@ public class SearchManyWordsAlgorithm {
 	}
 
 
-	public void searchTest(String input, List<BinaryMapIndexReader> files) throws IOException {
-		SearchManyContext ctx = new SearchManyContext();
-		ctx.files = files;
+	public void searchTest(String input, SearchManyContext ctx) throws IOException {
 		// 1. prepare tokens
 		List<SearchToken> tokens = splitWords(input);
 		// 2. read atoms
 		for (SearchToken t : tokens) {
-			readAtoms(ctx, t);
+			ctx.readAtoms(t);
 		}
 		// 3. sort tokens 
 		sortTokens(tokens);
@@ -356,67 +328,8 @@ public class SearchManyWordsAlgorithm {
 	
 
 
-	private void readAtoms(SearchManyContext ctx, SearchToken t) throws IOException {
-		int fileInd = 0;
-		for (BinaryMapIndexReader b : ctx.files) {
-			for (AddressRegion m : b.getAddressIndexes()) {
-				ctx.stats.readTime -= System.nanoTime();
-				NameIndexInspector indx = b.readFullNameIndex(m, t.word);
-				ctx.stats.readTime += System.nanoTime();
-				for (PrefixNameValue prefix : indx.getPrefixes()) {
-					readAtomSuffixes(t, b, fileInd, prefix);
-				}
-			}
-			for (PoiRegion m : b.getPoiIndexes()) {
-				ctx.stats.readTime -= System.nanoTime();
-				NameIndexInspector indx = b.readFullNameIndex(m, t.word);
-				ctx.stats.readTime += System.nanoTime();
-				for (PrefixNameValue prefix : indx.getPrefixes()) {
-					readAtomSuffixes(t, b, fileInd, prefix);
-				}
-			}
-			fileInd++;
-		}
-	}
+	
 
-	private void readAtomSuffixes(SearchToken t, BinaryMapIndexReader b, int fileInd, PrefixNameValue prefix) {
-		int INT_BITS = 32;
-		String curSuffix = null;
-		List<String> suffixes = new ArrayList<>();
-		boolean addr = prefix.addr != null;
-		for (String s : addr ? prefix.addr.getSuffixesDictionaryList() : 
-				prefix.poi.getSuffixesDictionaryList()) {
-			curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
-			suffixes.add(prefix.key + curSuffix);
-		}
-		if (addr) {
-			for (AddressNameIndexDataAtom a : prefix.addr.getAtomList()) {
-				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
-					int suffBit = a.getSuffixesBitset(i);
-					for (int j = 0; j < INT_BITS && suffBit != 0; j++) {
-						if (suffBit % 2 == 1) {
-							int ind = i * INT_BITS + j;
-							t.addAtom(suffixes.get(ind), b, fileInd, a, prefix.shift);
-						}
-						suffBit >>>= 1;
-					}
-				}
-			}
-		} else if (SEARCH_POI) {
-			for (OsmAndPoiNameIndexDataAtom a : prefix.poi.getAtomsList()) {
-				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
-					int suffBit = a.getSuffixesBitset(i);
-					for (int j = 0; j < INT_BITS && suffBit != 0; j++) {
-						if (suffBit % 2 == 1) {
-							int ind = i * INT_BITS + j;
-							t.addAtom(suffixes.get(ind), b, fileInd, a, prefix.shift);
-						}
-						suffBit >>>= 1;
-					}
-				}
-			}
-		}
-	}
 	
 
 	public void documentation(String input, List<BinaryMapIndexReader> files) {
