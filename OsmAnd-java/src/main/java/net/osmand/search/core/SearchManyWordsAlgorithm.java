@@ -1,6 +1,7 @@
 package net.osmand.search.core;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -166,7 +167,7 @@ public class SearchManyWordsAlgorithm {
 			} else if (poi != null) {
 				type = "POI";
 			}
-			return String.format("%s (%.4f, %.4f) ",  type + " " +name + " " + id, 
+			return String.format("%s (%.4f, %.4f) ",  type + " " + name, 
 					MapUtils.get31LatitudeY(y16 << 15), MapUtils.get31LongitudeX(x16 << 15),
 					name, id >> SHIFT_FILE_IND);
 		}
@@ -359,6 +360,36 @@ public class SearchManyWordsAlgorithm {
 		}
 	}
 	
+	
+	public static void mainTest(String[] subArgsArray) throws FileNotFoundException, IOException {
+		long t = System.nanoTime();
+		String query = subArgsArray[0];
+		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
+		for(int i = 1; i < subArgsArray.length; i++) {
+			File fl = new File(subArgsArray[i]);
+			if (fl.isFile()) {
+				if (i == 1) {
+					initFile(ls, new File(fl.getParentFile(), "regions.ocbf"));
+				}
+				initFile(ls, fl);
+			} else {
+				for (File f : fl.listFiles()) {
+					initFile(ls, f);
+				}
+			}
+		}
+		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
+		SearchManyWordsAlgorithm a = new SearchManyWordsAlgorithm();
+		a.searchTest(query, ls);
+	}
+
+	private static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {
+		if (f.exists() && (f.getName().endsWith(".obf") || f.getName().equals("regions.ocbf"))) {
+			BinaryMapIndexReader bir = new BinaryMapIndexReader(new RandomAccessFile(f, "r"), f);
+			ls.add(bir);
+		}
+	}
+	
 	public static void main(String[] args) throws IOException {
 		File folder = new File("/Users/victorshcherb/osmand/maps/");
 		String pattern = "Germany_baden";
@@ -367,15 +398,13 @@ public class SearchManyWordsAlgorithm {
 		query = "Deutschland Kelterstraße Kernen im Remstal";
 		
 //		pattern = "Us_";
-//		query = "Salt Lake City Pennsylvania Street";
+//		query = "USA Salt Lake City Pennsylvania Street";
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
 		for (File f : folder.listFiles()) {
-			if ((f.getName().endsWith(".obf") && f.getName().startsWith(pattern)) || 
-					f.getName().equals("regions.ocbf")) {
-				BinaryMapIndexReader bir = new BinaryMapIndexReader(new RandomAccessFile(f, "r"), f);
-				ls.add(bir);
+			if (f.getName().startsWith(pattern)) {
+				initFile(ls, f);
 			}
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
@@ -434,7 +463,7 @@ public class SearchManyWordsAlgorithm {
 			}
 			for (SearchToken token : tokens) {
 				if (parent.tokens.isEmpty() || token.sortedOrder < parent.tokens.get(0).sortedOrder) {
-					System.out.println("REVIEW " + parent + " " + token);
+//					System.out.println("REVIEW " + parent + " " + token);
 					SearchTokenCombination next = new SearchTokenCombination();
 					next.tokens.add(token);
 					next.tokens.addAll(parent.tokens);
@@ -502,7 +531,7 @@ public class SearchManyWordsAlgorithm {
 		System.out.println("All Results: ");
 		for (SearchTokenCombination s : combinations) {
 			if (s.tokens.size() >= 2) {
-				System.out.println("  " + s.toString(true));
+				System.out.println("  " + s.toString(false));
 			}
 		}
 		
@@ -606,6 +635,10 @@ public class SearchManyWordsAlgorithm {
 		// After search operations - Expand POI Type filters for results
 		
 	}
+
+
+
+	
 	
 	
 }
