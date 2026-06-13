@@ -10,6 +10,11 @@
 	- For wording and consistency, please note https://docs.osmand.net/docs/technical/contributions/translating-osmand
 	Thx - Hardy
 -->
+	<string name="search_around">Search around</string>
+	<string name="search_around_map_center_description">%1$s away from your location</string>
+	<string name="search_around_my_location">My location</string>
+	<string name="search_around_my_location_description">Search around your position</string>
+	<string name="sort_by_relevance">Relevance</string>
 	<string name="auto_copy_media_to_osmand_storage">Auto-copy media to OsmAnd storage</string>
 	<string name="choose_from_gallery">Choose from Gallery</string>
 	<string name="choose_from_files">Choose from Files</string>

@@ -9,12 +9,14 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -101,6 +103,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 
@@ -134,8 +137,13 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private View searchView;
 	private View buttonToolbarView;
 	private View sendEmptySearchView;
-	private ImageButton buttonToolbarFilter;
-	private TextView buttonToolbarText;
+	private View filterChip;
+	private View sortChip;
+	private View searchAroundChip;
+	private TextView filterChipCount;
+	private TextView sortChipTitle;
+	private ImageView searchAroundChipIcon;
+	private TextView searchAroundChipTitle;
 	private TextView sendEmptySearchText;
 	private FrameLayout sendEmptySearchButton;
 	private QuickSearchMainListFragment mainSearchFragment;
@@ -185,6 +193,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private boolean runSearchFirstTime;
 	private boolean phraseDefined;
 	private boolean addressSearch;
+	private SortByOption selectedSortByOption = SortByOption.RELEVANCE;
 	private List<SearchResult> nearestCities;
 	private LatLon storedOriginalLocation;
 
@@ -201,6 +210,30 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		FILTER,
 		MAP,
 		NO
+	}
+
+	private enum SortByOption {
+		RELEVANCE(R.string.sort_by_relevance),
+		NEAREST(R.string.shared_string_nearest);
+
+		final int titleId;
+
+		SortByOption(int titleId) {
+			this.titleId = titleId;
+		}
+	}
+
+	private enum SearchAroundOption {
+		MAP_CENTER(R.string.shared_string_map_center, R.drawable.ic_show_on_map_outlined),
+		MY_LOCATION(R.string.search_around_my_location, R.drawable.ic_action_location_marker_outlined);
+
+		final int titleId;
+		final int iconId;
+
+		SearchAroundOption(int titleId, int iconId) {
+			this.titleId = titleId;
+			this.iconId = iconId;
+		}
 	}
 
 	public enum QuickSearchTab {
@@ -283,11 +316,12 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		searchView = view.findViewById(R.id.search_view);
 
 		buttonToolbarView = view.findViewById(R.id.button_toolbar_layout);
-		ImageView buttonToolbarImage = view.findViewById(R.id.buttonToolbarImage);
-		buttonToolbarImage.setVisibility(View.GONE);
-		buttonToolbarFilter = view.findViewById(R.id.filterButton);
-		buttonToolbarFilter.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_filter_dark));
-		buttonToolbarFilter.setOnClickListener(v -> {
+		filterChip = view.findViewById(R.id.filter_chip);
+		filterChipCount = view.findViewById(R.id.filter_chip_count);
+		ImageView filterChipIcon = view.findViewById(R.id.filter_chip_icon);
+		filterChipIcon.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_filter));
+		filterChip.setOnClickListener(v -> {
+			filterChip.setSelected(true);
 			SearchPhrase searchPhrase = searchUICore.getPhrase();
 			if (searchPhrase.isLastWord(POI_TYPE)) {
 				String filterId = null;
@@ -318,9 +352,27 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 				}
 			}
 		});
+		sortChip = view.findViewById(R.id.sort_chip);
+		sortChipTitle = view.findViewById(R.id.sort_chip_title);
+		ImageView sortChipIcon = view.findViewById(R.id.sort_chip_icon);
+		sortChipIcon.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_sort));
+		ImageView sortChipArrow = view.findViewById(R.id.sort_chip_arrow);
+		sortChipArrow.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_arrow_drop_down));
+		sortChip.setOnClickListener(v -> {
+			sortChip.setSelected(true);
+			showSortPopupMenu();
+		});
+		updateSortChip();
+		searchAroundChip = view.findViewById(R.id.search_around_chip);
+		searchAroundChipIcon = view.findViewById(R.id.search_around_chip_icon);
+		searchAroundChipTitle = view.findViewById(R.id.search_around_chip_title);
+		ImageView searchAroundChipArrow = view.findViewById(R.id.search_around_chip_arrow);
+		searchAroundChipArrow.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_arrow_drop_down));
+		searchAroundChip.setOnClickListener(v -> {
+			searchAroundChip.setSelected(true);
+			showSearchAroundPopupMenu();
+		});
 
-		buttonToolbarText = view.findViewById(R.id.buttonToolbarTitle);
-		buttonToolbarText.setVisibility(View.INVISIBLE);
 		view.findViewById(R.id.buttonToolbar).setClickable(false);
 
 		toolbar = view.findViewById(R.id.toolbar);
@@ -458,15 +510,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			if (!searchEditText.getText().toString().isEmpty()) {
 				clearLastWord();
 			} else if (useMapCenter && location != null) {
-				useMapCenter = false;
-				centerLatLon = null;
-				updateUseMapCenterUI();
-				LatLon centerLatLon = new LatLon(location.getLatitude(), location.getLongitude());
-				SearchSettings ss = searchUICore.getSearchSettings().setOriginalLocation(new LatLon(centerLatLon.getLatitude(), centerLatLon.getLongitude()));
-				searchUICore.updateSettings(ss);
-				updateClearButtonAndHint();
-				updateClearButtonVisibility(true);
-				startLocationUpdate();
+				searchAroundMyLocation();
 			}
 			updateSendEmptySearchBottomBar(false);
 			updateToolbarButton();
@@ -838,35 +882,315 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 
 	private void updateToolbarButton() {
 		SearchWord word = searchUICore.getPhrase().getLastSelectedWord();
-		if (foundPartialLocation) {
-			buttonToolbarText.setText(getString(R.string.advanced_coords_search).toUpperCase());
-		} else if (!Algorithms.isEmpty(searchEditText.getText())) {
-			if (searchType.isTargetPoint()) {
-				if (word != null && word.getResult() != null) {
-					buttonToolbarText.setText(getString(R.string.shared_string_select).toUpperCase() + " " + word.getResult().localeName.toUpperCase());
-				} else {
-					buttonToolbarText.setText(getString(R.string.shared_string_select).toUpperCase());
-				}
-			} else {
-				if (word != null && word.getResult() != null) {
-					buttonToolbarText.setText(getString(R.string.show_something_on_map, word.getResult().localeName).toUpperCase());
-				} else {
-					buttonToolbarText.setText(getString(R.string.shared_string_show_on_map).toUpperCase());
-				}
-			}
-		} else {
-			buttonToolbarText.setText(getString(R.string.shared_string_show_on_map).toUpperCase());
-		}
 		boolean filterButtonVisible = word != null && word.getType() != null && word.getType().equals(POI_TYPE);
-		buttonToolbarFilter.setVisibility(filterButtonVisible ? View.VISIBLE : View.GONE);
+		filterChip.setVisibility(filterButtonVisible ? View.VISIBLE : View.GONE);
 		if (filterButtonVisible) {
-			if (word.getResult().object instanceof PoiUIFilter) {
-				int activeColor = ColorUtilities.getActiveColorId(nightMode);
-				buttonToolbarFilter.setImageDrawable(getIcon(R.drawable.ic_action_filter_dark, activeColor));
-				buttonToolbarFilter.setImageDrawable(getIcon(R.drawable.ic_action_filter_dark, activeColor));
+			updateFilterChipCount(word);
+		} else {
+			filterChip.setSelected(false);
+			filterChipCount.setVisibility(View.GONE);
+		}
+		updateSearchAroundChip();
+		updateSortChip();
+	}
+
+	private void updateSearchAroundChip() {
+		if (searchAroundChip != null) {
+			searchAroundChip.setVisibility(isSearchAroundChipVisible() ? View.VISIBLE : View.GONE);
+			updateSearchAroundChipContent();
+		}
+	}
+
+	private boolean isSearchAroundChipVisible() {
+		if (location == null) {
+			return false;
+		}
+		LatLon mapCenter = getCurrentMapCenter();
+		if (mapCenter == null) {
+			return false;
+		}
+		double distance = MapUtils.getDistance(mapCenter, location.getLatitude(), location.getLongitude());
+		return distance >= DISTANCE_THRESHOLD;
+	}
+
+	private void updateSearchAroundChipContent() {
+		if (searchAroundChipIcon == null || searchAroundChipTitle == null) {
+			return;
+		}
+		SearchAroundOption option = getSelectedSearchAroundOption();
+		searchAroundChipIcon.setImageDrawable(iconsCache.getThemedIcon(option.iconId));
+		searchAroundChipTitle.setText(option.titleId);
+	}
+
+	private SearchAroundOption getSelectedSearchAroundOption() {
+		return useMapCenter ? SearchAroundOption.MAP_CENTER : SearchAroundOption.MY_LOCATION;
+	}
+
+	private void updateFilterChipCount(@Nullable SearchWord word) {
+		int appliedFiltersCount = getAppliedFiltersCount(word);
+		filterChip.setSelected(appliedFiltersCount > 0);
+		filterChipCount.setVisibility(appliedFiltersCount > 0 ? View.VISIBLE : View.GONE);
+		filterChipCount.setText(String.valueOf(appliedFiltersCount));
+	}
+
+	private int getAppliedFiltersCount(@Nullable SearchWord word) {
+		if (word == null || word.getResult() == null || !(word.getResult().object instanceof PoiUIFilter filter)) {
+			return 0;
+		}
+		String filterByName = filter.getFilterByName();
+		if (Algorithms.isBlank(filterByName)) {
+			return 0;
+		}
+		int count = 0;
+		StringBuilder nameFilter = new StringBuilder();
+		Map<String, ?> poiAdditionals = filter.getPoiAdditionals();
+		for (String param : filterByName.trim().split("\\s+")) {
+			if (isAppliedPoiAdditional(param, poiAdditionals) || isAppliedOpeningHoursFilter(param)) {
+				count++;
 			} else {
-				buttonToolbarFilter.setImageDrawable(app.getUIUtilities().getThemedIcon(R.drawable.ic_action_filter_dark));
+				if (nameFilter.length() > 0) {
+					nameFilter.append(' ');
+				}
+				nameFilter.append(param);
 			}
+		}
+		return nameFilter.length() > 0 ? count + 1 : count;
+	}
+
+	private boolean isAppliedPoiAdditional(@NonNull String param, @Nullable Map<String, ?> poiAdditionals) {
+		if (poiAdditionals == null || poiAdditionals.isEmpty()) {
+			return false;
+		}
+		String key = param.replace('_', ':').toLowerCase(Locale.ROOT);
+		return poiAdditionals.containsKey(param) || poiAdditionals.containsKey(key);
+	}
+
+	private boolean isAppliedOpeningHoursFilter(@NonNull String param) {
+		String open = getString(R.string.shared_string_is_open).replace(' ', '_').toLowerCase(Locale.ROOT);
+		String open24 = getString(R.string.shared_string_is_open_24_7).replace(' ', '_').toLowerCase(Locale.ROOT);
+		return param.equals(open) || param.equals(open24);
+	}
+
+	private void showSortPopupMenu() {
+		LinearLayout content = new LinearLayout(requireContext());
+		content.setOrientation(LinearLayout.VERTICAL);
+		content.setPadding(0, AndroidUtils.dpToPx(requireContext(), 8), 0, AndroidUtils.dpToPx(requireContext(), 8));
+
+		GradientDrawable background = new GradientDrawable();
+		background.setColor(ColorUtilities.getListBgColor(requireContext(), nightMode));
+		background.setCornerRadius(AndroidUtils.dpToPx(requireContext(), 4));
+
+		TextView title = new TextView(requireContext());
+		title.setText(R.string.sort_by);
+		title.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorSecondary));
+		title.setTextSize(16);
+		title.setPadding(AndroidUtils.dpToPx(requireContext(), 24), AndroidUtils.dpToPx(requireContext(), 12),
+				AndroidUtils.dpToPx(requireContext(), 24), AndroidUtils.dpToPx(requireContext(), 8));
+		content.addView(title, new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+		PopupWindow popupWindow = new PopupWindow(content,
+				AndroidUtils.dpToPx(requireContext(), 268), LinearLayout.LayoutParams.WRAP_CONTENT, true);
+		addSortOption(content, popupWindow, SortByOption.NEAREST);
+		addSortOption(content, popupWindow, SortByOption.RELEVANCE);
+
+		popupWindow.setBackgroundDrawable(background);
+		popupWindow.setOutsideTouchable(true);
+		popupWindow.setElevation(AndroidUtils.dpToPx(requireContext(), 24));
+		popupWindow.setOnDismissListener(() -> sortChip.setSelected(false));
+		popupWindow.showAsDropDown(sortChip, 0, AndroidUtils.dpToPx(requireContext(), 4));
+	}
+
+	private void showSearchAroundPopupMenu() {
+		LinearLayout content = new LinearLayout(requireContext());
+		content.setOrientation(LinearLayout.VERTICAL);
+		content.setPadding(0, AndroidUtils.dpToPx(requireContext(), 8), 0, AndroidUtils.dpToPx(requireContext(), 8));
+
+		GradientDrawable background = new GradientDrawable();
+		background.setColor(ColorUtilities.getListBgColor(requireContext(), nightMode));
+		background.setCornerRadius(AndroidUtils.dpToPx(requireContext(), 4));
+
+		TextView title = new TextView(requireContext());
+		title.setText(R.string.search_around);
+		title.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorSecondary));
+		title.setTextSize(16);
+		title.setPadding(AndroidUtils.dpToPx(requireContext(), 24), AndroidUtils.dpToPx(requireContext(), 12),
+				AndroidUtils.dpToPx(requireContext(), 24), AndroidUtils.dpToPx(requireContext(), 8));
+		content.addView(title, new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+		PopupWindow popupWindow = new PopupWindow(content,
+				AndroidUtils.dpToPx(requireContext(), 268), LinearLayout.LayoutParams.WRAP_CONTENT, true);
+		addSearchAroundOption(content, popupWindow, SearchAroundOption.MAP_CENTER,
+				getMapCenterDistanceDescription(), () -> {
+					popupWindow.dismiss();
+					searchAroundMapCenter();
+				});
+		addSearchAroundOption(content, popupWindow, SearchAroundOption.MY_LOCATION,
+				getString(R.string.search_around_my_location_description), () -> {
+					popupWindow.dismiss();
+					searchAroundMyLocation();
+				});
+
+		popupWindow.setBackgroundDrawable(background);
+		popupWindow.setOutsideTouchable(true);
+		popupWindow.setElevation(AndroidUtils.dpToPx(requireContext(), 24));
+		popupWindow.setOnDismissListener(() -> searchAroundChip.setSelected(false));
+		popupWindow.showAsDropDown(searchAroundChip, 0, AndroidUtils.dpToPx(requireContext(), 4));
+	}
+
+	private void addSearchAroundOption(@NonNull LinearLayout content, @NonNull PopupWindow popupWindow,
+			@NonNull SearchAroundOption option, @NonNull String description, @Nullable Runnable action) {
+		LinearLayout row = new LinearLayout(requireContext());
+		row.setGravity(Gravity.CENTER_VERTICAL);
+		row.setOrientation(LinearLayout.HORIZONTAL);
+		row.setPadding(AndroidUtils.dpToPx(requireContext(), 24), 0,
+				AndroidUtils.dpToPx(requireContext(), 24), 0);
+		row.setMinimumHeight(AndroidUtils.dpToPx(requireContext(), 72));
+		row.setBackgroundResource(AndroidUtils.resolveAttribute(requireContext(), android.R.attr.selectableItemBackground));
+
+		RadioButton radioButton = new RadioButton(requireContext());
+		radioButton.setClickable(false);
+		radioButton.setChecked(getSelectedSearchAroundOption() == option);
+		row.addView(radioButton, new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+		LinearLayout textContainer = new LinearLayout(requireContext());
+		textContainer.setOrientation(LinearLayout.VERTICAL);
+		textContainer.setGravity(Gravity.CENTER_VERTICAL);
+		LinearLayout.LayoutParams textContainerParams = new LinearLayout.LayoutParams(
+				0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+		textContainerParams.setMarginStart(AndroidUtils.dpToPx(requireContext(), 16));
+		row.addView(textContainer, textContainerParams);
+
+		TextView title = new TextView(requireContext());
+		title.setText(option.titleId);
+		title.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
+		title.setTextSize(16);
+		textContainer.addView(title, new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+		TextView subtitle = new TextView(requireContext());
+		subtitle.setText(description);
+		subtitle.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorSecondary));
+		subtitle.setTextSize(14);
+		subtitle.setSingleLine(false);
+		textContainer.addView(subtitle, new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+		row.setOnClickListener(v -> {
+			if (action != null) {
+				action.run();
+			} else {
+				popupWindow.dismiss();
+			}
+		});
+		content.addView(row, new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+	}
+
+	@NonNull
+	private String getMapCenterDistanceDescription() {
+		if (location != null) {
+			LatLon mapCenter = getCurrentMapCenter();
+			if (mapCenter == null) {
+				return "";
+			}
+			double distance = MapUtils.getDistance(mapCenter, location.getLatitude(), location.getLongitude());
+			String formattedDistance = OsmAndFormatter.getFormattedDistance((float) distance, app);
+			return getString(R.string.search_around_map_center_description, formattedDistance);
+		}
+		return "";
+	}
+
+	@Nullable
+	private LatLon getCurrentMapCenter() {
+		MapActivity mapActivity = getMapActivity();
+		if (mapActivity == null) {
+			return null;
+		}
+		return mapActivity.getMapView().getCurrentRotatedTileBox().getCenterLatLon();
+	}
+
+	private void searchAroundMapCenter() {
+		LatLon mapCenter = getCurrentMapCenter();
+		if (mapCenter == null) {
+			return;
+		}
+		useMapCenter = true;
+		SearchSettings ss = searchUICore.getSearchSettings().setOriginalLocation(
+				new LatLon(mapCenter.getLatitude(), mapCenter.getLongitude()));
+		searchUICore.updateSettings(ss);
+		updateUseMapCenterUI();
+		updateClearButtonAndHint();
+		updateClearButtonVisibility(true);
+		updateToolbarButton();
+		runSearchAroundCurrentQuery();
+	}
+
+	private void searchAroundMyLocation() {
+		if (location == null) {
+			return;
+		}
+		useMapCenter = false;
+		centerLatLon = null;
+		updateUseMapCenterUI();
+		LatLon centerLatLon = new LatLon(location.getLatitude(), location.getLongitude());
+		SearchSettings ss = searchUICore.getSearchSettings().setOriginalLocation(
+				new LatLon(centerLatLon.getLatitude(), centerLatLon.getLongitude()));
+		searchUICore.updateSettings(ss);
+		updateClearButtonAndHint();
+		updateClearButtonVisibility(true);
+		startLocationUpdate();
+		updateToolbarButton();
+		runSearchAroundCurrentQuery();
+	}
+
+	private void runSearchAroundCurrentQuery() {
+		String text = searchEditText.getText().toString();
+		if (!Algorithms.isEmpty(text)) {
+			searchQuery = text;
+			runSearch(text);
+		}
+	}
+
+	private void addSortOption(@NonNull LinearLayout content, @NonNull PopupWindow popupWindow,
+			@NonNull SortByOption option) {
+		LinearLayout row = new LinearLayout(requireContext());
+		row.setGravity(Gravity.CENTER_VERTICAL);
+		row.setOrientation(LinearLayout.HORIZONTAL);
+		row.setPadding(AndroidUtils.dpToPx(requireContext(), 24), 0,
+				AndroidUtils.dpToPx(requireContext(), 24), 0);
+		row.setMinimumHeight(AndroidUtils.dpToPx(requireContext(), 56));
+		row.setBackgroundResource(AndroidUtils.resolveAttribute(requireContext(), android.R.attr.selectableItemBackground));
+
+		RadioButton radioButton = new RadioButton(requireContext());
+		radioButton.setClickable(false);
+		radioButton.setChecked(selectedSortByOption == option);
+		row.addView(radioButton, new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+		TextView text = new TextView(requireContext());
+		text.setText(option.titleId);
+		text.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
+		text.setTextSize(18);
+		LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+		textParams.setMarginStart(AndroidUtils.dpToPx(requireContext(), 16));
+		row.addView(text, textParams);
+
+		row.setOnClickListener(v -> {
+			selectedSortByOption = option;
+			updateSortChip();
+			popupWindow.dismiss();
+		});
+		content.addView(row, new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+	}
+
+	private void updateSortChip() {
+		if (sortChipTitle != null) {
+			sortChipTitle.setText(selectedSortByOption.titleId);
 		}
 	}
 
@@ -1662,7 +1986,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 						switch (processTopIndexAfterLoad) {
 							case FILTER:
 								app.runInUIThread(() -> {
-									buttonToolbarFilter.performClick();
+									filterChip.performClick();
 								});
 								break;
 							case MAP:
@@ -2282,7 +2606,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	public void showResult(@NonNull PoiUIFilter filter, @NonNull SearchResultCollection collection) {
-		buttonToolbarText.setText(R.string.shared_string_show_on_map);
 		mainSearchFragment.getAdapter().clear();
 		updateSearchResult(collection, true);
 		((QuickSearchListAdapter) mainSearchFragment.getAdapter()).setPoiUIFilter(filter);

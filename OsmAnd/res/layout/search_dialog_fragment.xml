@@ -13,7 +13,8 @@
         <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            app:elevation="0dp">
 
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar"
@@ -131,40 +132,155 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clickable="false"
-                    android:minHeight="48dp"
-                    android:orientation="horizontal">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="@dimen/content_padding"
+                    android:paddingEnd="@dimen/content_padding">
 
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/buttonToolbarImage"
-                        android:layout_width="54dp"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:visibility="gone"
-                        app:srcCompat="@drawable/ic_action_marker_dark"/>
+					<HorizontalScrollView
+						android:layout_width="0dp"
+						android:layout_height="match_parent"
+						android:layout_weight="1"
+						android:fillViewport="true"
+						android:overScrollMode="never"
+						android:paddingTop="@dimen/content_padding_small"
+						android:padding="@dimen/content_padding_small"
+						android:scrollbars="none">
 
-                    <TextView
-                        android:id="@+id/buttonToolbarTitle"
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:background="@null"
-                        android:ellipsize="end"
-                        android:gravity="center_vertical"
-                        android:lines="1"
-                        android:singleLine="true"
-                        android:text="@string/shared_string_show_on_map"
-                        android:textColor="?attr/color_dialog_buttons"
-                        android:textSize="@dimen/default_desc_text_size"
-                        android:visibility="invisible"/>
+						<LinearLayout
+							android:layout_width="wrap_content"
+							android:layout_height="match_parent"
+							android:gravity="center_vertical"
+							android:orientation="horizontal">
 
-                    <ImageButton
-                        android:id="@+id/filterButton"
-                        style="@style/Widget.AppCompat.ActionButton"
-                        android:layout_width="48dp"
-                        android:layout_height="match_parent"
-                        android:contentDescription="@string/poi_filter_custom_filter"
-                        app:srcCompat="@drawable/ic_action_filter_dark"
-                        android:visibility="gone"/>
+							<LinearLayout
+								android:id="@+id/filter_chip"
+								android:layout_width="wrap_content"
+								android:layout_height="36dp"
+								android:layout_marginEnd="@dimen/content_padding_half"
+								android:background="@drawable/bg_search_toolbar_chip"
+								android:clickable="true"
+								android:contentDescription="@string/poi_filter_custom_filter"
+								android:focusable="true"
+								android:gravity="center"
+								android:minWidth="68dp"
+								android:orientation="horizontal"
+								android:paddingStart="@dimen/content_padding_half"
+								android:paddingEnd="@dimen/content_padding_half"
+								android:visibility="gone">
+
+								<androidx.appcompat.widget.AppCompatImageView
+									android:id="@+id/filter_chip_icon"
+									android:layout_width="@dimen/standard_icon_size"
+									android:layout_height="@dimen/standard_icon_size"
+									android:layout_gravity="center_vertical"
+									app:srcCompat="@drawable/ic_action_filter" />
+
+								<TextView
+									android:id="@+id/filter_chip_count"
+									android:layout_width="wrap_content"
+									android:layout_height="wrap_content"
+									android:layout_marginStart="@dimen/content_padding_small_half"
+									android:gravity="center"
+									android:includeFontPadding="false"
+									android:minWidth="16dp"
+									android:textColor="?android:attr/textColorPrimary"
+									android:textSize="@dimen/default_desc_text_size"
+									android:textStyle="bold"
+									android:visibility="gone"
+									tools:text="2"
+									tools:visibility="visible" />
+
+							</LinearLayout>
+
+							<LinearLayout
+								android:id="@+id/sort_chip"
+								android:layout_width="wrap_content"
+								android:layout_height="36dp"
+								android:layout_marginEnd="@dimen/content_padding_half"
+								android:background="@drawable/bg_search_toolbar_chip"
+								android:clickable="true"
+								android:focusable="true"
+								android:gravity="center_vertical"
+								android:minWidth="132dp"
+								android:orientation="horizontal"
+								android:paddingStart="@dimen/content_padding_small"
+								android:paddingEnd="@dimen/content_padding_half">
+
+								<androidx.appcompat.widget.AppCompatImageView
+									android:id="@+id/sort_chip_icon"
+									android:layout_width="@dimen/standard_icon_size"
+									android:layout_height="@dimen/standard_icon_size"
+									android:layout_gravity="center_vertical"
+									android:layout_marginEnd="@dimen/content_padding_half"
+									app:srcCompat="@drawable/ic_action_sort" />
+
+								<net.osmand.plus.widgets.TextViewEx
+									android:id="@+id/sort_chip_title"
+									android:layout_width="wrap_content"
+									android:layout_height="wrap_content"
+									android:layout_gravity="center_vertical"
+									android:text="@string/sort_by_relevance"
+									android:textColor="?android:textColorPrimary"
+									android:textSize="@dimen/default_desc_text_size"
+									app:typefaceWeight="medium" />
+
+								<androidx.appcompat.widget.AppCompatImageView
+									android:id="@+id/sort_chip_arrow"
+									android:layout_width="@dimen/standard_icon_size"
+									android:layout_height="@dimen/standard_icon_size"
+									android:layout_gravity="center_vertical"
+									android:layout_marginStart="@dimen/content_padding_half"
+									app:srcCompat="@drawable/ic_action_arrow_drop_down" />
+
+							</LinearLayout>
+
+							<LinearLayout
+								android:id="@+id/search_around_chip"
+								android:layout_width="wrap_content"
+								android:layout_height="36dp"
+								android:background="@drawable/bg_search_toolbar_chip"
+								android:clickable="true"
+								android:focusable="true"
+								android:gravity="center_vertical"
+								android:minWidth="148dp"
+								android:orientation="horizontal"
+								android:paddingStart="@dimen/content_padding_small"
+								android:paddingEnd="@dimen/content_padding_half"
+								android:visibility="gone"
+								tools:visibility="visible">
+
+								<androidx.appcompat.widget.AppCompatImageView
+									android:id="@+id/search_around_chip_icon"
+									android:layout_width="@dimen/standard_icon_size"
+									android:layout_height="@dimen/standard_icon_size"
+									android:layout_gravity="center_vertical"
+									android:layout_marginEnd="@dimen/content_padding_half"
+									app:srcCompat="@drawable/ic_show_on_map_outlined" />
+
+								<net.osmand.plus.widgets.TextViewEx
+									android:id="@+id/search_around_chip_title"
+									android:layout_width="wrap_content"
+									android:layout_height="wrap_content"
+									android:layout_gravity="center_vertical"
+									android:text="@string/search_around"
+									android:textColor="?android:textColorPrimary"
+									android:textSize="@dimen/default_desc_text_size"
+									app:typefaceWeight="medium" />
+
+								<androidx.appcompat.widget.AppCompatImageView
+									android:id="@+id/search_around_chip_arrow"
+									android:layout_width="@dimen/standard_icon_size"
+									android:layout_height="@dimen/standard_icon_size"
+									android:layout_gravity="center_vertical"
+									android:layout_marginStart="@dimen/content_padding_half"
+									app:srcCompat="@drawable/ic_action_arrow_drop_down" />
+
+							</LinearLayout>
+
+						</LinearLayout>
+
+					</HorizontalScrollView>
 
                 </LinearLayout>
 
