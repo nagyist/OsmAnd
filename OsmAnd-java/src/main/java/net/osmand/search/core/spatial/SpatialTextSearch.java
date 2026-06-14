@@ -179,70 +179,6 @@ public class SpatialTextSearch {
 	}
 	
 	
-	public static void mainTest(String[] subArgsArray) throws FileNotFoundException, IOException {
-		long t = System.nanoTime();
-		String query = subArgsArray[0];
-		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
-		for(int i = 1; i < subArgsArray.length; i++) {
-			File fl = new File(subArgsArray[i]);
-			if (fl.isFile()) {
-				if (i == 1) {
-					initFile(ls, new File(fl.getParentFile(), OsmandRegions.REGIONS_OCBF));
-				}
-				initFile(ls, fl);
-			} else {
-				for (File f : fl.listFiles()) {
-					initFile(ls, f);
-				}
-			}
-		}
-		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
-		SpatialTextSearch a = new SpatialTextSearch();
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
-		a.searchTest(query, searchContext);
-	}
-
-	private static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {
-		if (f.exists() && (f.getName().endsWith(".obf") || f.getName().equals(OsmandRegions.REGIONS_OCBF))) {
-			BinaryMapIndexReader bir = new BinaryMapIndexReader(new RandomAccessFile(f, "r"), f);
-			ls.add(bir);
-		}
-	}
-	
-	public static void main(String[] args) throws IOException {
-		File folder = new File("/Users/victorshcherb/osmand/maps/");
-		String pattern = "Germany_baden";
-		String query = "Berlin hauptstrasse";
-		query = "Kelterstraße Kernen im Remstal";
-		query = "Germany Kelter. Kernen im Remstal";
-		
-		pattern = "Us_";
-		query = "Salt Lake City Pennsylvania Street";
-		query = "USA Salt Lake City Pennsylvania Street 41";
-		
-		pattern = "Ukraine_";
-//		query = "бровари Сільпо";
-		query = "пузата хата mcdonal.";
-		query = "kyiv нова пошта 53";
-		long t = System.nanoTime();
-		
-		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
-		for (File f : folder.listFiles()) {
-			if (f.getName().startsWith(pattern) || f.getName().equals(OsmandRegions.REGIONS_OCBF)) {
-				initFile(ls, f);
-			}
-		}
-		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
-		SpatialTextSearch a = new SpatialTextSearch();
-		a.searchTest(query, searchContext);
-		
-		searchContext = new SpatialSearchContext(ls, searchContext.cache);
-		a.searchTest(query, searchContext);
-	}
-	
-	
-
 
 	private List<SpatialSearchToken> splitWords(String input) {
 		List<String> owords =new ArrayList<String>();
@@ -362,6 +298,70 @@ public class SpatialTextSearch {
 		System.out.println();
 	}
 
+	
+	
+	public static void mainTest(String[] subArgsArray) throws FileNotFoundException, IOException {
+		long t = System.nanoTime();
+		String query = subArgsArray[0];
+		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
+		for(int i = 1; i < subArgsArray.length; i++) {
+			File fl = new File(subArgsArray[i]);
+			if (fl.isFile()) {
+				if (i == 1) {
+					initFile(ls, new File(fl.getParentFile(), OsmandRegions.REGIONS_OCBF));
+				}
+				initFile(ls, fl);
+			} else {
+				for (File f : fl.listFiles()) {
+					initFile(ls, f);
+				}
+			}
+		}
+		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
+		SpatialTextSearch a = new SpatialTextSearch();
+		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
+		a.searchTest(query, searchContext);
+	}
+
+	private static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {
+		if (f.exists() && (f.getName().endsWith(".obf") || f.getName().equals(OsmandRegions.REGIONS_OCBF))) {
+			BinaryMapIndexReader bir = new BinaryMapIndexReader(new RandomAccessFile(f, "r"), f);
+			ls.add(bir);
+		}
+	}
+	
+	public static void main(String[] args) throws IOException {
+		File folder = new File("/Users/victorshcherb/osmand/maps/");
+		String pattern = "Germany_baden";
+		String query = "Berlin hauptstrasse";
+		query = "Kelterstraße Kernen im Remstal";
+		query = "Germany Kelter. Kernen im Remstal";
+		
+		pattern = "Us_";
+		query = "Salt Lake City Pennsylvania Street";
+//		query = "USA Salt Lake City Pennsylvania Street 41";
+		
+//		pattern = "Ukraine_";
+//		query = "бровари Сільпо";
+//		query = "пузата хата mcdonal.";
+//		query = "kyiv нова пошта 53";
+		long t = System.nanoTime();
+		
+		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
+		for (File f : folder.listFiles()) {
+			if (f.getName().startsWith(pattern) || f.getName().equals(OsmandRegions.REGIONS_OCBF)) {
+				initFile(ls, f);
+			}
+		}
+		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
+		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
+		SpatialTextSearch a = new SpatialTextSearch();
+		a.searchTest(query, searchContext);
+		
+		searchContext = new SpatialSearchContext(ls, searchContext.cache);
+		a.searchTest(query, searchContext);
+	}
+	
 	
 
 	
