@@ -4478,9 +4478,9 @@
     <string name="weather_wind_miles_per_hour">mérföld/óra</string>
     <string name="weather_wind_kilimeters_per_hour">kilométer/óra</string>
     <string name="empty_screen_view_selected_weather_data">Kapcsolja be a kiválasztott időjárási adatok megtekintéséhez a térképen.</string>
-    <string name="clouds_widget_desc">Megjeleníti a felhőzetet a jelenlegi térképközéppontnál.</string>
-    <string name="precipitation_widget_desc">Megjeleníti a csapadékot a jelenlegi térképközéppontnál.</string>
-    <string name="temperature_widget_desc">Megjeleníti a hőmérsékletet a jelenlegi térképközéppontnál.</string>
+    <string name="clouds_widget_desc">Megjeleníti a jelenlegi térképközépponthoz tartozó felhőzetet.</string>
+    <string name="precipitation_widget_desc">Megjeleníti a jelenlegi térképközépponthoz tartozó csapadékot.</string>
+    <string name="temperature_widget_desc">Megjeleníti a jelenlegi térképközépponthoz tartozó hőmérsékletet.</string>
     <string name="weather_pressure_mmhg">Hgmm</string>
     <string name="weather_pressure_hectopascals">Hektopascal</string>
     <string name="weather_pressure_inches_of_mercury">Higanyhüvelyk</string>
@@ -4505,8 +4505,8 @@
     <string name="weather_wind_knots">csomó</string>
     <string name="weather_wind_meters_per_second">m/s</string>
     <string name="weather_pressure_hpa">hPa</string>
-    <string name="wind_widget_desc">Megjeleníti a szelet a jelenlegi térképközéppontnál.</string>
-    <string name="air_pressure_widget_desc">Megjeleníti a légnyomást a jelenlegi térképközéppontnál.</string>
+    <string name="wind_widget_desc">Megjeleníti a jelenlegi térképközépponthoz tartozó szelet.</string>
+    <string name="air_pressure_widget_desc">Megjeleníti a jelenlegi térképközépponthoz tartozó légnyomást.</string>
     <string name="weather_widgets_secondary_desc">A mértékegységek az időjárás bővítmény beállításaiban módosíthatók.</string>
     <string name="weather_plugin_description">Funkciók: \n- 24 órás és 7 napos időjárás-előrejelzés 5 rétegben \n- helyalapú modulok, \n- hőmérsékleti és légnyomásvonalak (izobárok).\n\nAz időjárási adatok szolgáltatója a Global Forecast System (GFS, %1$s).</string>
     <string name="map_widget_sunset_desc">Megjeleníti a következő napnyugta idejét vagy az addig hátralévő időt.</string>
