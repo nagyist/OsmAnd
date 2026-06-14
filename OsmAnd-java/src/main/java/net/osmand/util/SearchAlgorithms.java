@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.text.Normalizer;
 import java.util.*;
-import java.util.function.Function;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedInputStream;
@@ -47,25 +46,7 @@ public class SearchAlgorithms {
         return new CodePointPrefixMatch(leftOffset, rightOffset, commonPrefixCodePointLength);
     }
 
-    private static int suffixOffsetAfterPrefix(String token, String prefix) {
-        CodePointPrefixMatch prefixMatch = startWith(token, prefix);
-        if (prefixMatch.rightOffset != prefix.length()) {
-            return -1;
-        }
-        return prefixMatch.leftOffset < token.length() ? prefixMatch.leftOffset : -1;
-    }
-
-    private static String substringByCodePoints(String value, int codePointCount) {
-        if (codePointCount <= 0 || value.isEmpty()) {
-            return "";
-        }
-        int availableCodePointCount = value.codePointCount(0, value.length());
-        if (codePointCount >= availableCodePointCount) {
-            return value;
-        }
-        return value.substring(0, value.offsetByCodePoints(0, codePointCount));
-    }
-
+    
     private static List<String> split(String name) {
         int prev = -1;
         Set<String> namesToAdd = new LinkedHashSet<>();
@@ -150,7 +131,7 @@ public class SearchAlgorithms {
         return new ArrayList<>(queryTokens);
     }
     
-    private static String normalizeToken(String token) {
+    static String normalizeToken(String token) {
         if (token == null) {
             return "";
         }
@@ -224,17 +205,6 @@ public class SearchAlgorithms {
         return sb.toString();
     }
     
-    public static String nameIndexPreparePrefix(String token, int maxPrefixLength) {
-        String normalizedToken = normalizeToken(token);
-	    if (maxPrefixLength <= 0) {
-		    return "";
-	    }
-        if (normalizedToken.codePointCount(0, normalizedToken.length()) > maxPrefixLength) {
-	        return substringByCodePoints(normalizedToken, maxPrefixLength);
-        }
-        return normalizedToken;
-    }
-
     private static boolean isTokenCharacter(String value, int index, boolean tokenAlreadyStarted) {
         int character = value.codePointAt(index);
         if (Character.isLetter(character) || Character.isDigit(character)) {
@@ -305,12 +275,13 @@ public class SearchAlgorithms {
                 || (markerCodePoint >= SUFFIX_DICT_MARKER_BASE && markerCodePoint <= SUFFIX_DICT_MARKER_MAX);
     }
     
-    private static String nameIndexEncodeSuffix(String suffix) {
-        return startsWithSuffixMarker(suffix) ? SUFFIX_DICT_MARKER_RAW_ESCAPE + suffix : suffix;
-    }
-
+    
     private static int countCodePoints(String value) {
         return value.codePointCount(0, value.length());
+    }
+    
+	private static String nameIndexEncodeSuffix(String suffix) {
+        return startsWithSuffixMarker(suffix) ? SUFFIX_DICT_MARKER_RAW_ESCAPE + suffix : suffix;
     }
     
     public static String nameIndexEncodeSuffix(String suffix, String previousSuffix) {
@@ -329,64 +300,7 @@ public class SearchAlgorithms {
         return countCodePoints(deltaEncodedSuffix) < countCodePoints(encodedRawSuffix) ? deltaEncodedSuffix : encodedRawSuffix;
     }
 
-    /**
-     * Collects unique suffixes for the prefix, stores them once in sorted encoded form, and builds per-object bitsets.
-     */
-    public static <T> SuffixDictionary<T> nameIndexBuildSuffixDictionary(String prefix, List<T> objects,
-                                                                         Function<T, Collection<String>> tokenSupplier) {
-        SuffixDictionary<T> data = new SuffixDictionary<>();
-        TreeSet<String> sortedSuffixes = new TreeSet<>();
-        Map<T, Set<String>> suffixesByObject = new LinkedHashMap<>();
-        for (T object : objects) {
-            Set<String> objectSuffixes = new LinkedHashSet<>();
-            suffixesByObject.put(object, objectSuffixes);
-            for (String token : tokenSupplier.apply(object)) {
-                int suffixOffset = suffixOffsetAfterPrefix(token, prefix);
-                String suffix;
-                if (suffixOffset < 0) {
-                    if (!Objects.equals(token, prefix)) {
-                        continue;
-                    }
-                    suffix = "";
-                } else {
-                    suffix = Normalizer.normalize(token.substring(suffixOffset), Normalizer.Form.NFC);
-                }
-                if (suffix == null) {
-                    continue;
-                }
-                objectSuffixes.add(suffix);
-                sortedSuffixes.add(suffix);
-            }
-        }
-        String previousSuffix = null;
-        for (String suffix : sortedSuffixes) {
-            String encodedSuffix = nameIndexEncodeSuffix(suffix, previousSuffix);
-            SuffixEntry entry = new SuffixEntry(suffix, encodedSuffix);
-            data.resolvedSuffixToIndex.put(entry.resolvedSuffix(), data.dictionaryEntries.size());
-            data.dictionaryEntries.add(entry);
-            previousSuffix = suffix;
-        }
-        int dictionaryWordCount = (data.dictionaryEntries.size() + Integer.SIZE - 1) / Integer.SIZE;
-        if (dictionaryWordCount == 0) {
-            return data;
-        }
-        for (T object : objects) {
-            int[] bitsetWords = new int[dictionaryWordCount];
-            Set<String> objectSuffixes = suffixesByObject.get(object);
-            if (objectSuffixes != null) {
-                for (String suffix : objectSuffixes) {
-                    Integer suffixIndex = data.resolvedSuffixToIndex.get(suffix);
-                    if (suffixIndex == null) {
-                        continue;
-                    }
-                    bitsetWords[suffixIndex >> 5] |= 1 << (suffixIndex & 31);
-                }
-            }
-            data.bitsets.put(object, bitsetWords);
-        }
-        return data;
-    }
-
+ 
     public static String replaceGermanSS(String fullText) {
         int i;
         while ((i = fullText.indexOf('ß')) != -1) {
