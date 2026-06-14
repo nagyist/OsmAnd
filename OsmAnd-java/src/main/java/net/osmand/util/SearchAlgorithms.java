@@ -1,11 +1,18 @@
 package net.osmand.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.function.Function;
 
+import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedInputStream;
+
+import gnu.trove.list.array.TIntArrayList;
 import net.osmand.binary.Abbreviations;
 import net.osmand.binary.CommonWords;
+import net.osmand.search.core.SearchPhrase;
 
 /**
  * Basic algorithms that are used in Search
@@ -20,7 +27,8 @@ public class SearchAlgorithms {
     
     private SearchAlgorithms() {}
 
-    private record CodePointPrefixMatch(int leftOffset, int rightOffset, int commonPrefixCodePointLength) {}
+	private record CodePointPrefixMatch(int leftOffset, int rightOffset, int commonPrefixCodePointLength) {
+	}
 
     private static CodePointPrefixMatch startWith(String token, String prefix) {
         int leftOffset = 0;
@@ -85,6 +93,36 @@ public class SearchAlgorithms {
         }
         return new ArrayList<>(namesToAdd);
     }
+    
+    
+	public static List<String> splitAndNormalizeSearchQuery(String query, List<String> original) {
+		String normalizedQuery = canonicalizePunctuation(query);
+		List<String> o = SearchPhrase.splitWords(normalizedQuery, new ArrayList<String>(), SearchPhrase.ALLDELIMITERS);
+		List<String> queryTokens = new ArrayList<String>();
+		for (String token : o) {
+			String normalizedToken = normalizeToken(token);
+			if (!normalizedToken.isEmpty()) {
+				queryTokens.add(normalizedToken);
+				original.add(token);
+			}
+		}
+		if (ArabicNormalizer.isSpecialArabic(normalizedQuery)) {
+			String arabic = ArabicNormalizer.normalize(normalizedQuery);
+			if (arabic != null && !arabic.equals(normalizedQuery)) {
+				queryTokens.clear();
+				original.clear();
+				for (String token : SearchPhrase.splitWords(arabic, new ArrayList<String>(), SearchPhrase.ALLDELIMITERS)) {
+					String normalizedToken = normalizeToken(token);
+					if (!normalizedToken.isEmpty()) {
+						queryTokens.add(normalizedToken);
+						original.add(token);
+					}
+				}
+			}
+		}
+		return queryTokens;
+	}
+    
 
     /**
      * Produces unique normalized tokens from the query, plus Arabic-normalized variants when applicable.
@@ -379,4 +417,57 @@ public class SearchAlgorithms {
 			}
 		}
 	}
+	
+	
+	// [zoom - default = 15 - 1km],[xzoom-left],[xzoom-right-delta],[y-top],[y-bottom-delta],...
+	// input is boundary encoded - 4 first uints is bbox -  of x31-left, y31-top, x31-right, y31-bottom
+	public static int[] encodeBboxForNameAtoms(int zoom, int[] bbox31) {
+		int[] res = new int[bbox31.length + 1];
+		res[0] = zoom;
+		int dz = 31 - zoom;
+		// support for array of bboxes could be added later 
+		// without it some width could be negative -180 meridian
+		res[1] = bbox31[0] >> dz;
+		res[2] = Math.max(1, (bbox31[2] >> dz) - res[1]);
+		res[3] = bbox31[1] >> dz;
+		res[4] = Math.max(1, (bbox31[3] >> dz) - res[3]);
+		return res;
+	}
+	
+	// return array of x31-left, y31-top, x31-right, y31-bottom
+	public static int[] decodeBboxForNameAtoms(int[] vls, int x16, int y16) {
+		if (vls.length < 5) {
+			return null;
+		}
+		int zoom = vls[0];
+		int[] res = new int[((vls.length - 1) / 4) * 4];
+		for(int ind = 0; ind < res.length; ind+=4) {
+			res[ind] = ((x16 >> (16 - zoom)) - vls[ind + 1]) << (31 - zoom);
+			res[ind + 1] = ((y16 >> (16 - zoom))) - (vls[ind + 3]) << (31 - zoom);
+			res[ind + 2] = (vls[ind + 2] << (31 - zoom)) + res[ind];
+			res[ind + 3] = (vls[ind + 4] << (31 - zoom)) + res[ind + 1];
+		}
+		return res;
+	}
+	
+	public static int[] decodeBboxForNameAtomsBytes(ByteString bbox, int x16, int y16) {
+		int[] dBbox = null;
+		if (bbox != null) {
+			ByteArrayInputStream bis = new ByteArrayInputStream(bbox.toByteArray());
+			TIntArrayList lst = new TIntArrayList();
+			while (bis.available() > 0) {
+				try {
+					int n = CodedInputStream.readRawVarint32(bis);
+					lst.add(n);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
+			dBbox = SearchAlgorithms.decodeBboxForNameAtoms(lst.toArray(), x16, y16);
+		}
+		return dBbox;
+	}
+	
+	
 }
+

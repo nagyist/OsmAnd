@@ -9,17 +9,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+
+import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.City;
+import net.osmand.data.QuadRect;
 import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexInspector {
 
-	public Map<Long, PrefixNameValue> indexByRef = new HashMap<>();
+	private Map<Long, PrefixNameValue> indexByRef = new HashMap<>();
 	private long initialShift;
 	
 	private SuffixesStat suffixesStat = new SuffixesStat();
@@ -32,7 +35,10 @@ public class NameIndexInspector {
 	}
 	
 	public static class BoundariesIndexStat {
+		
 		Map<String, ValueFreq> bnds = new HashMap<>();
+		
+		TLongObjectHashMap<QuadRect> rects = new TLongObjectHashMap<QuadRect>();
 		
 		public Map<String, ValueFreq> getBoundaries() {
 			return bnds;
@@ -41,9 +47,14 @@ public class NameIndexInspector {
 		public void registerBoundaries(List<City> cities) {
 			for (City c : cities) {
 				long oid = ObfConstants.getOsmObjectId(c);
-				addSubValue(ValueFreq.get(bnds, c.getName()), oid);
+				int[] bbox31 = c.getBbox31();
+				if (bbox31 == null) {
+					continue;
+				}
+				rects.put(oid, new QuadRect(bbox31[0], bbox31[1], bbox31[2], bbox31[3]));
+				addSubValue(ValueFreq.get(bnds, c.getName(), 0), oid);
 				for (String s : c.getOtherNames()) {
-					addSubValue(ValueFreq.get(bnds, s), oid);
+					addSubValue(ValueFreq.get(bnds, s, 0), oid);
 				}
 			}
 		}
@@ -63,8 +74,36 @@ public class NameIndexInspector {
 			mainWord.subValues.add(v);
 			mainWord.freq++;
 		}
+		
+		public int calculateNumberOfDistinctBBox(List<ValueFreq> vls) {
+			if(vls.size() < 2) {
+				return vls.size();
+			}
+			List<List<QuadRect>> groups = new ArrayList<List<QuadRect>>();
+			int KM15_IN31Z = 1_000_000;
+			for (int i = 0; i < vls.size(); i++) {
+				QuadRect q = rects.get(vls.get(i).extra);
+				q.inset(-Math.max(KM15_IN31Z, q.width() / 6), -Math.max(KM15_IN31Z, q.height() / 6));
+				List<QuadRect> group = null;
+				main: for (List<QuadRect> gr : groups) {
+					for (QuadRect r : gr) {
+						if (QuadRect.trivialOverlap(r, q)) {
+							group = gr;
+							break main;
+						}
+					}
+				}
+				if (group == null) {
+					group = new ArrayList<QuadRect>();
+					groups.add(group);
+				}
+				group.add(q);
+			}
+			return groups.size();
+		}
 
 		public void merge(BoundariesIndexStat bndsStat) {
+			rects.putAll(bndsStat.rects);
 			for (ValueFreq from : bndsStat.bnds.values()) {
 				ValueFreq to = bnds.get(from.value);
 				if (to == null) {
@@ -75,7 +114,7 @@ public class NameIndexInspector {
 						for (ValueFreq t : from.subValues) {
 							if (t.extra == fromSub.extra) {
 								toSub = t;
-								toSub.extra += fromSub.extra;
+								toSub.freq += fromSub.freq;
 								break;
 							}
 						}
@@ -224,10 +263,10 @@ public class NameIndexInspector {
 			return subValues.subList(0, limit);
 		}
 		
-		public static ValueFreq get(Map<String, ValueFreq> values, String key) {
+		public static ValueFreq get(Map<String, ValueFreq> values, String key, int def) {
 			ValueFreq vf = values.get(key);
 			if (vf == null) {
-				vf = new ValueFreq(key, 0);
+				vf = new ValueFreq(key, def);
 				values.put(key, vf);
 			}
 			return vf;
@@ -329,16 +368,17 @@ public class NameIndexInspector {
 		}
 	}
 	
-	private static class PrefixNameValue implements Comparable<PrefixNameValue> {
+	public static class PrefixNameValue implements Comparable<PrefixNameValue> {
 		public String key;
-		public OsmAndPoiNameIndexData data = null;
+		public OsmAndPoiNameIndexData poi = null;
 		public AddressNameIndexData addr = null;
+		public long shift;
 		
 		@Override
 		public String toString() {
-			if (data != null) {
+			if (poi != null) {
 				List<ValueFreq> suffixes = collectPOIFrequencies(null);
-				return String.format("%s (%d, %s)", key, data.getAtomsCount(), suffixes);
+				return String.format("%s (%d, %s)", key, poi.getAtomsCount(), suffixes);
 			} else if (addr != null) {
 				List<ValueFreq> suffixes =  collectAddrFrequencies(key, null, null, -1);
 				return String.format("%s (%d, %s)", key, addr.getAtomCount(), suffixes);
@@ -393,11 +433,22 @@ public class NameIndexInspector {
 								ValueFreq sPref = streetsPrefix.subValues.get(ind);
 								streetsStat.processAtom(streetsPrefix, sPref, a);
 							}
+							// test bbox
+//							ByteString bbox = a.getBbox();
+//							if (bbox != null && a.hasBbox() && a.getXy16Count() >= 1) {
+//								int xy16 = a.getXy16(0);
+//								int x16 = (xy16 >>> 16);
+//								int y16 = (xy16 & ((1 << 16) - 1));
+//								int[] vls = SearchAlgorithms.decodeBboxForNameAtomsBytes(bbox, x16, y16);
+//								System.out.println(String.format("%s %.5f %.5f %.5f %.5f", s.value,
+//										MapUtils.get31LatitudeY(vls[1]), MapUtils.get31LongitudeX(vls[0]),
+//										MapUtils.get31LatitudeY(vls[3]), MapUtils.get31LongitudeX(vls[2])));
+//							}
 						}
 						suffBit >>= 1;
 					}
 				}
-				if (suffStats != null && f >= 0) {
+				if (suffStats != null && f == -1) {
 					if (setBits == 1) {
 						suffStats.atomOneBitSuffix++;
 					} else if (setBits == 2) {
@@ -414,8 +465,8 @@ public class NameIndexInspector {
 			List<ValueFreq> suffixes = new ArrayList<>();
 			String curSuffix = "";
 			stats.prefixesCount++;
-			stats.suffixesLenSum += data.getSuffixesDictionaryList().size();
-			for (String s : data.getSuffixesDictionaryList()) {
+			stats.suffixesLenSum += poi.getSuffixesDictionaryList().size();
+			for (String s : poi.getSuffixesDictionaryList()) {
 				curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
 				ValueFreq vf = new ValueFreq(key + curSuffix, 0);
 				suffixes.add(vf);
@@ -425,7 +476,7 @@ public class NameIndexInspector {
 				stats.longestSuffixesKey = key;
 			}
 			int INT_BITS = 32;
-			for (OsmAndPoiNameIndexDataAtom a : data.getAtomsList()) {
+			for (OsmAndPoiNameIndexDataAtom a : poi.getAtomsList()) {
 				int setBits = 0;
 				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
 					int suffBit = a.getSuffixesBitset(i);
@@ -453,7 +504,7 @@ public class NameIndexInspector {
 
 		@Override
 		public int compareTo(PrefixNameValue o) {
-			int c = -Integer.compare(data.getAtomsCount(), o.data.getAtomsCount());
+			int c = -Integer.compare(poi.getAtomsCount(), o.poi.getAtomsCount());
 			if (c == 0) {
 				c = key.compareTo(o.key);
 			}
@@ -499,7 +550,7 @@ public class NameIndexInspector {
 			if (prefix != null && !(p.key.toLowerCase().startsWith(prefix) || prefix.toLowerCase().startsWith(p.key))) {
 				continue;
 			}
-			ValueFreq vf = new ValueFreq(p.key, p.data.getAtomsCount());
+			ValueFreq vf = new ValueFreq(p.key, p.poi.getAtomsCount());
 			vf.subValues = p.collectPOIFrequencies(suffixesStat);
 			ls.add(vf);
 		}
@@ -553,10 +604,15 @@ public class NameIndexInspector {
 
 	public void addData(OsmAndPoiNameIndexData from, long currentShift) {
 		PrefixNameValue obj = indexByRef.get(currentShift);
-		if (obj.data != null) {
+		if (obj.poi != null) {
 			throw new IllegalStateException(obj.toString());
 		}
-		obj.data = from;
+		obj.shift = currentShift;
+		obj.poi = from;
+	}
+	
+	public Map<Long, PrefixNameValue> getIndexByRef() {
+		return indexByRef;
 	}
 
 
@@ -565,7 +621,12 @@ public class NameIndexInspector {
 		if (obj.addr != null) {
 			throw new IllegalStateException(obj.toString());
 		}
-		obj.addr = from;		
+		obj.shift = currentShift;
+		obj.addr = from;
+	}
+	
+	public Collection<PrefixNameValue> getPrefixes() {
+		return indexByRef.values();
 	}
 
 
