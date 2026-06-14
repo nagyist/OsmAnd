@@ -44,6 +44,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		return linearResults.get(combination * tokens.length + pos);
 	}
+	
+	public List<SpatialSearchResult> getResult() {
+		sortResults();
+		return result;
+	}
 
 	public List<NameIndexAtom> getAtoms(int combination) {
 		if (result != null) {

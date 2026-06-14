@@ -24,6 +24,9 @@ import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 
+
+// FIXME merge uniq references for POI to make id 
+
 // TODO Lazy load tokens from full name index !
 // TODO global cache - Read common words for files
 // TODO Read all top poi categories for files
@@ -116,16 +119,20 @@ public class SpatialTextSearch {
 			}			
 		}
 		
-		
-		@Override
-		public final String toString() {
+		public String getType() {
 			String type = "";
 			if (addr != null) {
 				type = CityBlocks.getByType(addr.getType()).toString();
 			} else if (poi != null) {
 				type = "POI";
 			}
-			return String.format("%s (%.4f, %.4f) ", type + " " + name + " " + (id % 0xffff), 
+			return type;
+		}
+		
+		
+		@Override
+		public final String toString() {
+			return String.format("%s (%.4f, %.4f) ", getType() + " " + name + " " + (id % 0xffff), 
 					MapUtils.get31LatitudeY(y16 << 15),
 					MapUtils.get31LongitudeX(x16 << 15));
 		}
@@ -333,12 +340,11 @@ public class SpatialTextSearch {
 		
 		Collections.sort(combinations);
 		if (combinations.size() > 0) {
-			SpatialSearchResultsList result = combinations.get(0);
-			result.sortResults();
+			SpatialSearchResultsList resList = combinations.get(0);
 			System.out.println("--------");
-			System.out.println("Main: " + result);
-			for(int i = 0; i < result.getCombinations(); i++) {
-				System.out.println(result.getAtoms(i));
+			System.out.println("Main: " + resList);
+			for (SpatialSearchResult r : resList.getResult()) {
+				System.out.println(r);
 			}
 			System.out.println("--------");
 		}
