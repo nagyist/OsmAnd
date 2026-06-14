@@ -1,4 +1,4 @@
-package net.osmand.search.core;
+package net.osmand.search.core.spatial;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -19,6 +19,7 @@ import net.osmand.binary.CommonWords;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.map.OsmandRegions;
+import net.osmand.search.core.HashQuadTree;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
@@ -35,6 +36,8 @@ import net.osmand.util.SearchAlgorithms;
 // 1. Abbrevations
 // 2. Street intersection match
 // -------------
+// - Sugggestion-correction
+// - Progress / cancel
 //////////////SEARCH ALGORITHM //////////////
 // 1. Split words
 // 2.Reinit caches
@@ -57,7 +60,7 @@ import net.osmand.util.SearchAlgorithms;
 // Phase I - only rare + words replaced abbrrevations
 // Phase II - all words + replaced abbrevations
 // Phase III - all words + replaced abbrevations
-public class SearchManyWordsAlgorithm {
+public class SpatialTextSearch {
 	
 	
 	static class NameIndexAtom {
@@ -129,7 +132,7 @@ public class SearchManyWordsAlgorithm {
 	};
 	
 	
-	static class SearchToken {
+	static class SpatialSearchToken {
 		int originalOrder = 0;
 		int sortedOrder = 0;
 		boolean incomplete;
@@ -140,7 +143,7 @@ public class SearchManyWordsAlgorithm {
 		HashQuadTree<NameIndexAtom> quadTree = new HashQuadTree<>(16);
 		
 		
-		public SearchToken(String w, String original, int order) {
+		public SpatialSearchToken(String w, String original, int order) {
 			originalWord = original;
 			word = w;
 			this.originalOrder = order;
@@ -187,8 +190,8 @@ public class SearchManyWordsAlgorithm {
 			}
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
-		SearchManyWordsAlgorithm a = new SearchManyWordsAlgorithm();
-		SearchManyContext searchContext = new SearchManyContext(ls);
+		SpatialTextSearch a = new SpatialTextSearch();
+		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
 		a.searchTest(query, searchContext);
 	}
 
@@ -223,32 +226,32 @@ public class SearchManyWordsAlgorithm {
 			}
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
-		SearchManyContext searchContext = new SearchManyContext(ls);
-		SearchManyWordsAlgorithm a = new SearchManyWordsAlgorithm();
+		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
+		SpatialTextSearch a = new SpatialTextSearch();
 		a.searchTest(query, searchContext);
 		
-		searchContext = new SearchManyContext(ls, searchContext.cache);
+		searchContext = new SpatialSearchContext(ls, searchContext.cache);
 		a.searchTest(query, searchContext);
 	}
 	
 	
 
 
-	private List<SearchToken> splitWords(String input) {
+	private List<SpatialSearchToken> splitWords(String input) {
 		List<String> owords =new ArrayList<String>();
 		List<String> words = SearchAlgorithms.splitAndNormalizeSearchQuery(input, owords);
-		List<SearchToken> tokens = new ArrayList<>();
+		List<SpatialSearchToken> tokens = new ArrayList<>();
 		for (int order = 0; order < words.size(); order++) {
 			String w = words.get(order);
-			tokens.add(new SearchToken(w, owords.get(order), order));
+			tokens.add(new SpatialSearchToken(w, owords.get(order), order));
 		}
 		return tokens;
 	}
 	
-	private void sortTokens(List<SearchToken> tokens) {
-		Collections.sort(tokens, new Comparator<SearchToken>() {
+	private void sortTokens(List<SpatialSearchToken> tokens) {
+		Collections.sort(tokens, new Comparator<SpatialSearchToken>() {
 			@Override
-			public int compare(SearchToken o1, SearchToken o2) {
+			public int compare(SpatialSearchToken o1, SpatialSearchToken o2) {
 				int c1 = CommonWords.getCommonSearch(o1.word);
 				int c2 = CommonWords.getCommonSearch(o2.word);
 				if(c1 != c2) {
@@ -269,20 +272,20 @@ public class SearchManyWordsAlgorithm {
 	}
 	
 
-	private List<SearchManyResultsList> findObjCombinations(List<SearchToken> tokens) {
-		LinkedList<SearchManyResultsList> candidates = new LinkedList<>();
-		candidates.add(new SearchManyResultsList());
-		List<SearchManyResultsList> result = new ArrayList<>();
+	private List<SpatialSearchResultsList> findObjCombinations(List<SpatialSearchToken> tokens) {
+		LinkedList<SpatialSearchResultsList> candidates = new LinkedList<>();
+		candidates.add(new SpatialSearchResultsList());
+		List<SpatialSearchResultsList> result = new ArrayList<>();
 //		System.out.println("TOKENS " + tokens);
 		while (!candidates.isEmpty()) {
-			SearchManyResultsList parent = candidates.removeFirst();
+			SpatialSearchResultsList parent = candidates.removeFirst();
 			if (parent.getCombinations() > 0) {
 				result.add(parent);
 			}
-			for (SearchToken token : tokens) {
+			for (SpatialSearchToken token : tokens) {
 				if (parent.getTokenCount() == 0 || token.sortedOrder < parent.getFirstToken().sortedOrder) {
 //					System.out.println("ITERATION Token [ " + token + " ] + " + parent);
-					SearchManyResultsList next = new SearchManyResultsList(token, parent);
+					SpatialSearchResultsList next = new SpatialSearchResultsList(token, parent);
 					if (parent.getTokenCount() == 0) {
 						next.addResult(token.atoms);
 					} else {
@@ -296,7 +299,7 @@ public class SearchManyWordsAlgorithm {
 						}
 					}
 					// reverse search quad tree 
-					final SearchManyResultsList p = parent;
+					final SpatialSearchResultsList p = parent;
 					for (final NameIndexAtom a : token.atoms) {
 						parent.quadTree.forEachMatchHigherZoom(a.bboxTileZoom, a.bboxTileId, indxs -> {
 							for (int indx : indxs) {
@@ -314,23 +317,23 @@ public class SearchManyWordsAlgorithm {
 	}
 
 
-	public void searchTest(String input, SearchManyContext ctx) throws IOException {
+	public void searchTest(String input, SpatialSearchContext ctx) throws IOException {
 		// 1. prepare tokens
-		List<SearchToken> tokens = splitWords(input);
+		List<SpatialSearchToken> tokens = splitWords(input);
 		// 2. read atoms
-		for (SearchToken t : tokens) {
+		for (SpatialSearchToken t : tokens) {
 			ctx.readAtoms(t);
 		}
 		// 3. sort tokens 
 		sortTokens(tokens);
 		// 4. find combinations
 		ctx.stats.computeTime -= System.nanoTime();
-		List<SearchManyResultsList> combinations = findObjCombinations(tokens);
+		List<SpatialSearchResultsList> combinations = findObjCombinations(tokens);
 		ctx.stats.computeTime += System.nanoTime();
 		
 		Collections.sort(combinations);
 		if (combinations.size() > 0) {
-			SearchManyResultsList result = combinations.get(0);
+			SpatialSearchResultsList result = combinations.get(0);
 			result.sortResults();
 			System.out.println("--------");
 			System.out.println("Main: " + result);
@@ -342,7 +345,7 @@ public class SearchManyWordsAlgorithm {
 		
 		System.out.println("\nTokens: " + tokens);
 		System.out.println("All Results: ");
-		for (SearchManyResultsList s : combinations) {
+		for (SpatialSearchResultsList s : combinations) {
 			if (s.getTokenCount() >= 2) {
 				System.out.println("  " + s.toString(false));
 			}

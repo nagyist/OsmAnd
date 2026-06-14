@@ -1,4 +1,4 @@
-package net.osmand.search.core;
+package net.osmand.search.core.spatial;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,15 +13,15 @@ import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.NameIndexInspector.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
-import net.osmand.search.core.SearchManyWordsAlgorithm.NameIndexAtom;
-import net.osmand.search.core.SearchManyWordsAlgorithm.SearchToken;
+import net.osmand.search.core.spatial.SpatialTextSearch.NameIndexAtom;
+import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchToken;
 import net.osmand.util.SearchAlgorithms;
 
 // 1. TODO evict cache files
 // 2. TODO evict cache words
 // TODO properly calculate shiftToIndex (test) - Address
 // TODO properly calculate shiftToIndex (test) - POI
-public class SearchManyContext {
+public class SpatialSearchContext {
 
 	public static boolean SEARCH_POI = true;
 	private static int SHIFT_FILE_IND = 12; // maximum files 4096
@@ -75,7 +75,7 @@ public class SearchManyContext {
 		}
 	}
 	
-	public SearchManyContext(List<BinaryMapIndexReader> files, SearchManyGlobalCache cache) {
+	public SpatialSearchContext(List<BinaryMapIndexReader> files, SearchManyGlobalCache cache) {
 		this.cache = cache;
 		this.files = files;
 		
@@ -89,11 +89,11 @@ public class SearchManyContext {
 		}
 	}
 	
-	public SearchManyContext(List<BinaryMapIndexReader> files) {
+	public SpatialSearchContext(List<BinaryMapIndexReader> files) {
 		this(files, new SearchManyGlobalCache());
 	}
 	
-	void readAtoms(SearchToken t) throws IOException {
+	void readAtoms(SpatialSearchToken t) throws IOException {
 		for (int fileInd = 0; fileInd < files.size(); fileInd++) {
 			SearchManyFileCache iCache = internalFile.get(fileInd);
 			List<NameIndexInspector> nameIndexes = iCache.tokens.get(t.word);
@@ -127,7 +127,7 @@ public class SearchManyContext {
 	}
 	
 
-	private void parseAtomSuffixes(SearchToken t, int fileInd, PrefixNameValue prefix) {
+	private void parseAtomSuffixes(SpatialSearchToken t, int fileInd, PrefixNameValue prefix) {
 		int INT_BITS = 32;
 		String curSuffix = null;
 		List<String> suffixes = new ArrayList<>();
