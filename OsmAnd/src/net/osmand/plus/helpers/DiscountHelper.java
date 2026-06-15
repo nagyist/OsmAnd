@@ -336,6 +336,9 @@ public class DiscountHelper {
 		if (mData == null) {
 			return null;
 		}
+		if (!Algorithms.isEmpty(mData.discount)) {
+			return mData.discount;
+		}
 		InAppPurchaseHelper purchaseHelper = app.getInAppPurchaseHelper();
 		if (purchaseHelper == null) {
 			return null;
@@ -591,6 +594,7 @@ public class DiscountHelper {
 		private String iconId;
 		private String url;
 		private String textBtnTitle;
+		private String discount;
 
 		@ColorInt
 		private int iconColor = -1;
@@ -637,6 +641,11 @@ public class DiscountHelper {
 		@Nullable
 		public String getTextBtnTitle() {
 			return textBtnTitle;
+		}
+
+		@Nullable
+		public String getDiscount() {
+			return discount;
 		}
 
 		@Nullable
@@ -706,6 +715,7 @@ public class DiscountHelper {
 			res.url = parseUrl(app, obj.getString("url"));
 			res.choosePlanType = DiscountHelper.getChoosePlanType(res.url);
 			res.textBtnTitle = obj.optString("button_title");
+			res.discount = obj.optString("discount");
 			res.iconColor = parseColor("icon_color_default_light", obj);
 			res.bgColor = parseColor("bg_color", obj);
 			res.titleColor = parseColor("title_color", obj);
