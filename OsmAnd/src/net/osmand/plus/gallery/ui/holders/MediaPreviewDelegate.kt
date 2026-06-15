@@ -23,7 +23,7 @@ class MediaPreviewDelegate(
 	private val videoScrim: View? = null,
 	private val playIcon: ImageView? = null,
 	private val durationText: TextView? = null,
-	private val large: Boolean = false,
+	var large: Boolean = false,
 	private val posterLoader: MediaPosterLoader? = null
 ) {
 

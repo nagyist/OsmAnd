@@ -9,6 +9,7 @@ import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.util.LruCache
 import net.osmand.plus.OsmandApplication
+import net.osmand.plus.utils.AndroidUtils
 import net.osmand.shared.media.domain.MediaItem
 import net.osmand.shared.media.domain.MediaType
 import java.io.File
@@ -30,7 +31,7 @@ import androidx.core.net.toUri
  */
 class LocalMediaMetadataRepository(
 	private val app: OsmandApplication
-) : MediaMetadataRepository, MediaPosterLoader {
+) : MediaMetadataRepository, MediaPosterLoader, MediaSourceResolver {
 
 	private val executor = Executors.newSingleThreadExecutor()
 	private val mainHandler = Handler(Looper.getMainLooper())
@@ -90,6 +91,23 @@ class LocalMediaMetadataRepository(
 				noPosterIds.add(item.id)
 			}
 			mainHandler.post { callback(poster) }
+		}
+	}
+
+	// --- MediaSourceResolver ---
+
+	override fun getPlaybackUri(item: MediaItem): Uri? {
+		resolveFile(item)?.let { return Uri.fromFile(it) }
+		return resolveContentUri(item)
+	}
+
+	override fun getShareableUri(item: MediaItem): Uri? {
+		resolveContentUri(item)?.let { return it }
+		val file = resolveFile(item) ?: return null
+		return try {
+			AndroidUtils.getUriForFile(app, file)
+		} catch (_: Exception) {
+			null
 		}
 	}
 

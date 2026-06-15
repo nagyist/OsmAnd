@@ -36,6 +36,14 @@ interface MediaPosterLoader {
 	fun loadPoster(item: MediaItem, callback: (Bitmap?) -> Unit)
 }
 
+
+interface MediaSourceResolver {
+
+	fun getPlaybackUri(item: MediaItem): android.net.Uri?
+
+	fun getShareableUri(item: MediaItem): android.net.Uri?
+}
+
 fun interface Cancellable {
 	fun cancel()
 }

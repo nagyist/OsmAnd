@@ -13,19 +13,23 @@ import net.osmand.plus.gallery.model.GalleryActionButton
 import net.osmand.plus.gallery.model.GalleryItem
 import net.osmand.plus.gallery.model.GalleryItem.NoMedia.ActionButtonStyle
 import net.osmand.plus.gallery.model.MediaHolder
+import net.osmand.plus.gallery.ui.holders.MediaHolderType
 import net.osmand.shared.gpx.primitives.Linkable
 import net.osmand.shared.media.domain.MediaItem
-import net.osmand.shared.media.domain.MediaType
 
 
-class AttachedMediaRowController(
+class AttachedMediaRowController @JvmOverloads constructor(
 	app: OsmandApplication,
 	key: GalleryKey,
 	private val target: Linkable,
-	private val latLon: LatLon?
+	private val latLon: LatLon?,
+	private val compactItems: Boolean = false
 ) : GalleryRowController(app, key) {
 
 	override fun requiresInternet() = false
+
+	override fun resolveRowHolderType(position: Int): MediaHolderType =
+		if (compactItems) MediaHolderType.SMALL else super.resolveRowHolderType(position)
 
 	override fun buildGalleryItems(holder: MediaHolder): List<GalleryItem> =
 		holder.getItems().map { GalleryItem.Media(it, showLoadingProgress = false) }
@@ -53,16 +57,17 @@ class AttachedMediaRowController(
 
 	override fun onMediaItemClicked(mediaItem: MediaItem) {
 		val activity = view?.mapActivity ?: return
-		val nightMode = view?.isNightMode() ?: return
 
-		if (mediaItem.type == MediaType.PHOTO) {
-			GalleryPagerController.show(activity, key, mediaItem.id)
-		} else {
-			AttachedMediaUiHelper(activity).openMediaItem(mediaItem, nightMode)
-		}
+		val orderedIds = getGalleryItems()
+			.filterIsInstance<GalleryItem.Media>()
+			.map { it.mediaItem.id }
+		GalleryPagerController.show(activity, key, mediaItem.id, orderedIds)
 	}
 
 	override fun emptyStateItems(): List<GalleryItem> {
+		if (compactItems) {
+			return emptyList()
+		}
 		val noMedia = GalleryItem.NoMedia(
 			action = ADD_MEDIA_ACTION,
 			titleResId = R.string.no_media,
@@ -72,6 +77,12 @@ class AttachedMediaRowController(
 		)
 		return listOf(noMedia)
 	}
+
+	fun showAddMenu(anchor: View) = handleGalleryAction(anchor, ADD_MEDIA_ACTION)
+
+	fun showAllMedia(anchor: View) = handleGalleryAction(anchor, SHOW_ALL_ACTION)
+
+	fun hasMedia(): Boolean = hasMediaItems()
 
 	private fun onMediaChanged() {
 		app.galleryHelper.mediaLoader.reload(key, loadListener)
