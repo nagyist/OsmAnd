@@ -49951,17 +49951,17 @@ public final class OsmandOdb {
       com.google.protobuf.ByteString
           getSuffixesDictionaryBytes(int index);
 
-      // repeated uint32 suffixesCommonDictionary = 4;
+      // repeated uint32 suffixesCommonDictionary = 1;
       /**
-       * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+       * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
        */
       java.util.List<java.lang.Integer> getSuffixesCommonDictionaryList();
       /**
-       * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+       * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
        */
       int getSuffixesCommonDictionaryCount();
       /**
-       * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+       * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
        */
       int getSuffixesCommonDictionary(int index);
 
@@ -50061,6 +50061,27 @@ public final class OsmandOdb {
                 }
                 break;
               }
+              case 8: {
+                if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+                  suffixesCommonDictionary_ = new java.util.ArrayList<java.lang.Integer>();
+                  mutable_bitField0_ |= 0x00000002;
+                }
+                suffixesCommonDictionary_.add(input.readUInt32());
+                break;
+              }
+              case 10: {
+                int length = input.readRawVarint32();
+                int limit = input.pushLimit(length);
+                if (!((mutable_bitField0_ & 0x00000002) == 0x00000002) && input.getBytesUntilLimit() > 0) {
+                  suffixesCommonDictionary_ = new java.util.ArrayList<java.lang.Integer>();
+                  mutable_bitField0_ |= 0x00000002;
+                }
+                while (input.getBytesUntilLimit() > 0) {
+                  suffixesCommonDictionary_.add(input.readUInt32());
+                }
+                input.popLimit(limit);
+                break;
+              }
               case 18: {
                 if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
                   suffixesDictionary_ = new com.google.protobuf.LazyStringArrayList();
@@ -50077,27 +50098,6 @@ public final class OsmandOdb {
                 atoms_.add(input.readMessage(net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom.PARSER, extensionRegistry));
                 break;
               }
-              case 32: {
-                if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                  suffixesCommonDictionary_ = new java.util.ArrayList<java.lang.Integer>();
-                  mutable_bitField0_ |= 0x00000002;
-                }
-                suffixesCommonDictionary_.add(input.readUInt32());
-                break;
-              }
-              case 34: {
-                int length = input.readRawVarint32();
-                int limit = input.pushLimit(length);
-                if (!((mutable_bitField0_ & 0x00000002) == 0x00000002) && input.getBytesUntilLimit() > 0) {
-                  suffixesCommonDictionary_ = new java.util.ArrayList<java.lang.Integer>();
-                  mutable_bitField0_ |= 0x00000002;
-                }
-                while (input.getBytesUntilLimit() > 0) {
-                  suffixesCommonDictionary_.add(input.readUInt32());
-                }
-                input.popLimit(limit);
-                break;
-              }
             }
           }
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -50106,14 +50106,14 @@ public final class OsmandOdb {
           throw new com.google.protobuf.InvalidProtocolBufferException(
               e.getMessage()).setUnfinishedMessage(this);
         } finally {
+          if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+            suffixesCommonDictionary_ = java.util.Collections.unmodifiableList(suffixesCommonDictionary_);
+          }
           if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
             suffixesDictionary_ = new com.google.protobuf.UnmodifiableLazyStringList(suffixesDictionary_);
           }
           if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
             atoms_ = java.util.Collections.unmodifiableList(atoms_);
-          }
-          if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-            suffixesCommonDictionary_ = java.util.Collections.unmodifiableList(suffixesCommonDictionary_);
           }
           this.unknownFields = unknownFields.build();
           makeExtensionsImmutable();
@@ -50196,24 +50196,24 @@ public final class OsmandOdb {
         return suffixesDictionary_.getByteString(index);
       }
 
-      // repeated uint32 suffixesCommonDictionary = 4;
-      public static final int SUFFIXESCOMMONDICTIONARY_FIELD_NUMBER = 4;
+      // repeated uint32 suffixesCommonDictionary = 1;
+      public static final int SUFFIXESCOMMONDICTIONARY_FIELD_NUMBER = 1;
       private java.util.List<java.lang.Integer> suffixesCommonDictionary_;
       /**
-       * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+       * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
        */
       public java.util.List<java.lang.Integer>
           getSuffixesCommonDictionaryList() {
         return suffixesCommonDictionary_;
       }
       /**
-       * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+       * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
        */
       public int getSuffixesCommonDictionaryCount() {
         return suffixesCommonDictionary_.size();
       }
       /**
-       * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+       * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
        */
       public int getSuffixesCommonDictionary(int index) {
         return suffixesCommonDictionary_.get(index);
@@ -50292,14 +50292,14 @@ public final class OsmandOdb {
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
         getSerializedSize();
+        for (int i = 0; i < suffixesCommonDictionary_.size(); i++) {
+          output.writeUInt32(1, suffixesCommonDictionary_.get(i));
+        }
         for (int i = 0; i < suffixesDictionary_.size(); i++) {
           output.writeBytes(2, suffixesDictionary_.getByteString(i));
         }
         for (int i = 0; i < atoms_.size(); i++) {
           output.writeMessage(3, atoms_.get(i));
-        }
-        for (int i = 0; i < suffixesCommonDictionary_.size(); i++) {
-          output.writeUInt32(4, suffixesCommonDictionary_.get(i));
         }
         getUnknownFields().writeTo(output);
       }
@@ -50312,6 +50312,15 @@ public final class OsmandOdb {
         size = 0;
         {
           int dataSize = 0;
+          for (int i = 0; i < suffixesCommonDictionary_.size(); i++) {
+            dataSize += com.google.protobuf.CodedOutputStream
+              .computeUInt32SizeNoTag(suffixesCommonDictionary_.get(i));
+          }
+          size += dataSize;
+          size += 1 * getSuffixesCommonDictionaryList().size();
+        }
+        {
+          int dataSize = 0;
           for (int i = 0; i < suffixesDictionary_.size(); i++) {
             dataSize += com.google.protobuf.CodedOutputStream
               .computeBytesSizeNoTag(suffixesDictionary_.getByteString(i));
@@ -50322,15 +50331,6 @@ public final class OsmandOdb {
         for (int i = 0; i < atoms_.size(); i++) {
           size += com.google.protobuf.CodedOutputStream
             .computeMessageSize(3, atoms_.get(i));
-        }
-        {
-          int dataSize = 0;
-          for (int i = 0; i < suffixesCommonDictionary_.size(); i++) {
-            dataSize += com.google.protobuf.CodedOutputStream
-              .computeUInt32SizeNoTag(suffixesCommonDictionary_.get(i));
-          }
-          size += dataSize;
-          size += 1 * getSuffixesCommonDictionaryList().size();
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSerializedSize = size;
@@ -50732,7 +50732,7 @@ public final class OsmandOdb {
           return this;
         }
 
-        // repeated uint32 suffixesCommonDictionary = 4;
+        // repeated uint32 suffixesCommonDictionary = 1;
         private java.util.List<java.lang.Integer> suffixesCommonDictionary_ = java.util.Collections.emptyList();
         private void ensureSuffixesCommonDictionaryIsMutable() {
           if (!((bitField0_ & 0x00000002) == 0x00000002)) {
@@ -50741,26 +50741,26 @@ public final class OsmandOdb {
            }
         }
         /**
-         * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+         * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
          */
         public java.util.List<java.lang.Integer>
             getSuffixesCommonDictionaryList() {
           return java.util.Collections.unmodifiableList(suffixesCommonDictionary_);
         }
         /**
-         * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+         * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
          */
         public int getSuffixesCommonDictionaryCount() {
           return suffixesCommonDictionary_.size();
         }
         /**
-         * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+         * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
          */
         public int getSuffixesCommonDictionary(int index) {
           return suffixesCommonDictionary_.get(index);
         }
         /**
-         * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+         * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
          */
         public Builder setSuffixesCommonDictionary(
             int index, int value) {
@@ -50770,7 +50770,7 @@ public final class OsmandOdb {
           return this;
         }
         /**
-         * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+         * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
          */
         public Builder addSuffixesCommonDictionary(int value) {
           ensureSuffixesCommonDictionaryIsMutable();
@@ -50779,7 +50779,7 @@ public final class OsmandOdb {
           return this;
         }
         /**
-         * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+         * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
          */
         public Builder addAllSuffixesCommonDictionary(
             java.lang.Iterable<? extends java.lang.Integer> values) {
@@ -50789,7 +50789,7 @@ public final class OsmandOdb {
           return this;
         }
         /**
-         * <code>repeated uint32 suffixesCommonDictionary = 4;</code>
+         * <code>repeated uint32 suffixesCommonDictionary = 1;</code>
          */
         public Builder clearSuffixesCommonDictionary() {
           suffixesCommonDictionary_ = java.util.Collections.emptyList();
@@ -81318,7 +81318,7 @@ public final class OsmandOdb {
       "data\030\005 \003(\01325.OsmAnd.OBF.OsmAndPoiNameInd" +
       "ex.OsmAndPoiNameIndexData\032\215\001\n\026OsmAndPoiN" +
       "ameIndexData\022\032\n\022suffixesDictionary\030\002 \003(\t" +
-      "\022 \n\030suffixesCommonDictionary\030\004 \003(\r\0225\n\005at" +
+      "\022 \n\030suffixesCommonDictionary\030\001 \003(\r\0225\n\005at" +
       "oms\030\003 \003(\0132&.OsmAnd.OBF.OsmAndPoiNameInde" +
       "xDataAtom\"\313\001\n\032OsmAndPoiNameIndexDataAtom" +
       "\022\014\n\004zoom\030\002 \001(\r\022\t\n\001x\030\003 \001(\r\022\t\n\001y\030\004 \001(\r\022\026\n\016" +

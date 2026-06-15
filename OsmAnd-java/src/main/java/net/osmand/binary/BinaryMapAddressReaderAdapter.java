@@ -20,6 +20,7 @@ import net.osmand.StringMatcher;
 import net.osmand.binary.BinaryMapIndexReader.SearchRequest;
 import net.osmand.binary.BinaryMapIndexReaderStats.PoiReadMetricSet;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
+import net.osmand.binary.OsmandOdb.CommonIndexedStats;
 import net.osmand.binary.OsmandOdb.OsmAndAddressIndex.CitiesIndex;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexData;
@@ -933,6 +934,13 @@ public class BinaryMapAddressReaderAdapter {
 				map.readNameIndexInspector(null, pi, prefix);
 				codedIS.popLimit(oldLimit);
 				break;
+			case OsmAndAddressNameIndexData.COMMONSTATS_FIELD_NUMBER:
+				length = codedIS.readRawVarint32();
+				oldLimit = codedIS.pushLimitLong(length);
+				CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
+				pi.setCommonIndexed(stat);
+				codedIS.popLimit(oldLimit);
+				break;
 			case OsmAndAddressNameIndexData.ATOM_FIELD_NUMBER :
 				long shift = codedIS.getTotalBytesRead();
 				if (ind == -1 && loffsets != null) {
@@ -991,7 +999,7 @@ public class BinaryMapAddressReaderAdapter {
 			switch (tag) {
 			case 0:
 				return;
-			case AddressNameIndexDataAtom.SUFFIXESBITSET_FIELD_NUMBER:
+			case AddressNameIndexDataAtom.SUFFIXESBITSETINDEX_FIELD_NUMBER:
 				int mask = codedIS.readUInt32();
 				if (!matched && suffixMask != null && suffixMask.isMatched(maskIndex, mask)) {
 					matched = true;

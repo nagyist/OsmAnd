@@ -34,6 +34,7 @@ import net.osmand.Location;
 import net.osmand.PlatformUtil;
 import net.osmand.binary.BinaryMapIndexReader.SearchRequest;
 import net.osmand.binary.BinaryMapIndexReader.TagValuePair;
+import net.osmand.binary.OsmandOdb.CommonIndexedStats;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.data.Amenity;
 import net.osmand.data.Amenity.AmenityRoutePoint;
@@ -45,7 +46,7 @@ import net.osmand.osm.PoiCategory;
 import net.osmand.util.MapUtils;
 
 public class BinaryMapPoiReaderAdapter {
-	private static final Log LOG = PlatformUtil.getLog(BinaryMapPoiReaderAdapter.class);
+	static final Log LOG = PlatformUtil.getLog(BinaryMapPoiReaderAdapter.class);
 
 	public static final int SHIFT_BITS_CATEGORY = 7;
 	private static final int CATEGORY_MASK = (1 << SHIFT_BITS_CATEGORY) - 1;
@@ -374,6 +375,14 @@ public class BinaryMapPoiReaderAdapter {
 				long oldLimit = codedIS.pushLimitLong((long) length);
 				pi.setInitialShift(codedIS.getTotalBytesRead());
 				map.readNameIndexInspector(null, pi, prefix);
+				codedIS.popLimit(oldLimit);
+				break;
+				
+			case OsmandOdb.OsmAndPoiNameIndex.COMMONSTATS_FIELD_NUMBER :
+				length = codedIS.readRawVarint32();
+				oldLimit = codedIS.pushLimitLong(length);
+				CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
+				pi.setCommonIndexed(stat);
 				codedIS.popLimit(oldLimit);
 				break;
 			case OsmandOdb.OsmAndPoiNameIndex.DATA_FIELD_NUMBER :
@@ -709,9 +718,9 @@ public class BinaryMapPoiReaderAdapter {
 			case OsmandOdb.OsmAndPoiNameIndexDataAtom.ZOOM_FIELD_NUMBER:
 				zoom = codedIS.readUInt32();
 				break;
-			case OsmandOdb.OsmAndPoiNameIndexDataAtom.SUFFIXESBITSET_FIELD_NUMBER:
-				int mask = codedIS.readUInt32();
-				if (!matched && suffixMask != null && suffixMask.isMatched(maskIndex, mask)) {
+			case OsmandOdb.OsmAndPoiNameIndexDataAtom.SUFFIXESBITSETINDEX_FIELD_NUMBER:
+				int index = codedIS.readUInt32();
+				if (!matched && suffixMask != null && suffixMask.isMatched(maskIndex, index)) {
 					matched = true;
 				}
 				maskIndex++;
@@ -737,7 +746,6 @@ public class BinaryMapPoiReaderAdapter {
 	protected void searchPoiIndex(int left31, int right31, int top31, int bottom31,
 			SearchRequest<Amenity> req, PoiRegion region) throws IOException {
 		long indexOffset = codedIS.getTotalBytesRead();
-		long time = System.currentTimeMillis();
 		TLongHashSet skipTiles = null;
 		if (req.zoom >= 0 && req.zoom < 16) {
 			skipTiles = new TLongHashSet();
@@ -1058,7 +1066,7 @@ public class BinaryMapPoiReaderAdapter {
 				retValue.setLength(0);
 				hasSubcategoriesField = true;
 				PoiSubType st = region.getSubtypeFromId(subtypev, retValue);
-				boolean topIndex = region.topIndexSubTypes.contains(st);
+				// boolean topIndex = region.topIndexSubTypes.contains(st);
 				if (req.poiAdditionalFilter != null) {
 					if (st != null && req.poiAdditionalFilter.accept(st, retValue.toString())) {
 						topIndexAdditonalFound = true;
