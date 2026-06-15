@@ -100,6 +100,9 @@ abstract class GalleryRowController(
 
 	protected abstract fun buildGalleryItems(holder: MediaHolder): List<GalleryItem>
 
+	protected open fun resolveRowHolderType(position: Int): MediaHolderType =
+		if (position == 0) MediaHolderType.MAIN else MediaHolderType.STANDARD
+
 	fun createAdapter(mapActivity: MapActivity, nightMode: Boolean): GalleryGridAdapter {
 		val registry = app.galleryHelper.loadStateRegistry
 		return GalleryGridAdapter(
@@ -107,13 +110,12 @@ abstract class GalleryRowController(
 			onMediaClicked = ::onMediaItemClicked,
 			onReloadMediaItems = ::onReloadMediaItems,
 			onActionClicked = ::handleGalleryAction,
-			mediaHolderType = { position ->
-				if (position == 0) MediaHolderType.MAIN else MediaHolderType.STANDARD
-			},
+			mediaHolderType = ::resolveRowHolderType,
 			resolveResizableImageSize = null,
 			isLoadFailed = registry::isFailed,
 			onLoadFailed = registry::markFailed,
-			nightMode = nightMode
+			nightMode = nightMode,
+			posterLoader = app.galleryHelper.posterLoader
 		)
 	}
 }

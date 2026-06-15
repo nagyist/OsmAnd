@@ -49,7 +49,6 @@ class GalleryMediaViewHolder(
 		videoScrim = itemView.findViewById(R.id.video_scrim),
 		playIcon = itemView.findViewById(R.id.play_icon),
 		durationText = itemView.findViewById(R.id.duration_text),
-		large = true,
 		posterLoader = posterLoader
 	)
 
@@ -126,6 +125,9 @@ class GalleryMediaViewHolder(
 		progressBar.visibility = if (galleryItem.showLoadingProgress) View.VISIBLE else View.GONE
 		ivImage.setOnClickListener(null)
 		ivLoadSourceType.visibility = View.GONE
+
+		previewDelegate.large = holderType == MediaHolderType.MAIN
+				|| holderType == MediaHolderType.SPAN_RESIZABLE
 
 		previewDelegate.bind(mediaItem, nightMode, galleryItem.presentation?.durationLabel) {
 			onPosterShown()

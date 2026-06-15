@@ -6,7 +6,6 @@ import net.osmand.plus.OsmandApplication
 import net.osmand.plus.R
 import net.osmand.plus.activities.MapActivity
 import net.osmand.plus.base.dialog.BaseDialogController
-import net.osmand.plus.gallery.attached.helpers.AttachedMediaUiHelper
 import net.osmand.plus.gallery.contract.IGalleryGridController
 import net.osmand.plus.gallery.contract.IGalleryGridView
 import net.osmand.plus.gallery.data.GalleryKey
@@ -22,7 +21,6 @@ import net.osmand.plus.gallery.ui.holders.MediaHolderType
 import net.osmand.plus.utils.AndroidUtils
 import net.osmand.shared.media.domain.MediaItem
 import net.osmand.shared.media.domain.MediaOrigin
-import net.osmand.shared.media.domain.MediaType
 
 abstract class GalleryGridController(
 	app: OsmandApplication,
@@ -244,12 +242,10 @@ abstract class GalleryGridController(
 
 	override fun onMediaItemClicked(mediaItem: MediaItem) {
 		val activity = view?.getMapActivity() ?: return
-		val nightMode = view?.isNightMode() ?: false
-		if (mediaItem.type == MediaType.PHOTO) {
-			GalleryPagerController.show(activity, key, mediaItem.id)
-		} else {
-			AttachedMediaUiHelper(activity).openMediaItem(mediaItem, nightMode)
-		}
+		val orderedIds = getGalleryItems()
+			.filterIsInstance<GalleryItem.Media>()
+			.map { it.mediaItem.id }
+		GalleryPagerController.show(activity, key, mediaItem.id, orderedIds)
 	}
 
 	override fun handleGalleryAction(v: View, action: GalleryAction) {}

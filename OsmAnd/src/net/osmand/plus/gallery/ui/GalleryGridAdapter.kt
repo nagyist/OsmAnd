@@ -49,6 +49,7 @@ class GalleryGridAdapter(
 
 	private val mainPhotoSizePx = app.resources.getDimensionPixelSize(R.dimen.gallery_big_icon_size)
 	private val standardPhotoSizePx = app.resources.getDimensionPixelSize(R.dimen.gallery_standard_icon_size)
+	private val smallPhotoSizePx = app.resources.getDimensionPixelSize(R.dimen.gallery_small_icon_size)
 
 	private var loadingImages = false
 
@@ -154,6 +155,7 @@ class GalleryGridAdapter(
 				val imageSizePx = when (holderType) {
 					MediaHolderType.SPAN_RESIZABLE -> resolveResizableImageSize?.invoke() ?: standardPhotoSizePx
 					MediaHolderType.MAIN -> mainPhotoSizePx
+					MediaHolderType.SMALL -> smallPhotoSizePx
 					else -> standardPhotoSizePx
 				}
 				holder.bindView(
