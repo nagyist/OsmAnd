@@ -1,5 +1,5 @@
 /*
- * NmeaDate.kt
+ * Date.java
  * Copyright (C) 2010 Kimmo Tuukkanen
  *
  * This file is part of Java Marine API.
@@ -21,9 +21,12 @@
 package net.sf.marineapi.nmea.util
 
 import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
+
 
 /**
  * Represents a calendar date (day-month-year) transmitted in sentences that
@@ -45,7 +48,7 @@ class NmeaDate {
     private var year = 0
 
     /**
-     * Creates a new instance of `NmeaDate` using the current date.
+     * Creates a new instance of `Date` using the current date.
      */
     constructor() {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
@@ -55,7 +58,7 @@ class NmeaDate {
     }
 
     /**
-     * Creates a new instance of `NmeaDate`, assumes the default NMEA
+     * Creates a new instance of `Date`, assumes the default NMEA
      * 0183 date formatting, `ddmmyy` or `ddmmyyyy`.
      *
      * @param date Date String to parse.
@@ -82,9 +85,7 @@ class NmeaDate {
     }
 
     override fun equals(other: Any?): Boolean {
-        if (other === this) {
-            return true
-        }
+        if (other === this) return true
         return other is NmeaDate && other.getDay() == getDay() && other.getMonth() == getMonth() && other.getYear() == getYear()
     }
 
@@ -131,7 +132,7 @@ class NmeaDate {
      * @param day the day to set
      */
     fun setDay(day: Int) {
-        require(day in 1..31) { "Day out of bounds [1..31]" }
+        require(!(day < 1 || day > 31)) { "Day out of bounds [1..31]" }
         this.day = day
     }
 
@@ -144,7 +145,7 @@ class NmeaDate {
      * [1..12]
      */
     fun setMonth(month: Int) {
-        require(month in 1..12) { "Month value out of bounds [1..12]" }
+        require(!(month < 1 || month > 12)) { "Month value out of bounds [1..12]" }
         this.month = month
     }
 
@@ -171,7 +172,7 @@ class NmeaDate {
     }
 
     /**
-     * Returns the String representation of `NmeaDate`. Formats the date
+     * Returns the String representation of `Date`. Formats the date
      * in `ddmmyy` format used in NMEA 0183 sentences.
      */
     override fun toString(): String {
