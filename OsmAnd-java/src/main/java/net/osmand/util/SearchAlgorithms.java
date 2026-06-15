@@ -131,7 +131,7 @@ public class SearchAlgorithms {
         return new ArrayList<>(queryTokens);
     }
     
-    static String normalizeToken(String token) {
+    public static String normalizeToken(String token) {
         if (token == null) {
             return "";
         }
@@ -257,14 +257,8 @@ public class SearchAlgorithms {
     }
 
     private static final int MARKER_LCP_LENGTH = SUFFIX_DICT_MARKER_MAX - SUFFIX_DICT_MARKER_BASE;
-    public record SuffixEntry(String resolvedSuffix, String encodedSuffix) {}
     public static final String EMPTY_SUFFIX_DICTIONARY_SENTINEL = "\uE100";
     
-    public static class SuffixDictionary<T> {
-        public final List<SuffixEntry> dictionaryEntries = new ArrayList<>();
-        public final Map<String, Integer> resolvedSuffixToIndex = new HashMap<>();
-        public final Map<T, int[]> bitsets = new LinkedHashMap<>();
-    }
 
     private static boolean startsWithSuffixMarker(String value) {
         if (value.isEmpty()) {

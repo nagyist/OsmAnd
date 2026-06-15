@@ -991,12 +991,6 @@ public class BinaryMapAddressReaderAdapter {
 			switch (tag) {
 			case 0:
 				return;
-			case AddressNameIndexDataAtom.NAMEEN_FIELD_NUMBER:
-				codedIS.readString();
-				break;
-			case AddressNameIndexDataAtom.NAME_FIELD_NUMBER:
-				codedIS.readString();
-				break;
 			case AddressNameIndexDataAtom.SUFFIXESBITSET_FIELD_NUMBER:
 				int mask = codedIS.readUInt32();
 				if (!matched && suffixMask != null && suffixMask.isMatched(maskIndex, mask)) {
