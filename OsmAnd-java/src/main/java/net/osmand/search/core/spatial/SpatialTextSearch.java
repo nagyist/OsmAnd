@@ -339,7 +339,11 @@ public class SpatialTextSearch {
 		
 		pattern = "Us_";
 		query = "Salt Lake City Pennsylvania Street";
-//		query = "USA Salt Lake City Pennsylvania Street 41";
+		
+//		pattern = "Lie";
+//		query = "Vaduz Lettstrasse ";
+		
+		query = "USA Salt Lake City Pennsylvania Street 41";
 		
 //		pattern = "Ukraine_";
 //		query = "бровари Сільпо";

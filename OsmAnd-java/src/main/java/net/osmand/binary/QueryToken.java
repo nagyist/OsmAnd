@@ -49,7 +49,11 @@ public class QueryToken {
         }
         
         boolean isMatched(int maskIndex, int mask) {
-            return masks != null && maskIndex < masks.size() && (masks.get(maskIndex) & mask) != 0;
+			if (masks == null) {
+				return true;
+			}
+        	//ignore other masks except first
+			return maskIndex == 0 && mask % 2 == 0 && masks.contains(mask / 2 - 1);
         }
 
         private void addSuffix(int index, String suffix) {
@@ -58,14 +62,7 @@ public class QueryToken {
             }
             String fullKey = prefix.key() + suffix;
             if (CollatorStringMatcher.cmatches(collator, fullKey, query, matcherMode)) {
-                int intWordIndex = index >> 5; // word selection where index >> 5 == index / 32
-                while (masks.size() <= intWordIndex) { // each int word in masks list holds 32 suffix flags
-                    masks.add(0);
-                }
-                int bitOffset = index & 31; // selection of bit inside the word where index & 31 == index % 32 and stays in 0..31
-                int wordMask = 1 << bitOffset; // building a one-bit mask
-                int prev = masks.get(intWordIndex);
-                masks.set(intWordIndex, prev | wordMask);
+            	masks.add(index);
             }
         }
     }

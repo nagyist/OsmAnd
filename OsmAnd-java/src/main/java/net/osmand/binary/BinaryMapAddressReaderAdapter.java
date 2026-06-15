@@ -20,6 +20,7 @@ import net.osmand.StringMatcher;
 import net.osmand.binary.BinaryMapIndexReader.SearchRequest;
 import net.osmand.binary.BinaryMapIndexReaderStats.PoiReadMetricSet;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
+import net.osmand.binary.OsmandOdb.CommonIndexedStats;
 import net.osmand.binary.OsmandOdb.OsmAndAddressIndex.CitiesIndex;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexData;
@@ -933,6 +934,13 @@ public class BinaryMapAddressReaderAdapter {
 				map.readNameIndexInspector(null, pi, prefix);
 				codedIS.popLimit(oldLimit);
 				break;
+			case OsmAndAddressNameIndexData.COMMONSTATS_FIELD_NUMBER:
+				length = codedIS.readRawVarint32();
+				oldLimit = codedIS.pushLimitLong(length);
+				CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
+				pi.setCommonIndexed(stat);
+				codedIS.popLimit(oldLimit);
+				break;
 			case OsmAndAddressNameIndexData.ATOM_FIELD_NUMBER :
 				long shift = codedIS.getTotalBytesRead();
 				if (ind == -1 && loffsets != null) {
@@ -970,7 +978,8 @@ public class BinaryMapAddressReaderAdapter {
 		int shiftindex = 0;
 		int shiftcityindex = 0;
 		boolean add = true; 
-		boolean matched = suffixMask != null && suffixMask.shouldPassThrough();
+		boolean matched = false;
+		boolean noBisetIndex = true;
 		int maskIndex = 0;
 		while (true) {
 			if (req.isCancelled()) {
@@ -979,6 +988,10 @@ public class BinaryMapAddressReaderAdapter {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
 			if(tag == 0 || tag == AddressNameIndexDataAtom.SHIFTTOINDEX_FIELD_NUMBER) {
+				if (suffixMask != null && suffixMask.shouldPassThrough() || noBisetIndex) {
+					// intermediate version ignore 
+					matched = true;
+				}
 				if (toAdd != null && add && matched) {
 					if (shiftindex != 0) {
 						toAdd.add(shiftindex);
@@ -991,13 +1004,8 @@ public class BinaryMapAddressReaderAdapter {
 			switch (tag) {
 			case 0:
 				return;
-			case AddressNameIndexDataAtom.NAMEEN_FIELD_NUMBER:
-				codedIS.readString();
-				break;
-			case AddressNameIndexDataAtom.NAME_FIELD_NUMBER:
-				codedIS.readString();
-				break;
-			case AddressNameIndexDataAtom.SUFFIXESBITSET_FIELD_NUMBER:
+			case AddressNameIndexDataAtom.SUFFIXESBITSETINDEX_FIELD_NUMBER:
+				noBisetIndex = false;
 				int mask = codedIS.readUInt32();
 				if (!matched && suffixMask != null && suffixMask.isMatched(maskIndex, mask)) {
 					matched = true;

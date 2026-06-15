@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-
 import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
+import net.osmand.binary.OsmandOdb.CommonIndexedStats;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
@@ -28,6 +28,8 @@ public class NameIndexInspector {
 	private SuffixesStat suffixesStat = new SuffixesStat();
 	private StreetsIndexStat streetsStat = new StreetsIndexStat();
 	private BoundariesIndexStat bndsStat = new BoundariesIndexStat();
+	private CommonIndexedStats commonStats;
+	private List<String> commonsList = new ArrayList<String>();
 	
 
 	public void setInitialShift(long totalBytesRead) {
@@ -165,8 +167,6 @@ public class NameIndexInspector {
 		String longestSuffixesKey;
 		int suffixesLenSum;
 		int prefixesCount;
-		int atomOneBitSuffix;
-		int atomTwoBitSuffix;
 		int atomCount;
 		
 		public void merge(SuffixesStat suffixesStat) {
@@ -176,23 +176,15 @@ public class NameIndexInspector {
 				
 			}
 			this.atomCount += suffixesStat.atomCount;
-			this.atomOneBitSuffix += suffixesStat.atomOneBitSuffix;
-			this.atomTwoBitSuffix += suffixesStat.atomTwoBitSuffix;
 			this.prefixesCount += suffixesStat.prefixesCount;
 			this.suffixesLenSum += suffixesStat.suffixesLenSum;
 		}
 		
 		public String toString(String nl) {
 			int sz = longestSuffixes.size();
-			String longestStr = String.format("Longest suffixes '%s' (%d): %s...", longestSuffixesKey,
+			String longestStr = String.format("Name Suffixes - Longest suffixes '%s' (%d): %s...", longestSuffixesKey,
 					longestSuffixes.size(), longestSuffixes.subList(0, Math.min(30, sz)));
-			String msg = String.format(
-					"Name Suffixes - "
-//					+ "%.1f avg suffixes per prefix, " // duplicate 23,193 prefixes, 45,283 tokens division
-					+ "suffixes in atom set: 2 - %,d, 3+ - %,d. ",
-//					suffixesLenSum * 1.0 / (prefixesCount + 1), 
-					atomTwoBitSuffix, (atomCount - atomOneBitSuffix - atomTwoBitSuffix));
-			return msg + longestStr;
+			return longestStr;
 		}
 
 		@Override
@@ -368,11 +360,12 @@ public class NameIndexInspector {
 		}
 	}
 	
-	public static class PrefixNameValue implements Comparable<PrefixNameValue> {
+	public class PrefixNameValue implements Comparable<PrefixNameValue> {
 		public String key;
 		public OsmAndPoiNameIndexData poi = null;
 		public AddressNameIndexData addr = null;
 		public long shift;
+		
 		
 		@Override
 		public String toString() {
@@ -380,7 +373,7 @@ public class NameIndexInspector {
 				List<ValueFreq> suffixes = collectPOIFrequencies(null);
 				return String.format("%s (%d, %s)", key, poi.getAtomsCount(), suffixes);
 			} else if (addr != null) {
-				List<ValueFreq> suffixes =  collectAddrFrequencies(key, null, null, -1);
+				List<ValueFreq> suffixes =  collectAddrFrequencies( key, null, null, -1);
 				return String.format("%s (%d, %s)", key, addr.getAtomCount(), suffixes);
 			} else {
 				return key + " <NOT SET>";
@@ -402,6 +395,7 @@ public class NameIndexInspector {
 				suffStats.prefixesCount++;
 				suffStats.suffixesLenSum += addr.getSuffixesDictionaryList().size();
 			}
+			// TODO common, integers
 			for (String s : addr.getSuffixesDictionaryList()) {
 				curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
 				suffixes.add(new ValueFreq(key + curSuffix, 0));
@@ -409,51 +403,48 @@ public class NameIndexInspector {
 					streetsPrefix.subValues.add(new ValueFreq(key + curSuffix, 0));
 				}
 			}
+			for (Integer i : addr.getSuffixesCommonDictionaryList()) {
+				String value = commonsList.get(i);
+				suffixes.add(new ValueFreq(" " + value, 0));
+				if (streetsStat != null) {
+					streetsPrefix.subValues.add(new ValueFreq(" " + value, 0));
+				}
+			}
 			if (suffStats != null && suffStats.longestSuffixes.size() < suffixes.size()) {
 				suffStats.longestSuffixes = suffixes;
 				suffStats.longestSuffixesKey = key;
 			}
-			int INT_BITS = 32;
 			for (AddressNameIndexDataAtom a : addr.getAtomList()) {
 				if (a.getType() != f && f >= 0) {
 					continue;
 				}
-				int setBits = 0;
-				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
-					int suffBit = a.getSuffixesBitset(i);
-					for (int j = 0; j < INT_BITS && suffBit != 0; j++) {
-						if (suffBit % 2 == 1) {
-							int ind = i * INT_BITS + j;
-							setBits++;
-							ValueFreq s = suffixes.get(ind);
-							s.freq++;
-							s.enclosing += a.getEnclosingObjects();
-							s.maxSingleAtomEnc = Math.max(s.maxSingleAtomEnc, a.getEnclosingObjects());
-							if (streetsStat != null) {
-								ValueFreq sPref = streetsPrefix.subValues.get(ind);
-								streetsStat.processAtom(streetsPrefix, sPref, a);
-							}
-							// test bbox
-//							ByteString bbox = a.getBbox();
-//							if (bbox != null && a.hasBbox() && a.getXy16Count() >= 1) {
-//								int xy16 = a.getXy16(0);
-//								int x16 = (xy16 >>> 16);
-//								int y16 = (xy16 & ((1 << 16) - 1));
-//								int[] vls = SearchAlgorithms.decodeBboxForNameAtomsBytes(bbox, x16, y16);
-//								System.out.println(String.format("%s %.5f %.5f %.5f %.5f", s.value,
-//										MapUtils.get31LatitudeY(vls[1]), MapUtils.get31LongitudeX(vls[0]),
-//										MapUtils.get31LatitudeY(vls[3]), MapUtils.get31LongitudeX(vls[2])));
-//							}
+				for (int i = 0; i < a.getSuffixesBitsetIndexCount(); i++) {
+					int suffBit = a.getSuffixesBitsetIndex(i);
+					// TODO delimiter words
+					if (suffBit % 2 == 0 && suffBit != 0) {
+						int ind = suffBit / 2 - 1;
+						ValueFreq s = suffixes.get(ind);
+						s.freq++;
+						s.enclosing += a.getEnclosingObjects();
+						s.maxSingleAtomEnc = Math.max(s.maxSingleAtomEnc, a.getEnclosingObjects());
+						if (streetsStat != null) {
+							ValueFreq sPref = streetsPrefix.subValues.get(ind);
+							streetsStat.processAtom(streetsPrefix, sPref, a);
 						}
-						suffBit >>= 1;
+						// test bbox
+//						ByteString bbox = a.getBbox();
+//						if (bbox != null && a.hasBbox() && a.getXy16Count() >= 1) {
+//							int xy16 = a.getXy16(0);
+//							int x16 = (xy16 >>> 16);
+//							int y16 = (xy16 & ((1 << 16) - 1));
+//							int[] vls = SearchAlgorithms.decodeBboxForNameAtomsBytes(bbox, x16, y16);
+//							System.out.println(String.format("%s %.5f %.5f %.5f %.5f", s.value,
+//									MapUtils.get31LatitudeY(vls[1]), MapUtils.get31LongitudeX(vls[0]),
+//									MapUtils.get31LatitudeY(vls[3]), MapUtils.get31LongitudeX(vls[2])));
+//						}
 					}
 				}
 				if (suffStats != null && f == -1) {
-					if (setBits == 1) {
-						suffStats.atomOneBitSuffix++;
-					} else if (setBits == 2) {
-						suffStats.atomTwoBitSuffix++;
-					}
 					suffStats.atomCount++;
 				}
 			}
@@ -471,30 +462,26 @@ public class NameIndexInspector {
 				ValueFreq vf = new ValueFreq(key + curSuffix, 0);
 				suffixes.add(vf);
 			}
+			for (Integer i : poi.getSuffixesCommonDictionaryList()) {
+				String value = commonsList.get(i);
+				suffixes.add(new ValueFreq(" " + value, 0));
+			}
 			if (stats != null && stats.longestSuffixes.size() < suffixes.size()) {
 				stats.longestSuffixes = suffixes;
 				stats.longestSuffixesKey = key;
 			}
-			int INT_BITS = 32;
+			
 			for (OsmAndPoiNameIndexDataAtom a : poi.getAtomsList()) {
-				int setBits = 0;
-				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
-					int suffBit = a.getSuffixesBitset(i);
-					for (int j = 0; j < INT_BITS && suffBit != 0; j++) {
-						if ((suffBit & 1) == 1) {
-							ValueFreq s = suffixes.get(i * INT_BITS + j);
-							s.freq++;
-							setBits++;
-						}
-						suffBit >>>= 1;
+				for (int i = 0; i < a.getSuffixesBitsetIndexCount(); i++) {
+					int suffBit = a.getSuffixesBitsetIndex(i);
+					// TODO delimiter words
+					if (suffBit % 2 == 0 && suffBit != 0) {
+						int ind = suffBit / 2 - 1;
+						ValueFreq s = suffixes.get(ind);
+						s.freq++;
 					}
 				}
 				if (stats != null) {
-					if (setBits == 1) {
-						stats.atomOneBitSuffix++;
-					} else if (setBits == 2) {
-						stats.atomTwoBitSuffix++;
-					}
 					stats.atomCount++;
 				}
 			}
@@ -627,6 +614,16 @@ public class NameIndexInspector {
 	
 	public Collection<PrefixNameValue> getPrefixes() {
 		return indexByRef.values();
+	}
+
+	public void setCommonIndexed(CommonIndexedStats commonStats) {
+		this.commonStats = commonStats;
+		String name = null;
+		for (String s : commonStats.getValueList()) {
+			name = SearchAlgorithms.nameIndexDecodeDictionarySuffix(name, s);
+			commonsList.add(name);
+		}
+
 	}
 
 
