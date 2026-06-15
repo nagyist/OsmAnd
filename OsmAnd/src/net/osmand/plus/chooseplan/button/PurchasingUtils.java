@@ -32,6 +32,7 @@ import java.util.List;
 public class PurchasingUtils {
 
 	public static final String PROMO_PREFIX = "promo_";
+	private static final int MIN_SHOWN_DISCOUNT_PERCENT = 10;
 
 	public static List<SubscriptionButton> collectSubscriptionButtons(@NonNull OsmandApplication app,
 	                                                                  @NonNull InAppPurchaseHelper purchaseHelper,
@@ -88,7 +89,24 @@ public class PurchasingUtils {
 		OneTimePaymentButton btn = new OneTimePaymentButton(purchase.getSku(), purchase);
 		btn.setTitle(app.getString(R.string.in_app_purchase_desc));
 		btn.setPrice(purchase.getPrice(app));
+		int discountPercent = getOneTimePurchaseDiscountPercent(purchase);
+		boolean discountApplied = discountPercent > MIN_SHOWN_DISCOUNT_PERCENT;
+		btn.setDiscountApplied(discountApplied);
+		if (discountApplied) {
+			btn.setDiscount("-" + discountPercent + "%");
+			String pattern = app.getString(R.string.ltr_or_rtl_combine_via_colon);
+			btn.setDescription(String.format(pattern, app.getString(R.string.regular_price), purchase.getOriginalPrice(app)));
+		}
 		return btn;
+	}
+
+	private static int getOneTimePurchaseDiscountPercent(@NonNull InAppPurchase purchase) {
+		double regularPrice = purchase.getOriginalPriceValue();
+		double discountedPrice = purchase.getPriceValue();
+		if (discountedPrice > 0 && discountedPrice < regularPrice) {
+			return (int) ((1 - discountedPrice / regularPrice) * 100d);
+		}
+		return 0;
 	}
 
 	@Nullable

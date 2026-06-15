@@ -252,6 +252,13 @@ public class AvailableTracksFragment extends BaseTrackFolderFragment implements 
 		}
 	}
 
+	@Override
+	public void onCardPressed(@NonNull BaseCard card) {
+		if (card instanceof TracksFreeBackupCard) {
+			ChoosePlanFragment.showInstance(requireActivity(), OsmAndFeature.OSMAND_CLOUD);
+		}
+	}
+
 	private void updateRecordingTrack() {
 		adapter.updateItem(recordingTrackItem);
 	}

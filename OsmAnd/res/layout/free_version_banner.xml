@@ -78,7 +78,7 @@
 				android:layout_width="match_parent"
 				android:layout_height="42dp"
 				android:layout_gravity="center_vertical"
-				android:background="@drawable/free_version_banner_cta_neutral_ripple"
+				android:background="@drawable/free_version_banner_cta_bg_ripple"
 				android:gravity="center_vertical"
 				android:orientation="horizontal">
 

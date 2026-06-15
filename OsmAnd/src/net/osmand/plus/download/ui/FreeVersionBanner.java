@@ -5,6 +5,7 @@ import static net.osmand.plus.chooseplan.OsmAndFeature.UNLIMITED_MAP_DOWNLOADS;
 import static net.osmand.plus.download.DownloadValidationManager.MAXIMUM_AVAILABLE_FREE_DOWNLOADS;
 
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
@@ -22,11 +23,10 @@ import net.osmand.plus.helpers.DiscountHelper;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.settings.enums.ThemeUsageContext;
 import net.osmand.plus.utils.AndroidUtils;
+import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.util.Algorithms;
 
 public class FreeVersionBanner {
-
-	private static final int PROGRESS_SEGMENTS_COUNT = 6;
 
 	private final OsmandApplication app;
 	private final OsmandSettings settings;
@@ -43,7 +43,7 @@ public class FreeVersionBanner {
 	private final ImageView freeVersionCtaArrow;
 	private final TextView freeVersionCtaDiscountBadge;
 
-	private final OnClickListener onCollapseListener = new OnClickListener() {
+	private final OnClickListener onBannerClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
 			app.logEvent("click_free_dialog");
@@ -89,26 +89,38 @@ public class FreeVersionBanner {
 		updateBannerState(downloadsLeft);
 		updateDownloadsProgress(downloadsLeft);
 		downloadsLeftTextView.setText(activity.getString(R.string.downloads_left_template, String.valueOf(downloadsLeft)));
-		freeVersionBanner.findViewById(R.id.bannerTopLayout).setOnClickListener(onCollapseListener);
+		freeVersionBanner.findViewById(R.id.bannerTopLayout).setOnClickListener(onBannerClickListener);
 	}
 
 	private void updateBannerState(int downloadsLeft) {
 		boolean limitReached = downloadsLeft == 0;
+		boolean nightMode = app.getDaynightHelper().isNightMode(settings.getApplicationMode(), ThemeUsageContext.APP);
+		updateBannerColors(nightMode);
 		freeVersionTitleTextView.setText(limitReached ? R.string.free_download_limit_reached : R.string.free_version_title);
 		downloadsLeftTextView.setVisibility(limitReached ? View.GONE : View.VISIBLE);
 		freeVersionSubtitleTextView.setVisibility(limitReached ? View.VISIBLE : View.GONE);
 		freeVersionDescriptionTextView.setText(R.string.get_unlimited_downloads);
-		freeVersionCtaContainer.setOnClickListener(onCollapseListener);
-		boolean nightMode = app.getDaynightHelper().isNightMode(settings.getApplicationMode(), ThemeUsageContext.APP);
-		boolean emphasizedCta = limitReached || updateCtaDiscountBadge(nightMode);
-		int ctaBackgroundId = R.drawable.free_version_banner_cta_neutral_ripple;
-		if (emphasizedCta) {
-			ctaBackgroundId = nightMode
-					? R.drawable.free_version_banner_cta_bg_ripple_dark
-					: R.drawable.free_version_banner_cta_bg_ripple;
-		}
+		freeVersionCtaContainer.setOnClickListener(onBannerClickListener);
+		updateCtaDiscountBadge(nightMode);
+		int ctaBackgroundId = nightMode
+				? R.drawable.free_version_banner_cta_bg_ripple_dark
+				: R.drawable.free_version_banner_cta_bg_ripple;
 		freeVersionCtaContentContainer.setBackgroundResource(ctaBackgroundId);
 		freeVersionCtaContainer.setVisibility(View.VISIBLE);
+	}
+
+	private void updateBannerColors(boolean nightMode) {
+		int backgroundColor = AndroidUtils.getColorFromAttr(activity, R.attr.list_background_color);
+		GradientDrawable background = new GradientDrawable();
+		background.setColor(backgroundColor);
+		background.setCornerRadius(AndroidUtils.dpToPx(app, 12));
+		freeVersionBanner.setBackground(background);
+		int textColor = AndroidUtils.getColorFromAttr(activity, android.R.attr.textColor);
+		int textColorSecondary = AndroidUtils.getColorFromAttr(activity, android.R.attr.textColorSecondary);
+		freeVersionTitleTextView.setTextColor(textColor);
+		freeVersionDescriptionTextView.setTextColor(ColorUtilities.getActiveColor(app, nightMode));
+		downloadsLeftTextView.setTextColor(textColorSecondary);
+		freeVersionSubtitleTextView.setTextColor(textColorSecondary);
 	}
 
 	private boolean updateCtaDiscountBadge(boolean nightMode) {
@@ -130,8 +142,8 @@ public class FreeVersionBanner {
 		boolean nightMode = app.getDaynightHelper().isNightMode(settings.getApplicationMode(), ThemeUsageContext.APP);
 		int colorUsed = app.getColor(nightMode ? R.color.banner_downloads_used_dark : R.color.banner_downloads_used_light);
 		int colorRemaining = app.getColor(nightMode ? R.color.banner_downloads_remaining_dark : R.color.banner_downloads_remaining_light);
-		int usedSegments = PROGRESS_SEGMENTS_COUNT - Math.min(downloadsLeft, PROGRESS_SEGMENTS_COUNT);
-		for (int i = 0; i < PROGRESS_SEGMENTS_COUNT; i++) {
+		int usedSegments = MAXIMUM_AVAILABLE_FREE_DOWNLOADS - Math.min(downloadsLeft, MAXIMUM_AVAILABLE_FREE_DOWNLOADS);
+		for (int i = 0; i < MAXIMUM_AVAILABLE_FREE_DOWNLOADS; i++) {
 			View markView = new View(activity);
 			LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, MATCH_PARENT, 1);
 			markView.setLayoutParams(params);

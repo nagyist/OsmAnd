@@ -24,6 +24,7 @@ import net.osmand.plus.R;
 import net.osmand.plus.Version;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.chooseplan.ChoosePlanFragment;
+import net.osmand.plus.chooseplan.DiscountBottomSheet;
 import net.osmand.plus.chooseplan.MapsPlusPlanFragment;
 import net.osmand.plus.chooseplan.OsmAndFeature;
 import net.osmand.plus.chooseplan.OsmAndProPlanFragment;
@@ -69,13 +70,13 @@ public class DiscountHelper {
 	private static PoiUIFilter mFilter;
 	private static boolean mFilterVisible;
 	private static final String URL = "https://osmand.net/api/motd";
-	private static final String CUSTOM_DISCOUNT_RESPONSE = "{\"url_params\":{\"selected_choose_plan_btn\":\"osmand_test_pro_annual\"},\"application\":{\"net.osmand\":true, \"net.osmand.plus\":true},\"show_day_frequency\":10,\"show_start_frequency\":40,\"icon\":\"ic_action_gift\",\"start\":\"22-05-2026 00:20\",\"description\":\"Подпишитесь на годовую подписку Maps+, Pro со скидкой 50% на первый год!\",\"end\":\"28-06-2026 23:59\",\"message\":\"РАСПРОДАЖА годовой подписки!\",\"oneOfConditions\":[{\"condition\":[{ \"not_purchased_feature\" : \"maps\", \"not_purchased_feature\":\"pro\"}]}],\"url\":\"show-choose-plan:osmand-pro\",\"max_total_show\":20,\"discount\":\"50\"}";
 	private static final String INAPP_PREFIX = "osmand-in-app:";
 	private static final String SEARCH_QUERY_PREFIX = "osmand-search-query:";
 	private static final String SHOW_POI_PREFIX = "osmand-show-poi:";
 	private static final String OPEN_ACTIVITY = "open_activity";
 
 	private static final String SHOW_CHOOSE_PLAN_PREFIX = "show-choose-plan:";
+	private static final String SELECTED_CHOOSE_PLAN_BUTTON_KEY = "selected_choose_plan_btn";
 	private static final String CHOOSE_PLAN_TYPE_FREE = "free-version";
 	private static final String CHOOSE_PLAN_TYPE_SEA_DEPTH = "sea-depth";
 	private static final String CHOOSE_PLAN_TYPE_HILLSHADE = "hillshade";
@@ -146,7 +147,7 @@ public class DiscountHelper {
 				if (!Algorithms.isEmpty(response)) {
 					processDiscountResponse(response, mapActivity);
 				} else if (settings.SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET.get()) {
-					processDiscountResponse(CUSTOM_DISCOUNT_RESPONSE, mapActivity);
+					processDiscountResponse(app.getString(R.string.test_discount_response), mapActivity);
 				}
 			}
 		});
@@ -285,6 +286,11 @@ public class DiscountHelper {
 		return null;
 	}
 
+	@Nullable
+	private static String getCurrentSalePlanType() {
+		return mData == null ? null : mData.choosePlanType;
+	}
+
 	public static String parseUrl(OsmandApplication app, String url) {
 		if (!Algorithms.isEmpty(url)) {
 			int i = url.indexOf("osmand-market-app:");
@@ -316,7 +322,7 @@ public class DiscountHelper {
 		mFilterVisible = true;
 	}
 
-	static void onDiscountBottomSheetDismissed() {
+	public static void onDiscountBottomSheetDismissed() {
 		mBannerVisible = false;
 	}
 
@@ -377,14 +383,6 @@ public class DiscountHelper {
 		return result;
 	}
 
-	@Nullable
-	private static String getCurrentSalePlanType() {
-		if (mData == null || Algorithms.isEmpty(mData.url) || !mData.url.startsWith(SHOW_CHOOSE_PLAN_PREFIX)) {
-			return null;
-		}
-		return mData.url.substring(SHOW_CHOOSE_PLAN_PREFIX.length()).trim();
-	}
-
 	public static boolean hasCurrentSale() {
 		return mData != null && !Algorithms.isEmpty(mData.message);
 	}
@@ -413,7 +411,7 @@ public class DiscountHelper {
 		}
 	}
 
-	static void onDiscountBottomSheetClicked(@NonNull MapActivity mapActivity, @NonNull String url) {
+	public static void onDiscountBottomSheetClicked(@NonNull MapActivity mapActivity, @NonNull String url) {
 		mapActivity.getApp().logEvent("motd_click");
 		mBannerVisible = false;
 		openUrl(mapActivity, url);
@@ -497,7 +495,7 @@ public class DiscountHelper {
 	private static void showDialogForPlanType(@NonNull MapActivity mapActivity, @NonNull String planType) {
 		String selectedButtonId = null;
 		if (mData != null && mData.urlParams != null) {
-			selectedButtonId = mData.urlParams.optString("selected_choose_plan_btn");
+			selectedButtonId = mData.urlParams.optString(SELECTED_CHOOSE_PLAN_BUTTON_KEY);
 		}
 		switch (planType) {
 			case CHOOSE_PLAN_TYPE_FREE:
@@ -585,34 +583,89 @@ public class DiscountHelper {
 		}
 	}
 
-	static class ControllerData {
+	public static class ControllerData {
 
-		String choosePlanType;
-		String message;
-		String description;
-		String iconId;
-		String url;
-		String textBtnTitle;
+		private String choosePlanType;
+		private String message;
+		private String description;
+		private String iconId;
+		private String url;
+		private String textBtnTitle;
 
 		@ColorInt
-		int iconColor = -1;
+		private int iconColor = -1;
 		@ColorInt
-		int bgColor = -1;
+		private int bgColor = -1;
 		@ColorInt
-		int titleColor = -1;
+		private int titleColor = -1;
 		@ColorInt
-		int descrColor = -1;
+		private int descrColor = -1;
 		@ColorInt
-		int statusBarColor = -1;
+		private int statusBarColor = -1;
 		@ColorInt
-		int textBtnTitleColor = -1;
+		private int textBtnTitleColor = -1;
 
-		JSONObject urlParams;
-		JSONObject activityJson;
-		JSONArray oneOfConditions;
+		private JSONObject urlParams;
+		private JSONObject activityJson;
+		private JSONArray oneOfConditions;
 
 		@Nullable
-		OsmAndFeature getChoosePlanFeature() {
+		public String getChoosePlanType() {
+			return choosePlanType;
+		}
+
+		@Nullable
+		public String getMessage() {
+			return message;
+		}
+
+		@Nullable
+		public String getDescription() {
+			return description;
+		}
+
+		@Nullable
+		public String getIconId() {
+			return iconId;
+		}
+
+		@Nullable
+		public String getUrl() {
+			return url;
+		}
+
+		@Nullable
+		public String getTextBtnTitle() {
+			return textBtnTitle;
+		}
+
+		@Nullable
+		public String getSelectedChoosePlanButtonId() {
+			return urlParams == null ? null : urlParams.optString(SELECTED_CHOOSE_PLAN_BUTTON_KEY);
+		}
+
+		@ColorInt
+		public int getIconColor() {
+			return iconColor;
+		}
+
+		@ColorInt
+		public int getTitleColor() {
+			return titleColor;
+		}
+
+		@ColorInt
+		public int getDescriptionColor() {
+			return descrColor;
+		}
+
+		@ColorInt
+		public int getTextBtnTitleColor() {
+			return textBtnTitleColor;
+		}
+
+		@Nullable
+		public OsmAndFeature getChoosePlanFeature() {
 			String planType = choosePlanType;
 			if (Algorithms.isEmpty(planType)) {
 				return null;
@@ -651,7 +704,7 @@ public class DiscountHelper {
 			res.description = obj.getString("description");
 			res.iconId = obj.getString("icon");
 			res.url = parseUrl(app, obj.getString("url"));
-			res.choosePlanType = getChoosePlanType(res.url);
+			res.choosePlanType = DiscountHelper.getChoosePlanType(res.url);
 			res.textBtnTitle = obj.optString("button_title");
 			res.iconColor = parseColor("icon_color_default_light", obj);
 			res.bgColor = parseColor("bg_color", obj);

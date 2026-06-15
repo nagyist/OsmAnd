@@ -1,13 +1,12 @@
-package net.osmand.plus.helpers;
+package net.osmand.plus.chooseplan;
+
+import static net.osmand.Period.PeriodUnit.YEAR;
 
 import android.app.Dialog;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
 import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.PixelFormat;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -43,12 +42,10 @@ import net.osmand.plus.Version;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.base.BaseMaterialBottomSheetDialogFragment;
 import net.osmand.plus.chooseplan.BasePurchaseDialogFragment.ButtonBackground;
-import net.osmand.plus.chooseplan.MapsPlusPlanFragment;
-import net.osmand.plus.chooseplan.OsmAndFeature;
-import net.osmand.plus.chooseplan.OsmAndProPlanFragment;
 import net.osmand.plus.chooseplan.button.PriceButton;
-import net.osmand.plus.chooseplan.button.SubscriptionButton;
+import net.osmand.plus.helpers.DiscountHelper;
 import net.osmand.plus.inapp.InAppPurchaseHelper;
+import net.osmand.plus.inapp.InAppPurchaseHelper.InAppPurchaseListener;
 import net.osmand.plus.inapp.InAppPurchaseUtils;
 import net.osmand.plus.inapp.InAppPurchases.InAppPurchase;
 import net.osmand.plus.inapp.InAppPurchases.InAppSubscription;
@@ -56,6 +53,7 @@ import net.osmand.plus.inapp.InAppPurchases.InAppSubscriptionIntroductoryInfo;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.plus.utils.UiUtilities;
+import net.osmand.plus.views.ClipRoundCornersDrawable;
 import net.osmand.plus.widgets.FlowLayout;
 import net.osmand.plus.widgets.TextViewEx;
 import net.osmand.util.Algorithms;
@@ -66,7 +64,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
+public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment implements InAppPurchaseListener {
 
 	private static final String TAG = DiscountBottomSheet.class.getSimpleName();
 	private static final String IN_APP_SKU_KEY = "in_app_sku_key";
@@ -80,12 +78,17 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 	private static final String ICON_COLOR_KEY = "icon_color";
 	private static final String BUTTON_TITLE_COLOR_KEY = "button_title_color";
 	private static final String FEATURE_KEY = "feature";
+	private static final String SELECTED_PRICE_BUTTON_ID_KEY = "selected_price_button_id";
 	private static final String OSMAND_PRO_SKU = "osmand-pro";
 	private static final String MAPS_PLUS_SKU = "osmand-maps-plus";
 	private final List<PriceButton<?>> priceButtons = new ArrayList<>();
 	private final Map<PriceButton<?>, View> buttonViews = new HashMap<>();
 	@Nullable
 	private PriceButton<?> selectedPriceButton;
+	@Nullable
+	private OsmAndFeature currentSelectedFeature;
+	@Nullable
+	private String currentInAppSku;
 
 	private static final List<BannerFeatureItem> MAPS_PLUS_BANNER_FEATURES = Arrays.asList(
 			new BannerFeatureItem(OsmAndFeature.UNLIMITED_MAP_DOWNLOADS),
@@ -126,12 +129,12 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 		setupRestoreButton(view.findViewById(R.id.restore_button));
 
 		String featureName = args.getString(FEATURE_KEY);
-		String inAppSku = args.getString(IN_APP_SKU_KEY);
-		if (!Algorithms.isEmpty(featureName) || !Algorithms.isEmpty(inAppSku)) {
-			OsmAndFeature feature = Algorithms.isEmpty(featureName) ? null : OsmAndFeature.valueOf(featureName);
+		currentInAppSku = args.getString(IN_APP_SKU_KEY);
+		if (!Algorithms.isEmpty(featureName) || !Algorithms.isEmpty(currentInAppSku)) {
+			currentSelectedFeature = Algorithms.isEmpty(featureName) ? null : OsmAndFeature.valueOf(featureName);
 			view.findViewById(R.id.plan_content).setVisibility(View.VISIBLE);
 			view.findViewById(R.id.message_content).setVisibility(View.GONE);
-			bindChoosePlanContent(view, feature, inAppSku, args);
+			bindChoosePlanContent(view, currentSelectedFeature, currentInAppSku, args);
 		} else {
 			view.findViewById(R.id.plan_content).setVisibility(View.GONE);
 			view.findViewById(R.id.message_content).setVisibility(View.VISIBLE);
@@ -141,27 +144,28 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 	}
 
 	private void setupBannerBackground(@NonNull View bannerContainer) {
-		int backgroundColor = AndroidUtils.getColorFromAttr(requireContext(), R.attr.list_background_color);
+		int backgroundColor = ColorUtilities.getListBgColor(getApp(), isNightMode());
 		float cornerRadius = getResources().getDimension(R.dimen.radius_double_large);
 		Drawable contours = AppCompatResources.getDrawable(requireContext(), R.drawable.img_banner_contours);
 		if (contours != null) {
 			contours = contours.mutate();
 			contours.setAlpha(isNightMode() ? 255 : 51);
 		}
-		AndroidUtils.setBackground(bannerContainer, new BannerBackgroundDrawable(backgroundColor, cornerRadius, contours));
+		AndroidUtils.setBackground(bannerContainer, new ClipRoundCornersDrawable(backgroundColor, cornerRadius, contours));
 	}
 
 	private void bindMessageContent(@NonNull View view, @NonNull Bundle args) {
+		boolean nightMode = isNightMode();
 		View messageContent = view.findViewById(R.id.message_content);
 		TextView title = messageContent.findViewById(R.id.title);
 		title.setText(args.getString(TITLE_KEY));
-		applyTextColor(title, args.getInt(TITLE_COLOR_KEY, -1));
+		applyTextColor(title, args.getInt(TITLE_COLOR_KEY, -1), ColorUtilities.getPrimaryTextColor(getApp(), nightMode));
 
 		TextView description = messageContent.findViewById(R.id.description);
 		String descriptionText = args.getString(DESCRIPTION_KEY);
 		description.setText(descriptionText);
 		description.setVisibility(Algorithms.isEmpty(descriptionText) ? View.GONE : View.VISIBLE);
-		applyTextColor(description, args.getInt(DESCRIPTION_COLOR_KEY, -1));
+		applyTextColor(description, args.getInt(DESCRIPTION_COLOR_KEY, -1), ColorUtilities.getSecondaryTextColor(getApp(), nightMode));
 
 		ImageView icon = messageContent.findViewById(R.id.icon);
 		int iconId = getResources().getIdentifier(args.getString(ICON_KEY), "drawable", requireActivity().getPackageName());
@@ -182,7 +186,7 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 			buttonTitle = getString(R.string.shared_string_learn_more);
 		}
 		actionButton.setText(buttonTitle);
-		applyTextColor(actionButton, args.getInt(BUTTON_TITLE_COLOR_KEY, -1));
+		applyTextColor(actionButton, args.getInt(BUTTON_TITLE_COLOR_KEY, -1), AndroidUtils.getColorFromAttr(requireContext(), R.attr.dlg_btn_primary_text));
 
 		String url = args.getString(URL_KEY);
 		View.OnClickListener clickListener = v -> {
@@ -199,17 +203,22 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 
 	private void bindChoosePlanContent(@NonNull View view, @Nullable OsmAndFeature selectedFeature,
 	                                   @Nullable String inAppSku, @NonNull Bundle args) {
+		currentSelectedFeature = selectedFeature;
+		currentInAppSku = inAppSku;
 		boolean nightMode = isNightMode();
 		((ImageView) view.findViewById(R.id.header_icon)).setImageResource(getHeaderIconId(selectedFeature, inAppSku, nightMode));
 		TextView headerIconTitle = view.findViewById(R.id.header_icon_title);
 		String headerIconTitleText = selectedFeature != null
 				? getString(selectedFeature.getTitleId()) : getHeaderIconTitle(inAppSku);
 		headerIconTitle.setText(headerIconTitleText);
+		headerIconTitle.setTextColor(ColorUtilities.getPrimaryTextColor(getApp(), nightMode));
 		headerIconTitle.setVisibility(Algorithms.isEmpty(headerIconTitleText) ? View.GONE : View.VISIBLE);
-		((TextView) view.findViewById(R.id.primary_description)).setText(selectedFeature != null
+		TextView primaryDescription = view.findViewById(R.id.primary_description);
+		primaryDescription.setText(selectedFeature != null
 				? selectedFeature.getDescription(getApp())
 				: args.getString(TITLE_KEY));
-		
+		primaryDescription.setTextColor(ColorUtilities.getPrimaryTextColor(getApp(), nightMode));
+
 		FlowLayout listContainer = view.findViewById(R.id.list_container);
 		listContainer.removeAllViews();
 		int spacing = getResources().getDimensionPixelSize(R.dimen.content_padding_half);
@@ -284,7 +293,7 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 
 		TextViewEx title = new TextViewEx(requireContext());
 		title.setText(getString(item.titleId));
-		title.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
+		title.setTextColor(ColorUtilities.getPrimaryTextColor(getApp(), isNightMode()));
 		title.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,
 				getResources().getDimension(R.dimen.default_list_text_size));
 		chip.addView(title, new LinearLayout.LayoutParams(
@@ -307,7 +316,10 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 		chip.setOnClickListener(v -> {
 			MapActivity mapActivity = requireMapActivity();
 			dismiss();
-			DiscountHelper.onDiscountBottomSheetClicked(mapActivity, requireArguments().getString(URL_KEY));
+			String url = requireArguments().getString(URL_KEY);
+			if (!Algorithms.isEmpty(url)) {
+				DiscountHelper.onDiscountBottomSheetClicked(mapActivity, url);
+			}
 		});
 		return chip;
 	}
@@ -323,6 +335,9 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 		int backgroundColor = ColorUtilities.getInactiveButtonsAndLinksColor(getApp(), isNightMode());
 		Drawable normal = createRoundedDrawable(backgroundColor, ButtonBackground.ROUNDED);
 		setupRoundedBackground(restoreButton, normal, ButtonBackground.ROUNDED);
+		if (restoreButton instanceof TextView restoreText) {
+			restoreText.setTextColor(ColorUtilities.getActiveColor(getApp(), isNightMode()));
+		}
 		restoreButton.setOnClickListener(v -> {
 			InAppPurchaseHelper purchaseHelper = getApp().getInAppPurchaseHelper();
 			if (purchaseHelper != null) {
@@ -356,12 +371,12 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 		}
 
 		if (selectedPriceButton == null || !priceButtons.contains(selectedPriceButton)) {
-			selectedPriceButton = priceButtons.get(0);
+			selectedPriceButton = getInitialPriceButton(requireArguments().getString(SELECTED_PRICE_BUTTON_ID_KEY));
 		}
 
 		LinearLayout container = view.findViewById(R.id.price_block);
 		container.removeAllViews();
-		LayoutInflater inflater = LayoutInflater.from(requireContext());
+		LayoutInflater inflater = UiUtilities.getInflater(requireContext(), nightMode);
 		for (PriceButton<?> button : priceButtons) {
 			View itemView = inflater.inflate(R.layout.purchase_dialog_btn_payment, container, false);
 			TextView title = itemView.findViewById(R.id.title);
@@ -393,6 +408,7 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 
 		setupApplyButton(view, purchaseHelper);
 		setupCancelDescription(cancelDescription);
+		cancelDescription.setTextColor(ColorUtilities.getSecondaryTextColor(getApp(), nightMode));
 		updateDiscountBadge(view);
 		updatePriceButtons(view);
 	}
@@ -423,6 +439,32 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 			return MapsPlusPlanFragment.collectPriceButtons(getApp(), purchaseHelper, nightMode);
 		}
 		return OsmAndProPlanFragment.collectPriceButtons(getApp(), purchaseHelper, nightMode);
+	}
+
+	@NonNull
+	private PriceButton<?> getInitialPriceButton(@Nullable String selectedButtonId) {
+		if (!Algorithms.isEmpty(selectedButtonId)) {
+			for (PriceButton<?> button : priceButtons) {
+				if (Algorithms.stringsEqual(button.getId(), selectedButtonId)) {
+					return button;
+				}
+			}
+		}
+		PriceButton<?> annualButton = getAnnualSubscriptionButton();
+		return annualButton != null ? annualButton : priceButtons.get(0);
+	}
+
+	@Nullable
+	private PriceButton<?> getAnnualSubscriptionButton() {
+		for (PriceButton<?> button : priceButtons) {
+			InAppPurchase purchaseItem = button.getPurchaseItem();
+			if (purchaseItem instanceof InAppSubscription subscription
+					&& subscription.getSubscriptionPeriod() != null
+					&& subscription.getSubscriptionPeriod().getUnit() == YEAR) {
+				return button;
+			}
+		}
+		return null;
 	}
 
 	private boolean isMapsPlusPurchased() {
@@ -599,6 +641,51 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 		return getNightMode();
 	}
 
+	@Override
+	public void onResume() {
+		super.onResume();
+		updateThemeIfNeeded();
+	}
+
+	@Override
+	public void onItemPurchased(String sku, boolean active) {
+		dismissAllowingStateLoss();
+	}
+
+	@Override
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		updateThemeIfNeeded();
+	}
+
+	private void updateThemeIfNeeded() {
+		boolean resolvedNightMode = resolveNightMode();
+		if (resolvedNightMode != isNightMode()) {
+			updateNightMode();
+			View view = getView();
+			if (view != null) {
+				refreshContent(view);
+			}
+		}
+	}
+
+	private void refreshContent(@NonNull View view) {
+		setupBannerBackground(view.findViewById(R.id.banner_container));
+		setupRestoreButton(view.findViewById(R.id.restore_button));
+
+		Bundle args = requireArguments();
+		if (!Algorithms.isEmpty(currentInAppSku) || currentSelectedFeature != null) {
+			bindChoosePlanContent(view, currentSelectedFeature, currentInAppSku, args);
+		} else {
+			bindMessageContent(view, args);
+		}
+		Dialog dialog = getDialog();
+		if (dialog instanceof BottomSheetDialog bottomSheetDialog) {
+			applyDialogTransparency(bottomSheetDialog);
+			setupInitialBottomSheetHeight(bottomSheetDialog);
+		}
+	}
+
 	@NonNull
 	@Override
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
@@ -676,25 +763,24 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 		});
 	}
 
-	private void applyTextColor(@NonNull TextView view, int color) {
-		if (color != -1) {
-			view.setTextColor(color);
-		}
+	private void applyTextColor(@NonNull TextView view, int color, int defaultColor) {
+		view.setTextColor(color != -1 ? color : defaultColor);
 	}
 
-	static boolean showInstance(@NonNull FragmentManager manager, @NonNull DiscountHelper.ControllerData data) {
+	public static boolean showInstance(@NonNull FragmentManager manager, @NonNull DiscountHelper.ControllerData data) {
 		if (AndroidUtils.isFragmentCanBeAdded(manager, TAG)) {
 			Bundle args = new Bundle();
-			args.putString(TITLE_KEY, data.message);
-			args.putString(IN_APP_SKU_KEY, data.choosePlanType);
-			args.putString(DESCRIPTION_KEY, data.description);
-			args.putString(ICON_KEY, data.iconId);
-			args.putString(URL_KEY, data.url);
-			args.putString(BUTTON_TITLE_KEY, data.textBtnTitle);
-			args.putInt(TITLE_COLOR_KEY, data.titleColor);
-			args.putInt(DESCRIPTION_COLOR_KEY, data.descrColor);
-			args.putInt(ICON_COLOR_KEY, data.iconColor);
-			args.putInt(BUTTON_TITLE_COLOR_KEY, data.textBtnTitleColor);
+			args.putString(TITLE_KEY, data.getMessage());
+			args.putString(IN_APP_SKU_KEY, data.getChoosePlanType());
+			args.putString(DESCRIPTION_KEY, data.getDescription());
+			args.putString(ICON_KEY, data.getIconId());
+			args.putString(URL_KEY, data.getUrl());
+			args.putString(BUTTON_TITLE_KEY, data.getTextBtnTitle());
+			args.putInt(TITLE_COLOR_KEY, data.getTitleColor());
+			args.putInt(DESCRIPTION_COLOR_KEY, data.getDescriptionColor());
+			args.putInt(ICON_COLOR_KEY, data.getIconColor());
+			args.putInt(BUTTON_TITLE_COLOR_KEY, data.getTextBtnTitleColor());
+			args.putString(SELECTED_PRICE_BUTTON_ID_KEY, data.getSelectedChoosePlanButtonId());
 			OsmAndFeature feature = data.getChoosePlanFeature();
 			if (feature != null) {
 				args.putString(FEATURE_KEY, feature.name());
@@ -789,62 +875,4 @@ public class DiscountBottomSheet extends BaseMaterialBottomSheetDialogFragment {
 		}
 	}
 
-	private static class BannerBackgroundDrawable extends Drawable {
-
-		private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-		private final Path path = new Path();
-		private final RectF rect = new RectF();
-		private final float cornerRadius;
-		@Nullable
-		private final Drawable contours;
-
-		BannerBackgroundDrawable(int backgroundColor, float cornerRadius, @Nullable Drawable contours) {
-			this.cornerRadius = cornerRadius;
-			this.contours = contours;
-			paint.setColor(backgroundColor);
-		}
-
-		@Override
-		public void draw(@NonNull Canvas canvas) {
-			Rect bounds = getBounds();
-			rect.set(bounds);
-			path.reset();
-			path.addRoundRect(rect, new float[] {
-					cornerRadius, cornerRadius,
-					cornerRadius, cornerRadius,
-					0, 0,
-					0, 0
-			}, Path.Direction.CW);
-
-			int save = canvas.save();
-			canvas.clipPath(path);
-			canvas.drawPath(path, paint);
-			if (contours != null) {
-				int width = bounds.width();
-				int intrinsicWidth = contours.getIntrinsicWidth();
-				int intrinsicHeight = contours.getIntrinsicHeight();
-				int height = intrinsicWidth > 0 && intrinsicHeight > 0
-						? Math.round(width * intrinsicHeight / (float) intrinsicWidth)
-						: bounds.height();
-				contours.setBounds(bounds.left, bounds.top, bounds.right, bounds.top + height);
-				contours.draw(canvas);
-			}
-			canvas.restoreToCount(save);
-		}
-
-		@Override
-		public void setAlpha(int alpha) {
-			paint.setAlpha(alpha);
-		}
-
-		@Override
-		public void setColorFilter(@Nullable ColorFilter colorFilter) {
-			paint.setColorFilter(colorFilter);
-		}
-
-		@Override
-		public int getOpacity() {
-			return PixelFormat.TRANSLUCENT;
-		}
-	}
 }
