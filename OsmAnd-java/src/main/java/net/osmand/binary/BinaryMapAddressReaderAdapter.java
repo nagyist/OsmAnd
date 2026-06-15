@@ -978,7 +978,8 @@ public class BinaryMapAddressReaderAdapter {
 		int shiftindex = 0;
 		int shiftcityindex = 0;
 		boolean add = true; 
-		boolean matched = suffixMask != null && suffixMask.shouldPassThrough();
+		boolean matched = false;
+		boolean noBisetIndex = true;
 		int maskIndex = 0;
 		while (true) {
 			if (req.isCancelled()) {
@@ -987,6 +988,10 @@ public class BinaryMapAddressReaderAdapter {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
 			if(tag == 0 || tag == AddressNameIndexDataAtom.SHIFTTOINDEX_FIELD_NUMBER) {
+				if (suffixMask != null && suffixMask.shouldPassThrough() || noBisetIndex) {
+					// intermediate version ignore 
+					matched = true;
+				}
 				if (toAdd != null && add && matched) {
 					if (shiftindex != 0) {
 						toAdd.add(shiftindex);
@@ -1000,6 +1005,7 @@ public class BinaryMapAddressReaderAdapter {
 			case 0:
 				return;
 			case AddressNameIndexDataAtom.SUFFIXESBITSETINDEX_FIELD_NUMBER:
+				noBisetIndex = false;
 				int mask = codedIS.readUInt32();
 				if (!matched && suffixMask != null && suffixMask.isMatched(maskIndex, mask)) {
 					matched = true;

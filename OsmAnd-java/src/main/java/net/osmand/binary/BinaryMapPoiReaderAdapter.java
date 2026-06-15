@@ -680,13 +680,18 @@ public class BinaryMapPoiReaderAdapter {
 		int y = 0;
 		int zoom = 15;
 		int shift = Integer.MIN_VALUE;
-		boolean matched = suffixMask != null && suffixMask.shouldPassThrough();
+		boolean matched = false;
+		boolean noBisetIndex = true;
 		int maskIndex = 0;
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
 			switch (tag) {
 			case 0:
+				if ((suffixMask != null && suffixMask.shouldPassThrough()) || noBisetIndex) {
+					// intermediate version ignore 
+					matched = true;
+				}
 				if (!matched) {
 					return;
 				}
@@ -719,6 +724,7 @@ public class BinaryMapPoiReaderAdapter {
 				zoom = codedIS.readUInt32();
 				break;
 			case OsmandOdb.OsmAndPoiNameIndexDataAtom.SUFFIXESBITSETINDEX_FIELD_NUMBER:
+				noBisetIndex = false;
 				int index = codedIS.readUInt32();
 				if (!matched && suffixMask != null && suffixMask.isMatched(maskIndex, index)) {
 					matched = true;
@@ -731,10 +737,10 @@ public class BinaryMapPoiReaderAdapter {
 					throw new IllegalStateException();
 				}
 				shift = (int) l;
-				if (!matched) {
-					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
-					return;
-				}
+//				if (!matched) {
+//					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+//					return;
+//				}
 				break;
 			default:
 				skipUnknownField(t);
