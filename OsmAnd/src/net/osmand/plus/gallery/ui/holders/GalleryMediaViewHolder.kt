@@ -74,8 +74,23 @@ class GalleryMediaViewHolder(
 	val boundItemId: String?
 		get() = boundMediaItem?.id
 
-	val morphPlaceholderIcon
-		get() = previewDelegate.morphIcon
+	val morphPreviewSnapshotView
+		get() = previewDelegate.morphPreviewSnapshotView
+
+	val morphCenterIcon
+		get() = previewDelegate.morphCenterIcon
+
+	val morphShowsScrim
+		get() = previewDelegate.morphShowsScrim
+
+	val morphDurationLabel
+		get() = previewDelegate.morphDurationLabel
+
+	val morphShowsDuration
+		get() = previewDelegate.morphShowsDuration
+
+	val morphDurationTextColor
+		get() = previewDelegate.morphDurationTextColor
 
 	val morphBgColor: Int
 		get() = previewDelegate.placeholderBgColor
@@ -133,7 +148,7 @@ class GalleryMediaViewHolder(
 			onPosterShown()
 		}
 		tvUrl.visibility = View.GONE
-		border.visibility = View.VISIBLE
+		border.visibility = View.GONE
 
 		if (isLoadFailed(mediaItem)) {
 			bindUrl(mediaItem)

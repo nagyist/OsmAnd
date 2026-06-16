@@ -24,6 +24,14 @@ class MediaStatsHolder(
 		tvStats.setTextColor(ColorUtilities.getSecondaryTextColor(app, nightMode))
 
 		val baseMargin = app.resources.getDimensionPixelSize(R.dimen.content_padding)
+		val topPadding = if (gridMode) baseMargin else 0
+		itemView.setPaddingRelative(
+			itemView.paddingStart,
+			topPadding,
+			itemView.paddingEnd,
+			itemView.paddingBottom
+		)
+
 		val gridInset = if (gridMode) {
 			AndroidUtils.dpToPx(app, GalleryGridItemDecorator.GRID_SIDE_PADDING_DP)
 		} else {

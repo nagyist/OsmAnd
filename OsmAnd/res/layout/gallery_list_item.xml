@@ -52,8 +52,8 @@
 
 			<ImageView
 				android:id="@+id/play_icon"
-				android:layout_width="20dp"
-				android:layout_height="20dp"
+				android:layout_width="@dimen/standard_icon_size"
+				android:layout_height="@dimen/standard_icon_size"
 				android:layout_gravity="center"
 				android:visibility="gone"
 				tools:src="@drawable/ic_action_play_in_shape"

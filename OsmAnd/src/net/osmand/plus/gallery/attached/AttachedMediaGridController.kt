@@ -227,7 +227,7 @@ class AttachedMediaGridController(
 		val items = GallerySortMode.entries.map { mode ->
 			PopUpMenuItem.Builder(app)
 				.setTitleId(mode.titleId)
-				.setIcon(app.uiUtilities.getPaintedIcon(R.drawable.ic_action_list_sort, iconColor))
+				.setIcon(app.uiUtilities.getPaintedIcon(mode.iconId, iconColor))
 				.setSelected(mode == sortMode)
 				.setOnClickListener { setSortMode(mode) }
 				.create()
