@@ -5531,8 +5531,8 @@
     <string name="calculating_indication_message">Számítás…</string>
     <string name="rendering_attr_showClimbingRoutes_description">Hegymászó utak megjelenítése</string>
     <string name="rendering_attr_showClimbingRoutes_name">Hegymászó utak</string>
-    <string name="display_distance_to_first_intermediate_summary">A következő megállásig tartó időt és távolságot jeleníti meg. Tiltsa le, hogy ehelyett mindig az úti cél részleteit mutassa.</string>
-    <string name="display_distance_to_first_intermediate">A következő megállásig tartó útvonal részleteinek megjelenítése</string>
+    <string name="display_distance_to_first_intermediate_summary">Megjeleníti a következő megállásig tartó időt és távolságot. Kikapcsolva mindig az úti cél adatait jeleníti meg.</string>
+    <string name="display_distance_to_first_intermediate">Útvonaladatok a következő megállásig</string>
     <string name="popular_places_nearby">Népszerű helyek a közelben</string>
     <string name="recently_visited">Nemrég meglátogatott</string>
     <string name="shared_string_avg_altitude">Átlagos magasság</string>

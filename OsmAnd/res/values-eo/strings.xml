@@ -6159,4 +6159,6 @@
     <string name="no_media">Neniu aŭdvidaĵo</string>
     <string name="no_media_descr">Vi povas aldoni fotojn, filmetojn aŭ sonajn notojn el fotilo aŭ biblioteko.</string>
     <string name="auto_copy_media_to_osmand_storage">Aŭtomate kopii aŭdvidaĵojn al konservejo de OsmAnd</string>
+    <string name="navigate_point_format_maidenhead">Maidenhead</string>
+    <string name="maidenhead_format_descr">Maidenhead Locator System (QTH Locator).</string>
 </resources>
