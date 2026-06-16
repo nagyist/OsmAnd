@@ -209,7 +209,7 @@ public class SpatialTextSearch {
 		if (res.mainResult != null) {
 			System.out.println("--------");
 			System.out.println("Main: " + res.mainResult);
-			int limit = 100;
+			int limit = 1000;
 			for (SpatialSearchResult r : res.mainResult.getResult()) {
 				if (limit-- < 0) {
 					System.out.println(".............");
@@ -261,9 +261,9 @@ public class SpatialTextSearch {
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-		pattern = "Ukraine_";
+		pattern = "Ukraine_kyiv-";
 //		query = "нова пошта 1";
-		query = "kyiv сакс. ";
+		query = "kyiv";
 //		query = "пузата хата mcdonal.";
 //		query = "нова"; // TODO number?
 		long t = System.nanoTime();

@@ -47,10 +47,10 @@ public class SpatialSearchToken {
 		NameIndexAtom aa = index.get(atom.id);
 		if (aa != null) {
 			if (aa != atom) {
-//					throw new IllegalStateException(aa.name + " != " + atom.name  + " " + aa.object + " " + aa.object.getLocation());
-			} else {
-				return;
+				// ignore duplicates object per token
+//				System.out.println(aa.name + " != " + atom.name  + " " + aa + " " + aa.object.getLocation());
 			}
+			return;
 		}
 		index.put(atom.id, atom);
 		atoms.add(atom);

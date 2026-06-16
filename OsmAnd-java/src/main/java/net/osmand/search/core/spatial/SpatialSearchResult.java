@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import net.osmand.binary.ObfConstants;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.data.MapObject;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
@@ -94,7 +95,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				words.add(s.word);
 			}
 			if (atom.object != null) {
-				return String.format("%s %s %.4f %.4f", words, atom.object, atom.object.getLocation().getLatitude(),
+				return String.format("%s %s (%d) %.4f %.4f ", words, 
+						atom.object.getClass().getSimpleName() + " " + atom.object.getName(), 
+						ObfConstants.getOsmObjectId(atom.object),
+						atom.object.getLocation().getLatitude(),
 						atom.object.getLocation().getLongitude());
 			}
 			return atom.simpleName(words.toString()); 
