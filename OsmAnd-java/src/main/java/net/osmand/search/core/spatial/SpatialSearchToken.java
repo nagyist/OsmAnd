@@ -19,6 +19,9 @@ import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 public class SpatialSearchToken {
+	public static final int POI_TYPE = -1;
+	public static final int STREET_TYPE = CityBlocks.STREET_TYPE.index;
+			
 	int originalOrder = 0;
 	int sortedOrder = 0;
 	boolean incomplete;
@@ -49,7 +52,6 @@ public class SpatialSearchToken {
 	void addAtom(NameIndexAtom atom) {
 		if (atom.object != null && !(atom.object instanceof Street) && atom.object.getId() > 0) {
 			long osmId = ObfConstants.getOsmIdFromMapObjectId(atom.object.getId());
-			// TODO extend bbox if needed
 			NameIndexAtom ex = indexByOsmIds.get(osmId);
 			if (ex != null) {
 				return;
@@ -67,46 +69,29 @@ public class SpatialSearchToken {
 		}
 		index.put(atom.id, atom);
 		atoms.add(atom);
-		quadTree.put(atom.bboxTileZoom, atom.bboxTileId, atom);
+		quadTree.put(atom.coords.bboxTileZoom, atom.coords.bboxTileId, atom);
 	}
 
 	boolean acceptName(String name) {
 		return collator.matches(name);
 	}
 	
-	
-	public static class NameIndexAtom {
-		String name;
-		AddressNameIndexDataAtom addr;
-		OsmAndPoiNameIndexDataAtom poi;
-		
-		long id;
-		MapObject object;
-		// TODO clculate
-		int otherWordsCnt = 0;
-		
+	public static class NameIndexAtomXY {
 		int[] bbox31; // if exists [xleft, yleft, xright, yright]
 		long bboxTileId; // encodes zoom, tileX, tileY
 		int bboxTileZoom;
 		int x16, y16;
-
-		NameIndexAtom(String name, AddressNameIndexDataAtom addr, OsmAndPoiNameIndexDataAtom poi, 
-				long id, MapObject obj) {
-			this.name = name;
-			this.addr = addr;
-			this.poi = poi;
-			this.id = id;
-			this.object = obj;
-			calculateBbox(addr, poi);
+		
+		public NameIndexAtomXY(AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b) {
+			if (a != null) {
+				init(a);
+			} else {
+				init(b);
+			}
 		}
 		
-		public boolean atomicObject() {
-			return (addr != null && addr.getType() == CityBlocks.STREET_TYPE.index) || poi == null;  
-					
-		}
-		
-		private void calculateBbox(AddressNameIndexDataAtom addr, OsmAndPoiNameIndexDataAtom poi) {
-			if (addr != null && addr.getXy16Count() >= 1) {
+		private void init(AddressNameIndexDataAtom addr) {
+			if (addr.getXy16Count() >= 1) {
 				int xy16 = addr.getXy16(0);
 				this.x16 = (xy16 >>> 16);
 				this.y16 = (xy16 & ((1 << 16) - 1));
@@ -126,27 +111,55 @@ public class SpatialSearchToken {
 							ytop >>= 1;
 							ybottom >>= 1;
 						}
-						bboxTileZoom = z;								
+						bboxTileZoom = z;
 						bboxTileId = HashQuadTree.encodeTileId(z, xleft, ytop);
 					}
 				}
-			} else if (poi != null) {
-				this.x16 = poi.getX();
-				this.y16 = poi.getY();
-				bboxTileZoom = 16;
-				bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16, y16);
-			}			
+			}
+		}
+		
+		private void init(OsmAndPoiNameIndexDataAtom poi) {
+			this.x16 = poi.getX();
+			this.y16 = poi.getY();
+			bboxTileZoom = 16;
+			bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16, y16);
+		}
+	}
+	
+	public static class NameIndexAtom {
+		String name;
+		
+		int type; // 
+		long id; // used to read object
+		long parentid; // used to read object
+		MapObject object;
+		int otherWordsCnt = 0;
+		NameIndexAtomXY coords;
+
+		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, int otherWordsCnt,
+				NameIndexAtomXY coords) {
+			this.name = name;
+			this.id = id;
+			this.parentid = pid;
+			this.object = obj;
+			this.type = type;
+			this.otherWordsCnt = otherWordsCnt;
+			this.coords = coords;
+		}
+		
+		public boolean atomicObject() {
+			return type == STREET_TYPE || type == POI_TYPE;  
 		}
 		
 		String simpleName(String name) {
-			String type = "";
-			if (addr != null) {
-				type = CityBlocks.getByType(addr.getType()).toString();
-			} else if (poi != null) {
-				type = "POI";
+			String typeS = "";
+			if (type == -1) {
+				typeS = "POI";
+			} else {
+				typeS = CityBlocks.getByType(type).toString();
 			}
-			return String.format("%s %s %d (%.4f, %.4f)", type, name, (id % 0xffff),
-					MapUtils.get31LatitudeY(y16 << 15), MapUtils.get31LongitudeX(x16 << 15));
+			return String.format("%s %s %d (%.4f, %.4f)", typeS, name, (id % 0xffff),
+					MapUtils.get31LatitudeY(coords.y16 << 15), MapUtils.get31LongitudeX(coords.x16 << 15));
 		}
 		
 		@Override

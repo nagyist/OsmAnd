@@ -5,10 +5,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
+import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
@@ -28,6 +31,7 @@ public class NameIndexReader {
 	public final PoiRegion poiRegion;
 	public final AddressRegion addressRegion;
 	
+	private Set<Long> matchedKeys = new HashSet<Long>();
 	private Map<Long, PrefixNameValue> indexByRef = new HashMap<>();
 	private long tablePointer;
 	
@@ -581,6 +585,9 @@ public class NameIndexReader {
 	}
 
 	public void setCommonIndexed(CommonIndexedStats commonStats) {
+		if (this.commonStats != null) {
+			throw new IllegalStateException();
+		}
 		this.commonStats = commonStats;
 		String name = null;
 		for (String s : commonStats.getValueList()) {
@@ -593,10 +600,18 @@ public class NameIndexReader {
 		return commonsList.get(ind);
 	}
 	
+	public void resetMatchedKeys() {
+		matchedKeys.clear();
+	}
+	
 	public void putKey(String key, int val, String prefix) {
-		PrefixNameValue nameValue = new PrefixNameValue();
-		nameValue.key = key;
-		indexByRef.put(tablePointer + val, nameValue);
+		long shift = tablePointer + val;
+		matchedKeys.add(shift);
+		if (!indexByRef.containsKey(shift)) {
+			PrefixNameValue nameValue = new PrefixNameValue();
+			nameValue.key = key;
+			indexByRef.put(shift, nameValue);
+		}
 	}
 	
 	
@@ -667,8 +682,18 @@ public class NameIndexReader {
 		obj.poi = from;
 	}
 	
-	public Map<Long, PrefixNameValue> getIndexByRef() {
-		return indexByRef;
+	
+	public List<PrefixNameValue> getAtomsToLoad(TLongArrayList loffsets) {
+		List<PrefixNameValue> r = new ArrayList<>();
+		for (Long l : matchedKeys) {
+			PrefixNameValue pv = indexByRef.get(l);
+			if (pv.addr == null && pv.poi == null) {
+				loffsets.add(l);
+			} else {
+				r.add(pv);
+			}
+		}
+		return r;
 	}
 
 
@@ -681,10 +706,13 @@ public class NameIndexReader {
 		obj.addr = from;
 	}
 	
-	public Collection<PrefixNameValue> getPrefixes() {
-		return indexByRef.values();
+	public List<PrefixNameValue> getMatchedPrefixes() {
+		List<PrefixNameValue> r = new ArrayList<>();
+		for (Long l : matchedKeys) {
+			PrefixNameValue pv = indexByRef.get(l);
+			r.add(pv);
+		}
+		return r;
 	}
-
-	
 
 }

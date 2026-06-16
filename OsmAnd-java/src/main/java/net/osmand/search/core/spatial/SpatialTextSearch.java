@@ -12,7 +12,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapIndexReader;
+import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.CommonWords;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
@@ -21,27 +23,46 @@ import net.osmand.util.SearchAlgorithms;
 
 
 
-// TODO merge boundaries bbox...
+/// GENERATION
+// TODO Check sizes
+// TODO same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
+// ?
+// TODO "2-га Нова вулиця" - split by "-"?
 
+
+////////////////////////
+// EFFICIENCY 
+// TODO cache POI block read, cache city index
+// TODO implement for tokens READ_COMMON_WORDS = false;
 // FIXME merge uniq references for POI to make id 
 
-// TODO Lazy load tokens from full name index !
-// TODO global cache - Read common words for files
-// TODO Read all top poi categories for files
+// TODO merge boundaries bbox - extend incomplete boundary same id...
 // TODO read buildings
 // TODO duplicate words
-// TODO collator +replace last dot as incomplete
 // TODO sort tokens by actual frequency
-// TODO Special split by -
-// special cases
-// 1. Abbrevations
-// 2. Street intersection match
-// -------------
-// - Sugggestion-correction
-// - Progress / cancel
+
+// TODO collator +replace last dot as incomplete
+
+// POI CATEGORIES 
+// TODO Read all top poi categories for files
+// TODO implement categories
+
+// CACHE
+// TODO global cache - Read common words for files
+// TODO evict cache files
+// TODO evict cache words
+// TODO Lazy load tokens from full name index !
+// TODO don't read objects while preparing tokens ?
+
+// SPECIAL CASES
+// TODO Abbrevations
+// TODO Street intersection match
+// TODO Sugggestion-correction
+// TODO Progress / cancel
+
 //////////////SEARCH ALGORITHM //////////////
 // 1. Split words
-// 2.Reinit caches
+// 2. Reinit caches
 // 3. Sort words & meta information for words
 // 3.1 Calculate poi categories for words & combinations!
 // 3.2 Calculate common & frequent numbers based on files
@@ -65,16 +86,23 @@ public class SpatialTextSearch {
 	
 
 	public static class SpatialSearchFileCache {
+		public int fileInd = -1; // changing each session - not concurrent !!!
+		public int indexInd = -1; // changing each session - not concurrent !!!
 		public final String file;
 		public final long length;
 		public final long edition;
-		// TODO make it global without words!
-		public Map<String, List<NameIndexReader>> tokens = new HashMap<>(); 
+		public final List<NameIndexReader> indexReaders = new ArrayList<NameIndexReader>();
 		
 		public SpatialSearchFileCache(BinaryMapIndexReader r) {
 			file = r.getFile().getName();
 			length = r.getFile().length();
 			edition = r.getDateCreated();
+			for (AddressRegion a : r.getAddressIndexes()) {
+				indexReaders.add(new NameIndexReader(a));
+			}
+			for (PoiRegion a : r.getPoiIndexes()) {
+				indexReaders.add(new NameIndexReader(a));
+			}
 		}
 		
 		public boolean test(BinaryMapIndexReader r) {
@@ -167,7 +195,7 @@ public class SpatialTextSearch {
 					// reverse search quad tree 
 					final SpatialSearchResultsList p = parent;
 					for (final NameIndexAtom a : token.atoms) {
-						parent.quadTree.forEachMatchHigherZoom(a.bboxTileZoom, a.bboxTileId, indxs -> {
+						parent.quadTree.forEachMatchHigherZoom(a.coords.bboxTileZoom, a.coords.bboxTileId, indxs -> {
 							for (int indx : indxs) {
 								next.addResult(p, indx, a);
 							}
@@ -200,6 +228,7 @@ public class SpatialTextSearch {
 		Collections.sort(res.combinations);
 		if (res.combinations.size() > 0) {
 			res.mainResult = res.combinations.get(0);
+			res.mainResult.loadObjects(ctx, true);
 		}
 		ctx.stats.computeTime += System.nanoTime();
 		return res;
@@ -246,7 +275,7 @@ public class SpatialTextSearch {
 		}
 	}
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, InterruptedException {
 		File folder = new File("/Users/victorshcherb/osmand/maps/");
 		String pattern = "Germany_baden";
 		String query = "Berlin hauptstrasse";
@@ -264,10 +293,10 @@ public class SpatialTextSearch {
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
 		pattern = "Ukraine";
-		query = "нова пошта kyiv кудрявс.";
-//		query = "kyiv";
-//		query = "пузата хата mcdonal.";
-//		query = "нова"; // TODO number?
+//		query = "нова";
+//		query = "kyiv saks."; // TODO no intersection!
+		query = "пузата хата mcdonal."; // TODO 3 amenitie
+//		query = "нова"; 
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
@@ -278,6 +307,7 @@ public class SpatialTextSearch {
 		}
 		SpatialTextSearch a = new SpatialTextSearch();
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
+		
 		
 		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
 		a.searchTest(query, searchContext);

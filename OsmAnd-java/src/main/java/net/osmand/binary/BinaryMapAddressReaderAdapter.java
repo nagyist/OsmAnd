@@ -927,6 +927,7 @@ public class BinaryMapAddressReaderAdapter {
 			case 0:
 				return res;
 			case OsmAndAddressNameIndexData.TABLE_FIELD_NUMBER :
+				pi.resetMatchedKeys();
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
 				pi.setTablePointer(codedIS.getTotalBytesRead());
@@ -936,14 +937,18 @@ public class BinaryMapAddressReaderAdapter {
 			case OsmAndAddressNameIndexData.COMMONSTATS_FIELD_NUMBER:
 				length = codedIS.readRawVarint32();
 				oldLimit = codedIS.pushLimitLong(length);
-				CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
-				pi.setCommonIndexed(stat);
+				if (pi.getCommonStats() != null) {
+					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+				} else {
+					CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
+					pi.setCommonIndexed(stat);
+				}
 				codedIS.popLimit(oldLimit);
 				break;
 			case OsmAndAddressNameIndexData.ATOM_FIELD_NUMBER :
 				long shift = codedIS.getTotalBytesRead();
 				if (ind == -1 && loffsets != null) {
-					loffsets.addAll(pi.getIndexByRef().keySet());
+					pi.getAtomsToLoad(loffsets);
 					loffsets.sort();
 					ind = 0;
 				}

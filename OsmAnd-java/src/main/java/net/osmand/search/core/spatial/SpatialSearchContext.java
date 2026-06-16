@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.BinaryMapIndexReader;
-import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.binary.NameIndexReader.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
@@ -16,36 +14,30 @@ import net.osmand.data.Amenity;
 import net.osmand.data.City;
 import net.osmand.data.MapObject;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
+import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtomXY;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchFileCache;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchGlobalCache;
 import net.osmand.util.SearchAlgorithms;
 
-
-// 1. TODO evict cache files
-// 2. TODO evict cache words
-// TODO properly calculate shiftToIndex (test) - Address
-// TODO properly calculate shiftToIndex (test) - POI
 public class SpatialSearchContext {
 
 	public static boolean SEARCH_POI = true;
-	
-	public static boolean READ_POI_OBJECTS = true;
+
+	public static boolean READ_POI_OBJECTS = false;
 	public static boolean READ_ADDR_OBJECTS = true;
-	
-	// TODO implement for tokens
-	public static boolean READ_COMMON_WORDS = false;
-	
+
+
 	public static int LIMIT_ATOMIC_OBJECTS = 2;
-	
-	
+
 	private static int SHIFT_FILE_IND = 12; // maximum files 4096
-	
+	private static int SHIFT_POI_IND = 10; // maximum poi 1024
+
 	final List<BinaryMapIndexReader> files;
-	
+
 	final List<SpatialSearchFileCache> internalFile = new ArrayList<>();
-	
+
 	SpatialSearchStats stats = new SpatialSearchStats();
-	
+
 	public static class SpatialSearchStats {
 		long time = System.nanoTime();
 		long readTokensTime = 0;
@@ -56,77 +48,83 @@ public class SpatialSearchContext {
 
 		@Override
 		public String toString() {
-			return String.format("Search Stats %.1f ms - read tokens %.1f ms, read obj %.1f ms, match %.1f ms, comp %.1f ms", 
-					time / 1e6, readTokensTime / 1e6, readObjTime / 1e6,
-					matchTime / 1e6, computeTime / 1e6);
+			return String.format(
+					"Search Stats %.1f ms - read tokens %.1f ms, read obj %.1f ms, match %.1f ms, comp %.1f ms",
+					time / 1e6, readTokensTime / 1e6, readObjTime / 1e6, matchTime / 1e6, computeTime / 1e6);
 		}
 
 		public void finish() {
 			time = System.nanoTime() - time;
 		}
 	}
-	
+
 	public SpatialSearchContext(List<BinaryMapIndexReader> files) {
 		this.files = files;
 	}
-	
 
 	public void initFiles(SpatialSearchGlobalCache cache) {
+		int indexInd = 0;
+		int fileInd = 0;
 		for (BinaryMapIndexReader bir : files) {
 			SpatialSearchFileCache fc = cache.filesCache.get(bir.getFile().getName());
 			if (fc == null || !fc.test(bir)) {
 				fc = new SpatialSearchFileCache(bir);
 			}
 			cache.filesCache.put(fc.file, fc);
+			fc.indexInd = indexInd;
+			fc.fileInd = fileInd;
 			this.internalFile.add(fc);
-		}		
+			
+			indexInd += fc.indexReaders.size();
+			fileInd++;
+		}
 	}
-	
-	
+
 	void readAtoms(List<SpatialSearchToken> tokens) throws IOException {
 		for (SpatialSearchToken t : tokens) {
+			int indxInd = 0;
 			for (int fileInd = 0; fileInd < files.size(); fileInd++) {
 				SpatialSearchFileCache iCache = internalFile.get(fileInd);
-				List<NameIndexReader> nameIndexes = iCache.tokens.get(t.word);
-				if (nameIndexes == null) {
+				BinaryMapIndexReader b = files.get(fileInd);
+				for (NameIndexReader indx : iCache.indexReaders) {
 					stats.readTokensTime -= System.nanoTime();
-					BinaryMapIndexReader b = files.get(fileInd);
-					nameIndexes = new ArrayList<>();
-					for (AddressRegion m : b.getAddressIndexes()) {
-						nameIndexes.add(b.readFullNameIndex(m, t.word));
-					}
-					for (PoiRegion m : b.getPoiIndexes()) {
-						nameIndexes.add(b.readFullNameIndex(m, t.word));
-					}
-					iCache.tokens.put(t.word, nameIndexes);
+					b.readFullNameIndex(indx, t.word);
 					stats.readTokensTime += System.nanoTime();
-				}
-				for (NameIndexReader indx : nameIndexes) {
-					for (PrefixNameValue prefix : indx.getPrefixes()) {
-						parseAtomSuffixes(t, fileInd, indx, prefix, tokens);
+					for (PrefixNameValue prefix : indx.getMatchedPrefixes()) {
+						parseAtomSuffixes(t, indxInd, indx, prefix, tokens);
 					}
+					indxInd++;
 				}
 			}
 		}
 	}
-	
-	private long makeId(int fileInd, long shiftToIndex) {
+
+	private long makeAddrId(int fileInd, long shiftToIndex) {
 		if (fileInd > 1 << SHIFT_FILE_IND) {
 			throw new IllegalStateException();
 		}
-		long id = (shiftToIndex << SHIFT_FILE_IND) + SHIFT_FILE_IND;
+		long id = (shiftToIndex << SHIFT_FILE_IND) + fileInd;
 		return id;
 	}
 	
+	private long makePoiId(int fileInd, long shiftToIndex, int poiInd) {
+		if (fileInd > 1 << SHIFT_FILE_IND) {
+			throw new IllegalStateException();
+		}
+		if (poiInd > 1 << SHIFT_POI_IND) {
+			throw new IllegalStateException();
+		}
+		long id = (((shiftToIndex << SHIFT_POI_IND) + poiInd) << SHIFT_FILE_IND) + fileInd;
+		return id;
+	}
 
-	private void parseAtomSuffixes(SpatialSearchToken t, int fileInd, 
-			NameIndexReader indx, PrefixNameValue prefix, List<SpatialSearchToken> allTokens) throws IOException {
+	private void parseAtomSuffixes(SpatialSearchToken t, int indInd, NameIndexReader indx, PrefixNameValue prefix,
+			List<SpatialSearchToken> allTokens) throws IOException {
 		String curSuffix = null;
 		List<String> suffixes = new ArrayList<>();
 		List<String> commonSuffixes = new ArrayList<>();
 		boolean addr = prefix.addr != null;
-		for (String s : addr ? prefix.addr.getSuffixesDictionaryList() : 
-				prefix.poi.getSuffixesDictionaryList()) {
+		for (String s : addr ? prefix.addr.getSuffixesDictionaryList() : prefix.poi.getSuffixesDictionaryList()) {
 			curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
 			suffixes.add(prefix.key + curSuffix);
 		}
@@ -136,58 +134,112 @@ public class SpatialSearchContext {
 		}
 		if (addr) {
 			for (AddressNameIndexDataAtom a : prefix.addr.getAtomList()) {
-				long shift = prefix.shift - a.getShiftToIndex(0);
-				long lid = makeId(fileInd, prefix.shift - a.getShiftToIndex(0));
+				long lid = makeAddrId(indInd, prefix.shift - a.getShiftToIndex(0));
+				long pid = 0;
+				if (a.getType() == CityBlocks.STREET_TYPE.index) {
+					pid = makeAddrId(indInd, prefix.shift - a.getShiftToCityIndex(0));
+				} else if (a.getType() != CityBlocks.BOUNDARY_TYPE.index || a.getType() != CityBlocks.CITY_TOWN_TYPE.index
+						|| a.getType() != CityBlocks.VILLAGES_TYPE.index || a.getType() != CityBlocks.POSTCODES_TYPE.index) {
+					continue;
+				}
 				MapObject obj = null;
 				if (READ_ADDR_OBJECTS) {
-					obj = readAddrObject(fileInd, indx, prefix, a, shift, obj);
+					obj = readAddrObject(lid, pid);
 				}
-				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, obj, allTokens);
+				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, pid, obj, allTokens);
 			}
 		} else if (SEARCH_POI) {
 			for (OsmAndPoiNameIndexDataAtom a : prefix.poi.getAtomsList()) {
-				long shift = BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()); 
-				long lid = makeId(fileInd, shift + a.getPoiIndInBlock(0));
+				long lid = makePoiId(indInd, BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()),
+						a.getPoiIndInBlock(0));
 				MapObject amenity = null;
 				if (READ_POI_OBJECTS) {
-					List<Amenity> lst = files.get(fileInd).readAmenityBlock(indx.poiRegion, shift);
-					amenity = lst.get(a.getPoiIndInBlock(0));
+					amenity = readPoiObject(lid);
 				}
-				parseSuffixes(t, suffixes, commonSuffixes, null, a, lid, amenity, allTokens);
+				parseSuffixes(t, suffixes, commonSuffixes, null, a, lid, 0, amenity, allTokens);
 			}
 		}
 	}
 
-	private MapObject readAddrObject(int fileInd, NameIndexReader indx, PrefixNameValue prefix,
-			AddressNameIndexDataAtom a, long shift, MapObject obj) throws IOException {
-		// TODO read by id
+	public MapObject readPoiObject(long id) throws IOException {
+		int indInd = (int) (id & ((1l << SHIFT_FILE_IND) - 1));
+		id >>= SHIFT_FILE_IND;
+		int poiInd = (int) (id & ((1l << SHIFT_POI_IND) - 1));
+		id >>= SHIFT_POI_IND;
+		long shift = id;
+		
+		NameIndexReader nameIndex = null;
+		SpatialSearchFileCache c = null;
+		for (int k = 0; k < internalFile.size(); k++) {
+			c = internalFile.get(k);
+			if (indInd < c.indexInd + c.indexReaders.size()) {
+				nameIndex = c.indexReaders.get(indInd - c.indexInd);
+				break;
+			}
+		}
+		
 		long tm = System.nanoTime();
-		if (a.getType() == CityBlocks.STREET_TYPE.index) {
-			long cshift = prefix.shift - a.getShiftToCityIndex(0);
-			City city = files.get(fileInd).readCityObject(indx.addressRegion, cshift);
-			obj = files.get(fileInd).readStreetObject(indx.addressRegion, city, shift);
-		} else if (a.getType() == CityBlocks.BOUNDARY_TYPE.index ||
-				a.getType() == CityBlocks.CITY_TOWN_TYPE.index || 
-				a.getType() == CityBlocks.VILLAGES_TYPE.index || 
-				a.getType() == CityBlocks.POSTCODES_TYPE.index) {
-			obj = files.get(fileInd).readCityObject(indx.addressRegion, shift);
+		List<Amenity> lst = files.get(c.fileInd).readAmenityBlock(nameIndex.poiRegion, shift);
+		MapObject amenity = lst.get(poiInd);
+		stats.readObjTime += (System.nanoTime() - tm);
+		return amenity;
+	}
+
+	public MapObject readAddrObject(long id, long pid) throws IOException {
+		int indInd = (int) (id & ((1l << SHIFT_FILE_IND) - 1));
+		id >>= SHIFT_FILE_IND;
+		long shift = id;
+		
+		NameIndexReader nameIndex = null;
+		SpatialSearchFileCache c = null;
+		for (int k = 0; k < internalFile.size(); k++) {
+			c = internalFile.get(k);
+			if (indInd < c.indexInd + c.indexReaders.size()) {
+				nameIndex = c.indexReaders.get(indInd - c.indexInd);
+				break;
+			}
+		}		
+		
+		long tm = System.nanoTime();
+		MapObject obj;
+		if (pid != 0) {
+			int pIndInd = (int) (pid & ((1l << SHIFT_FILE_IND) - 1));
+			pid >>= SHIFT_FILE_IND;
+			long pshift = pid;
+			if (pIndInd != indInd) {
+				throw new UnsupportedOperationException();
+			}
+			City city = files.get(c.fileInd).readCityObject(nameIndex.addressRegion, pshift);
+			obj = files.get(c.fileInd).readStreetObject(nameIndex.addressRegion, city, shift);
+		} else  {
+			obj = files.get(c.fileInd).readCityObject(nameIndex.addressRegion, shift);
 		}
 		stats.readObjTime += (System.nanoTime() - tm);
 		return obj;
 	}
 
 	private void parseSuffixes(SpatialSearchToken t, List<String> suffixes, List<String> commonSuffixes,
-			AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b, long lid, MapObject obj, List<SpatialSearchToken> allTokens) {
+			AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b, long cid, long pid, MapObject obj,
+			List<SpatialSearchToken> allTokens) {
 		int cnt = a != null ? a.getSuffixesBitsetIndexCount() : b.getSuffixesBitsetIndexCount();
 		String name = "";
+		int wInd = 0;
+		int type = a != null ? a.getType() : SpatialSearchToken.POI_TYPE;
 		for (int i = 0; i < cnt; i++) {
 			int suffBit = a != null ? a.getSuffixesBitsetIndex(i) : b.getSuffixesBitsetIndex(i);
 			if (suffBit % 2 == 0) {
 				int ind = suffBit / 2 - 1;
 				if (ind == -1) {
 					if (acceptName(t, name)) {
-						addObject(t, a, b, lid, obj, name, allTokens);
+						int other;
+						if (a != null) {
+							other = wInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wInd) : 0;
+						} else {
+							other = wInd < b.getOtherWordsCountCount() ? b.getOtherWordsCount(wInd) : 0;
+						}
+						addObject(t, name, type, cid, pid, obj, other, new NameIndexAtomXY(a, b), allTokens);
 					}
+					wInd++;
 					name = "";
 				} else if (ind < suffixes.size()) {
 					name += suffixes.get(ind);
@@ -206,7 +258,13 @@ public class SpatialSearchContext {
 			}
 		}
 		if (name.length() != 0 && acceptName(t, name)) {
-			addObject(t, a, b, lid, obj, name, allTokens);
+			int other;
+			if (a != null) {
+				other = wInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wInd) : 0;
+			} else {
+				other = wInd < b.getOtherWordsCountCount() ? b.getOtherWordsCount(wInd) : 0;
+			}
+			addObject(t, name, type, cid, pid, obj, other, new NameIndexAtomXY(a, b), allTokens);
 		}
 	}
 
@@ -217,25 +275,41 @@ public class SpatialSearchContext {
 		return acceptName;
 	}
 
-
-	private void addObject(SpatialSearchToken t, AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b, long lid,
-			MapObject obj, String name, List<SpatialSearchToken> allTokens) {
-		NameIndexAtom atom = new NameIndexAtom(name, a, b, lid, obj);
-		t.addAtom(atom);
+	private void addObject(SpatialSearchToken t, String name, int type, long lid, long pid, MapObject obj, int other,
+			NameIndexAtomXY coords, List<SpatialSearchToken> allTokens) {
+		List<SpatialSearchToken> otherTokens = null;
 		if (name.indexOf(' ') != -1) {
 			List<String> split = SearchAlgorithms.splitAndNormalize(name);
 			for (int k = 1; k < split.size(); k++) {
-				// not exactly correct as does combination but not a strong issue 
+				boolean matched = false;
 				for (SpatialSearchToken token : allTokens) {
-					if (t != token && acceptName(token, name)) {
-						token.addAtom(atom);
+					if (t != token && acceptName(token, name)
+							&& (otherTokens == null || !otherTokens.contains(token))) {
+						if (otherTokens == null) {
+							otherTokens = new ArrayList<>();
+						}
+						otherTokens.add(token);
+						matched = true;
+						break;
 					}
 				}
+				if (!matched) {
+					other++;
+				}
+			}
+		}
+		if (otherTokens != null) {
+			other += otherTokens.size();
+		}
+		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, other, coords);
+		t.addAtom(atom);
+		
+		if (otherTokens != null) {
+			for (SpatialSearchToken token : otherTokens) {
+				token.addAtom(atom);
 			}
 		}
 
 	}
-
-
 
 }

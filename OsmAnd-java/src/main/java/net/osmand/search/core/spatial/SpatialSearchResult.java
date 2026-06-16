@@ -5,8 +5,8 @@ import java.util.Collections;
 import java.util.List;
 
 import net.osmand.binary.ObfConstants;
-import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.data.MapObject;
+import net.osmand.data.Street;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 
 public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
@@ -83,14 +83,16 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		}
 		
 		public int typeOrder() {
-			if (atom.poi != null) {
+			if (atom.type == SpatialSearchToken.POI_TYPE) {
 				return 0;
 			}
-			if (atom.addr.getType() == CityBlocks.STREET_TYPE.index) {
+			if (atom.type == SpatialSearchToken.POI_TYPE) {
 				return 1;
 			}
 			return 2;
 		}
+		
+
 
 		@Override
 		public String toString() {
@@ -101,12 +103,29 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			if (atom.object != null) {
 				return String.format("%s %s (%d) %.4f %.4f ", words, 
 						atom.object.getClass().getSimpleName() + " " + atom.object.getName(), 
-						ObfConstants.getOsmObjectId(atom.object),
+						atom.object instanceof Street ? atom.object.getId() : ObfConstants.getOsmObjectId(atom.object),
 						atom.object.getLocation().getLatitude(),
 						atom.object.getLocation().getLongitude());
 			}
 			return atom.simpleName(words.toString()); 
 		}
+	}
+	
+
+	public int sumOther() {
+		int s1 = 0;
+		for (SpatialSearchResultRef r : objs) {
+			s1 += r.atom.otherWordsCnt;
+		}
+		return s1;
+	}
+	
+	public int sumTypeOrder() {
+		int s1 = 0;
+		for (SpatialSearchResultRef r : objs) {
+			s1 += r.typeOrder();
+		}
+		return s1;
 	}
 
 	@Override
@@ -115,15 +134,12 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		if (res != 0) {
 			return res;
 		}
-		int s1 = 0;
-		int s2 = 0;
-		for (SpatialSearchResultRef r : objs) {
-			s1 += r.typeOrder();
+		res = -Integer.compare(sumTypeOrder(), o.sumTypeOrder());
+		if (res != 0) {
+			return res;
 		}
-		for (SpatialSearchResultRef r : o.objs) {
-			s2 += r.typeOrder();
-		}
-		res -= Integer.compare(s1, s2);
+		
+		res = Integer.compare(sumOther(), o.sumOther());
 		if (res != 0) {
 			return res;
 		}

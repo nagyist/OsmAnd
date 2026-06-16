@@ -1,5 +1,6 @@
 package net.osmand.search.core.spatial;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,17 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		tCount = tokens.length;
+	}
+	
+	public void loadObjects(SpatialSearchContext ctx, boolean deduplicate) throws IOException {
+		for (NameIndexAtom a : linearResults) {
+			if (a.type == SpatialSearchToken.POI_TYPE) {
+				a.object = ctx.readPoiObject(a.id);
+			} else {
+				a.object = ctx.readAddrObject(a.id, a.parentid);
+			}
+		}
+		
 	}
 
 	public NameIndexAtom getAtom(int combination, int pos) {
@@ -101,6 +113,27 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 
 	boolean addResult(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
+		boolean acceptIntersection = acceptIntersection(parent, pindx, a);
+		if(!acceptIntersection) {
+			return false;
+		}
+		result = null;
+		int pzoom = parent == null ? 0 : parent.tileZooms.get(pindx);
+		int zoom = Math.max(pzoom, a.coords.bboxTileZoom);
+		long tileId = pzoom > a.coords.bboxTileZoom ? parent.tileIds.get(pindx) : a.coords.bboxTileId;
+		int insIndx = this.tileIds.size();
+		this.linearResults.add(a);
+		for (int i = 0; parent != null && i < parent.tCount; i++) {
+			this.linearResults.add(parent.linearResults.get(pindx * parent.tCount + i));
+		}
+
+		this.tileIds.add(tileId);
+		this.tileZooms.add(zoom);
+		quadTree.put(zoom, tileId, insIndx);
+		return true;
+	}
+
+	private boolean acceptIntersection(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
 		// ignore 2+ POI / Streets
 		if (a.atomicObject()) {
 			// check limit atomic objects to add
@@ -118,42 +151,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 			}
 		}
-		
-		result = null;
-		int pzoom = parent == null ? 0 : parent.tileZooms.get(pindx);
-		int zoom = Math.max(pzoom, a.bboxTileZoom);
-		long tileId = pzoom > a.bboxTileZoom ? parent.tileIds.get(pindx) : a.bboxTileId;
-		int insIndx = this.tileIds.size();
-		// not many duplicates
-//			boolean dup = checkDuplicate(parent, pindx, a, zoom, tileId);
-//			if (dup) return;
-		this.linearResults.add(a);
-		for (int i = 0; parent != null && i < parent.tCount; i++) {
-			this.linearResults.add(parent.linearResults.get(pindx * parent.tCount + i));
-		}
-
-		this.tileIds.add(tileId);
-		this.tileZooms.add(zoom);
-		quadTree.put(zoom, tileId, insIndx);
 		return true;
-	}
-
-	boolean checkDuplicate(SpatialSearchResultsList parent, int pindx, NameIndexAtom a, int zoom, long tileId) {
-		final boolean[] matched = new boolean[1];
-		quadTree.forEachMatch(zoom, zoom, tileId, indxs -> {
-			for (int indx : indxs) {
-				boolean m = linearResults.get((indx + 1) * tCount - 1).id == a.id;
-				for (int i = 0; m && parent != null && i < parent.tCount; i++) {
-					NameIndexAtom p = parent.linearResults.get(pindx * parent.tCount + i);
-					NameIndexAtom p2 = linearResults.get(indx * tCount + i);
-					if (p.id != p2.id) {
-						m = false;
-					}
-				}
-				matched[0] |= m;
-			}
-		});
-		return matched[0];
 	}
 
 	@Override

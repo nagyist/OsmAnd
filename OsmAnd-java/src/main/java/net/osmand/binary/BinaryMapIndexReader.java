@@ -1494,18 +1494,14 @@ public class BinaryMapIndexReader {
 		return req.getSearchResults();
 	}
 	
-	public NameIndexReader readFullNameIndex(PoiRegion p, String prefix) throws IOException {
-		codedIS.seek(p.filePointer);
-		NameIndexReader res = poiAdapter.readNameIndex(prefix, new NameIndexReader(p));
-		long old = codedIS.pushLimitLong((long) p.length);
-		codedIS.popLimit(old);
-		return res;
-	}
-	
-	public NameIndexReader readFullNameIndex(AddressRegion p, String prefix) throws IOException {
-		codedIS.seek(p.filePointer);
-		NameIndexReader res = addressAdapter.readNameIndex(prefix, new NameIndexReader(p));
-		long old = codedIS.pushLimitLong((long) p.length);
+	public NameIndexReader readFullNameIndex(NameIndexReader res, String prefix) throws IOException {
+		codedIS.seek(res.poiRegion != null ? res.poiRegion.filePointer : res.addressRegion.filePointer);
+		long old = codedIS.pushLimitLong(res.poiRegion != null ? res.poiRegion.length : res.addressRegion.length);
+		if (res.poiRegion != null) {
+			poiAdapter.readNameIndex(prefix, res);
+		} else {
+			addressAdapter.readNameIndex(prefix, res);
+		}
 		codedIS.popLimit(old);
 		return res;
 	}

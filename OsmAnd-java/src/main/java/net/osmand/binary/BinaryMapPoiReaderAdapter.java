@@ -34,6 +34,7 @@ import net.osmand.Location;
 import net.osmand.PlatformUtil;
 import net.osmand.binary.BinaryMapIndexReader.SearchRequest;
 import net.osmand.binary.BinaryMapIndexReader.TagValuePair;
+import net.osmand.binary.NameIndexReader.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.CommonIndexedStats;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.data.Amenity;
@@ -371,6 +372,7 @@ public class BinaryMapPoiReaderAdapter {
 			case 0:
 				return res;
 			case OsmandOdb.OsmAndPoiNameIndex.TABLE_FIELD_NUMBER :
+				pi.resetMatchedKeys();
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
 				pi.setTablePointer(codedIS.getTotalBytesRead());
@@ -381,14 +383,18 @@ public class BinaryMapPoiReaderAdapter {
 			case OsmandOdb.OsmAndPoiNameIndex.COMMONSTATS_FIELD_NUMBER :
 				length = codedIS.readRawVarint32();
 				oldLimit = codedIS.pushLimitLong(length);
-				CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
-				pi.setCommonIndexed(stat);
+				if (pi.getCommonStats() != null) {
+					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+				} else {
+					CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
+					pi.setCommonIndexed(stat);
+				}
 				codedIS.popLimit(oldLimit);
 				break;
 			case OsmandOdb.OsmAndPoiNameIndex.DATA_FIELD_NUMBER :
 				long shift = codedIS.getTotalBytesRead();
 				if (ind == -1 && loffsets != null) {
-					loffsets.addAll(pi.getIndexByRef().keySet());
+					pi.getAtomsToLoad(loffsets);
 					loffsets.sort();
 					ind = 0;
 				}
