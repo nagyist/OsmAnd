@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.data.MapObject;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 
@@ -33,10 +34,19 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			}
 			ref.tokens.add(token);
 		}
-		useOriginalOrder();
+		useSmallestObjectOrder();
+//		useOriginalOrder();
 	}
 	
-	private void useOriginalOrder() {
+	void useSmallestObjectOrder() {
+		for (SpatialSearchResultRef r : objs) {
+			Collections.sort(r.tokens, (o1, o2) -> Integer.compare(o1.originalOrder, o2.originalOrder));
+		}
+		Collections.sort(objs,
+				(o1, o2) -> Integer.compare(o1.typeOrder(), o2.typeOrder()));
+	}
+
+	void useOriginalOrder() {
 		for (SpatialSearchResultRef r : objs) {
 			Collections.sort(r.tokens, (o1, o2) -> Integer.compare(o1.originalOrder, o2.originalOrder));
 		}
@@ -67,6 +77,16 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			this.atom = atom;
 		}
 		
+		public int typeOrder() {
+			if (atom.poi != null) {
+				return 0;
+			}
+			if (atom.addr.getType() == CityBlocks.STREET_TYPE.index) {
+				return 1;
+			}
+			return 2;
+		}
+
 		@Override
 		public String toString() {
 			List<String> words = new ArrayList<String>();

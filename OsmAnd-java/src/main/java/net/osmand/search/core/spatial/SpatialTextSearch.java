@@ -196,6 +196,9 @@ public class SpatialTextSearch {
 		ctx.stats.computeTime -= System.nanoTime();
 		res.combinations = findObjCombinations(res.tokens);
 		Collections.sort(res.combinations);
+		if (res.combinations.size() > 0) {
+			res.mainResult = res.combinations.get(0);
+		}
 		ctx.stats.computeTime += System.nanoTime();
 		return res;
 	}
@@ -259,8 +262,8 @@ public class SpatialTextSearch {
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
 		pattern = "Ukraine_";
-		query = "нова пошта 1";
-//		query = "kyiv сакс. ";
+//		query = "нова пошта 1";
+		query = "kyiv сакс. ";
 //		query = "пузата хата mcdonal.";
 //		query = "нова"; // TODO number?
 		long t = System.nanoTime();
