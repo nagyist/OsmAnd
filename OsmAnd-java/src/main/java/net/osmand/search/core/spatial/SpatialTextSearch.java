@@ -7,21 +7,16 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
-import com.google.protobuf.ByteString;
-
-import gnu.trove.map.hash.TLongObjectHashMap;
-import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.CommonWords;
-import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
-import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
-import net.osmand.data.MapObject;
+import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
-import net.osmand.search.core.HashQuadTree;
-import net.osmand.util.MapUtils;
+import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.util.SearchAlgorithms;
 
 
@@ -66,129 +61,45 @@ import net.osmand.util.SearchAlgorithms;
 // Phase III - all words + replaced abbrevations
 public class SpatialTextSearch {
 	
-	
-	static class NameIndexAtom {
-		String name;
-		AddressNameIndexDataAtom addr;
-		OsmAndPoiNameIndexDataAtom poi;
-		
-		long id;
-		Object object;
-		int otherWordsCnt = 0;
-		
-		int[] bbox31; // if exists [xleft, yleft, xright, yright]
-		long bboxTileId; // encodes zoom, tileX, tileY
-		int bboxTileZoom;
-		int x16, y16;
 
-		NameIndexAtom(String name, AddressNameIndexDataAtom addr, OsmAndPoiNameIndexDataAtom poi, 
-				long id, MapObject obj) {
-			this.name = name;
-			this.addr = addr;
-			this.poi = poi;
-			this.id = id;
-			this.object = obj;
-			System.out.println(name + " " + obj + " " + (obj != null ? obj.getLocation() : ""));
-			calculateBbox(addr, poi);
+	public static class SpatialSearchFileCache {
+		public final String file;
+		public final long length;
+		public final long edition;
+		// TODO make it global without words!
+		public Map<String, List<NameIndexReader>> tokens = new HashMap<>(); 
+		
+		public SpatialSearchFileCache(BinaryMapIndexReader r) {
+			file = r.getFile().getName();
+			length = r.getFile().length();
+			edition = r.getDateCreated();
 		}
 		
-		
-		private void calculateBbox(AddressNameIndexDataAtom addr, OsmAndPoiNameIndexDataAtom poi) {
-			if (addr != null && addr.getXy16Count() >= 1) {
-				int xy16 = addr.getXy16(0);
-				this.x16 = (xy16 >>> 16);
-				this.y16 = (xy16 & ((1 << 16) - 1));
-				ByteString bbox = addr.getBbox();
-				bboxTileZoom = 15;
-				bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16 / 2, y16 / 2);
-				if (bbox != null && addr.hasBbox()) {
-					bbox31 = SearchAlgorithms.decodeBboxForNameAtomsBytes(bbox, x16, y16);
-					if (bbox31 != null) {
-						int z = 31;
-						int xleft = bbox31[0], xright = bbox31[2];
-						int ytop = bbox31[1], ybottom = bbox31[3];
-						while (xleft != xright || ytop != ybottom) {
-							z--;
-							xleft >>= 1;
-							xright >>= 1;
-							ytop >>= 1;
-							ybottom >>= 1;
-						}
-						bboxTileZoom = z;								
-						bboxTileId = HashQuadTree.encodeTileId(z, xleft, ytop);
-					}
-				}
-			} else if (poi != null) {
-				this.x16 = poi.getX();
-				this.y16 = poi.getY();
-				bboxTileZoom = 16;
-				bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16, y16);
-			}			
-		}
-		
-		String simpleName(String name) {
-			String type = "";
-			if (addr != null) {
-				type = CityBlocks.getByType(addr.getType()).toString();
-			} else if (poi != null) {
-				type = "POI";
-			}
-			return String.format("%s %s %d (%.4f, %.4f)", type, name, (id % 0xffff),
-					MapUtils.get31LatitudeY(y16 << 15), MapUtils.get31LongitudeX(x16 << 15));
-		}
-		
-		@Override
-		public final String toString() {
-			return object != null ? object.toString() : simpleName(name); 
-		}
-
-
-		
-	};
-	
-	
-	static class SpatialSearchToken {
-		int originalOrder = 0;
-		int sortedOrder = 0;
-		boolean incomplete;
-		String originalWord;
-		String word;
-		List<NameIndexAtom> atoms = new ArrayList<>();
-		TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
-		HashQuadTree<NameIndexAtom> quadTree = new HashQuadTree<>(16);
-		
-		
-		public SpatialSearchToken(String w, String original, int order) {
-			originalWord = original;
-			word = w;
-			this.originalOrder = order;
-		}
-		
-		@Override
-		public String toString() {
-			return String.format("%d. %s - %d atoms", originalOrder, originalWord, atoms.size());
-		}
-		
-
-		void addAtom(String name, NameIndexAtom atom) {
-			if (match(name)) {
-				index.put(atom.id, atom);
-				atoms.add(atom);
-				quadTree.put(atom.bboxTileZoom, atom.bboxTileId, atom);
-			}
-		}
-
-		private boolean match(String name) {
-			// TODO collator from space
-			if (word.endsWith(".")) {
-				
-				return name.toLowerCase().startsWith(word.substring(0, word.length() - 1));
-			}
-			return word.equalsIgnoreCase(name);
+		public boolean test(BinaryMapIndexReader r) {
+			return r.getFile().getName().equals(file) && r.getFile().length() == length && 
+					r.getDateCreated() == edition;
 		}
 	}
 	
 	
+	public static class SpatialSearchGlobalCache {
+		
+		public Map<String, SpatialSearchFileCache> filesCache = new HashMap<>();
+		
+	}
+	
+	public static class SpatialSearchResults {
+		
+		public String input;
+		
+		public List<SpatialSearchToken> tokens;
+		
+		public SpatialSearchResultsList mainResult;
+		
+		public List<SpatialSearchResultsList> combinations;
+	}	
+	
+	SpatialSearchGlobalCache cache = new SpatialSearchGlobalCache(); // reusable between sessions
 
 	private List<SpatialSearchToken> splitWords(String input) {
 		List<String> owords =new ArrayList<String>();
@@ -268,36 +179,47 @@ public class SpatialTextSearch {
 		return result;
 		
 	}
+	
+	public SpatialSearchResults searchAPI(String input, SpatialSearchContext ctx) throws IOException {
+		SpatialSearchResults res = new SpatialSearchResults();
+		ctx.initFiles(cache);
+		res.input = input;
+		// 1. prepare tokens
+		res.tokens = splitWords(input);
+		// 2. read atoms
+		ctx.stats.atoms -= System.nanoTime();
+		ctx.readAtoms(res.tokens);
+		ctx.stats.atoms += System.nanoTime();
+		// 3. sort tokens 
+		sortTokens(res.tokens);
+		// 4. find combinations
+		ctx.stats.computeTime -= System.nanoTime();
+		res.combinations = findObjCombinations(res.tokens);
+		Collections.sort(res.combinations);
+		ctx.stats.computeTime += System.nanoTime();
+		return res;
+	}
 
 
 	public void searchTest(String input, SpatialSearchContext ctx) throws IOException {
-		// 1. prepare tokens
-		List<SpatialSearchToken> tokens = splitWords(input);
-		// 2. read atoms
-		for (SpatialSearchToken t : tokens) {
-			ctx.readAtoms(t);
-		}
-		// 3. sort tokens 
-		sortTokens(tokens);
-		// 4. find combinations
-		ctx.stats.computeTime -= System.nanoTime();
-		List<SpatialSearchResultsList> combinations = findObjCombinations(tokens);
-		ctx.stats.computeTime += System.nanoTime();
-		
-		Collections.sort(combinations);
-		if (combinations.size() > 0) {
-			SpatialSearchResultsList resList = combinations.get(0);
+		SpatialSearchResults res = searchAPI(input, ctx);
+		if (res.mainResult != null) {
 			System.out.println("--------");
-			System.out.println("Main: " + resList);
-			for (SpatialSearchResult r : resList.getResult()) {
+			System.out.println("Main: " + res.mainResult);
+			int limit = 100;
+			for (SpatialSearchResult r : res.mainResult.getResult()) {
+				if (limit-- < 0) {
+					System.out.println(".............");
+					break;
+				}
 				System.out.println(r);
 			}
 			System.out.println("--------");
 		}
 		
-		System.out.println("\nTokens: " + tokens);
+		System.out.println("\nTokens: " + res.tokens);
 		System.out.println("All Results: ");
-		for (SpatialSearchResultsList s : combinations) {
+		for (SpatialSearchResultsList s : res.combinations) {
 			if (s.getTokenCount() >= 2) {
 				System.out.println("  " + s.toString(false));
 			}
@@ -336,11 +258,11 @@ public class SpatialTextSearch {
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-		pattern = "Ukraine_kyiv-ci";
-//		query = "24";
-//		query = "kyiv";
+		pattern = "Ukraine_";
+		query = "нова пошта 1";
+//		query = "kyiv сакс. ";
 //		query = "пузата хата mcdonal.";
-		query = "58"; // TODO number?
+//		query = "нова"; // TODO number?
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
@@ -349,12 +271,13 @@ public class SpatialTextSearch {
 				initFile(ls, f);
 			}
 		}
-		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
 		SpatialTextSearch a = new SpatialTextSearch();
+		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
+		
+		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
 		a.searchTest(query, searchContext);
 		
-		searchContext = new SpatialSearchContext(ls, searchContext.cache);
+		searchContext = new SpatialSearchContext(ls);
 		a.searchTest(query, searchContext);
 	}
 	

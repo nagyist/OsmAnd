@@ -84,6 +84,7 @@ import net.osmand.router.HHRouteDataStructure.HHRoutingContext;
 import net.osmand.router.HHRouteDataStructure.NetworkDBPoint;
 import net.osmand.util.Algorithms;
 import net.osmand.util.MapUtils;
+import net.osmand.util.UnicodeDiacritics;
 
 public class BinaryMapIndexReader {
 
@@ -769,6 +770,36 @@ public class BinaryMapIndexReader {
 				sr, pr, null, 0);
 		codedIS.popLimit(oldLim);
 		return sr.getSearchResults();
+	}
+	
+	public City readCityObject(AddressRegion r, long offset) throws IOException {
+		if (!(offset >= r.filePointer && offset <= (r.length + r.filePointer))) {
+			throw new IllegalArgumentException();
+		}
+		codedIS.seek(offset);
+		long length = codedIS.readRawVarint32();
+		long oldLim = codedIS.pushLimitLong((long) length);
+		// city header
+		City city = addressAdapter.readCityHeader(null, null, offset, r.getAttributeTagsTable());
+		codedIS.popLimit(oldLim);
+		return city;
+	}
+	
+	public MapObject readStreetObject(AddressRegion r, City city, long offset) throws IOException {
+		if (!(offset >= r.filePointer && offset <= (r.length + r.filePointer))) {
+			throw new IllegalArgumentException();
+		}
+		int cx24 = MapUtils.get31TileNumberX(city.getLocation().getLongitude()) >> 7;
+		int cy24 = MapUtils.get31TileNumberY(city.getLocation().getLatitude()) >> 7;
+		codedIS.seek(offset);
+		Street s = new Street(city);
+		s.setFileOffset(offset);
+		long length = codedIS.readRawVarint32();
+		long oldLim = codedIS.pushLimitLong((long) length);
+		// cityx
+		addressAdapter.readStreet(s, null, true, cx24, cy24, null, r.attributeTagsTable);
+		codedIS.popLimit(oldLim);
+		return s;
 	}
 
 	private AddressRegion checkAddressIndex(long offset) {
@@ -2704,6 +2735,7 @@ public class BinaryMapIndexReader {
 				return;
 			case OsmandOdb.IndexedStringTable.KEY_FIELD_NUMBER :
 				key = codedIS.readString();
+				key = UnicodeDiacritics.getInstance().stripDiacritics(key);
 				if (prefix != null) {
 					key = prefix + key;
 				}

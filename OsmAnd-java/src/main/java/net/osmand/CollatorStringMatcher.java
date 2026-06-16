@@ -2,7 +2,7 @@ package net.osmand;
 
 import net.osmand.util.ArabicNormalizer;
 import net.osmand.util.SearchAlgorithms;
-
+import net.osmand.util.UnicodeDiacritics;
 
 import java.util.Locale;
 
@@ -221,6 +221,7 @@ public class CollatorStringMatcher implements StringMatcher {
 		}
 		fullText = SearchAlgorithms.removeApostrophes(fullText);
 		fullText = SearchAlgorithms.replaceGermanSS(fullText);
+		fullText = UnicodeDiacritics.getInstance().stripDiacritics(fullText);
 		return fullText;
 	}
 

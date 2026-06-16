@@ -7,12 +7,12 @@ import java.util.List;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import net.osmand.search.core.HashQuadTree;
-import net.osmand.search.core.spatial.SpatialTextSearch.NameIndexAtom;
-import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchToken;
+import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 
 public class SpatialSearchResultsList implements Comparable<SpatialSearchResultsList> {
 	final SpatialSearchToken[] tokens; // non modifieable!
 	final int tCount;
+	
 
 	// NameIndexAtom[][] -- should be double array to store list of combinations
 	List<NameIndexAtom> linearResults = new ArrayList<>();
@@ -100,7 +100,25 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return sum;
 	}
 
-	void addResult(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
+	boolean addResult(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
+		// ignore 2+ POI / Streets
+		if (a.atomicObject()) {
+			// check limit atomic objects to add
+			List<Long> objects = new ArrayList<Long>(SpatialSearchContext.LIMIT_ATOMIC_OBJECTS);
+			objects.add(a.id);
+			for (int i = 0; parent != null && i < parent.tCount; i++) {
+				NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
+				if (pa.atomicObject()) {
+					if (!objects.contains(pa.id)) {
+						objects.add(pa.id);
+					}
+				}
+				if (objects.size() > SpatialSearchContext.LIMIT_ATOMIC_OBJECTS) {
+					return false;
+				}
+			}
+		}
+		
 		result = null;
 		int pzoom = parent == null ? 0 : parent.tileZooms.get(pindx);
 		int zoom = Math.max(pzoom, a.bboxTileZoom);
@@ -117,6 +135,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		this.tileIds.add(tileId);
 		this.tileZooms.add(zoom);
 		quadTree.put(zoom, tileId, insIndx);
+		return true;
 	}
 
 	boolean checkDuplicate(SpatialSearchResultsList parent, int pindx, NameIndexAtom a, int zoom, long tileId) {

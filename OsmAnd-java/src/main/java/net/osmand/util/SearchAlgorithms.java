@@ -46,7 +46,6 @@ public class SearchAlgorithms {
         return new CodePointPrefixMatch(leftOffset, rightOffset, commonPrefixCodePointLength);
     }
 
-    
     private static List<String> split(String name) {
         int prev = -1;
         Set<String> namesToAdd = new LinkedHashSet<>();

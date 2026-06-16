@@ -4,9 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import net.osmand.search.core.spatial.SpatialTextSearch.NameIndexAtom;
-import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchToken;
-import net.osmand.util.MapUtils;
+import net.osmand.data.MapObject;
+import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 
 public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
@@ -45,6 +44,14 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				(o1, o2) -> Integer.compare(o1.tokens.get(0).originalOrder, o2.tokens.get(0).originalOrder));
 
 	}
+	
+	public List<MapObject> getObjects() {
+		List<MapObject> o = new ArrayList<>();
+		for (SpatialSearchResultRef r : objs) {
+			o.add(r.atom.object);
+		}
+		return o;
+	}
 
 	@Override
 	public String toString() {
@@ -60,15 +67,15 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			this.atom = atom;
 		}
 		
-		
 		@Override
 		public String toString() {
 			List<String> words = new ArrayList<String>();
-			for(SpatialSearchToken s : tokens) {
+			for (SpatialSearchToken s : tokens) {
 				words.add(s.word);
 			}
 			if (atom.object != null) {
-				String.format("%s %s", words, atom.object);
+				return String.format("%s %s %.4f %.4f", words, atom.object, atom.object.getLocation().getLatitude(),
+						atom.object.getLocation().getLongitude());
 			}
 			return atom.simpleName(words.toString()); 
 		}
