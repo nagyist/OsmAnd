@@ -87,10 +87,14 @@ public class SpatialSearchContext {
 				SpatialSearchFileCache iCache = internalFile.get(fileInd);
 				BinaryMapIndexReader b = files.get(fileInd);
 				for (NameIndexReader indx : iCache.indexReaders) {
-					stats.readTokensTime -= System.nanoTime();
-					b.readFullNameIndex(indx, t.word);
-					stats.readTokensTime += System.nanoTime();
-					for (PrefixNameValue prefix : indx.getMatchedPrefixes()) {
+					List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
+					if (matchedPrefixes == null) {
+						stats.readTokensTime -= System.nanoTime();
+						b.readFullNameIndex(indx, t.word);
+						matchedPrefixes = indx.getMatchedPrefixes(t.word);
+						stats.readTokensTime += System.nanoTime();
+					}
+					for (PrefixNameValue prefix : matchedPrefixes) {
 						parseAtomSuffixes(t, indxInd, indx, prefix, tokens);
 					}
 					indxInd++;

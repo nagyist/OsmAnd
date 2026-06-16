@@ -32,26 +32,25 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////////////////////
 // EFFICIENCY 
-// TODO cache POI block read, cache city index
-// TODO implement for tokens READ_COMMON_WORDS = false;
-// FIXME merge uniq references for POI to make id 
 
 // TODO merge boundaries bbox - extend incomplete boundary same id...
 // TODO read buildings
 // TODO duplicate words
 // TODO sort tokens by actual frequency
 
-// TODO collator +replace last dot as incomplete
+// TODO COLLATOR + Last dot [CONSTANT] as incomplete, 
+//      [NameIndexReader, SpatialSearchToken] 
 
 // POI CATEGORIES 
 // TODO Read all top poi categories for files
 // TODO implement categories
 
 // CACHE
-// TODO global cache - Read common words for files
-// TODO evict cache files
-// TODO evict cache words
-// TODO Lazy load tokens from full name index !
+// TODO implement for tokens READ_COMMON_WORDS = false;
+// TODO Cache POI block read, cache city index
+// TODO Evict - NameIndexReader in caches ( > 200 - indexByRef, matchedKeys) full clear
+
+// FIXME merge uniq references for POI to make id 
 // TODO don't read objects while preparing tokens ?
 
 // SPECIAL CASES

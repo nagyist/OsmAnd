@@ -5,14 +5,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TLongObjectHashMap;
+import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
@@ -24,6 +23,7 @@ import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.City;
 import net.osmand.data.QuadRect;
 import net.osmand.util.SearchAlgorithms;
+import net.osmand.util.UnicodeDiacritics;
 
 public class NameIndexReader {
 
@@ -31,7 +31,9 @@ public class NameIndexReader {
 	public final PoiRegion poiRegion;
 	public final AddressRegion addressRegion;
 	
-	private Set<Long> matchedKeys = new HashSet<Long>();
+	// cache for queries 
+	private Map<String, TLongHashSet> matchedKeys = new HashMap<String, TLongHashSet>();
+	
 	private Map<Long, PrefixNameValue> indexByRef = new HashMap<>();
 	private long tablePointer;
 	
@@ -600,13 +602,31 @@ public class NameIndexReader {
 		return commonsList.get(ind);
 	}
 	
-	public void resetMatchedKeys() {
-		matchedKeys.clear();
+	public void resetMatchedKeys(String query) {
+		if (query != null) {
+			matchedKeys.put(query, new TLongHashSet());
+		}
 	}
 	
-	public void putKey(String key, int val, String prefix) {
+	public boolean matchKey(String key, String query) {
+		if (query == null) {
+			return true;
+		}
+		// TODO COLLATOR
+		key = UnicodeDiacritics.getInstance().stripDiacritics(key);
+		boolean match = query.startsWith(key);
+		if (!match && query.endsWith(".")) {
+			String pr = query.substring(0, query.length() - 1);
+			match = key.startsWith(pr) || pr.startsWith(key);
+		}
+		return match;
+	}
+	
+	public void putKey(String key, int val, String prefix, String query) {
 		long shift = tablePointer + val;
-		matchedKeys.add(shift);
+		if (query != null) {
+			matchedKeys.get(query).add(shift);
+		}
 		if (!indexByRef.containsKey(shift)) {
 			PrefixNameValue nameValue = new PrefixNameValue();
 			nameValue.key = key;
@@ -683,9 +703,9 @@ public class NameIndexReader {
 	}
 	
 	
-	public List<PrefixNameValue> getAtomsToLoad(TLongArrayList loffsets) {
+	public List<PrefixNameValue> getAtomsToLoad(TLongArrayList loffsets, String query) {
 		List<PrefixNameValue> r = new ArrayList<>();
-		for (Long l : matchedKeys) {
+		for (long l : matchedKeys.get(query).toArray()) {
 			PrefixNameValue pv = indexByRef.get(l);
 			if (pv.addr == null && pv.poi == null) {
 				loffsets.add(l);
@@ -706,13 +726,18 @@ public class NameIndexReader {
 		obj.addr = from;
 	}
 	
-	public List<PrefixNameValue> getMatchedPrefixes() {
+	public List<PrefixNameValue> getMatchedPrefixes(String query) {
+		if (!matchedKeys.containsKey(query)) {
+			return null;
+		}
 		List<PrefixNameValue> r = new ArrayList<>();
-		for (Long l : matchedKeys) {
+		for (long l : matchedKeys.get(query).toArray()) {
 			PrefixNameValue pv = indexByRef.get(l);
 			r.add(pv);
 		}
 		return r;
 	}
+
+	
 
 }

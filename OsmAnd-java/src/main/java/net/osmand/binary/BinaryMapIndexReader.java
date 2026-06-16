@@ -2720,7 +2720,7 @@ public class BinaryMapIndexReader {
 		return result;
 	}
 	
-	void readNameIndexInspector(String prefix, NameIndexReader inspector, String filter) throws InvalidProtocolBufferException, IOException {
+	void readNameIndexInspector(String prefix, NameIndexReader inspector, String query) throws InvalidProtocolBufferException, IOException {
 		String key = null;
 		boolean match = true;
 		while (true) {
@@ -2731,27 +2731,22 @@ public class BinaryMapIndexReader {
 				return;
 			case OsmandOdb.IndexedStringTable.KEY_FIELD_NUMBER :
 				key = codedIS.readString();
-				key = UnicodeDiacritics.getInstance().stripDiacritics(key);
 				if (prefix != null) {
 					key = prefix + key;
 				}
-				match = filter == null || filter.startsWith(key);
-				if (!match && filter.endsWith(".")) {
-					String pr = filter.substring(0, filter.length() - 1);
-					match = key.startsWith(pr) || pr.startsWith(key);
-				}
+				match = inspector.matchKey(key, query);
 				break;
 			case OsmandOdb.IndexedStringTable.VAL_FIELD_NUMBER :
 				int val = (int) readInt(); // FIXME for 64 bit support
 				if (match) {
-					inspector.putKey(key, val, prefix);
+					inspector.putKey(key, val, prefix, query);
 				}
 				break;
 			case OsmandOdb.IndexedStringTable.SUBTABLES_FIELD_NUMBER :
 				long len = codedIS.readRawVarint32();
 				long oldLim = codedIS.pushLimitLong((long) len);
 				if (match) {
-					readNameIndexInspector(key, inspector, filter);
+					readNameIndexInspector(key, inspector, query);
 				} else {
 					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
 				}
