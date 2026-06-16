@@ -9,9 +9,11 @@ import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.CollatorStringMatcher;
 import net.osmand.CollatorStringMatcher.StringMatcherMode;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
+import net.osmand.binary.ObfConstants;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.MapObject;
+import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
@@ -24,6 +26,7 @@ public class SpatialSearchToken {
 	String word;
 	List<NameIndexAtom> atoms = new ArrayList<>();
 	TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
+	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
 	HashQuadTree<NameIndexAtom> quadTree = new HashQuadTree<>(16);
 	CollatorStringMatcher collator;
 
@@ -44,6 +47,16 @@ public class SpatialSearchToken {
 	}
 
 	void addAtom(NameIndexAtom atom) {
+		if (atom.object != null && !(atom.object instanceof Street) && atom.object.getId() > 0) {
+			long osmId = ObfConstants.getOsmIdFromMapObjectId(atom.object.getId());
+			// TODO extend bbox if needed
+			NameIndexAtom ex = indexByOsmIds.get(osmId);
+			if (ex != null) {
+				return;
+			}
+			indexByOsmIds.put(osmId, atom);
+		}
+		
 		NameIndexAtom aa = index.get(atom.id);
 		if (aa != null) {
 			if (aa != atom) {

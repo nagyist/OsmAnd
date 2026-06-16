@@ -11,6 +11,7 @@ import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 
 public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
+	public static boolean USE_ORDER_TYPE = true;
 	final int parentInd;
 	final SpatialSearchResultsList parent;
 	final List<SpatialSearchResultRef> objs = new ArrayList<>(); 
@@ -35,8 +36,11 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			}
 			ref.tokens.add(token);
 		}
-		useSmallestObjectOrder();
-//		useOriginalOrder();
+		if (USE_ORDER_TYPE) {
+			useSmallestObjectOrder();
+		} else {
+			useOriginalOrder();
+		}
 	}
 	
 	void useSmallestObjectOrder() {
@@ -108,6 +112,18 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	@Override
 	public int compareTo(SpatialSearchResult o) {
 		int res = Integer.compare(objs.size(), o.objs.size());
+		if (res != 0) {
+			return res;
+		}
+		int s1 = 0;
+		int s2 = 0;
+		for (SpatialSearchResultRef r : objs) {
+			s1 += r.typeOrder();
+		}
+		for (SpatialSearchResultRef r : o.objs) {
+			s2 += r.typeOrder();
+		}
+		res -= Integer.compare(s1, s2);
 		if (res != 0) {
 			return res;
 		}

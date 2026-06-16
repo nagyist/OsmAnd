@@ -20,6 +20,7 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchFileCache;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchGlobalCache;
 import net.osmand.util.SearchAlgorithms;
 
+
 // 1. TODO evict cache files
 // 2. TODO evict cache words
 // TODO properly calculate shiftToIndex (test) - Address

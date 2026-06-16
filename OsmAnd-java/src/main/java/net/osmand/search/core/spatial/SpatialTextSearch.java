@@ -21,6 +21,8 @@ import net.osmand.util.SearchAlgorithms;
 
 
 
+// TODO merge boundaries bbox...
+
 // FIXME merge uniq references for POI to make id 
 
 // TODO Lazy load tokens from full name index !
@@ -261,9 +263,9 @@ public class SpatialTextSearch {
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-		pattern = "Ukraine_kyiv-";
-//		query = "нова пошта 1";
-		query = "kyiv";
+		pattern = "Ukraine";
+		query = "нова пошта kyiv кудрявс.";
+//		query = "kyiv";
 //		query = "пузата хата mcdonal.";
 //		query = "нова"; // TODO number?
 		long t = System.nanoTime();
