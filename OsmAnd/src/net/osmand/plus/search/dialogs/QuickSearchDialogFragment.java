@@ -82,8 +82,10 @@ import net.osmand.plus.search.listitems.QuickSearchMoreListItem.SearchMoreItemOn
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.settings.enums.HistorySource;
+import net.osmand.plus.settings.fragments.BaseSettingsFragment;
 import net.osmand.plus.settings.fragments.OnPreferenceChanged;
 import net.osmand.plus.settings.fragments.SearchHistorySettingsFragment;
+import net.osmand.plus.settings.fragments.SettingsScreenType;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.plus.utils.InsetTarget;
@@ -206,6 +208,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private SortByOption selectedSortByOption = SortByOption.RELEVANCE;
 	private String selectedSortContextId;
 	private final List<String> selectedResultCategoryFilterIds = new ArrayList<>();
+	private FragmentManager.OnBackStackChangedListener returnToSearchAfterHistorySettingsListener;
 	private List<SearchResult> nearestCities;
 	private LatLon storedOriginalLocation;
 
@@ -803,6 +806,36 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	public void closeSearch() {
 		app.getPoiFilters().restoreSelectedPoiFilters();
 		dismissAllowingStateLoss();
+	}
+
+	private void openHistorySettingsAndReturnToSearch() {
+		FragmentActivity activity = requireActivity();
+		FragmentManager fragmentManager = activity.getSupportFragmentManager();
+		removeReturnToSearchListener(fragmentManager);
+		hide();
+		boolean opened = BaseSettingsFragment.showInstance(activity, SettingsScreenType.HISTORY_SETTINGS);
+		if (opened) {
+			returnToSearchAfterHistorySettingsListener = () -> {
+				Fragment historySettings = fragmentManager.findFragmentByTag(SettingsScreenType.HISTORY_SETTINGS.fragmentName);
+				if (historySettings == null) {
+					removeReturnToSearchListener(fragmentManager);
+					if (isAdded() && isSearchHidden()) {
+						show();
+						reloadHistory();
+					}
+				}
+			};
+			fragmentManager.addOnBackStackChangedListener(returnToSearchAfterHistorySettingsListener);
+		} else if (isSearchHidden()) {
+			show();
+		}
+	}
+
+	private void removeReturnToSearchListener(@NonNull FragmentManager fragmentManager) {
+		if (returnToSearchAfterHistorySettingsListener != null) {
+			fragmentManager.removeOnBackStackChangedListener(returnToSearchAfterHistorySettingsListener);
+			returnToSearchAfterHistorySettingsListener = null;
+		}
 	}
 
 	public void addMainSearchFragment() {
@@ -1629,6 +1662,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	public void onDismiss(@NonNull DialogInterface dialog) {
 		MapActivity mapActivity = getMapActivity();
 		if (mapActivity != null) {
+			removeReturnToSearchListener(mapActivity.getSupportFragmentManager());
 			hideToolbar();
 			mapActivity.updateStatusBarColor();
 			mapActivity.refreshMap();
@@ -2079,7 +2113,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		if (historySearchFragment != null) {
 			try {
 				List<QuickSearchListItem> rows = new ArrayList<>();
-				boolean historyEnabled = settings.SEARCH_HISTORY.get();
+				boolean historyEnabled = settings.SEARCH_HISTORY.get() || settings.NAVIGATION_HISTORY.get();
 				if (historyEnabled && !historySearchFragment.isHistoryCollapsed()) {
 					SearchResultCollection res = searchUICore.shallowSearch(SearchHistoryAPI.class, "", null, false, false);
 					if (res != null) {
@@ -2100,12 +2134,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 						}
 					}));
 				} else {
-					OnClickListener listener = v -> {
-						FragmentManager fragmentManager = getFragmentManager();
-						if (fragmentManager != null) {
-							SearchHistorySettingsFragment.showInstance(fragmentManager, this);
-						}
-					};
+					OnClickListener listener = v -> openHistorySettingsAndReturnToSearch();
 					if (!historySearchFragment.isHistoryCollapsed()) {
 						rows.add(new QuickSearchDisabledHistoryItem(app, listener));
 					}
