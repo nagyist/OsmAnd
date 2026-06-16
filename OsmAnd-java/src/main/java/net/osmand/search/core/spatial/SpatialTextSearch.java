@@ -100,7 +100,7 @@ public class SpatialTextSearch {
 						int z = 31;
 						int xleft = bbox31[0], xright = bbox31[2];
 						int ytop = bbox31[1], ybottom = bbox31[3];
-						while (xleft != xright && ytop != ybottom) {
+						while (xleft != xright || ytop != ybottom) {
 							z--;
 							xleft >>= 1;
 							xright >>= 1;
@@ -171,7 +171,9 @@ public class SpatialTextSearch {
 		}
 
 		private boolean match(String name) {
+			// TODO collator from space
 			if (word.endsWith(".")) {
+				
 				return name.toLowerCase().startsWith(word.substring(0, word.length() - 1));
 			}
 			return word.equalsIgnoreCase(name);
@@ -340,15 +342,18 @@ public class SpatialTextSearch {
 		pattern = "Us_";
 		query = "Salt Lake City Pennsylvania Street";
 		
-//		pattern = "Lie";
-//		query = "Vaduz Lettstrasse ";
+		pattern = "Liechtenstein_europe.obf";
+		query = "Vaduz Lettstrasse";
+		query = "Vaduz ";
+//		query = "Jugendheim Malbun";
 		
-		query = "USA Salt Lake City Pennsylvania Street 41";
+//		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-//		pattern = "Ukraine_";
+//		pattern = "Ukraine_kyi/v-ci";
 //		query = "бровари Сільпо";
+//		query = "kyiv";
 //		query = "пузата хата mcdonal.";
-//		query = "kyiv нова пошта 53";
+//		query = "нова пошта 53"; // TODO number?
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();

@@ -7,12 +7,13 @@ import java.util.List;
 import java.util.Map;
 
 import net.osmand.binary.BinaryMapIndexReader;
-import net.osmand.binary.NameIndexInspector;
+import net.osmand.binary.NameIndexReader;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
-import net.osmand.binary.NameIndexInspector.PrefixNameValue;
+import net.osmand.binary.NameIndexReader.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
+import net.osmand.data.Amenity;
 import net.osmand.search.core.spatial.SpatialTextSearch.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchToken;
 import net.osmand.util.SearchAlgorithms;
@@ -38,7 +39,7 @@ public class SpatialSearchContext {
 		public final String file;
 		public final long length;
 		public final long edition;
-		public Map<String, List<NameIndexInspector>> tokens = new HashMap<>(); 
+		public Map<String, List<NameIndexReader>> tokens = new HashMap<>(); 
 		
 		public SearchManyFileCache(BinaryMapIndexReader r) {
 			file = r.getFile().getName();
@@ -96,7 +97,7 @@ public class SpatialSearchContext {
 	void readAtoms(SpatialSearchToken t) throws IOException {
 		for (int fileInd = 0; fileInd < files.size(); fileInd++) {
 			SearchManyFileCache iCache = internalFile.get(fileInd);
-			List<NameIndexInspector> nameIndexes = iCache.tokens.get(t.word);
+			List<NameIndexReader> nameIndexes = iCache.tokens.get(t.word);
 			if (nameIndexes == null) {
 				stats.readTime -= System.nanoTime();
 				BinaryMapIndexReader b = files.get(fileInd);
@@ -110,9 +111,9 @@ public class SpatialSearchContext {
 				iCache.tokens.put(t.word, nameIndexes);
 				stats.readTime += System.nanoTime();
 			}
-			for (NameIndexInspector indx : nameIndexes) {
+			for (NameIndexReader indx : nameIndexes) {
 				for (PrefixNameValue prefix : indx.getPrefixes()) {
-					parseAtomSuffixes(t, fileInd, prefix);
+					parseAtomSuffixes(t, fileInd, indx, prefix);
 				}
 			}
 		}
@@ -127,46 +128,71 @@ public class SpatialSearchContext {
 	}
 	
 
-	private void parseAtomSuffixes(SpatialSearchToken t, int fileInd, PrefixNameValue prefix) {
-		int INT_BITS = 32;
+	private void parseAtomSuffixes(SpatialSearchToken t, int fileInd, 
+			NameIndexReader indx, PrefixNameValue prefix) throws IOException {
 		String curSuffix = null;
 		List<String> suffixes = new ArrayList<>();
+		List<String> commonSuffixes = new ArrayList<>();
 		boolean addr = prefix.addr != null;
 		for (String s : addr ? prefix.addr.getSuffixesDictionaryList() : 
 				prefix.poi.getSuffixesDictionaryList()) {
 			curSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(curSuffix, s);
 			suffixes.add(prefix.key + curSuffix);
 		}
+		for (Integer i : addr ? prefix.addr.getSuffixesCommonDictionaryList()
+				: prefix.poi.getSuffixesCommonDictionaryList()) {
+			commonSuffixes.add(indx.getCommonIndexed(i));
+		}
 		if (addr) {
 			for (AddressNameIndexDataAtom a : prefix.addr.getAtomList()) {
-				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
-					int suffBit = a.getSuffixesBitset(i);
-					for (int j = 0; j < INT_BITS && suffBit != 0; j++) {
-						if (suffBit % 2 == 1) {
-							int ind = i * INT_BITS + j;
-							String name = suffixes.get(ind);
-							long lid = makeId(fileInd, prefix.shift - a.getShiftToIndex(0));
-							t.addAtom(name, new NameIndexAtom(name, a, null, lid));
-						}
-						suffBit >>>= 1;
-					}
-				}
+				long lid = makeId(fileInd, prefix.shift - a.getShiftToIndex(0));
+				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, null);
 			}
 		} else if (SEARCH_POI) {
 			for (OsmAndPoiNameIndexDataAtom a : prefix.poi.getAtomsList()) {
-				for (int i = 0; i < a.getSuffixesBitsetCount(); i++) {
-					int suffBit = a.getSuffixesBitset(i);
-					for (int j = 0; j < INT_BITS && suffBit != 0; j++) {
-						if (suffBit % 2 == 1) {
-							int ind = i * INT_BITS + j;
-							String name = suffixes.get(ind);
-							long lid = makeId(fileInd, a.getShiftTo());
-							t.addAtom(name, new NameIndexAtom(name, null, a, lid));
-						}
-						suffBit >>>= 1;
-					}
+				long shift = BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()); 
+				long lid = makeId(fileInd, shift + a.getPoiIndInBlock(0));
+				Object amenity = null;
+				amenity = files.get(fileInd).readAmenityBlock(indx.poiRegion, shift).get(a.getPoiIndInBlock(0));
+				parseSuffixes(t, suffixes, commonSuffixes, null, a, lid, amenity);
+			}
+		}
+	}
+
+	private void parseSuffixes(SpatialSearchToken t, List<String> suffixes, List<String> commonSuffixes,
+			AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b, long lid, Object obj ) {
+		int cnt = a != null ? a.getSuffixesBitsetIndexCount() : b.getSuffixesBitsetIndexCount();
+		String name = "";
+		for (int i = 0; i < cnt; i++) {
+			int suffBit = a != null ? a.getSuffixesBitsetIndex(i) : b.getSuffixesBitsetIndex(i);
+			if (suffBit % 2 == 0) {
+				int ind = suffBit / 2 - 1;
+				if (ind == -1) {
+					t.addAtom(name, new NameIndexAtom(name, a, b, lid));
+					name = "";
+				} else if (ind < suffixes.size()) {
+//					if (name.length() != 0) {
+//						System.out.println(a + " " + b);
+//					}
+					name += suffixes.get(ind);
+				} else {
+					// common suffix
+					name += " " + commonSuffixes.get(ind - suffixes.size());
+				}
+			} else {
+				if (suffBit % 4 == 1) {
+					// separated number
+					name += " " + (suffBit >> 2);
+				} else {
+					// partial
+					name += (suffBit >> 2);
 				}
 			}
+		}
+		if (name.length() != 0) {
+			NameIndexAtom atom = new NameIndexAtom(name, a, b, lid);
+			System.out.println(name + " " + atom.toString() + " " + obj);
+			t.addAtom(name, atom);
 		}
 	}
 

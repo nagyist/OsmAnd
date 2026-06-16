@@ -360,7 +360,7 @@ public class BinaryMapPoiReaderAdapter {
 	}
 	
 	
-	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexInspector pi, String prefix) throws IOException {
+	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexReader pi, String prefix) throws IOException {
 		OsmandOdb.IndexedStringTable res = null;
 		TLongArrayList loffsets = prefix == null ? null : new TLongArrayList();
 		int ind = -1;
@@ -373,7 +373,7 @@ public class BinaryMapPoiReaderAdapter {
 			case OsmandOdb.OsmAndPoiNameIndex.TABLE_FIELD_NUMBER :
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
-				pi.setInitialShift(codedIS.getTotalBytesRead());
+				pi.setTablePointer(codedIS.getTotalBytesRead());
 				map.readNameIndexInspector(null, pi, prefix);
 				codedIS.popLimit(oldLimit);
 				break;
@@ -415,18 +415,17 @@ public class BinaryMapPoiReaderAdapter {
 		}
 	}
 
-	protected NameIndexInspector readNameIndex(String prefix) throws IOException {
-		NameIndexInspector nameIndexInspector = new NameIndexInspector();
+	protected NameIndexReader readNameIndex(String prefix, NameIndexReader nameIndexReader) throws IOException {
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
 			switch (tag) {
 			case 0:
-				return nameIndexInspector;
+				return nameIndexReader;
 			case OsmandOdb.OsmAndPoiIndex.NAMEINDEX_FIELD_NUMBER:
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
-				readNameIndexInternal(nameIndexInspector, prefix);
+				readNameIndexInternal(nameIndexReader, prefix);
 				codedIS.popLimit(oldLimit);
 				break;
 			default:
@@ -733,7 +732,7 @@ public class BinaryMapPoiReaderAdapter {
 				break;
 			case OsmandOdb.OsmAndPoiNameIndexDataAtom.SHIFTTO_FIELD_NUMBER:
 				long l = readInt();
-				if(l > Integer.MAX_VALUE) {
+				if (l > Integer.MAX_VALUE) {
 					throw new IllegalStateException();
 				}
 				shift = (int) l;
@@ -824,7 +823,7 @@ public class BinaryMapPoiReaderAdapter {
 		}
 	}
 
-	private void readPoiData(CollatorStringMatcher matcher, SearchRequest<Amenity> req, PoiRegion region,
+	void readPoiData(CollatorStringMatcher matcher, SearchRequest<Amenity> req, PoiRegion region,
 			BinaryMapIndexReaderStats.PoiReadMetricSet metrics) throws IOException {
 		int x = 0;
 		int y = 0;
@@ -901,7 +900,7 @@ public class BinaryMapPoiReaderAdapter {
 		}
 	}
 
-	private boolean readPoiData(int left31, int right31, int top31, int bottom31,
+	boolean readPoiData(int left31, int right31, int top31, int bottom31,
 			SearchRequest<Amenity> req, PoiRegion region, TLongHashSet toSkip, int zSkip) throws IOException {
 		int x = 0;
 		int y = 0;

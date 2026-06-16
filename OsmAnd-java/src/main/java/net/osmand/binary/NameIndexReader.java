@@ -10,7 +10,9 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import gnu.trove.map.hash.TLongObjectHashMap;
+import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
+import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.CommonIndexedStats;
 import net.osmand.binary.OsmandOdb.OsmAndAddressNameIndexData.AddressNameIndexData;
@@ -20,10 +22,13 @@ import net.osmand.data.City;
 import net.osmand.data.QuadRect;
 import net.osmand.util.SearchAlgorithms;
 
-public class NameIndexInspector {
+public class NameIndexReader {
 
+	public final PoiRegion poiRegion;
+	public final AddressRegion addressRegion;
+	
 	private Map<Long, PrefixNameValue> indexByRef = new HashMap<>();
-	private long initialShift;
+	private long tablePointer;
 	
 	private SuffixesStat suffixesStat = new SuffixesStat();
 	private StreetsIndexStat streetsStat = new StreetsIndexStat();
@@ -32,9 +37,20 @@ public class NameIndexInspector {
 	private List<String> commonsList = new ArrayList<String>();
 	
 
-	public void setInitialShift(long totalBytesRead) {
-		this.initialShift = totalBytesRead;
+	public NameIndexReader(AddressRegion p) {
+		this.poiRegion = null;
+		this.addressRegion = p;
 	}
+	
+	public NameIndexReader(PoiRegion p) {
+		this.poiRegion = p;
+		this.addressRegion = null;
+	}
+
+	public void setTablePointer(long totalBytesRead) {
+		this.tablePointer = totalBytesRead;
+	}
+
 	
 	public static class BoundariesIndexStat {
 		
@@ -499,40 +515,59 @@ public class NameIndexInspector {
 		}
 	}
 	
-	public SuffixesStat getSuffixesStat() {
-		return suffixesStat;
-	}
 	
 	public StreetsIndexStat getStreetsStat() {
 		return streetsStat;
 	}
 	
-
 	public void setStreetsStat(StreetsIndexStat streetsStat) {
 		this.streetsStat = streetsStat;
+	}
+
+	public SuffixesStat getSuffixesStat() {
+		return suffixesStat;
 	}
 	
 	public void setSuffixesStat(SuffixesStat suffixesStat) {
 		this.suffixesStat = suffixesStat;
+	}
+
+
+	public BoundariesIndexStat getBoundariesStat() {
+		return bndsStat;
 	}
 	
 	public void setBoundariesStat(BoundariesIndexStat bndsStat) {
 		this.bndsStat = bndsStat;
 	}
 	
-	public BoundariesIndexStat getBoundariesStat() {
-		return bndsStat;
+
+	public CommonIndexedStats getCommonStats() {
+		return commonStats;
+	}
+
+	public void setCommonIndexed(CommonIndexedStats commonStats) {
+		this.commonStats = commonStats;
+		String name = null;
+		for (String s : commonStats.getValueList()) {
+			name = SearchAlgorithms.nameIndexDecodeDictionarySuffix(name, s);
+			commonsList.add(name);
+		}
+	}
+	
+	public String getCommonIndexed(int ind) {
+		return commonsList.get(ind);
 	}
 	
 	public void putKey(String key, int val, String prefix) {
 		PrefixNameValue nameValue = new PrefixNameValue();
 		nameValue.key = key;
-		indexByRef.put(initialShift + val, nameValue);
+		indexByRef.put(tablePointer + val, nameValue);
 	}
 	
 	
 	public List<ValueFreq> getPOIPrefixes(String prefix) {
-		List<ValueFreq> ls = new ArrayList<NameIndexInspector.ValueFreq>();
+		List<ValueFreq> ls = new ArrayList<NameIndexReader.ValueFreq>();
 		for (PrefixNameValue p : indexByRef.values()) {
 			if (prefix != null && !(p.key.toLowerCase().startsWith(prefix) || prefix.toLowerCase().startsWith(p.key))) {
 				continue;
@@ -546,7 +581,7 @@ public class NameIndexInspector {
 	
 
 	public List<ValueFreq> getAddrPrefixes(int filter, String prefix) {
-		List<ValueFreq> ls = new ArrayList<NameIndexInspector.ValueFreq>();
+		List<ValueFreq> ls = new ArrayList<NameIndexReader.ValueFreq>();
 		for (PrefixNameValue p : indexByRef.values()) {
 			if (prefix != null && !(p.key.toLowerCase().startsWith(prefix) || prefix.toLowerCase().startsWith(p.key))) {
 				continue;
@@ -616,15 +651,6 @@ public class NameIndexInspector {
 		return indexByRef.values();
 	}
 
-	public void setCommonIndexed(CommonIndexedStats commonStats) {
-		this.commonStats = commonStats;
-		String name = null;
-		for (String s : commonStats.getValueList()) {
-			name = SearchAlgorithms.nameIndexDecodeDictionarySuffix(name, s);
-			commonsList.add(name);
-		}
-
-	}
-
+	
 
 }

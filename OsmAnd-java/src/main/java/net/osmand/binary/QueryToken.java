@@ -18,6 +18,7 @@ public class QueryToken {
         TIntArrayList masks;
         final Prefix prefix;
         private boolean passThrough;
+        int prevMask = 0; // not exactly correct to maintain state here
 
         SuffixMask(Prefix prefix) {
             this.prefix = prefix;
@@ -52,8 +53,13 @@ public class QueryToken {
 			if (masks == null) {
 				return true;
 			}
-        	//ignore other masks except first
-			return maskIndex == 0 && mask % 2 == 0 && masks.contains(mask / 2 - 1);
+			boolean res = false;
+			// use only masks for first and after delimiter
+			if (prevMask == 0 && mask % 2 == 0 && masks.contains(mask / 2 - 1)) {
+				res = true;
+			}
+			prevMask = mask;
+			return res;
         }
 
         private void addSuffix(int index, String suffix) {

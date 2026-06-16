@@ -896,18 +896,17 @@ public class BinaryMapAddressReaderAdapter {
 
 	}
 	
-	protected NameIndexInspector readNameIndex(String prefix) throws IOException {
-		NameIndexInspector nameIndexInspector = new NameIndexInspector();
+	protected NameIndexReader readNameIndex(String prefix, NameIndexReader nameIndex) throws IOException {
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
 			switch (tag) {
 			case 0:
-				return nameIndexInspector;
+				return nameIndex;
 			case OsmandOdb.OsmAndAddressIndex.NAMEINDEX_FIELD_NUMBER:
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
-				readNameIndexInternal(nameIndexInspector, prefix);
+				readNameIndexInternal(nameIndex, prefix);
 				codedIS.popLimit(oldLimit);
 				break;
 			default:
@@ -917,7 +916,7 @@ public class BinaryMapAddressReaderAdapter {
 		}
 	}
 	
-	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexInspector pi, String prefix) throws IOException {
+	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexReader pi, String prefix) throws IOException {
 		OsmandOdb.IndexedStringTable res = null;
 		TLongArrayList loffsets = prefix == null ? null : new TLongArrayList();
 		int ind = -1;
@@ -930,7 +929,7 @@ public class BinaryMapAddressReaderAdapter {
 			case OsmAndAddressNameIndexData.TABLE_FIELD_NUMBER :
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
-				pi.setInitialShift(codedIS.getTotalBytesRead());
+				pi.setTablePointer(codedIS.getTotalBytesRead());
 				map.readNameIndexInspector(null, pi, prefix);
 				codedIS.popLimit(oldLimit);
 				break;

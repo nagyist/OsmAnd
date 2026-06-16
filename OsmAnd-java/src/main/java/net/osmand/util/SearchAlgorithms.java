@@ -351,7 +351,7 @@ public class SearchAlgorithms {
 		int[] res = new int[((vls.length - 1) / 4) * 4];
 		for(int ind = 0; ind < res.length; ind+=4) {
 			res[ind] = ((x16 >> (16 - zoom)) - vls[ind + 1]) << (31 - zoom);
-			res[ind + 1] = ((y16 >> (16 - zoom))) - (vls[ind + 3]) << (31 - zoom);
+			res[ind + 1] = ((y16 >> (16 - zoom)) - vls[ind + 3]) << (31 - zoom);
 			res[ind + 2] = (vls[ind + 2] << (31 - zoom)) + res[ind];
 			res[ind + 3] = (vls[ind + 4] << (31 - zoom)) + res[ind + 1];
 		}
