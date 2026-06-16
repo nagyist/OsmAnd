@@ -7,26 +7,37 @@ import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
+import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.PathInterpolator
 import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.graphics.createBitmap
 import androidx.core.view.doOnPreDraw
 import androidx.recyclerview.widget.RecyclerView
+import net.osmand.plus.R
 import net.osmand.plus.gallery.ui.holders.GalleryMediaListViewHolder
 import net.osmand.plus.gallery.ui.holders.GalleryMediaViewHolder
-import androidx.core.graphics.createBitmap
 
 class GalleryDisplayModeTransition(private val recyclerView: RecyclerView) {
 
 	private class StartState(
 		val bounds: Rect,
 		val snapshot: Bitmap? = null,
-		val icon: Drawable? = null,
-		val bgColor: Int = 0
-	)
+		val centerIcon: Drawable? = null,
+		val bgColor: Int = 0,
+		val showsScrim: Boolean = false,
+		val durationLabel: String? = null,
+		val showsDuration: Boolean = false,
+		val durationTextColor: Int = Color.WHITE
+	) {
+		val hasOverlayVisual: Boolean
+			get() = snapshot != null || centerIcon != null
+	}
 
 	private val startStates = LinkedHashMap<String, StartState>()
 	private val endActions = mutableListOf<() -> Unit>()
@@ -49,21 +60,11 @@ class GalleryDisplayModeTransition(private val recyclerView: RecyclerView) {
 			when (val holder = recyclerView.getChildViewHolder(child)) {
 				is GalleryMediaViewHolder -> if (toList) {
 					val id = holder.boundItemId ?: continue
-					val icon = holder.morphPlaceholderIcon
-					startStates[id] = if (icon != null) {
-						StartState(boundsOf(child), icon = icon, bgColor = holder.morphBgColor)
-					} else {
-						StartState(boundsOf(child), snapshot = snapshot(child))
-					}
+					startStates[id] = startState(holder, child, includePlainSnapshot = true)
 				}
 				is GalleryMediaListViewHolder -> if (!toList) {
 					val id = holder.boundItemId ?: continue
-					val icon = holder.morphPlaceholderIcon
-					startStates[id] = StartState(
-						boundsOf(holder.previewView),
-						icon = icon,
-						bgColor = holder.morphBgColor
-					)
+					startStates[id] = startState(holder, holder.previewView, includePlainSnapshot = false)
 				}
 				else -> {}
 			}
@@ -101,13 +102,15 @@ class GalleryDisplayModeTransition(private val recyclerView: RecyclerView) {
 				is GalleryMediaListViewHolder -> if (toList) {
 					val state = holder.boundItemId?.let { startStates.remove(it) }
 					when {
-						state?.icon != null -> {
-							animators += createPlaceholderMorph(state, holder.previewView, matchedIndex)
+						state?.hasOverlayVisual == true -> {
+							animators += createMediaMorph(
+								state, holder.previewView, holder.morphShowsDuration, matchedIndex
+							)
 							animators += createContentFadeIn(holder.getFadeableContentViews(), matchedIndex)
 							matchedIndex++
 						}
-						state?.snapshot != null -> {
-							animators += createSnapshotMorph(state, holder, matchedIndex)
+						state != null -> {
+							animators += createCellMorph(state.bounds, holder.previewView, matchedIndex)
 							animators += createContentFadeIn(holder.getFadeableContentViews(), matchedIndex)
 							matchedIndex++
 						}
@@ -117,8 +120,10 @@ class GalleryDisplayModeTransition(private val recyclerView: RecyclerView) {
 				is GalleryMediaViewHolder -> if (!toList) {
 					val state = holder.boundItemId?.let { startStates.remove(it) }
 					when {
-						state?.icon != null ->
-							animators += createPlaceholderMorph(state, child, matchedIndex++)
+						state?.hasOverlayVisual == true ->
+							animators += createMediaMorph(
+								state, child, holder.morphShowsDuration, matchedIndex++
+							)
 						state != null ->
 							animators += createCellMorph(state.bounds, child, matchedIndex++)
 						else -> animators += createAppear(child, appearIndex++)
@@ -141,46 +146,60 @@ class GalleryDisplayModeTransition(private val recyclerView: RecyclerView) {
 		}
 	}
 
-	private fun createSnapshotMorph(
-		state: StartState,
-		holder: GalleryMediaListViewHolder,
-		index: Int
-	): Animator {
-		val target = holder.previewView
-		val start = state.bounds
-		val end = boundsOf(target)
-
-		val overlayView = ImageView(recyclerView.context).apply {
-			setImageBitmap(state.snapshot)
-			scaleType = ImageView.ScaleType.FIT_XY
-			pivotX = 0f
-			pivotY = 0f
-			layout(start.left, start.top, start.right, start.bottom)
+	private fun startState(
+		holder: GalleryMediaViewHolder,
+		boundsView: View,
+		includePlainSnapshot: Boolean
+	): StartState {
+		val hasChrome = holder.morphCenterIcon != null
+				|| holder.morphShowsScrim
+				|| holder.morphDurationLabel != null
+		val snapshot = if (includePlainSnapshot || hasChrome) {
+			holder.morphPreviewSnapshotView?.let { snapshot(it) }
+		} else {
+			null
 		}
-		recyclerView.overlay.add(overlayView)
-		target.alpha = 0f
-		endActions += {
-			recyclerView.overlay.remove(overlayView)
-			target.alpha = 1f
-			target.invalidate()
-		}
-
-		return ObjectAnimator.ofPropertyValuesHolder(
-			overlayView,
-			PropertyValuesHolder.ofFloat(View.TRANSLATION_X, 0f, (end.left - start.left).toFloat()),
-			PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0f, (end.top - start.top).toFloat()),
-			PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, end.width() / start.width().toFloat()),
-			PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, end.height() / start.height().toFloat())
-		).apply {
-			duration = MOVE_DURATION_MS
-			interpolator = moveInterpolator
-			startDelay = (index * MOVE_STAGGER_MS).coerceAtMost(MAX_STAGGER_MS)
-		}
+		return StartState(
+			bounds = boundsOf(boundsView),
+			snapshot = snapshot,
+			centerIcon = holder.morphCenterIcon,
+			bgColor = holder.morphBgColor,
+			showsScrim = holder.morphShowsScrim,
+			durationLabel = holder.morphDurationLabel,
+			showsDuration = holder.morphShowsDuration,
+			durationTextColor = holder.morphDurationTextColor
+		)
 	}
 
-	private fun createPlaceholderMorph(
+	private fun startState(
+		holder: GalleryMediaListViewHolder,
+		boundsView: View,
+		includePlainSnapshot: Boolean
+	): StartState {
+		val hasChrome = holder.morphCenterIcon != null
+				|| holder.morphShowsScrim
+				|| holder.morphDurationLabel != null
+		val snapshot = if (includePlainSnapshot || hasChrome) {
+			holder.morphPreviewSnapshotView?.let { snapshot(it) }
+		} else {
+			null
+		}
+		return StartState(
+			bounds = boundsOf(boundsView),
+			snapshot = snapshot,
+			centerIcon = holder.morphCenterIcon,
+			bgColor = holder.morphBgColor,
+			showsScrim = holder.morphShowsScrim,
+			durationLabel = holder.morphDurationLabel,
+			showsDuration = holder.morphShowsDuration,
+			durationTextColor = holder.morphDurationTextColor
+		)
+	}
+
+	private fun createMediaMorph(
 		state: StartState,
 		target: View,
+		targetShowsDuration: Boolean,
 		index: Int
 	): List<Animator> {
 		val start = state.bounds
@@ -188,39 +207,77 @@ class GalleryDisplayModeTransition(private val recyclerView: RecyclerView) {
 		if (start.width() == 0 || start.height() == 0 || end.width() == 0 || end.height() == 0) {
 			return listOf(createAppear(target, index))
 		}
-		val icon = state.icon ?: return listOf(createAppear(target, index))
+
+		val overlayViews = mutableListOf<View>()
+		val animators = mutableListOf<Animator>()
+		val delay = (index * MOVE_STAGGER_MS).coerceAtMost(MAX_STAGGER_MS)
 		val context = recyclerView.context
 
-		val bgView = View(context).apply {
-			setBackgroundColor(state.bgColor)
-			pivotX = 0f
-			pivotY = 0f
-			layout(start.left, start.top, start.right, start.bottom)
+		val baseView: View = if (state.snapshot != null) {
+			ImageView(context).apply {
+				setImageBitmap(state.snapshot)
+				scaleType = ImageView.ScaleType.FIT_XY
+			}
+		} else {
+			View(context).apply { setBackgroundColor(state.bgColor) }
 		}
-		recyclerView.overlay.add(bgView)
+		baseView.pivotX = 0f
+		baseView.pivotY = 0f
+		baseView.layout(start.left, start.top, start.right, start.bottom)
+		recyclerView.overlay.add(baseView)
+		overlayViews += baseView
+		animators += createBoundsAnimator(baseView, start, end, delay)
 
-		val iconCopy = icon.constantState?.newDrawable()?.mutate() ?: icon
-		val iconWidth = iconCopy.intrinsicWidth.coerceAtLeast(1)
-		val iconHeight = iconCopy.intrinsicHeight.coerceAtLeast(1)
-		val iconLeft = start.centerX() - iconWidth / 2
-		val iconTop = start.centerY() - iconHeight / 2
-		val iconView = ImageView(context).apply {
-			setImageDrawable(iconCopy)
-			layout(iconLeft, iconTop, iconLeft + iconWidth, iconTop + iconHeight)
+		if (state.showsScrim) {
+			val scrimView = View(context).apply {
+				setBackgroundColor(Color.argb(VIDEO_SCRIM_ALPHA, 0, 0, 0))
+				pivotX = 0f
+				pivotY = 0f
+				layout(start.left, start.top, start.right, start.bottom)
+			}
+			recyclerView.overlay.add(scrimView)
+			overlayViews += scrimView
+			animators += createBoundsAnimator(scrimView, start, end, delay)
 		}
-		recyclerView.overlay.add(iconView)
+
+		val iconSize = state.centerIcon?.let { icon ->
+			val iconCopy = icon.constantState?.newDrawable()?.mutate() ?: icon
+			val iconWidth = iconCopy.intrinsicWidth.coerceAtLeast(1)
+			val iconHeight = iconCopy.intrinsicHeight.coerceAtLeast(1)
+			val iconLeft = start.centerX() - iconWidth / 2
+			val iconTop = start.centerY() - iconHeight / 2
+			val iconView = ImageView(context).apply {
+				setImageDrawable(iconCopy)
+				layout(iconLeft, iconTop, iconLeft + iconWidth, iconTop + iconHeight)
+			}
+			recyclerView.overlay.add(iconView)
+			overlayViews += iconView
+			animators += createCenterMoveAnimator(iconView, start, end, delay)
+			Pair(iconWidth, iconHeight)
+		}
+
+		val durationView = createDurationView(state, targetShowsDuration, iconSize)
+		if (durationView != null) {
+			recyclerView.overlay.add(durationView)
+			overlayViews += durationView
+			animators += createDurationMoveAnimator(
+				durationView, state, start, end, targetShowsDuration, iconSize, delay
+			)
+		}
 
 		target.alpha = 0f
 		endActions += {
-			recyclerView.overlay.remove(bgView)
-			recyclerView.overlay.remove(iconView)
+			overlayViews.forEach { recyclerView.overlay.remove(it) }
 			target.alpha = 1f
 			target.invalidate()
 		}
 
-		val delay = (index * MOVE_STAGGER_MS).coerceAtMost(MAX_STAGGER_MS)
-		val bgAnimator = ObjectAnimator.ofPropertyValuesHolder(
-			bgView,
+		return animators
+	}
+
+	private fun createBoundsAnimator(view: View, start: Rect, end: Rect, delay: Long): Animator =
+		ObjectAnimator.ofPropertyValuesHolder(
+			view,
 			PropertyValuesHolder.ofFloat(View.TRANSLATION_X, 0f, (end.left - start.left).toFloat()),
 			PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0f, (end.top - start.top).toFloat()),
 			PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, end.width() / start.width().toFloat()),
@@ -230,8 +287,10 @@ class GalleryDisplayModeTransition(private val recyclerView: RecyclerView) {
 			interpolator = moveInterpolator
 			startDelay = delay
 		}
-		val iconAnimator = ObjectAnimator.ofPropertyValuesHolder(
-			iconView,
+
+	private fun createCenterMoveAnimator(view: View, start: Rect, end: Rect, delay: Long): Animator =
+		ObjectAnimator.ofPropertyValuesHolder(
+			view,
 			PropertyValuesHolder.ofFloat(
 				View.TRANSLATION_X, 0f, (end.centerX() - start.centerX()).toFloat()
 			),
@@ -243,7 +302,78 @@ class GalleryDisplayModeTransition(private val recyclerView: RecyclerView) {
 			interpolator = moveInterpolator
 			startDelay = delay
 		}
-		return listOf(bgAnimator, iconAnimator)
+
+	private fun createDurationView(
+		state: StartState,
+		targetShowsDuration: Boolean,
+		iconSize: Pair<Int, Int>?
+	): TextView? {
+		val label = state.durationLabel ?: return null
+		if (!state.showsDuration && !targetShowsDuration) return null
+
+		val context = recyclerView.context
+		val view = TextView(context).apply {
+			text = label
+			gravity = android.view.Gravity.CENTER
+			setTextColor(state.durationTextColor)
+			setTextSize(
+				TypedValue.COMPLEX_UNIT_PX,
+				context.resources.getDimension(R.dimen.default_sub_text_size)
+			)
+			alpha = if (state.showsDuration) 1f else 0f
+		}
+		view.measure(
+			View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+			View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+		)
+		val position = durationPosition(
+			state.bounds, view.measuredWidth, view.measuredHeight, iconSize
+		)
+		view.layout(position.left, position.top, position.right, position.bottom)
+		return view
+	}
+
+	private fun createDurationMoveAnimator(
+		view: TextView,
+		state: StartState,
+		start: Rect,
+		end: Rect,
+		targetShowsDuration: Boolean,
+		iconSize: Pair<Int, Int>?,
+		delay: Long
+	): Animator {
+		val startPosition = durationPosition(start, view.width, view.height, iconSize)
+		val endPosition = durationPosition(end, view.width, view.height, iconSize)
+		val targetAlpha = if (targetShowsDuration) 1f else 0f
+		view.alpha = if (state.showsDuration) 1f else 0f
+		return ObjectAnimator.ofPropertyValuesHolder(
+			view,
+			PropertyValuesHolder.ofFloat(
+				View.TRANSLATION_X, 0f, (endPosition.left - startPosition.left).toFloat()
+			),
+			PropertyValuesHolder.ofFloat(
+				View.TRANSLATION_Y, 0f, (endPosition.top - startPosition.top).toFloat()
+			),
+			PropertyValuesHolder.ofFloat(View.ALPHA, targetAlpha)
+		).apply {
+			duration = MOVE_DURATION_MS
+			interpolator = moveInterpolator
+			startDelay = delay
+		}
+	}
+
+	private fun durationPosition(
+		bounds: Rect,
+		width: Int,
+		height: Int,
+		iconSize: Pair<Int, Int>?
+	): Rect {
+		val iconHeight = iconSize?.second
+			?: recyclerView.resources.getDimensionPixelSize(R.dimen.standard_icon_size)
+		val gap = recyclerView.resources.displayMetrics.density * DURATION_GAP_DP
+		val left = bounds.centerX() - width / 2
+		val top = (bounds.centerY() + iconHeight / 2f + gap).toInt()
+		return Rect(left, top, left + width, top + height)
 	}
 
 	private fun createCellMorph(start: Rect, cell: View, index: Int): Animator {
@@ -369,5 +499,8 @@ class GalleryDisplayModeTransition(private val recyclerView: RecyclerView) {
 		private const val APPEAR_BASE_DELAY_MS = 120L
 		private const val APPEAR_STAGGER_MS = 15L
 		private const val APPEAR_SCALE = 0.92f
+
+		private const val VIDEO_SCRIM_ALPHA = 77
+		private const val DURATION_GAP_DP = 2f
 	}
 }
