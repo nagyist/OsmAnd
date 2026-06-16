@@ -142,8 +142,8 @@ public class SpatialSearchContext {
 				long pid = 0;
 				if (a.getType() == CityBlocks.STREET_TYPE.index) {
 					pid = makeAddrId(indInd, prefix.shift - a.getShiftToCityIndex(0));
-				} else if (a.getType() != CityBlocks.BOUNDARY_TYPE.index || a.getType() != CityBlocks.CITY_TOWN_TYPE.index
-						|| a.getType() != CityBlocks.VILLAGES_TYPE.index || a.getType() != CityBlocks.POSTCODES_TYPE.index) {
+				} else if (a.getType() != CityBlocks.BOUNDARY_TYPE.index && a.getType() != CityBlocks.CITY_TOWN_TYPE.index
+						&& a.getType() != CityBlocks.VILLAGES_TYPE.index && a.getType() != CityBlocks.POSTCODES_TYPE.index) {
 					continue;
 				}
 				MapObject obj = null;
@@ -229,6 +229,7 @@ public class SpatialSearchContext {
 		String name = "";
 		int wInd = 0;
 		int type = a != null ? a.getType() : SpatialSearchToken.POI_TYPE;
+		
 		for (int i = 0; i < cnt; i++) {
 			int suffBit = a != null ? a.getSuffixesBitsetIndex(i) : b.getSuffixesBitsetIndex(i);
 			if (suffBit % 2 == 0) {
@@ -307,7 +308,6 @@ public class SpatialSearchContext {
 		}
 		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, other, coords);
 		t.addAtom(atom);
-		
 		if (otherTokens != null) {
 			for (SpatialSearchToken token : otherTokens) {
 				token.addAtom(atom);

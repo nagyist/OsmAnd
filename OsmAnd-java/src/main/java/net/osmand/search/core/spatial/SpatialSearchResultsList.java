@@ -7,6 +7,7 @@ import java.util.List;
 
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
+import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 
@@ -19,7 +20,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	List<NameIndexAtom> linearResults = new ArrayList<>();
 	TLongArrayList tileIds = new TLongArrayList();
 	TIntArrayList tileZooms = new TIntArrayList();
-	List<SpatialSearchResult> result = null;
+	List<SpatialSearchResult> finalResult = null;
 	HashQuadTree<Integer> quadTree = new HashQuadTree<>(16);
 
 	public SpatialSearchResultsList() {
@@ -39,7 +40,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		tCount = tokens.length;
 	}
 	
-	public void loadObjects(SpatialSearchContext ctx, boolean deduplicate) throws IOException {
+	public void loadObjects(SpatialSearchContext ctx) throws IOException {
 		for (NameIndexAtom a : linearResults) {
 			if (a.type == SpatialSearchToken.POI_TYPE) {
 				a.object = ctx.readPoiObject(a.id);
@@ -51,20 +52,19 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 
 	public NameIndexAtom getAtom(int combination, int pos) {
-		if (result != null) {
-			combination = result.get(combination).parentInd;
+		if (finalResult != null) {
+			combination = finalResult.get(combination).parentInd;
 		}
 		return linearResults.get(combination * tokens.length + pos);
 	}
 	
 	public List<SpatialSearchResult> getResult() {
-		sortResults();
-		return result;
+		return finalResult;
 	}
 
 	public List<NameIndexAtom> getAtoms(int combination) {
-		if (result != null) {
-			combination = result.get(combination).parentInd;
+		if (finalResult != null) {
+			combination = finalResult.get(combination).parentInd;
 		}
 		int st = combination * tCount;
 		return linearResults.subList(st, st + tCount);
@@ -82,16 +82,27 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return tCount;
 	}
 
-	public void sortResults() {
-		if (result == null) {
-			result = new ArrayList<>(tileIds.size());
-			for (int i = 0; i < tileIds.size(); i++) {
-				result.add(new SpatialSearchResult(this, i));
-			}
+	public List<SpatialSearchResult> sortResults(boolean deduplicate) {
+		if (finalResult == null) {
+			finalResult = new ArrayList<>(tileIds.size());
 		}
-
-		Collections.sort(result);
-
+		for (int i = 0; i < tileIds.size(); i++) {
+			finalResult.add(new SpatialSearchResult(this, i));
+		}		
+		Collections.sort(finalResult);
+		if (deduplicate) {
+			List<SpatialSearchResult> res = new ArrayList<SpatialSearchResult>();
+			TLongHashSet duplicateIds = new TLongHashSet();
+			for (SpatialSearchResult s : finalResult) {
+				long filterId = s.getIdDeduplication();
+				if (filterId > 0 && !duplicateIds.add(filterId)) {
+					continue;
+				}
+				res.add(s);
+			}
+			finalResult = res;
+		}
+		return finalResult;
 	}
 
 	void addResult(List<NameIndexAtom> atoms) {
@@ -117,7 +128,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		if(!acceptIntersection) {
 			return false;
 		}
-		result = null;
+		finalResult = null;
 		int pzoom = parent == null ? 0 : parent.tileZooms.get(pindx);
 		int zoom = Math.max(pzoom, a.coords.bboxTileZoom);
 		long tileId = pzoom > a.coords.bboxTileZoom ? parent.tileIds.get(pindx) : a.coords.bboxTileId;
@@ -171,7 +182,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		for (SpatialSearchToken t : tokens) {
 			words.add(t.originalWord);
 		}
-		return String.format("Results list %d matched %s - %d results: %s", tCount, words, getCombinations(),
+		return String.format("Results list %d matched %s - %d (%d unique) results: %s", tCount, words,
+				getCombinations(),
+				finalResult == null ? -1 : finalResult.size(),
 				extended ? linearResults : Collections.EMPTY_LIST);
 	}
 	

@@ -23,21 +23,25 @@ import net.osmand.util.SearchAlgorithms;
 
 
 
-/// GENERATION
-// TODO Check sizes
+
+// GENERATION
+// TODO Check file sizes??
 // TODO same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
-// ?
 // TODO "2-га Нова вулиця" - split by "-"?
 
-
 ////////////////////////
-// EFFICIENCY 
-
+// BBOX
+// TODO !!! no intersection ! Saks. rayon! (multiple boundaries)
 // TODO merge boundaries bbox - extend incomplete boundary same id...
-// TODO read buildings
-// TODO duplicate words
-// TODO sort tokens by actual frequency
+// TODO Load objects by groups file order effiecently!
+// FIXME merge uniq references for POI to make id 
+// TODO don't read objects while preparing tokens ?
+// TODO Ignore same embedded boundary while - deduplicate on the fly
 
+// FEATURES
+// TODO read buildings
+// TODO duplicate words in query
+// TODO sort tokens by actual frequency
 // TODO COLLATOR + Last dot [CONSTANT] as incomplete, 
 //      [NameIndexReader, SpatialSearchToken] 
 
@@ -50,11 +54,9 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Cache POI block read, cache city index
 // TODO Evict - NameIndexReader in caches ( > 200 - indexByRef, matchedKeys) full clear
 
-// FIXME merge uniq references for POI to make id 
-// TODO don't read objects while preparing tokens ?
 
 // SPECIAL CASES
-// TODO Abbrevations
+// TODO Abbreviations
 // TODO Street intersection match
 // TODO Sugggestion-correction
 // TODO Progress / cancel
@@ -75,12 +77,13 @@ import net.osmand.util.SearchAlgorithms;
 // After search operations - Expand POI Type filters for results
 // 5.1 Run rare words (by counts & labels)
 // 5.2 Run with frequent words
-// 5.3 Expand poi categories
+// 5.3 Expand POI categories
 
 // Search categories
-// Phase I - only rare + words replaced abbrrevations
-// Phase II - all words + replaced abbrevations
-// Phase III - all words + replaced abbrevations
+// Phase I - only rare + words replaced abbreviations
+// Phase II - all words + replaced abbreviations
+// Phase III - all words + replaced abbreviations
+
 public class SpatialTextSearch {
 	
 
@@ -224,10 +227,12 @@ public class SpatialTextSearch {
 		// 4. find combinations
 		ctx.stats.computeTime -= System.nanoTime();
 		res.combinations = findObjCombinations(res.tokens);
+		// 5. sort combinations, load objects, objects and filter duplicate
 		Collections.sort(res.combinations);
 		if (res.combinations.size() > 0) {
 			res.mainResult = res.combinations.get(0);
-			res.mainResult.loadObjects(ctx, true);
+			res.mainResult.loadObjects(ctx);
+			res.mainResult.sortResults(true);
 		}
 		ctx.stats.computeTime += System.nanoTime();
 		return res;
@@ -254,6 +259,7 @@ public class SpatialTextSearch {
 		System.out.println("All Results: ");
 		for (SpatialSearchResultsList s : res.combinations) {
 			if (s.getTokenCount() >= 2) {
+				s.sortResults(true);
 				System.out.println("  " + s.toString(false));
 			}
 		}
@@ -284,18 +290,19 @@ public class SpatialTextSearch {
 		pattern = "Us_";
 		query = "Salt Lake City Pennsylvania Street";
 		
-		pattern = "Liechtenstein_europe.obf";
-		query = "Vaduz Lettstrasse";
-		query = "Vaduz ";
+//		pattern = "Liechtenstein_europe.obf";
+//		query = "Vaduz Lettstrasse";
+//		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-		pattern = "Ukraine";
-//		query = "нова";
-//		query = "kyiv saks."; // TODO no intersection!
-		query = "пузата хата mcdonal."; // TODO 3 amenitie
-//		query = "нова"; 
+//		pattern = "Ukraine";
+//		query = "нова пошта Бульварно Кудрявська"; 
+		// TODO Бульварно-Кудрявська, 2-га?
+		// TODO №59 (366443448)?
+//		query = "kyiv saks."; 
+//		query = "пузата хата mcdonal.";
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();

@@ -67,6 +67,17 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		}
 		return o;
 	}
+	
+	public long getIdDeduplication() {
+		if (objs.size() > 0) {
+			NameIndexAtom atom = objs.get(0).atom;
+			if (atom.object != null) {
+				return ObfConstants.getOsmObjectId(atom.object);
+			}
+			return atom.id;
+		}
+		return -1;
+	}
 
 	@Override
 	public String toString() {
@@ -101,11 +112,11 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				words.add(s.word);
 			}
 			if (atom.object != null) {
-				return String.format("%s %s (%d) %.4f %.4f ", words, 
+				return String.format("%s %s (%s) %.4f %.4f ", words, 
 						atom.object.getClass().getSimpleName() + " " + atom.object.getName(), 
-						atom.object instanceof Street ? atom.object.getId() : ObfConstants.getOsmObjectId(atom.object),
-						atom.object.getLocation().getLatitude(),
-						atom.object.getLocation().getLongitude());
+						"" + (atom.object instanceof Street ? atom.object.getId() : ObfConstants.getOsmObjectId(atom.object)) 
+								//+ " " + atom.id,
+						, atom.object.getLocation().getLatitude(), atom.object.getLocation().getLongitude());
 			}
 			return atom.simpleName(words.toString()); 
 		}
@@ -146,3 +157,4 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		return -Integer.compare(parentInd, o.parentInd);
 	}
 }
+	
