@@ -67,11 +67,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			for(SpatialSearchToken s : tokens) {
 				words.add(s.word);
 			}
-			return String.format("%s %s %d (%.4f, %.4f) ",
-					atom.getType(),
-					words, (atom.id % 0xffff), 
-					MapUtils.get31LatitudeY(atom.y16 << 15),
-					MapUtils.get31LongitudeX(atom.x16 << 15));
+			if (atom.object != null) {
+				String.format("%s %s", words, atom.object);
+			}
+			return atom.simpleName(words.toString()); 
 		}
 	}
 

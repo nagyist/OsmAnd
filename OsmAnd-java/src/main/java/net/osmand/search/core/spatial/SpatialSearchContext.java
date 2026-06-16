@@ -14,6 +14,7 @@ import net.osmand.binary.NameIndexReader.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.Amenity;
+import net.osmand.data.MapObject;
 import net.osmand.search.core.spatial.SpatialTextSearch.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchToken;
 import net.osmand.util.SearchAlgorithms;
@@ -25,6 +26,11 @@ import net.osmand.util.SearchAlgorithms;
 public class SpatialSearchContext {
 
 	public static boolean SEARCH_POI = true;
+	
+	public static boolean READ_POI_OBJECTS = true;
+	public static boolean READ_ADDR_OBJECTS = true;
+	
+	
 	private static int SHIFT_FILE_IND = 12; // maximum files 4096
 	
 	final List<BinaryMapIndexReader> files;
@@ -152,15 +158,18 @@ public class SpatialSearchContext {
 			for (OsmAndPoiNameIndexDataAtom a : prefix.poi.getAtomsList()) {
 				long shift = BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()); 
 				long lid = makeId(fileInd, shift + a.getPoiIndInBlock(0));
-				Object amenity = null;
-				amenity = files.get(fileInd).readAmenityBlock(indx.poiRegion, shift).get(a.getPoiIndInBlock(0));
+				MapObject amenity = null;
+				if (READ_POI_OBJECTS) {
+					List<Amenity> lst = files.get(fileInd).readAmenityBlock(indx.poiRegion, shift);
+					amenity = lst.get(a.getPoiIndInBlock(0));
+				}
 				parseSuffixes(t, suffixes, commonSuffixes, null, a, lid, amenity);
 			}
 		}
 	}
 
 	private void parseSuffixes(SpatialSearchToken t, List<String> suffixes, List<String> commonSuffixes,
-			AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b, long lid, Object obj ) {
+			AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b, long lid, MapObject obj) {
 		int cnt = a != null ? a.getSuffixesBitsetIndexCount() : b.getSuffixesBitsetIndexCount();
 		String name = "";
 		for (int i = 0; i < cnt; i++) {
@@ -168,12 +177,9 @@ public class SpatialSearchContext {
 			if (suffBit % 2 == 0) {
 				int ind = suffBit / 2 - 1;
 				if (ind == -1) {
-					t.addAtom(name, new NameIndexAtom(name, a, b, lid));
+					t.addAtom(name, new NameIndexAtom(name, a, b, lid, obj));
 					name = "";
 				} else if (ind < suffixes.size()) {
-//					if (name.length() != 0) {
-//						System.out.println(a + " " + b);
-//					}
 					name += suffixes.get(ind);
 				} else {
 					// common suffix
@@ -190,8 +196,8 @@ public class SpatialSearchContext {
 			}
 		}
 		if (name.length() != 0) {
-			NameIndexAtom atom = new NameIndexAtom(name, a, b, lid);
-			System.out.println(name + " " + atom.toString() + " " + obj);
+			// TODO add 1 atom only if it's same object
+			NameIndexAtom atom = new NameIndexAtom(name, a, b, lid, obj);
 			t.addAtom(name, atom);
 		}
 	}

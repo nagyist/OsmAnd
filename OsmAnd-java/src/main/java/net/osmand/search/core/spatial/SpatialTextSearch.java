@@ -18,6 +18,7 @@ import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.CommonWords;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
+import net.osmand.data.MapObject;
 import net.osmand.map.OsmandRegions;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.util.MapUtils;
@@ -70,18 +71,24 @@ public class SpatialTextSearch {
 		String name;
 		AddressNameIndexDataAtom addr;
 		OsmAndPoiNameIndexDataAtom poi;
+		
 		long id;
+		Object object;
+		int otherWordsCnt = 0;
 		
 		int[] bbox31; // if exists [xleft, yleft, xright, yright]
 		long bboxTileId; // encodes zoom, tileX, tileY
 		int bboxTileZoom;
 		int x16, y16;
 
-		NameIndexAtom(String name, AddressNameIndexDataAtom addr, OsmAndPoiNameIndexDataAtom poi, long id) {
+		NameIndexAtom(String name, AddressNameIndexDataAtom addr, OsmAndPoiNameIndexDataAtom poi, 
+				long id, MapObject obj) {
 			this.name = name;
 			this.addr = addr;
 			this.poi = poi;
 			this.id = id;
+			this.object = obj;
+			System.out.println(name + " " + obj + " " + (obj != null ? obj.getLocation() : ""));
 			calculateBbox(addr, poi);
 		}
 		
@@ -119,23 +126,24 @@ public class SpatialTextSearch {
 			}			
 		}
 		
-		public String getType() {
+		String simpleName(String name) {
 			String type = "";
 			if (addr != null) {
 				type = CityBlocks.getByType(addr.getType()).toString();
 			} else if (poi != null) {
 				type = "POI";
 			}
-			return type;
+			return String.format("%s %s %d (%.4f, %.4f)", type, name, (id % 0xffff),
+					MapUtils.get31LatitudeY(y16 << 15), MapUtils.get31LongitudeX(x16 << 15));
 		}
-		
 		
 		@Override
 		public final String toString() {
-			return String.format("%s (%.4f, %.4f) ", getType() + " " + name + " " + (id % 0xffff), 
-					MapUtils.get31LatitudeY(y16 << 15),
-					MapUtils.get31LongitudeX(x16 << 15));
+			return object != null ? object.toString() : simpleName(name); 
 		}
+
+
+		
 	};
 	
 	
@@ -302,28 +310,7 @@ public class SpatialTextSearch {
 
 	
 	
-	public static void mainTest(String[] subArgsArray) throws FileNotFoundException, IOException {
-		long t = System.nanoTime();
-		String query = subArgsArray[0];
-		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
-		for(int i = 1; i < subArgsArray.length; i++) {
-			File fl = new File(subArgsArray[i]);
-			if (fl.isFile()) {
-				if (i == 1) {
-					initFile(ls, new File(fl.getParentFile(), OsmandRegions.REGIONS_OCBF));
-				}
-				initFile(ls, fl);
-			} else {
-				for (File f : fl.listFiles()) {
-					initFile(ls, f);
-				}
-			}
-		}
-		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
-		SpatialTextSearch a = new SpatialTextSearch();
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
-		a.searchTest(query, searchContext);
-	}
+	
 
 	private static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {
 		if (f.exists() && (f.getName().endsWith(".obf") || f.getName().equals(OsmandRegions.REGIONS_OCBF))) {
@@ -349,11 +336,11 @@ public class SpatialTextSearch {
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-//		pattern = "Ukraine_kyi/v-ci";
-//		query = "бровари Сільпо";
+		pattern = "Ukraine_kyiv-ci";
+//		query = "24";
 //		query = "kyiv";
 //		query = "пузата хата mcdonal.";
-//		query = "нова пошта 53"; // TODO number?
+		query = "58"; // TODO number?
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
@@ -371,7 +358,28 @@ public class SpatialTextSearch {
 		a.searchTest(query, searchContext);
 	}
 	
-	
+	public static void mainTest(String[] subArgsArray) throws FileNotFoundException, IOException {
+		long t = System.nanoTime();
+		String query = subArgsArray[0];
+		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
+		for(int i = 1; i < subArgsArray.length; i++) {
+			File fl = new File(subArgsArray[i]);
+			if (fl.isFile()) {
+				if (i == 1) {
+					initFile(ls, new File(fl.getParentFile(), OsmandRegions.REGIONS_OCBF));
+				}
+				initFile(ls, fl);
+			} else {
+				for (File f : fl.listFiles()) {
+					initFile(ls, f);
+				}
+			}
+		}
+		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
+		SpatialTextSearch a = new SpatialTextSearch();
+		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
+		a.searchTest(query, searchContext);
+	}
 
 	
 }
