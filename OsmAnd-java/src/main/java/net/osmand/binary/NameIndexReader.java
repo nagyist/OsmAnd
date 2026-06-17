@@ -12,6 +12,10 @@ import java.util.TreeMap;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
+import net.osmand.Collator;
+import net.osmand.CollatorStringMatcher;
+import net.osmand.CollatorStringMatcher.StringMatcherMode;
+import net.osmand.OsmAndCollator;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
@@ -23,7 +27,6 @@ import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.City;
 import net.osmand.data.QuadRect;
 import net.osmand.util.SearchAlgorithms;
-import net.osmand.util.UnicodeDiacritics;
 
 public class NameIndexReader {
 
@@ -45,6 +48,11 @@ public class NameIndexReader {
 	private SuffixesStat suffixesStat;
 	private StreetsIndexStat streetsStat;
 	private BoundariesIndexStat bndsStat;
+	
+	// cache collator
+	private String queryCachedStr;
+	private String queryAligned;
+	private Collator collator;
 
 	public NameIndexReader(AddressRegion p) {
 		this.poiRegion = null;
@@ -628,12 +636,18 @@ public class NameIndexReader {
 		if (query == null) {
 			return true;
 		}
-		// TODO COLLATOR
-		key = UnicodeDiacritics.getInstance().stripDiacritics(key);
-		boolean match = query.startsWith(key);
+		if (query != queryCachedStr) {
+			queryAligned = CollatorStringMatcher.alignChars(query);
+			collator = OsmAndCollator.primaryCollator();
+		}
+		String alignedKey = CollatorStringMatcher.alignChars(key);
+		boolean match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedKey, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
+//		match = query.startsWith(key);
 		if (!match && query.endsWith(".")) {
-			String pr = query.substring(0, query.length() - 1);
-			match = key.startsWith(pr) || pr.startsWith(key);
+			String queryStar = query.substring(0, query.length() - 1);
+			match = CollatorStringMatcher.cmatches(collator, queryStar, alignedKey, StringMatcherMode.CHECK_ONLY_STARTS_WITH) ||
+					CollatorStringMatcher.cmatches(collator, alignedKey, queryStar, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
+//			match = key.startsWith(pr) || pr.startsWith(key);
 		}
 		return match;
 	}

@@ -91,8 +91,8 @@ import net.osmand.util.SearchAlgorithms;
 
 public class SpatialTextSearch {
 	
-	private static final int LIMIT_PRINT = 10;
-	public static boolean DEDUPLICATE_RES = false;
+	private static final int LIMIT_PRINT = 100;
+	public static boolean DEDUPLICATE_RES = true;
 	
 	public static class SpatialSearchFileCache {
 		public int fileInd = -1; // changing each session - not concurrent !!!
@@ -320,13 +320,16 @@ public class SpatialTextSearch {
 		pattern = "Ukraine";
 		query = "нова пошта Бульварно Кудрявська"; 
 		// TODO Бульварно-Кудрявська, 2-га?
-		// TODO №59 (366443448)?
+		// Catedral-Basílica de Nuestra Señora del Pilar
+		// TODO №59 (366443448) missing?
 //		query = "Ukraine kyiv saks.";
 //		query = "Ukraine kyiv";
-//		query = "пузата хата mcdonal.";
+		query = "пузата хата mcdonal.";
+		query = "Нова пошта 53";
 		
-		pattern = "Spain_aragon_europe_";
-		query = "Cathedral-Basilica of Our Lady of the Pillar";
+//		pattern = "Spain_aragon_europe_";
+//		query = "Basílica de Nuestra Señora del Pilar";
+		
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
