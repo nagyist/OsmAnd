@@ -92,6 +92,7 @@ public class DevelopmentSettingsFragment extends BaseSettingsFragment implements
 		setupSimulateInitialStartupPref();
 		setupFullscreenMapDrawingModePref();
 		setupShouldShowFreeVersionBannerPref();
+		setupShouldShowDiscountBottomSheetPref();
 		setupTestVoiceCommandsPref();
 		setupLogcatBufferPref();
 		setupPressedKeyInfoPref();
@@ -164,6 +165,12 @@ public class DevelopmentSettingsFragment extends BaseSettingsFragment implements
 		SwitchPreferenceEx shouldShowFreeVersionBanner = findPreference(settings.SHOULD_SHOW_FREE_VERSION_BANNER.getId());
 		shouldShowFreeVersionBanner.setDescription(getString(R.string.show_free_version_banner_description));
 		shouldShowFreeVersionBanner.setIconSpaceReserved(false);
+	}
+
+	private void setupShouldShowDiscountBottomSheetPref() {
+		SwitchPreferenceEx shouldShowDiscountBottomSheet = findPreference(settings.SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET.getId());
+		shouldShowDiscountBottomSheet.setDescription(getString(R.string.show_discount_bottom_sheet_description));
+		shouldShowDiscountBottomSheet.setIconSpaceReserved(false);
 	}
 
 	private void setupFullscreenMapDrawingModePref() {

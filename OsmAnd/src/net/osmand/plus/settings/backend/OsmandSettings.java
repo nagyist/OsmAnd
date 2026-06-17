@@ -2060,6 +2060,7 @@ public class OsmandSettings {
 	public CommonPreference<String> PREVIOUS_INSTALLED_VERSION = new StringPreference(this, "previous_installed_version", "").makeGlobal();
 
 	public final OsmandPreference<Boolean> SHOULD_SHOW_FREE_VERSION_BANNER = new BooleanPreference(this, "should_show_free_version_banner", false).makeGlobal().makeShared().cache();
+	public final OsmandPreference<Boolean> SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET = new BooleanPreference(this, "should_show_discount_bottom_sheet", false).makeGlobal().makeShared().cache();
 
 	public final OsmandPreference<Boolean> USE_DISCRETE_AUTO_ZOOM = new BooleanPreference(this, "use_v1_auto_zoom", false).makeGlobal().makeShared().cache();
 
@@ -3522,6 +3523,9 @@ public class OsmandSettings {
 
 	public final OsmandPreference<Boolean> FAVORITES_FREE_ACCOUNT_CARD_DISMISSED =
 			new BooleanPreference(this, "favorites_free_account_card_dismissed", false).makeGlobal();
+
+	public final OsmandPreference<Boolean> TRACKS_FREE_ACCOUNT_CARD_DISMISSED =
+			new BooleanPreference(this, "tracks_free_account_card_dismissed", false).makeGlobal();
 
 	public final OsmandPreference<Boolean> CONFIGURE_PROFILE_FREE_ACCOUNT_CARD_DISMISSED =
 			new BooleanPreference(this, "configure_profile_free_account_card_dismissed", false).makeGlobal();

@@ -4,10 +4,12 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static net.osmand.plus.chooseplan.OsmAndFeature.UNLIMITED_MAP_DOWNLOADS;
 import static net.osmand.plus.download.DownloadValidationManager.MAXIMUM_AVAILABLE_FREE_DOWNLOADS;
 
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.Space;
 import android.widget.TextView;
 
@@ -17,8 +19,12 @@ import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.chooseplan.ChoosePlanFragment;
 import net.osmand.plus.download.DownloadActivity;
-import net.osmand.plus.download.DownloadValidationManager;
+import net.osmand.plus.helpers.DiscountHelper;
 import net.osmand.plus.settings.backend.OsmandSettings;
+import net.osmand.plus.settings.enums.ThemeUsageContext;
+import net.osmand.plus.utils.AndroidUtils;
+import net.osmand.plus.utils.ColorUtilities;
+import net.osmand.util.Algorithms;
 
 public class FreeVersionBanner {
 
@@ -28,20 +34,20 @@ public class FreeVersionBanner {
 
 	private final View freeVersionBanner;
 	private final View freeVersionBannerTitle;
+	private final View freeVersionCtaContainer;
+	private final View freeVersionCtaContentContainer;
+	private final TextView freeVersionTitleTextView;
+	private final TextView freeVersionSubtitleTextView;
 	private final TextView freeVersionDescriptionTextView;
 	private final TextView downloadsLeftTextView;
-	private final ProgressBar downloadsLeftProgressBar;
+	private final ImageView freeVersionCtaArrow;
+	private final TextView freeVersionCtaDiscountBadge;
 
-	private final OnClickListener onCollapseListener = new OnClickListener() {
+	private final OnClickListener onBannerClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
-			if (freeVersionDescriptionTextView.getVisibility() == View.VISIBLE
-					&& DownloadActivity.isDownloadingPermitted(settings)) {
-				collapseBanner();
-			} else {
-				app.logEvent("click_free_dialog");
-				ChoosePlanFragment.showInstance(activity, UNLIMITED_MAP_DOWNLOADS);
-			}
+			app.logEvent("click_free_dialog");
+			ChoosePlanFragment.showInstance(activity, UNLIMITED_MAP_DOWNLOADS);
 		}
 	};
 
@@ -52,19 +58,14 @@ public class FreeVersionBanner {
 
 		freeVersionBanner = view.findViewById(R.id.freeVersionBanner);
 		freeVersionBannerTitle = freeVersionBanner.findViewById(R.id.freeVersionBannerTitle);
+		freeVersionCtaContainer = freeVersionBanner.findViewById(R.id.freeVersionCtaContainer);
+		freeVersionCtaContentContainer = freeVersionBanner.findViewById(R.id.freeVersionCtaContentContainer);
+		freeVersionTitleTextView = freeVersionBanner.findViewById(R.id.freeVersionTitleTextView);
+		freeVersionSubtitleTextView = freeVersionBanner.findViewById(R.id.freeVersionSubtitleTextView);
 		downloadsLeftTextView = freeVersionBanner.findViewById(R.id.downloadsLeftTextView);
-		downloadsLeftProgressBar = freeVersionBanner.findViewById(R.id.downloadsLeftProgressBar);
 		freeVersionDescriptionTextView = freeVersionBanner.findViewById(R.id.freeVersionDescriptionTextView);
-	}
-
-	private void collapseBanner() {
-		freeVersionDescriptionTextView.setVisibility(View.GONE);
-		freeVersionBannerTitle.setVisibility(View.VISIBLE);
-	}
-
-	public void expandBanner() {
-		freeVersionDescriptionTextView.setVisibility(View.VISIBLE);
-		freeVersionBannerTitle.setVisibility(View.VISIBLE);
+		freeVersionCtaArrow = freeVersionBanner.findViewById(R.id.freeVersionCtaArrow);
+		freeVersionCtaDiscountBadge = freeVersionBanner.findViewById(R.id.freeVersionCtaDiscountBadge);
 	}
 
 	public void initFreeVersionBanner() {
@@ -73,32 +74,7 @@ public class FreeVersionBanner {
 			return;
 		}
 		freeVersionBanner.setVisibility(View.VISIBLE);
-		downloadsLeftProgressBar.setMax(MAXIMUM_AVAILABLE_FREE_DOWNLOADS);
-		freeVersionDescriptionTextView.setText(DownloadValidationManager.getFreeVersionMessage(activity));
-
-		LinearLayout marksContainer = freeVersionBanner.findViewById(R.id.marksLinearLayout);
-
-		Space spaceView = new Space(activity);
-		LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, MATCH_PARENT, 1);
-		spaceView.setLayoutParams(params);
-		marksContainer.addView(spaceView);
-
-		int markWidth = (int) (1 * activity.getResources().getDisplayMetrics().density);
-		int colorBlack = activity.getColor(R.color.activity_background_color_dark);
-		for (int i = 1; i < MAXIMUM_AVAILABLE_FREE_DOWNLOADS; i++) {
-			View markView = new View(activity);
-			params = new LinearLayout.LayoutParams(markWidth, MATCH_PARENT);
-			markView.setLayoutParams(params);
-			markView.setBackgroundColor(colorBlack);
-			marksContainer.addView(markView);
-
-			spaceView = new Space(activity);
-			params = new LinearLayout.LayoutParams(0, MATCH_PARENT, 1);
-			spaceView.setLayoutParams(params);
-			marksContainer.addView(spaceView);
-		}
 		updateFreeVersionBanner();
-		collapseBanner();
 	}
 
 	public void updateFreeVersionBanner() {
@@ -109,17 +85,88 @@ public class FreeVersionBanner {
 			return;
 		}
 		setMinimizedFreeVersionBanner(false);
-		int mapsDownloaded = settings.NUMBER_OF_FREE_DOWNLOADS.get();
-		downloadsLeftProgressBar.setProgress(mapsDownloaded);
-		int downloadsLeft = MAXIMUM_AVAILABLE_FREE_DOWNLOADS - mapsDownloaded;
-		downloadsLeft = Math.max(downloadsLeft, 0);
+		int downloadsLeft = getDownloadsLeft(false);
+		updateBannerState(downloadsLeft);
+		updateDownloadsProgress(downloadsLeft);
 		downloadsLeftTextView.setText(activity.getString(R.string.downloads_left_template, String.valueOf(downloadsLeft)));
-		freeVersionBanner.findViewById(R.id.bannerTopLayout).setOnClickListener(onCollapseListener);
+		freeVersionBanner.findViewById(R.id.bannerTopLayout).setOnClickListener(onBannerClickListener);
+	}
+
+	private void updateBannerState(int downloadsLeft) {
+		boolean limitReached = downloadsLeft == 0;
+		boolean nightMode = app.getDaynightHelper().isNightMode(settings.getApplicationMode(), ThemeUsageContext.APP);
+		updateBannerColors(nightMode);
+		freeVersionTitleTextView.setText(limitReached ? R.string.free_download_limit_reached : R.string.free_version_title);
+		downloadsLeftTextView.setVisibility(limitReached ? View.GONE : View.VISIBLE);
+		freeVersionSubtitleTextView.setVisibility(limitReached ? View.VISIBLE : View.GONE);
+		freeVersionDescriptionTextView.setText(R.string.get_unlimited_downloads);
+		freeVersionCtaContainer.setOnClickListener(onBannerClickListener);
+		updateCtaDiscountBadge(nightMode);
+		int ctaBackgroundId = nightMode
+				? R.drawable.free_version_banner_cta_bg_ripple_dark
+				: R.drawable.free_version_banner_cta_bg_ripple;
+		freeVersionCtaContentContainer.setBackgroundResource(ctaBackgroundId);
+		freeVersionCtaContainer.setVisibility(View.VISIBLE);
+	}
+
+	private void updateBannerColors(boolean nightMode) {
+		int backgroundColor = AndroidUtils.getColorFromAttr(activity, R.attr.list_background_color);
+		GradientDrawable background = new GradientDrawable();
+		background.setColor(backgroundColor);
+		background.setCornerRadius(AndroidUtils.dpToPx(app, 12));
+		freeVersionBanner.setBackground(background);
+		int textColor = AndroidUtils.getColorFromAttr(activity, android.R.attr.textColor);
+		int textColorSecondary = AndroidUtils.getColorFromAttr(activity, android.R.attr.textColorSecondary);
+		freeVersionTitleTextView.setTextColor(textColor);
+		freeVersionDescriptionTextView.setTextColor(ColorUtilities.getActiveColor(app, nightMode));
+		downloadsLeftTextView.setTextColor(textColorSecondary);
+		freeVersionSubtitleTextView.setTextColor(textColorSecondary);
+	}
+
+	private boolean updateCtaDiscountBadge(boolean nightMode) {
+		String discount = DiscountHelper.getCurrentSaleDiscount(app, nightMode, true);
+		boolean hasDiscount = !Algorithms.isEmpty(discount);
+		freeVersionCtaDiscountBadge.setText(discount);
+		freeVersionCtaDiscountBadge.setBackgroundResource(nightMode
+				? R.drawable.free_version_banner_cta_discount_bg_dark
+				: R.drawable.free_version_banner_cta_discount_bg);
+		freeVersionCtaDiscountBadge.setVisibility(hasDiscount ? View.VISIBLE : View.GONE);
+		freeVersionCtaArrow.setVisibility(hasDiscount ? View.GONE : View.VISIBLE);
+		return hasDiscount;
+	}
+
+	private void updateDownloadsProgress(int downloadsLeft) {
+		LinearLayout marksContainer = freeVersionBanner.findViewById(R.id.marksLinearLayout);
+		marksContainer.removeAllViews();
+		int markWidth = AndroidUtils.dpToPx(app, 2);
+		boolean nightMode = app.getDaynightHelper().isNightMode(settings.getApplicationMode(), ThemeUsageContext.APP);
+		int colorUsed = app.getColor(nightMode ? R.color.banner_downloads_used_dark : R.color.banner_downloads_used_light);
+		int colorRemaining = app.getColor(nightMode ? R.color.banner_downloads_remaining_dark : R.color.banner_downloads_remaining_light);
+		int usedSegments = MAXIMUM_AVAILABLE_FREE_DOWNLOADS - Math.min(downloadsLeft, MAXIMUM_AVAILABLE_FREE_DOWNLOADS);
+		for (int i = 0; i < MAXIMUM_AVAILABLE_FREE_DOWNLOADS; i++) {
+			View markView = new View(activity);
+			LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, MATCH_PARENT, 1);
+			markView.setLayoutParams(params);
+			markView.setBackground(getColoredTickDrawable(i < usedSegments ? colorUsed : colorRemaining));
+			marksContainer.addView(markView);
+			Space spaceView = new Space(activity);
+			params = new LinearLayout.LayoutParams(markWidth, MATCH_PARENT);
+			spaceView.setLayoutParams(params);
+			marksContainer.addView(spaceView);
+		}
+	}
+
+	private Drawable getColoredTickDrawable(int color) {
+		Drawable drawable = activity.getDrawable(R.drawable.free_version_downloads_progress_tick);
+		if (drawable != null) {
+			drawable = drawable.mutate();
+			drawable.setTint(color);
+		}
+		return drawable;
 	}
 
 	protected void setMinimizedFreeVersionBanner(boolean minimize) {
 		if (minimize && DownloadActivity.isDownloadingPermitted(settings)) {
-			collapseBanner();
 			freeVersionBannerTitle.setVisibility(View.GONE);
 		} else {
 			freeVersionBannerTitle.setVisibility(View.VISIBLE);
@@ -127,8 +174,18 @@ public class FreeVersionBanner {
 	}
 
 	protected void updateAvailableDownloads() {
-		int activeTasks = activity.getDownloadThread().getCountedDownloads();
-		int mapsDownloaded = settings.NUMBER_OF_FREE_DOWNLOADS.get() + activeTasks;
-		downloadsLeftProgressBar.setProgress(mapsDownloaded);
+		int downloadsLeft = getDownloadsLeft(true);
+		updateBannerState(downloadsLeft);
+		updateDownloadsProgress(downloadsLeft);
+	}
+
+	private int getDownloadsLeft(boolean includeActiveTasks) {
+		int mapsDownloaded = settings.NUMBER_OF_FREE_DOWNLOADS.get();
+		if (includeActiveTasks) {
+			int activeTasks = activity.getDownloadThread().getCountedDownloads();
+			mapsDownloaded += activeTasks;
+		}
+		int downloadsLeft = MAXIMUM_AVAILABLE_FREE_DOWNLOADS - mapsDownloaded;
+		return Math.max(downloadsLeft, 0);
 	}
 }
