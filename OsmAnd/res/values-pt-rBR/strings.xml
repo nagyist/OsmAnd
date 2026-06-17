@@ -6553,4 +6553,15 @@
     <string name="coordinate_format_select_other">Selecione outro formato</string>
     <string name="coordinate_format_recent">Recente</string>
     <string name="coordinate_format_primary">Primário</string>
+    <string name="gallery_seek_back_seconds">−%1$ds</string>
+    <string name="gallery_seek_forward_seconds">+%1$ds</string>
+    <string name="gallery_sort_last_modified">Última modificação</string>
+    <string name="gallery_sort_name_a_z">Nome A - Z</string>
+    <string name="gallery_sort_name_z_a">Nome Z - A</string>
+    <string name="gallery_sort_newest_first">Primeiro a data mais recente</string>
+    <string name="gallery_sort_oldest_first">Primeiro a data mais recente</string>
+    <string name="gallery_sort_duration_long_short">Primeiro a duração mais longa</string>
+    <string name="gallery_sort_duration_short_long">Primeiro a duração mais curta</string>
+    <string name="gallery_media_playback_error">Não foi possível reproduzir o arquivo de mídia.</string>
+    <string name="gallery_open_in">Abrir em</string>
 </resources>
