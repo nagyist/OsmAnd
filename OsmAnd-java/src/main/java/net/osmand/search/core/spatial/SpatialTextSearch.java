@@ -324,6 +324,9 @@ public class SpatialTextSearch {
 //		query = "Ukraine kyiv saks.";
 //		query = "Ukraine kyiv";
 //		query = "пузата хата mcdonal.";
+		
+		pattern = "Spain_aragon_europe_";
+		query = "Cathedral-Basilica of Our Lady of the Pillar";
 		long t = System.nanoTime();
 		
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();

@@ -154,6 +154,10 @@ public class SpatialSearchContext {
 			}
 		} else if (SEARCH_POI) {
 			for (OsmAndPoiNameIndexDataAtom a : prefix.poi.getAtomsList()) {
+				if(a.getPoiIndInBlockCount() == 0 ) {
+					// intermediate version ignore
+					continue;
+				}
 				long lid = makePoiId(indInd, BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()),
 						a.getPoiIndInBlock(0));
 				MapObject amenity = null;
