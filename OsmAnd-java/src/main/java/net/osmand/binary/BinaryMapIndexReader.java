@@ -2445,7 +2445,7 @@ public class BinaryMapIndexReader {
 
 	public static void main(String[] args) throws IOException {
 		File fl = new File(System.getProperty("maps") + "/Synthetic_test_rendering.obf");
-		fl = new File(System.getProperty("maps") +"/Liechtenstein_europe.obf");
+		fl = new File(System.getProperty("maps") +"/Ukraine_kharkiv_europe_2.obf");
 		
 		RandomAccessFile raf = new RandomAccessFile(fl, "r");
 		SearchStat stat = new SearchStat();
@@ -2473,7 +2473,7 @@ public class BinaryMapIndexReader {
 			PoiRegion poiRegion = reader.getPoiIndexes().get(0);
 			if (testPoiSearch) {
 				testPoiSearch(reader, poiRegion, stat);
-				testPoiSearchByName(reader, "vaduts", 0, 0, stat);
+				testPoiSearchByName(reader, "вулиця", 0, 0, stat);
 			}
 			if (testPoiSearchOnPath) {
 				testSearchOnthePath(reader, stat);

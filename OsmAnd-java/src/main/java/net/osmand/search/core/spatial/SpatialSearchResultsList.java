@@ -7,7 +7,9 @@ import java.util.List;
 
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
+import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
+import net.osmand.data.MapObject;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
@@ -41,15 +43,39 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		tCount = tokens.length;
 	}
 	
-	public void loadObjects(SpatialSearchContext ctx) throws IOException {
+	private void loadObjects(SpatialSearchContext ctx, int type, TLongObjectHashMap<MapObject> cache) throws IOException {
+		TLongObjectHashMap<Long> lstMap = new TLongObjectHashMap<>();
 		for (NameIndexAtom a : linearResults) {
-			if (a.type == SpatialSearchToken.POI_TYPE) {
-				a.object = ctx.readPoiObject(a.id);
-			} else {
-				a.object = ctx.readAddrObject(a.id, a.parentid);
+			if (a.type == type || (type == -2 && a.type != SpatialSearchToken.POI_TYPE
+					&& a.type != SpatialSearchToken.STREET_TYPE)) {
+				lstMap.put(a.id, a.parentid);
+			} else if(type == -2 && a.type == SpatialSearchToken.STREET_TYPE) {
+				lstMap.put(a.parentid, (long) 0);
 			}
 		}
-		
+		TLongArrayList lst = new TLongArrayList(lstMap.keySet());
+		lst.sort(); // sort is not correct for file ind last bits >>> 12 
+		for(int i = 0; i < lst.size(); i++) {
+			long id = lst.get(i);
+			if (type == SpatialSearchToken.POI_TYPE) {
+				cache.put(id, ctx.readPoiObject(id, cache));
+			} else {
+				cache.put(id, ctx.readAddrObject(id, lstMap.get(id), cache));
+			}
+		}
+		for (NameIndexAtom a : linearResults) {
+			MapObject mo = cache.get(a.id);
+			if (mo != null) {
+				a.object = mo;
+			}
+		}
+	}
+	public void loadObjects(SpatialSearchContext ctx) throws IOException {
+		TLongObjectHashMap<MapObject> cache = new TLongObjectHashMap<MapObject>();
+		loadObjects(ctx, SpatialSearchToken.POI_TYPE, cache);
+		cache.clear();
+		loadObjects(ctx, -2, cache);
+		loadObjects(ctx, SpatialSearchToken.STREET_TYPE, cache);
 	}
 
 	public NameIndexAtom getAtom(int combination, int pos) {

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.NameIndexReader;
@@ -204,7 +205,7 @@ public class SpatialSearchContext {
 				}
 				MapObject obj = null;
 				if (SpatialTextSearchSettings.READ_ADDR_OBJECTS) {
-					obj = readAddrObject(lid, pid);
+					obj = readAddrObject(lid, pid, null);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, pid, obj, allTokens);
 			}
@@ -216,23 +217,29 @@ public class SpatialSearchContext {
 				}
 				long lid = makePoiId(indInd, BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()),
 						a.getPoiIndInBlock(0));
-				System.out.println(t.word + " " + a.getPoiIndInBlock(0));
 				MapObject amenity = null;
 				if (SpatialTextSearchSettings.READ_POI_OBJECTS) {
-					amenity = readPoiObject(lid);
+					amenity = readPoiObject(lid, null);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, null, a, lid, 0, amenity, allTokens);
 			}
 		}
 	}
 	
-	public MapObject readPoiObject(long id) throws IOException {
+	public MapObject readPoiObject(long id, TLongObjectHashMap<MapObject> cache) throws IOException {
+		if (cache != null) {
+			MapObject mapObject = cache.get(id);
+			if (mapObject != null) {
+				return mapObject;
+			}
+		}
+		long oid = id;
 		int indInd = (int) (id & ((1l << SHIFT_FILE_IND) - 1));
 		id >>= SHIFT_FILE_IND;
 		int poiInd = (int) (id & ((1l << SHIFT_POI_IND) - 1));
 		id >>= SHIFT_POI_IND;
 		long shift = id;
-		
+
 		NameIndexReader nameIndex = null;
 		SpatialSearchFileCache c = null;
 		for (int k = 0; k < internalFile.size(); k++) {
@@ -242,16 +249,28 @@ public class SpatialSearchContext {
 				break;
 			}
 		}
-		
+
 		long tm = System.nanoTime();
 		List<Amenity> lst = files.get(c.fileInd).readAmenityBlock(nameIndex.poiRegion, shift);
-		System.out.println(lst + " " + c.file + " ");
+		if (cache != null) {
+			long ofirstid = oid - (poiInd << SHIFT_FILE_IND);
+			for (int i = 0; i < lst.size(); i++) {
+				cache.put(ofirstid + (i << SHIFT_FILE_IND), lst.get(i));
+			}
+		}
 		MapObject amenity = lst.get(poiInd);
 		stats.readObjTime += (System.nanoTime() - tm);
 		return amenity;
 	}
 
-	public MapObject readAddrObject(long id, long pid) throws IOException {
+	public MapObject readAddrObject(long id, long pid, TLongObjectHashMap<MapObject> cache) throws IOException {
+		if (cache != null) {
+			MapObject obj = cache.get(id);
+			if (obj != null) {
+				return obj;
+			}
+		}
+		long opid = pid;
 		int indInd = (int) (id & ((1l << SHIFT_FILE_IND) - 1));
 		id >>= SHIFT_FILE_IND;
 		long shift = id;
@@ -275,7 +294,13 @@ public class SpatialSearchContext {
 			if (pIndInd != indInd) {
 				throw new UnsupportedOperationException();
 			}
-			City city = files.get(c.fileInd).readCityObject(nameIndex.addressRegion, pshift);
+			City city = null;
+			if (cache != null) {
+				city = (City) cache.get(opid);
+			}
+			if (city == null) {
+				city = files.get(c.fileInd).readCityObject(nameIndex.addressRegion, pshift);
+			}
 			obj = files.get(c.fileInd).readStreetObject(nameIndex.addressRegion, city, shift);
 		} else  {
 			obj = files.get(c.fileInd).readCityObject(nameIndex.addressRegion, shift);

@@ -33,17 +33,16 @@ import net.osmand.util.SearchAlgorithms;
 
 
 // DONE TEST
-// Same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
-// TODO [[2, нова, вулиця] STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
+// Load objects by groups file order efficiently!
 // Index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048 bytes[2] >= 1
 // "2-га Нова вулиця" - split by "-"?
+// !!! implement for tokens READ_COMMON_WORDS = false; Нова вулиця very slow!
+// Same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182 - TODO
 
 /////////////////////////////////
-// EEFFICIENCY
-// TODO !!! implement for tokens READ_COMMON_WORDS = false; Нова вулиця very slow!
-
+// TODO [[2, нова, вулиця] STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 // TODO don't compute all combinations... (!) and do it in the right order 2^7
-// TODO Load objects by groups file order efficiently!
+
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 
 // FEATURES
@@ -97,14 +96,14 @@ public class SpatialTextSearch {
 
 		// READ OBJECTS before intersection to reduce number of duplicates from different maps by osm id
 		// - needs to be tested performance mostly slows down
-		public static boolean READ_ADDR_OBJECTS = true;
-		public static boolean READ_POI_OBJECTS = true; // TODO crash
+		public static boolean READ_ADDR_OBJECTS = false;
+		public static boolean READ_POI_OBJECTS = false; 
 		
 		// no need to find 3 street intersection or 3 POI intersection
 		public static int LIMIT_ATOMIC_OBJECTS = 2;
 		
 		// Performance improvement assuming for rare words we don't read common atoms 
-		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
+		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = false;
 		public static boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
 
 	}
@@ -315,7 +314,7 @@ public class SpatialTextSearch {
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-		pattern = "Ukraine";
+		pattern = "Ukraine_";
 //		pattern = "Map";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
