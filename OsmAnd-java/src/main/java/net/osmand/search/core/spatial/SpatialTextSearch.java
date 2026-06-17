@@ -15,7 +15,6 @@ import java.util.Map;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
-import net.osmand.binary.CommonWords;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
 import net.osmand.util.SearchAlgorithms;
@@ -28,72 +27,62 @@ import net.osmand.util.SearchAlgorithms;
 // 2. REVIEW added bbox31 size
 // 3. REVIEW if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
 //    - 2-га Нова (2 Нова), Бульварно-Кудрявська
+// 4. TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania
+// 5. English postcodes
+// 6. TEST / REVIEW - COLLATOR + Last dot [CONSTANT] as incomplete, [NameIndexReader, SpatialSearchToken]
+
 
 // DONE TEST
 // Same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
+// TODO [[2, нова, вулиця] STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 // Index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048 bytes[2] >= 1
 // "2-га Нова вулиця" - split by "-"?
 
 /////////////////////////////////
-// BBOX EEFFICIENCY
+// EEFFICIENCY
+// TODO Catedral-Basílica de Nuestra Señora del Pilar
 // TODO !!! implement for tokens READ_COMMON_WORDS = false; Нова вулиця very slow!
+// TODO don't compute all combinations... (!) and do it in the right order
+
 // TODO Load objects by groups file order efficiently!
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
-// TODO sort tokens by actual frequency (do not use common words)
-
-
-// OTPIMIZATIONS
-// TODO merge boundaries bbox - extend incomplete boundary same id...
-// TODO ? don't compute all combinations...
-// TODO ? don't read objects while preparing tokens ? id duplicate between maps?
-// TODO ? in the end recheck bbox boundary after load coordinates 31 (not 15)
 
 // FEATURES
-// TODO read buildings
-// TODO duplicate words in query
-// TODO COLLATOR + Last dot [CONSTANT] as incomplete, 
-//      [NameIndexReader, SpatialSearchToken] 
+// TODO Search Buildings
+// TODO Read all top poi categories for files
+// TODO POI Categories implement categories
+// TODO World basemap ! POI  
+// TODO Street intersection match
+// TODO Progress / cancel
+// TODO Abbreviations Phase
+// TODO Sugggestion-correction
 
+// ISSUES
+// TODO test: merge boundaries bbox - extend incomplete boundary same id...
+// TODO ? test: duplicate words in query
+// TODO ? review settings: don't read objects while preparing tokens ? id duplicate between maps?
+// TODO ? in the end recheck bbox boundary after load coordinates 31 (not 15)
 
 // CACHE
-// TODO Cache POI block read, cache city index !
 // TODO Evict - NameIndexReader in caches ( > 200 - indexByRef, matchedKeys) full clear
+// TODO Cache Loaded objects ?
 
-// POI CATEGORIES 
-// TODO Read all top poi categories for files
-// TODO implement categories
-// TODO World basemap ! POI
+//////////////// SEARCH ALGORITHM /////////////////
+// 1. Init files + read caches
+// 2. Split tokens
+// 3. Read tokens -> atoms (
+// 4. Sort tokens to do combinations
+// 5. Find combinations
+// 6. Sort results, filter results
+// 7. Expand poi categories if needed
 
-// SPECIAL CASES
-// TODO Abbreviations Phase
-// TODO Street intersection match
-// TODO Sugggestion-correction
-// TODO Progress / cancel
-
-//////////////SEARCH ALGORITHM //////////////
-// 1. Split words
-// 2. Reinit caches
-// 3. Sort words & meta information for words
-// 3.1 Calculate poi categories for words & combinations!
-// 3.2 Calculate common & frequent numbers based on files
-// 3.3 Assign Common & frequent labels from Global file
-
-// 4. Read 
-// 4.1 Incomplete words? assign prefix ?
-// 4.2 Read Per word List<AddressNameIndexDataAtom>, List<OsmAndPoiNameIndexDataAtom>
-// 4.3 Read & Cache for non-frequent common words
-
-// After search operations - Expand POI Type filters for results
-// 5.1 Run rare words (by counts & labels)
-// 5.2 Run with frequent words
-// 5.3 Expand POI categories
-
-// Search categories
-// MAPS ITERATION 1 - close up, 2 - larger radius 
-// Phase I - only rare + words replaced abbreviations
-// Phase II - all words + replaced abbreviations
-// Phase III - all words + replaced abbreviations
-
+////////////// TODO THINK OPTIMIZATIONS /////////////
+// 1. PARTIAL SEARCH. Perform equals search and then with '.'
+// 2. MAPS. Do search first with closest maps and then with others
+// 3. ALL COMBINATIONS. Stop on one combination or find all
+// 4. POI CATEGORIES. ? 
+// 5. READ_ALL. Switch ALWAYS_READ_COMMON_WORDS_ATOMS=true 
+//    It couldn't give any new complete result but could give partial results
 public class SpatialTextSearch {
 	
 	private static final int LIMIT_PRINT = 100;
@@ -110,6 +99,10 @@ public class SpatialTextSearch {
 		public static boolean READ_POI_OBJECTS = false; // mostly slows down 
 		
 		public static int LIMIT_ATOMIC_OBJECTS = 2;
+		
+		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = false;
+		
+		public static boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
 
 	}
 	
@@ -160,31 +153,14 @@ public class SpatialTextSearch {
 		
 	
 	SpatialSearchGlobalCache cache = new SpatialSearchGlobalCache(); // reusable between sessions
-
-	private List<SpatialSearchToken> splitWords(String input) {
-		List<String> owords =new ArrayList<String>();
-		// split by hyphen as we supposed to index them separately
-		List<String> words = SearchAlgorithms.splitAndNormalize(input, owords);
-		List<SpatialSearchToken> tokens = new ArrayList<>();
-		for (int order = 0; order < words.size(); order++) {
-			String w = words.get(order);
-			tokens.add(new SpatialSearchToken(w, owords.get(order), order));
-		}
-		return tokens;
-	}
 	
 	private void sortTokens(List<SpatialSearchToken> tokens) {
-		// TODO donot use common words class
+		// sort from least atoms to do combinations as the most efficient
 		Collections.sort(tokens, new Comparator<SpatialSearchToken>() {
 			@Override
 			public int compare(SpatialSearchToken o1, SpatialSearchToken o2) {
-				int c1 = CommonWords.getCommonSearch(o1.word);
-				int c2 = CommonWords.getCommonSearch(o2.word);
-				if(c1 != c2) {
-					return Integer.compare(c1, c2);
-				}
-				c1 = o1.atoms.size();
-				c2 = o2.atoms.size();
+				int c1 = o1.atoms.size();
+				int c2 = o2.atoms.size();
 				if(c1 != c2) {
 					return Integer.compare(c1, c2);
 				}
@@ -210,7 +186,7 @@ public class SpatialTextSearch {
 			}
 			for (SpatialSearchToken token : tokens) {
 				if (parent.getTokenCount() == 0 || token.sortedOrder < parent.getFirstToken().sortedOrder) {
-//					System.out.println("ITERATION Token [ " + token + " ] + " + parent);
+					System.out.println("ITERATION Token [ " + token + " ] + " + parent);
 					SpatialSearchResultsList next = new SpatialSearchResultsList(token, parent);
 					next.calculateIntersection(token, parent);
 					candidates.add(next);
@@ -252,6 +228,18 @@ public class SpatialTextSearch {
 		return res;
 	}
 
+	public List<SpatialSearchToken> splitWords(String input) {
+		List<String> owords = new ArrayList<String>();
+		// split by hyphen as we supposed to index them separately
+		List<String> words = SearchAlgorithms.splitAndNormalize(input, owords);
+		List<SpatialSearchToken> tokens = new ArrayList<>();
+		for (int order = 0; order < words.size(); order++) {
+			String w = words.get(order);
+			SpatialSearchToken token = new SpatialSearchToken(w, owords.get(order), order);
+			tokens.add(token);
+		}
+		return tokens;
+	}
 
 	public void searchTest(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = searchAPI(input, ctx);
@@ -316,8 +304,8 @@ public class SpatialTextSearch {
 		
 		pattern = "Us_";
 		query = "Salt Lake City Pennsylvania Place";
-//		query = "Salt Lake City Pennsylvania Street";
-		query = "Salt Lake City";
+		query = "Salt Lake City Pennsylvania Street";
+//		query = "Salt Lake City";
 		
 //		pattern = "Liechtenstein_europe.obf";
 //		query = "Vaduz Lettstrasse";
@@ -326,16 +314,16 @@ public class SpatialTextSearch {
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-		pattern = "Ukraine_kyiv-";
+		pattern = "Ukraine";
 //		pattern = "Map";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
-		// TODO Бульварно-Кудрявська (not searching), 2-га? (searching?)
 //		query = "2 Нова вулиця"; 
 //		query = "Ukraine kyiv saks.";
 //		query = "Ukraine Київ";
 //		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 53";
+		query = "2 Нова вулиця";
 		
 		// TODO Catedral-Basílica de Nuestra Señora del Pilar
 //		pattern = "Spain_aragon_europe_";

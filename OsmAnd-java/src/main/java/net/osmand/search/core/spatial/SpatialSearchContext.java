@@ -67,31 +67,57 @@ public class SpatialSearchContext {
 			fc.indexInd = indexInd;
 			fc.fileInd = fileInd;
 			this.internalFile.add(fc);
-			
 			indexInd += fc.indexReaders.size();
 			fileInd++;
 		}
 	}
 
 	void readAtoms(List<SpatialSearchToken> tokens) throws IOException {
+		int indxInd = 0;
+		for (int fileInd = 0; fileInd < files.size(); fileInd++) {
+			SpatialSearchFileCache iCache = internalFile.get(fileInd);
+			BinaryMapIndexReader b = files.get(fileInd);
+			for (NameIndexReader indx : iCache.indexReaders) {
+				readAtoms(tokens, b, indx, indxInd);
+				indxInd++;
+			}
+		}
+	}
+
+	private void readAtoms(List<SpatialSearchToken> tokens, BinaryMapIndexReader b, NameIndexReader indx, int indxInd)
+			throws IOException {
+		
+//		boolean readAllTokens = true;
+//		if (!SpatialTextSearch.SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
+//			for (SpatialSearchToken t : tokens) {
+//				if (!t.almostNumber && t.commonNonIndexed == 0) {
+//					readAllTokens = false;
+//				}
+//			}
+//		}
 		for (SpatialSearchToken t : tokens) {
-			int indxInd = 0;
-			for (int fileInd = 0; fileInd < files.size(); fileInd++) {
-				SpatialSearchFileCache iCache = internalFile.get(fileInd);
-				BinaryMapIndexReader b = files.get(fileInd);
-				for (NameIndexReader indx : iCache.indexReaders) {
-					List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
-					if (matchedPrefixes == null) {
-						stats.readTokensTime -= System.nanoTime();
-						b.readFullNameIndex(indx, t.word);
-						matchedPrefixes = indx.getMatchedPrefixes(t.word);
-						stats.readTokensTime += System.nanoTime();
-					}
-					for (PrefixNameValue prefix : matchedPrefixes) {
-						parseAtomSuffixes(t, indxInd, indx, prefix, tokens);
-					}
-					indxInd++;
-				}
+//			Map<String, ValueFreq> vs = indx.getCommonWordsStats();
+//			if (vs != null) {
+//				ValueFreq vf = indx.getCommonWordsStats().get(token.word);
+//				if (vf != null) {
+//					token.frequent += vf.freq;
+//					token.commonNonIndexed += (int) (vf.freq - vf.extra);
+//				}
+//			}
+//			if ((t.commonNonIndexed > 0) && !readAllTokens) {
+//				System.out.println("___");
+//				continue;
+//			}
+
+			List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
+			if (matchedPrefixes == null) {
+				stats.readTokensTime -= System.nanoTime();
+				b.readFullNameIndex(indx, t.word);
+				matchedPrefixes = indx.getMatchedPrefixes(t.word);
+				stats.readTokensTime += System.nanoTime();
+			}
+			for (PrefixNameValue prefix : matchedPrefixes) {
+				parseAtomSuffixes(t, indxInd, indx, prefix, tokens);
 			}
 		}
 	}
@@ -161,7 +187,7 @@ public class SpatialSearchContext {
 			}
 		}
 	}
-
+	
 	public MapObject readPoiObject(long id) throws IOException {
 		int indInd = (int) (id & ((1l << SHIFT_FILE_IND) - 1));
 		id >>= SHIFT_FILE_IND;
@@ -312,5 +338,7 @@ public class SpatialSearchContext {
 		}
 
 	}
+
+
 
 }

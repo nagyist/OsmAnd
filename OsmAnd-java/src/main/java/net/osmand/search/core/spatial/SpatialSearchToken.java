@@ -25,7 +25,7 @@ public class SpatialSearchToken {
 
 	int originalOrder = 0;
 	int sortedOrder = 0;
-	boolean incomplete;
+	
 	String originalWord;
 	String word;
 	List<NameIndexAtom> atoms = new ArrayList<>();
@@ -33,6 +33,7 @@ public class SpatialSearchToken {
 	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
 	HashQuadTree<NameIndexAtom> quadTree = new HashQuadTree<>(16);
 	CollatorStringMatcher collator;
+	
 
 	public SpatialSearchToken(String w, String original, int order) {
 		originalWord = original;

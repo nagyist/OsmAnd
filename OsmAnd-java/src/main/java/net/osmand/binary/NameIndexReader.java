@@ -43,6 +43,7 @@ public class NameIndexReader {
 	// common words
 	private CommonIndexedStats commonStats;
 	private List<String> commonsList = new ArrayList<String>();
+	private Map<String, ValueFreq> commonStatsValues = null;
 	
 	// stats
 	private SuffixesStat suffixesStat;
@@ -591,19 +592,25 @@ public class NameIndexReader {
 	
 	
 	public Map<String, ValueFreq> getCommonWordsStats() {
-		Map<String, ValueFreq> mp = new HashMap<>();
+		if (commonStatsValues != null) {
+			return commonStatsValues;
+		}
+		if (commonStats == null) {
+			return null;
+		}
+		commonStatsValues = new HashMap<>();
 		String name = null;
 		int valueCount = commonStats.getValueCount();
-		for(int i = 0; i < valueCount; i++) {
+		for (int i = 0; i < valueCount; i++) {
 			name = SearchAlgorithms.nameIndexDecodeDictionarySuffix(name, commonStats.getValue(i));
 			ValueFreq vf = new ValueFreq(name, commonStats.getMatched(i));
 			vf.extra = commonStats.getMatched(i) - commonStats.getNonindexed(i);
-			ValueFreq old = mp.put(vf.value, vf);
+			ValueFreq old = commonStatsValues.put(vf.value, vf);
 			if (old != null) {
 				throw new UnsupportedOperationException();
 			}
 		}
-		return mp;
+		return commonStatsValues;
 	}
 
 	public CommonIndexedStats getCommonStats() {

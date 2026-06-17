@@ -393,6 +393,18 @@ public class SearchAlgorithms {
 		return dBbox;
 	}
 	
-	
+	private static int letters(String s) {
+		int count = 0;
+		for (int i = 0; i < s.length(); i++) {
+			if (!Character.isDigit(s.charAt(i)) && Character.isLetter(s.charAt(i))) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	public static boolean isNumber2Letters(String name) {
+		return !name.isEmpty() && Character.isDigit(name.trim().charAt(0)) && letters(name) < 2;
+	}	
 }
 
