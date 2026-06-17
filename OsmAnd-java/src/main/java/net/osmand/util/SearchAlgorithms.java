@@ -76,8 +76,12 @@ public class SearchAlgorithms {
     
     
 	public static List<String> splitAndNormalizeSearchQuery(String query, List<String> original) {
+		return splitAndNormalizeSearchQuery(query, original, SearchPhrase.ALLDELIMITERS);
+	}
+
+	public static List<String> splitAndNormalizeSearchQuery(String query, List<String> original, String delimiters) {
 		String normalizedQuery = canonicalizePunctuation(query);
-		List<String> o = SearchPhrase.splitWords(normalizedQuery, new ArrayList<String>(), SearchPhrase.ALLDELIMITERS);
+		List<String> o = SearchPhrase.splitWords(normalizedQuery, new ArrayList<String>(), delimiters);
 		List<String> queryTokens = new ArrayList<String>();
 		for (String token : o) {
 			String normalizedToken = normalizeToken(token);
@@ -91,7 +95,7 @@ public class SearchAlgorithms {
 			if (arabic != null && !arabic.equals(normalizedQuery)) {
 				queryTokens.clear();
 				original.clear();
-				for (String token : SearchPhrase.splitWords(arabic, new ArrayList<String>(), SearchPhrase.ALLDELIMITERS)) {
+				for (String token : SearchPhrase.splitWords(arabic, new ArrayList<String>(), delimiters)) {
 					String normalizedToken = normalizeToken(token);
 					if (!normalizedToken.isEmpty()) {
 						queryTokens.add(normalizedToken);
@@ -107,28 +111,42 @@ public class SearchAlgorithms {
     /**
      * Produces unique normalized tokens from the query, plus Arabic-normalized variants when applicable.
      */
-    public static List<String> splitAndNormalize(String query) {
-        String normalizedQuery = canonicalizePunctuation(query);
-        Set<String> queryTokens = new LinkedHashSet<>();
-        for (String token : split(normalizedQuery)) {
-            String normalizedToken = normalizeToken(token);
-            if (!normalizedToken.isEmpty()) {
-                queryTokens.add(normalizedToken);
-            }
-        }
-        if (ArabicNormalizer.isSpecialArabic(normalizedQuery)) {
-            String arabic = ArabicNormalizer.normalize(normalizedQuery);
-            if (arabic != null && !arabic.equals(normalizedQuery)) {
-                for (String token : split(arabic)) {
-                    String normalizedToken = normalizeToken(token);
-                    if (!normalizedToken.isEmpty()) {
-                        queryTokens.add(normalizedToken);
-                    }
-                }
-            }
-        }
-        return new ArrayList<>(queryTokens);
-    }
+	public static List<String> splitAndNormalize(String query) {
+		return splitAndNormalize(query, null);
+	}
+	
+	public static List<String> splitAndNormalize(String query, List<String> original) {
+		String normalizedQuery = canonicalizePunctuation(query);
+		Set<String> queryTokens = new LinkedHashSet<>();
+		for (String token : split(normalizedQuery)) {
+			String normalizedToken = normalizeToken(token);
+			if (!normalizedToken.isEmpty()) {
+				queryTokens.add(normalizedToken);
+				if (original != null) {
+					original.add(token);
+				}
+			}
+		}
+		if (ArabicNormalizer.isSpecialArabic(normalizedQuery)) {
+			String arabic = ArabicNormalizer.normalize(normalizedQuery);
+			if (arabic != null && !arabic.equals(normalizedQuery)) {
+				queryTokens.clear();
+				if (original != null) {
+					original.clear();
+				}
+				for (String token : split(arabic)) {
+					String normalizedToken = normalizeToken(token);
+					if (!normalizedToken.isEmpty()) {
+						queryTokens.add(normalizedToken);
+						if (original != null) {
+							original.add(token);
+						}
+					}
+				}
+			}
+		}
+		return new ArrayList<>(queryTokens);
+	}
     
     public static String normalizeToken(String token) {
         if (token == null) {

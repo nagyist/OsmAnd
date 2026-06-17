@@ -18,30 +18,37 @@ import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.CommonWords;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
+import net.osmand.search.core.SearchPhrase;
 import net.osmand.util.SearchAlgorithms;
 
 
-//DONE TEST
+
+// OTHER TASKS
+// TODO Check file sizes 
+// 1. REVIEW ADD_TOP_X_FREQ_WORDS (many common?)
+// 2. REVIEW added bbox31 size
+// 3. REVIEW if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
+//    - 2-га Нова (2 Нова), Бульварно-Кудрявська
+
+// DONE TEST
 // TODO same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
+// TODO index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048 bytes[2] >= 1
 
-// GENERATION !
-
-// TODO index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048
+////////////////////////
 // TODO "2-га Нова вулиця" - split by "-"?
 
-// TODO Check file sizes??
-////////////////////////
 // BBOX EEFFICIENCY
-// TODO !!! implement for tokens READ_COMMON_WORDS = false;
+// TODO !!! implement for tokens READ_COMMON_WORDS = false; Нова вулиця very slow!
 
 // TODO merge boundaries bbox - extend incomplete boundary same id...
 // TODO Load objects by groups file order efficiently!
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO sort tokens by actual frequency (do not use common words)
 
-// TODO don't compute all combinations...
-// TODO don't read objects while preparing tokens ? id duplicate between maps?
-// TODO in the end recheck bbox boundary after load coordinates 31 (not 15)
+// OTPIMIZATIONS
+// TODO ? don't compute all combinations...
+// TODO ? don't read objects while preparing tokens ? id duplicate between maps?
+// TODO ? in the end recheck bbox boundary after load coordinates 31 (not 15)
 
 // FEATURES
 // TODO read buildings
@@ -92,7 +99,21 @@ import net.osmand.util.SearchAlgorithms;
 public class SpatialTextSearch {
 	
 	private static final int LIMIT_PRINT = 100;
-	public static boolean DEDUPLICATE_RES = true;
+	
+	public static class SpatialTextSearchSettings {
+		
+		public static boolean SEARCH_POI = true;
+
+		public static boolean DEDUPLICATE_RES = true;
+
+		// READ OBJECTS to reduce number of duplicates needs to be tested performance 
+		public static boolean READ_ADDR_OBJECTS = false;
+		
+		public static boolean READ_POI_OBJECTS = false; // mostly slows down 
+		
+		public static int LIMIT_ATOMIC_OBJECTS = 2;
+
+	}
 	
 	public static class SpatialSearchFileCache {
 		public int fileInd = -1; // changing each session - not concurrent !!!
@@ -144,7 +165,8 @@ public class SpatialTextSearch {
 
 	private List<SpatialSearchToken> splitWords(String input) {
 		List<String> owords =new ArrayList<String>();
-		List<String> words = SearchAlgorithms.splitAndNormalizeSearchQuery(input, owords);
+		// split by hyphen as we supposed to index them separately
+		List<String> words = SearchAlgorithms.splitAndNormalize(input, owords);
 		List<SpatialSearchToken> tokens = new ArrayList<>();
 		for (int order = 0; order < words.size(); order++) {
 			String w = words.get(order);
@@ -227,7 +249,7 @@ public class SpatialTextSearch {
 			ctx.stats.atoms -= System.nanoTime();
 			res.mainResult.loadObjects(ctx);
 			ctx.stats.atoms += System.nanoTime();
-			res.mainResult.sortResults(DEDUPLICATE_RES);
+			res.mainResult.sortResults(SpatialTextSearchSettings.DEDUPLICATE_RES);
 		}
 		return res;
 	}
@@ -287,7 +309,7 @@ public class SpatialTextSearch {
 	}
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
-		DEDUPLICATE_RES = true;
+		SpatialTextSearchSettings.DEDUPLICATE_RES = true;
 		File folder = new File("/Users/victorshcherb/osmand/maps/");
 		String pattern = "Germany_b";
 		String query = "Berlin hauptstrasse"; // slow 
@@ -306,13 +328,16 @@ public class SpatialTextSearch {
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-		pattern = "Ukraine_";
-//		query = "нова пошта Бульварно кудрявс.";
-//		query = "kyiv Бульварно кудряв.";
+		pattern = "Ukraine_kyiv-";
+//		pattern = "Map";
+		query = "нова пошта Бульварно-кудрявс.";
+		query = "2 нова вулиця";
+//		query = "Бульварно-кудрявс.";
 		// TODO Бульварно-Кудрявська (not searching), 2-га? (searching?)
+//		query = "2 Нова вулиця"; 
 //		query = "Ukraine kyiv saks.";
 //		query = "Ukraine Київ";
-		query = "пузата хата mcdonal.";
+//		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 53";
 		
 		// TODO Catedral-Basílica de Nuestra Señora del Pilar

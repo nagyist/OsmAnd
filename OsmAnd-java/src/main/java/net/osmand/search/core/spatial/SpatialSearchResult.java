@@ -111,7 +111,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			if (atom.object != null) {
 				return String.format("%s %s (%s) %.4f %.4f ", words, 
 						atom.typeStr() + " " + atom.object.getName(), 
-						"" + (atom.object instanceof Street ? atom.object.getId() : ObfConstants.getOsmObjectId(atom.object)) 
+						"" + ObfConstants.getOsmObjectId(atom.object) 
 								//+ " " + atom.id,
 						, atom.object.getLocation().getLatitude(), atom.object.getLocation().getLongitude());
 			}

@@ -10,6 +10,7 @@ import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
+import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 
 public class SpatialSearchResultsList implements Comparable<SpatialSearchResultsList> {
 	final SpatialSearchToken[] tokens; // non modifieable!
@@ -183,7 +184,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		// ignore multiple atomic objects intersections POI / Streets > 2!
 		if (a.atomicObject()) {
 			// check limit atomic objects to add
-			List<Long> objects = new ArrayList<Long>(SpatialSearchContext.LIMIT_ATOMIC_OBJECTS);
+			List<Long> objects = new ArrayList<Long>(SpatialTextSearchSettings.LIMIT_ATOMIC_OBJECTS);
 			objects.add(a.id);
 			for (int i = 0; parent != null && i < parent.tCount; i++) {
 				NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
@@ -192,7 +193,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 						objects.add(pa.id);
 					}
 				}
-				if (objects.size() > SpatialSearchContext.LIMIT_ATOMIC_OBJECTS) {
+				if (objects.size() > SpatialTextSearchSettings.LIMIT_ATOMIC_OBJECTS) {
 					return false;
 				}
 			}

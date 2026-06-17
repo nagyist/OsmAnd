@@ -21,6 +21,7 @@ import net.osmand.util.SearchAlgorithms;
 public class SpatialSearchToken {
 	public static final int POI_TYPE = -1;
 	public static final int STREET_TYPE = CityBlocks.STREET_TYPE.index;
+	public static final String DOT_INCOMPLETE_STRING = ".";
 
 	int originalOrder = 0;
 	int sortedOrder = 0;
@@ -37,7 +38,7 @@ public class SpatialSearchToken {
 		originalWord = original;
 		word = w;
 		this.originalOrder = order;
-		if (w.endsWith(".")) {
+		if (w.endsWith(DOT_INCOMPLETE_STRING)) {
 			collator = new CollatorStringMatcher(w, StringMatcherMode.CHECK_STARTS_FROM_SPACE);
 		} else {
 			collator = new CollatorStringMatcher(w, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);

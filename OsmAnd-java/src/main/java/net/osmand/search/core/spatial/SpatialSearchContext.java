@@ -17,17 +17,10 @@ import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtomXY;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchFileCache;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchGlobalCache;
+import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.SearchAlgorithms;
 
 public class SpatialSearchContext {
-
-	public static boolean SEARCH_POI = true;
-
-	public static boolean READ_POI_OBJECTS = false; // FIXME review read
-	public static boolean READ_ADDR_OBJECTS = true;
-
-
-	public static int LIMIT_ATOMIC_OBJECTS = 2;
 
 	private static int SHIFT_FILE_IND = 12; // maximum files 4096
 	private static int SHIFT_POI_IND = 10; // maximum poi 1024
@@ -147,12 +140,12 @@ public class SpatialSearchContext {
 					continue;
 				}
 				MapObject obj = null;
-				if (READ_ADDR_OBJECTS) {
+				if (SpatialTextSearchSettings.READ_ADDR_OBJECTS) {
 					obj = readAddrObject(lid, pid);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, pid, obj, allTokens);
 			}
-		} else if (SEARCH_POI) {
+		} else if (SpatialTextSearchSettings.SEARCH_POI) {
 			for (OsmAndPoiNameIndexDataAtom a : prefix.poi.getAtomsList()) {
 				if(a.getPoiIndInBlockCount() == 0 ) {
 					// intermediate version ignore
@@ -161,7 +154,7 @@ public class SpatialSearchContext {
 				long lid = makePoiId(indInd, BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()),
 						a.getPoiIndInBlock(0));
 				MapObject amenity = null;
-				if (READ_POI_OBJECTS) {
+				if (SpatialTextSearchSettings.READ_POI_OBJECTS) {
 					amenity = readPoiObject(lid);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, null, a, lid, 0, amenity, allTokens);
