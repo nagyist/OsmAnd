@@ -1,8 +1,16 @@
 package net.osmand.plus.plugins.audionotes;
 
+import static net.osmand.plus.media.CameraRecorder.AV_CAMERA_FOCUS_AUTO;
+import static net.osmand.plus.media.CameraRecorder.AV_CAMERA_FOCUS_CONTINUOUS;
+import static net.osmand.plus.media.CameraRecorder.AV_CAMERA_FOCUS_EDOF;
+import static net.osmand.plus.media.CameraRecorder.AV_CAMERA_FOCUS_HIPERFOCAL;
+import static net.osmand.plus.media.CameraRecorder.AV_CAMERA_FOCUS_INFINITY;
+import static net.osmand.plus.media.CameraRecorder.AV_CAMERA_FOCUS_MACRO;
 import static net.osmand.plus.myplaces.MyPlacesActivity.TAB_ID;
 import static net.osmand.plus.plugins.PluginInfoFragment.PLUGIN_INFO;
-import static net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin.*;
+import static net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin.EXTERNAL_PHOTO_CAM_SETTING_ID;
+import static net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin.EXTERNAL_RECORDER_SETTING_ID;
+import static net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin.NOTES_TAB;
 
 import android.Manifest;
 import android.content.Context;
@@ -30,6 +38,8 @@ import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.media.AudioRecorder;
+import net.osmand.plus.media.CameraRecorder;
+import net.osmand.plus.media.MediaCaptureHelper;
 import net.osmand.plus.plugins.PluginsHelper;
 import net.osmand.plus.profiles.SelectCopyAppModeBottomSheet;
 import net.osmand.plus.profiles.SelectCopyAppModeBottomSheet.CopyAppModePrefsListener;
@@ -66,7 +76,9 @@ public class MultimediaNotesFragment extends BaseSettingsFragment implements Cop
 	private static final String OPEN_NOTES = "open_notes";
 
 	private final AudioVideoNotesPlugin plugin = PluginsHelper.requirePlugin(AudioVideoNotesPlugin.class);
-	private final AudioRecorder audioRecorder = plugin.getAudioRecorder();
+	private final MediaCaptureHelper mediaCaptureHelper = plugin.getMediaCaptureHelper();
+	private final AudioRecorder audioRecorder = mediaCaptureHelper.getAudioRecorder();
+	private final CameraRecorder cameraRecorder = mediaCaptureHelper.getCameraRecorder();
 	private final RecordingsFileHelper recordingsFileHelper = plugin.getRecordingsFileHelper();
 
 	private boolean showSwitchProfile;
@@ -123,10 +135,10 @@ public class MultimediaNotesFragment extends BaseSettingsFragment implements Cop
 	private void setupCameraPhotoPrefs() {
 		Camera cam = openCamera();
 		setupCameraPermissionPref(cam);
-		setupExternalPhotoCamPref(cam, plugin);
-		setupCameraPictureSizePref(cam, plugin);
-		setupCameraFocusTypePref(cam, plugin);
-		setupPhotoPlaySoundPref(cam, plugin);
+		setupExternalPhotoCamPref(cam);
+		setupCameraPictureSizePref(cam);
+		setupCameraFocusTypePref(cam);
+		setupPhotoPlaySoundPref(cam);
 		if (cam != null) {
 			cam.release();
 		}
@@ -142,7 +154,7 @@ public class MultimediaNotesFragment extends BaseSettingsFragment implements Cop
 		cameraPermission.setVisible(cam == null && !permissionGranted);
 	}
 
-	private void setupExternalPhotoCamPref(Camera cam, AudioVideoNotesPlugin plugin) {
+	private void setupExternalPhotoCamPref(Camera cam) {
 		ApplicationMode appMode = getSelectedAppMode();
 		boolean useSystemCameraApp = plugin.AV_EXTERNAL_PHOTO_CAM.getModeValue(appMode);
 		Preference uiPreference = findPreference(EXTERNAL_PHOTO_CAM_SETTING_ID);
@@ -151,8 +163,8 @@ public class MultimediaNotesFragment extends BaseSettingsFragment implements Cop
 		uiPreference.setEnabled(cam != null);
 	}
 
-	private void setupCameraPictureSizePref(Camera cam, AudioVideoNotesPlugin plugin) {
-		ListPreferenceEx cameraPictureSize = findPreference(plugin.AV_CAMERA_PICTURE_SIZE.getId());
+	private void setupCameraPictureSizePref(Camera cam) {
+		ListPreferenceEx cameraPictureSize = findPreference(cameraRecorder.AV_CAMERA_PICTURE_SIZE.getId());
 		cameraPictureSize.setDescription(R.string.av_camera_pic_size_descr);
 		cameraPictureSize.setIcon(getPersistentPrefIcon(R.drawable.ic_action_picture_size));
 
@@ -194,7 +206,8 @@ public class MultimediaNotesFragment extends BaseSettingsFragment implements Cop
 			}
 		}
 		// set default photo size to max resolution (set index of element with max resolution in List, returned by getSupportedPictureSizes() )
-		cameraPictureSizeDefault = picSizesValues.get(0);
+		int cameraPictureSizeDefault = picSizesValues.get(0);
+		cameraRecorder.setCameraPictureSizeDefault(cameraPictureSizeDefault);
 		log.debug("onCreate() set cameraPictureSizeDefault=" + cameraPictureSizeDefault);
 
 		List<String> itemsPicSizes = new ArrayList<String>();
@@ -222,7 +235,7 @@ public class MultimediaNotesFragment extends BaseSettingsFragment implements Cop
 		if (entries.length > 0) {
 			cameraPictureSize.setEntries(entries);
 			cameraPictureSize.setEntryValues(entryValues);
-			if ((Integer) cameraPictureSize.getValue() == AV_PHOTO_SIZE_DEFAULT) {
+			if ((Integer) cameraPictureSize.getValue() == CameraRecorder.AV_PHOTO_SIZE_DEFAULT) {
 				cameraPictureSize.setValueIndex(0);
 				updatePreference(cameraPictureSize);
 			}
@@ -231,8 +244,8 @@ public class MultimediaNotesFragment extends BaseSettingsFragment implements Cop
 		}
 	}
 
-	private void setupCameraFocusTypePref(Camera cam, AudioVideoNotesPlugin plugin) {
-		ListPreferenceEx cameraFocusType = findPreference(plugin.AV_CAMERA_FOCUS_TYPE.getId());
+	private void setupCameraFocusTypePref(Camera cam) {
+		ListPreferenceEx cameraFocusType = findPreference(cameraRecorder.AV_CAMERA_FOCUS_TYPE.getId());
 		cameraFocusType.setDescription(R.string.av_camera_focus_descr);
 		cameraFocusType.setIcon(getPersistentPrefIcon(R.drawable.ic_action_camera_focus));
 
@@ -286,19 +299,19 @@ public class MultimediaNotesFragment extends BaseSettingsFragment implements Cop
 		}
 	}
 
-	private void setupPhotoPlaySoundPref(Camera cam, AudioVideoNotesPlugin plugin) {
+	private void setupPhotoPlaySoundPref(Camera cam) {
 		Drawable disabled = getContentIcon(R.drawable.ic_action_music_off);
 		Drawable enabled = getActiveIcon(R.drawable.ic_type_audio);
 		Drawable icon = getPersistentPrefIcon(enabled, disabled);
 
-		SwitchPreferenceEx uiPreference = findPreference(plugin.AV_PHOTO_PLAY_SOUND.getId());
+		SwitchPreferenceEx uiPreference = findPreference(cameraRecorder.AV_PHOTO_PLAY_SOUND.getId());
 		uiPreference.setDescription(getString(R.string.av_photo_play_sound_descr));
 		uiPreference.setIcon(icon);
 		uiPreference.setEnabled(cam != null);
 
 		ApplicationMode appMode = getSelectedAppMode();
 		boolean useOsmAndCamera = !plugin.AV_EXTERNAL_PHOTO_CAM.getModeValue(appMode);
-		boolean shouldShowPreference = useOsmAndCamera && canDisableShutterSound();
+		boolean shouldShowPreference = useOsmAndCamera && CameraRecorder.canDisableShutterSound();
 		uiPreference.setVisible(shouldShowPreference);
 	}
 
@@ -372,7 +385,7 @@ public class MultimediaNotesFragment extends BaseSettingsFragment implements Cop
 		String[] entries = qNames.toArray(new String[0]);
 		Integer[] entryValues = qValues.toArray(new Integer[0]);
 
-		ListPreferenceEx videoQuality = findPreference(plugin.AV_VIDEO_QUALITY.getId());
+		ListPreferenceEx videoQuality = findPreference(cameraRecorder.AV_VIDEO_QUALITY.getId());
 		videoQuality.setEntries(entries);
 		videoQuality.setEntryValues(entryValues);
 		videoQuality.setDescription(R.string.av_video_quality_descr);
