@@ -115,4 +115,11 @@ data class FormattedCoordinate(
 	val format: CoordinateFormat,
 	val text: String,
 	val primary: Boolean
-)
+) {
+	companion object {
+		@JvmStatic
+		fun plain(text: String): FormattedCoordinate {
+			return FormattedCoordinate(CoordinateFormat.unknown(""), text, false)
+		}
+	}
+}
