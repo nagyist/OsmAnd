@@ -46,6 +46,12 @@ public abstract class BaseCoordinateFormatFragment extends BaseFullScreenFragmen
 	}
 
 	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		AndroidUtils.addStatusBarPadding21v(requireActivity(), view);
+	}
+
+	@Override
 	public boolean getContentStatusBarNightMode() {
 		return nightMode;
 	}
