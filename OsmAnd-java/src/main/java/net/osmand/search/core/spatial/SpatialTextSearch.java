@@ -21,12 +21,12 @@ import net.osmand.map.OsmandRegions;
 import net.osmand.util.SearchAlgorithms;
 
 
-
+//DONE TEST
+// TODO same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
 
 // GENERATION !
 
 // TODO index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048
-// TODO same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
 // TODO "2-га Нова вулиця" - split by "-"?
 
 // TODO Check file sizes??
@@ -57,7 +57,7 @@ import net.osmand.util.SearchAlgorithms;
 // POI CATEGORIES 
 // TODO Read all top poi categories for files
 // TODO implement categories
-// TODO World basemap
+// TODO World basemap ! POI
 
 // SPECIAL CASES
 // TODO Abbreviations Phase
@@ -307,16 +307,15 @@ public class SpatialTextSearch {
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
 		pattern = "Ukraine_";
-		query = "нова пошта Бульварно кудрявс.";
+//		query = "нова пошта Бульварно кудрявс.";
 //		query = "kyiv Бульварно кудряв.";
 		// TODO Бульварно-Кудрявська (not searching), 2-га? (searching?)
-		// Catedral-Basílica de Nuestra Señora del Pilar
-		// TODO №59 (366443448) missing?
 //		query = "Ukraine kyiv saks.";
-//		query = "Ukraine kyiv";
-//		query = "пузата хата mcdonal.";
+//		query = "Ukraine Київ";
+		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 53";
 		
+		// TODO Catedral-Basílica de Nuestra Señora del Pilar
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";
 		

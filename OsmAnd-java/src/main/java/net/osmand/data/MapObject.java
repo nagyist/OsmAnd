@@ -117,8 +117,8 @@ public abstract class MapObject implements Comparable<MapObject> {
 		}
 		if (names != null) {
 			for (String key : names.keySet()) {
-				// skip name:place, name:admin_level...
-				if (key.equals("admin_level") || key.equals("place")) {
+				// skip name:place, name:admin_level... (for search and indexing!)
+				if (key.equals("admin_level") || key.equals("place") || key.contains("etymology")) {
 					continue;
 				}
 				String name = names.get(key);

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.ObfConstants;
 import net.osmand.data.MapObject;
 import net.osmand.data.Street;
@@ -89,11 +90,14 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		public int typeOrder() {
 			if (atom.type == SpatialSearchToken.POI_TYPE) {
 				return 0;
-			}
-			if (atom.type == SpatialSearchToken.POI_TYPE) {
+			} else if (atom.type == SpatialSearchToken.STREET_TYPE) {
 				return 1;
+			} else if(atom.type == CityBlocks.POSTCODES_TYPE.index) {
+				return 2;
+			} else if(atom.type == CityBlocks.BOUNDARY_TYPE.index) {
+				return 5;
 			}
-			return 2;
+			return 3;
 		}
 		
 
@@ -138,15 +142,16 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		if (res != 0) {
 			return res;
 		}
+		res = Integer.compare(sumOther(), o.sumOther());
+		if (res != 0) {
+			return res;
+		}
 		res = -Integer.compare(sumTypeOrder(), o.sumTypeOrder());
 		if (res != 0) {
 			return res;
 		}
 		
-		res = Integer.compare(sumOther(), o.sumOther());
-		if (res != 0) {
-			return res;
-		}
+		
 		return -Integer.compare(parentInd, o.parentInd);
 	}
 }
