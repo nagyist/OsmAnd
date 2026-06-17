@@ -642,6 +642,16 @@ public class NameIndexReader {
 		}
 		String alignedKey = CollatorStringMatcher.alignChars(key);
 		boolean match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedKey, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
+		if (!match) {
+			int hyphen = -1;
+			while ((hyphen = alignedKey.indexOf('-', hyphen + 1)) != -1) {
+				match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedKey.substring(0, hyphen),
+						StringMatcherMode.CHECK_ONLY_STARTS_WITH);
+				if (match) {
+					break;
+				}
+			}
+		}
 //		match = query.startsWith(key);
 		if (!match && query.endsWith(".")) {
 			String queryStar = query.substring(0, query.length() - 1);

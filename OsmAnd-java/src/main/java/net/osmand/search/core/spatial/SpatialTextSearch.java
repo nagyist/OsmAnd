@@ -18,34 +18,32 @@ import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.CommonWords;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
-import net.osmand.search.core.SearchPhrase;
 import net.osmand.util.SearchAlgorithms;
 
 
 
-// OTHER TASKS
-// TODO Check file sizes 
+//////////// OTHER TASKS ///////
+// Check file sizes: 
 // 1. REVIEW ADD_TOP_X_FREQ_WORDS (many common?)
 // 2. REVIEW added bbox31 size
 // 3. REVIEW if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
 //    - 2-га Нова (2 Нова), Бульварно-Кудрявська
 
 // DONE TEST
-// TODO same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
-// TODO index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048 bytes[2] >= 1
+// Same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
+// Index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048 bytes[2] >= 1
+// "2-га Нова вулиця" - split by "-"?
 
-////////////////////////
-// TODO "2-га Нова вулиця" - split by "-"?
-
+/////////////////////////////////
 // BBOX EEFFICIENCY
 // TODO !!! implement for tokens READ_COMMON_WORDS = false; Нова вулиця very slow!
-
-// TODO merge boundaries bbox - extend incomplete boundary same id...
 // TODO Load objects by groups file order efficiently!
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO sort tokens by actual frequency (do not use common words)
 
+
 // OTPIMIZATIONS
+// TODO merge boundaries bbox - extend incomplete boundary same id...
 // TODO ? don't compute all combinations...
 // TODO ? don't read objects while preparing tokens ? id duplicate between maps?
 // TODO ? in the end recheck bbox boundary after load coordinates 31 (not 15)
@@ -330,8 +328,7 @@ public class SpatialTextSearch {
 		
 		pattern = "Ukraine_kyiv-";
 //		pattern = "Map";
-		query = "нова пошта Бульварно-кудрявс.";
-		query = "2 нова вулиця";
+//		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
 		// TODO Бульварно-Кудрявська (not searching), 2-га? (searching?)
 //		query = "2 Нова вулиця"; 
