@@ -16,6 +16,7 @@ import net.osmand.data.LatLon;
 import net.osmand.data.PointDescription;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
+import net.osmand.plus.media.MediaFileUtils;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.util.Algorithms;
 
@@ -122,7 +123,7 @@ public class Recording {
 		lat = latLon.getLatitude();
 		lon = latLon.getLongitude();
 		if (directory != null) {
-			File to = RecordingsFileHelper.getBaseFileName(lat, lon, directory, Algorithms.getFileExtension(file));
+			File to = MediaFileUtils.getBaseFileName(lat, lon, directory, Algorithms.getFileExtension(file));
 			if (file.renameTo(to)) {
 				file = to;
 				return true;
