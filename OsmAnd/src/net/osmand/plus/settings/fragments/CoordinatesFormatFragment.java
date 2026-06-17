@@ -11,6 +11,7 @@ import android.widget.TextView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -133,10 +134,12 @@ public class CoordinatesFormatFragment extends BaseCoordinateFormatFragment
 
 	private void showOverflowMenu(@NonNull View anchor) {
 		PopupMenu popupMenu = new PopupMenu(requireContext(), anchor);
+		MenuBuilder menuBuilder = (MenuBuilder) popupMenu.getMenu();
+		menuBuilder.setOptionalIconsVisible(true);
 		popupMenu.getMenu().add(0, R.string.reset_to_default, 0, R.string.reset_to_default)
-				.setIcon(R.drawable.ic_action_reset_to_default_dark);
+				.setIcon(getContentIcon(R.drawable.ic_action_reset));
 		popupMenu.getMenu().add(0, R.string.copy_from_other_profile, 1, R.string.copy_from_other_profile)
-				.setIcon(R.drawable.ic_action_copy);
+				.setIcon(getContentIcon(R.drawable.ic_action_copy));
 		popupMenu.setOnMenuItemClickListener(item -> {
 			if (item.getItemId() == R.string.reset_to_default) {
 				resetToDefault();
