@@ -700,14 +700,19 @@ public class MenuBuilder {
 		double latitude = latLon.getLatitude();
 		double longitude = latLon.getLongitude();
 		List<FormattedCoordinate> coordinateRows = PointDescription.getPreferredLocationData(mapActivity, latitude, longitude);
+		Map<Integer, String> legacyLocationData = PointDescription.getLocationData(mapActivity, latitude, longitude, true);
+		String shortCoordinates = legacyLocationData.get(OsmAndFormatter.FORMAT_DEGREES_SHORT);
+		String osmAndUrl = legacyLocationData.get(PointDescription.LOCATION_URL);
 		FormattedCoordinate primaryRow = coordinateRows.isEmpty() ? null : coordinateRows.get(0);
 		String title = primaryRow != null
 				? primaryRow.getText()
 				: PointDescription.getLocationName(mapActivity, latitude, longitude, true);
-		boolean collapsable = coordinateRows.size() > 1;
+		boolean collapsable = coordinateRows.size() > 1
+				|| !Algorithms.isEmpty(shortCoordinates)
+				|| !Algorithms.isEmpty(osmAndUrl);
 		buildRow(view, new BuildRowAttrs.Builder().setText(title).setIconId(R.drawable.ic_action_get_my_location)
 				.setTextPrefix(getCoordinatesRowPrefix(primaryRow)).setClipboardText(title).setCollapsable(collapsable)
-				.setCollapsableView(getLocationCollapsableView(coordinateRows))
+				.setCollapsableView(getLocationCollapsableView(coordinateRows, shortCoordinates, osmAndUrl))
 				.setTextLinesLimit(1).build());
 	}
 
@@ -1171,7 +1176,16 @@ public class MenuBuilder {
 	}
 
 	protected CollapsableView getLocationCollapsableView(List<FormattedCoordinate> coordinateRows) {
+		return getLocationCollapsableView(coordinateRows, null, null);
+	}
+
+	protected CollapsableView getLocationCollapsableView(@NonNull List<FormattedCoordinate> coordinateRows,
+	                                                     @Nullable String shortCoordinates,
+	                                                     @Nullable String osmAndUrl) {
 		LinearLayout llv = buildCollapsableContentView(mapActivity, true, true);
+		if (!Algorithms.isEmpty(shortCoordinates)) {
+			addPlainCoordinateButton(llv, shortCoordinates);
+		}
 		for (int i = 1; i < coordinateRows.size(); i++) {
 			FormattedCoordinate coordinate = coordinateRows.get(i);
 			TextViewEx button = buildButtonInCollapsableView(mapActivity, false, false);
@@ -1182,7 +1196,17 @@ public class MenuBuilder {
 			button.setOnClickListener(v -> copyToClipboard(coordinate.getText(), mapActivity));
 			llv.addView(button);
 		}
+		if (!Algorithms.isEmpty(osmAndUrl)) {
+			addPlainCoordinateButton(llv, osmAndUrl);
+		}
 		return new CollapsableView(llv, this, true);
+	}
+
+	private void addPlainCoordinateButton(@NonNull LinearLayout container, @NonNull String text) {
+		TextViewEx button = buildButtonInCollapsableView(mapActivity, false, false);
+		button.setText(text);
+		button.setOnClickListener(v -> copyToClipboard(text, mapActivity));
+		container.addView(button);
 	}
 
 	private void appendCoordinateFormatPrefix(@NonNull SpannableStringBuilder ssb,
