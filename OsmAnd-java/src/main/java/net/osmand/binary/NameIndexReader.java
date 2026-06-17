@@ -581,6 +581,22 @@ public class NameIndexReader {
 		this.bndsStat = bndsStat;
 	}
 	
+	
+	public Map<String, ValueFreq> getCommonWordsStats() {
+		Map<String, ValueFreq> mp = new HashMap<>();
+		String name = null;
+		int valueCount = commonStats.getValueCount();
+		for(int i = 0; i < valueCount; i++) {
+			name = SearchAlgorithms.nameIndexDecodeDictionarySuffix(name, commonStats.getValue(i));
+			ValueFreq vf = new ValueFreq(name, commonStats.getMatched(i));
+			vf.extra = commonStats.getMatched(i) - commonStats.getNonindexed(i);
+			ValueFreq old = mp.put(vf.value, vf);
+			if (old != null) {
+				throw new UnsupportedOperationException();
+			}
+		}
+		return mp;
+	}
 
 	public CommonIndexedStats getCommonStats() {
 		return commonStats;

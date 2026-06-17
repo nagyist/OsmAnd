@@ -49,8 +49,8 @@ public class SpatialSearchContext {
 		@Override
 		public String toString() {
 			return String.format(
-					"Search Stats %.1f ms - read tokens %.1f ms, read obj %.1f ms, match %.1f ms, comp %.1f ms",
-					time / 1e6, readTokensTime / 1e6, readObjTime / 1e6, matchTime / 1e6, computeTime / 1e6);
+					"Search Stats %.1f ms - read %.1f ms atoms (tokens %.1f ms, obj %.1f ms), match %.1f ms, comp %.1f ms",
+					time / 1e6, atoms / 1e6, readTokensTime / 1e6, readObjTime / 1e6, matchTime / 1e6, computeTime / 1e6);
 		}
 
 		public void finish() {

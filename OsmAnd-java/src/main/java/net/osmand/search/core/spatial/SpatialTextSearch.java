@@ -30,33 +30,37 @@ import net.osmand.util.SearchAlgorithms;
 // TODO "2-га Нова вулиця" - split by "-"?
 
 ////////////////////////
-// BBOX
+// BBOX EEFFICIENCY
 // TODO !!! no intersection ! Saks. rayon! (multiple boundaries)
+// TODO !!! implement for tokens READ_COMMON_WORDS = false;
+
 // TODO merge boundaries bbox - extend incomplete boundary same id...
-// TODO Load objects by groups file order effiecently!
-// FIXME merge uniq references for POI to make id 
-// TODO don't read objects while preparing tokens ?
-// TODO Ignore same embedded boundary while - deduplicate on the fly
+// TODO Load objects by groups file order efficiently!
+// TODO Ignore same embedded boundary city / county - deduplicate on the fly
+// TODO sort tokens by actual frequency (do not use common words)
+
+// TODO don't compute all combinations...
+// TODO don't read objects while preparing tokens ? id duplicate between maps?
+// TODO in the end recheck bbox boundary after load coordinates 31 (not 15)
 
 // FEATURES
 // TODO read buildings
 // TODO duplicate words in query
-// TODO sort tokens by actual frequency
 // TODO COLLATOR + Last dot [CONSTANT] as incomplete, 
 //      [NameIndexReader, SpatialSearchToken] 
+
+
+// CACHE
+// TODO Cache POI block read, cache city index !
+// TODO Evict - NameIndexReader in caches ( > 200 - indexByRef, matchedKeys) full clear
 
 // POI CATEGORIES 
 // TODO Read all top poi categories for files
 // TODO implement categories
-
-// CACHE
-// TODO implement for tokens READ_COMMON_WORDS = false;
-// TODO Cache POI block read, cache city index
-// TODO Evict - NameIndexReader in caches ( > 200 - indexByRef, matchedKeys) full clear
-
+// TODO World basemap
 
 // SPECIAL CASES
-// TODO Abbreviations
+// TODO Abbreviations Phase
 // TODO Street intersection match
 // TODO Sugggestion-correction
 // TODO Progress / cancel
@@ -80,13 +84,16 @@ import net.osmand.util.SearchAlgorithms;
 // 5.3 Expand POI categories
 
 // Search categories
+// MAPS ITERATION 1 - close up, 2 - larger radius 
 // Phase I - only rare + words replaced abbreviations
 // Phase II - all words + replaced abbreviations
 // Phase III - all words + replaced abbreviations
 
 public class SpatialTextSearch {
 	
-
+	private static final int LIMIT_PRINT = 10;
+	public static boolean DEDUPLICATE_RES = false;
+	
 	public static class SpatialSearchFileCache {
 		public int fileInd = -1; // changing each session - not concurrent !!!
 		public int indexInd = -1; // changing each session - not concurrent !!!
@@ -129,7 +136,9 @@ public class SpatialTextSearch {
 		public SpatialSearchResultsList mainResult;
 		
 		public List<SpatialSearchResultsList> combinations;
-	}	
+	}
+
+		
 	
 	SpatialSearchGlobalCache cache = new SpatialSearchGlobalCache(); // reusable between sessions
 
@@ -145,6 +154,7 @@ public class SpatialTextSearch {
 	}
 	
 	private void sortTokens(List<SpatialSearchToken> tokens) {
+		// TODO donot use common words class
 		Collections.sort(tokens, new Comparator<SpatialSearchToken>() {
 			@Override
 			public int compare(SpatialSearchToken o1, SpatialSearchToken o2) {
@@ -218,33 +228,40 @@ public class SpatialTextSearch {
 		res.input = input;
 		// 1. prepare tokens
 		res.tokens = splitWords(input);
+
 		// 2. read atoms
 		ctx.stats.atoms -= System.nanoTime();
 		ctx.readAtoms(res.tokens);
 		ctx.stats.atoms += System.nanoTime();
+		
 		// 3. sort tokens 
 		sortTokens(res.tokens);
+		
 		// 4. find combinations
 		ctx.stats.computeTime -= System.nanoTime();
 		res.combinations = findObjCombinations(res.tokens);
+		ctx.stats.computeTime += System.nanoTime();
 		// 5. sort combinations, load objects, objects and filter duplicate
 		Collections.sort(res.combinations);
 		if (res.combinations.size() > 0) {
 			res.mainResult = res.combinations.get(0);
+			ctx.stats.atoms -= System.nanoTime();
 			res.mainResult.loadObjects(ctx);
-			res.mainResult.sortResults(true);
+			ctx.stats.atoms += System.nanoTime();
+			res.mainResult.sortResults(DEDUPLICATE_RES);
 		}
-		ctx.stats.computeTime += System.nanoTime();
 		return res;
 	}
 
 
 	public void searchTest(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = searchAPI(input, ctx);
+		ctx.stats.finish();
 		if (res.mainResult != null) {
 			System.out.println("--------");
 			System.out.println("Main: " + res.mainResult);
-			int limit = 1000;
+			int limit = LIMIT_PRINT;
+			int all = res.mainResult.getCombinations();
 			for (SpatialSearchResult r : res.mainResult.getResult()) {
 				if (limit-- < 0) {
 					System.out.println(".............");
@@ -252,7 +269,9 @@ public class SpatialTextSearch {
 				}
 				System.out.println(r);
 			}
+			int unique = res.mainResult.sortResults(true).size();
 			System.out.println("--------");
+			System.out.printf("--- ALL %d results, unique %d\n", all, unique);
 		}
 		
 		System.out.println("\nTokens: " + res.tokens);
@@ -264,7 +283,7 @@ public class SpatialTextSearch {
 			}
 		}
 		
-		ctx.stats.finish();
+		
 		System.out.println(ctx.stats);
 		System.out.println();
 	}
@@ -281,14 +300,15 @@ public class SpatialTextSearch {
 	}
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
+		DEDUPLICATE_RES = true;
 		File folder = new File("/Users/victorshcherb/osmand/maps/");
-		String pattern = "Germany_baden";
-		String query = "Berlin hauptstrasse";
+		String pattern = "Germany_b";
+		String query = "Berlin hauptstrasse"; // slow 
 		query = "Kelterstraße Kernen im Remstal";
 		query = "Germany Kelter. Kernen im Remstal";
 		
-		pattern = "Us_";
-		query = "Salt Lake City Pennsylvania Street";
+//		pattern = "Us_";
+//		query = "Salt Lake City Pennsylvania Street";
 		
 //		pattern = "Liechtenstein_europe.obf";
 //		query = "Vaduz Lettstrasse";
@@ -297,11 +317,12 @@ public class SpatialTextSearch {
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-//		pattern = "Ukraine";
-//		query = "нова пошта Бульварно Кудрявська"; 
+		pattern = "Ukraine";
+		query = "нова пошта Бульварно Кудрявська"; 
 		// TODO Бульварно-Кудрявська, 2-га?
 		// TODO №59 (366443448)?
-//		query = "kyiv saks."; 
+//		query = "Ukraine kyiv saks.";
+//		query = "Ukraine kyiv";
 //		query = "пузата хата mcdonal.";
 		long t = System.nanoTime();
 		

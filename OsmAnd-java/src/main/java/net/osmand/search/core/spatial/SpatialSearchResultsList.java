@@ -83,9 +83,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 
 	public List<SpatialSearchResult> sortResults(boolean deduplicate) {
-		if (finalResult == null) {
-			finalResult = new ArrayList<>(tileIds.size());
-		}
+		finalResult = new ArrayList<>(tileIds.size());
 		for (int i = 0; i < tileIds.size(); i++) {
 			finalResult.add(new SpatialSearchResult(this, i));
 		}		

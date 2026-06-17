@@ -151,14 +151,18 @@ public class SpatialSearchToken {
 			return type == STREET_TYPE || type == POI_TYPE;  
 		}
 		
-		String simpleName(String name) {
+		String typeStr() {
 			String typeS = "";
-			if (type == -1) {
+			if (type == POI_TYPE) {
 				typeS = "POI";
 			} else {
 				typeS = CityBlocks.getByType(type).toString();
 			}
-			return String.format("%s %s %d (%.4f, %.4f)", typeS, name, (id % 0xffff),
+			return typeS;
+		}
+		
+		String simpleName(String name) {
+			return String.format("%s %s %d (%.4f, %.4f)", typeStr(), name, (id % 0xffff),
 					MapUtils.get31LatitudeY(coords.y16 << 15), MapUtils.get31LongitudeX(coords.x16 << 15));
 		}
 		
