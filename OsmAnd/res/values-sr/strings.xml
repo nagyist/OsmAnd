@@ -6165,4 +6165,18 @@
     <string name="coordinate_format_select_other">Изаберите други формат</string>
     <string name="coordinate_format_recent">Недавно</string>
     <string name="coordinate_format_primary">Примарни</string>
+    <string name="gallery_media_playback_error">Није могуће репродуковати медиј.</string>
+    <string name="gallery_open_in">Отвори у</string>
+    <string name="gallery_seek_back_seconds">−%1$dс</string>
+    <string name="gallery_seek_forward_seconds">+%1$dс</string>
+    <string name="gallery_stats_counts">Фотографије %1$d, видео снимци %2$d, аудио %3$d.</string>
+    <string name="gallery_stats_size">Величина %1$s.</string>
+    <string name="gallery_sort_nearest">Најближе</string>
+    <string name="gallery_sort_last_modified">Последња измена</string>
+    <string name="gallery_sort_name_a_z">Име А - З</string>
+    <string name="gallery_sort_name_z_a">Име З - А</string>
+    <string name="gallery_sort_newest_first">Најпре најновији датум</string>
+    <string name="gallery_sort_oldest_first">Најпре најстарији датум</string>
+    <string name="gallery_sort_duration_long_short">Најпре најдуже трајање</string>
+    <string name="gallery_sort_duration_short_long">Најпре најкраће трајање</string>
 </resources>

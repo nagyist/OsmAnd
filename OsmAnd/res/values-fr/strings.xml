@@ -6088,4 +6088,18 @@
     <string name="coordinate_format_select_other">Choisissez un autre format</string>
     <string name="coordinate_format_recent">Récents</string>
     <string name="coordinate_format_primary">Primaire</string>
+    <string name="gallery_media_playback_error">Impossible de lire le fichier multimédia.</string>
+    <string name="gallery_open_in">Ouvrir avec</string>
+    <string name="gallery_seek_back_seconds">−%1$ds</string>
+    <string name="gallery_seek_forward_seconds">+%1$ds</string>
+    <string name="gallery_stats_counts">%1$d photos, %2$d vidéos, %3$d fichiers audio.</string>
+    <string name="gallery_stats_size">Taille %1$s.</string>
+    <string name="gallery_sort_last_modified">Dernière modification</string>
+    <string name="gallery_sort_nearest">Le plus proche</string>
+    <string name="gallery_sort_name_a_z">Nom de A à Z</string>
+    <string name="gallery_sort_name_z_a">Nom de Z à A</string>
+    <string name="gallery_sort_newest_first">Du plus récente à la plus ancienne</string>
+    <string name="gallery_sort_oldest_first">De la plus ancienne à la plus récente</string>
+    <string name="gallery_sort_duration_long_short">Par ordre décroissant de durée</string>
+    <string name="gallery_sort_duration_short_long">Par ordre croissant de durée</string>
 </resources>
