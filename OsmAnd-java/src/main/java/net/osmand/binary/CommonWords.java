@@ -70,6 +70,15 @@ public class CommonWords {
 	}
 
 	public static int getCommonSearch(String name) {
+		boolean startsWithDigit = false;
+		for (int i = 0; i < name.length(); i++) {
+			if (Character.isDigit(name.charAt(i))) {
+				startsWithDigit = true;
+				break;
+			} else if (Character.isLetter(name.charAt(i))) {
+				break;
+			}
+		}
 		if (SearchAlgorithms.isNumber2Letters(name)) {
 			name = NUMBER_WITH_LESS_THAN_2_LETTERS;
 		}

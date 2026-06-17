@@ -41,8 +41,9 @@ import net.osmand.util.SearchAlgorithms;
 
 /////////////////////////////////
 // TODO [[2, нова, вулиця] STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
-// TODO don't compute all combinations... (!) and do it in the right order 2^7
+//  to search buildings most complete street is needed (largest city sort?)
 
+// TODO don't compute all combinations... (!) and do it in the right order 2^7
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 
 // FEATURES
@@ -84,7 +85,7 @@ import net.osmand.util.SearchAlgorithms;
 //    It couldn't give any new complete result but could give partial results
 public class SpatialTextSearch {
 	
-	private static final int LIMIT_PRINT = 100;
+	private static final int LIMIT_PRINT = 300;
 	
 	public static class SpatialTextSearchSettings {
 		
@@ -314,8 +315,8 @@ public class SpatialTextSearch {
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-		pattern = "Ukraine_";
-//		pattern = "Map";
+		pattern = "Ukraine_kyiv";
+		pattern = "Map";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
 //		query = "2 Нова вулиця"; 
