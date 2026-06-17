@@ -102,10 +102,34 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		return finalResult;
 	}
-
-	void addResult(List<NameIndexAtom> atoms) {
-		addResult(null, 0, atoms);
+	
+	public void calculateIntersection(SpatialSearchToken token, SpatialSearchResultsList parent) {
+		if (parent.getTokenCount() == 0) {
+			addResult(null, 0, token.atoms);
+		} else {
+			// 1. iterate parent objects and find all objects from <parent>
+			//    that are fully inside object <token> or have same the same tile 
+			for (int i = 0; i < parent.tileIds.size(); i++) {
+				long tileId = parent.tileIds.get(i);
+				int zoom = parent.tileZooms.get(i);
+				final int indx = i;
+				token.quadTree.forEachMatch(zoom, tileId, t -> {
+					addResult(parent, indx, t);
+				});
+			}
+			// 2. reverse search quad tree from <token> and find objects
+			//    that are fully inside any object <parent> and not the same the same tile!
+			final SpatialSearchResultsList p = parent;
+			for (final NameIndexAtom a : token.atoms) {
+				parent.quadTree.forEachMatchHigherZoom(a.coords.bboxTileZoom, a.coords.bboxTileId, indxs -> {
+					for (int indx : indxs) {
+						addResult(p, indx, a);
+					}
+				});
+			}
+		}		
 	}
+
 
 	void addResult(SpatialSearchResultsList parent, int indx, List<NameIndexAtom> atoms) {
 		for (NameIndexAtom a : atoms) {
@@ -123,7 +147,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 
 	boolean addResult(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
 		boolean acceptIntersection = acceptIntersection(parent, pindx, a);
-		if(!acceptIntersection) {
+		if (!acceptIntersection) {
 			return false;
 		}
 		finalResult = null;
@@ -143,7 +167,20 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 
 	private boolean acceptIntersection(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
-		// ignore 2+ POI / Streets
+		// no cache for now
+		boolean intersect = true;
+		for (int i = 0; parent != null && i < parent.tCount; i++) {
+			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
+			if (!pa.coords.intersects(a.coords)) {
+				intersect = false;
+				break;
+			}
+		}
+		if (!intersect) {
+			return false;
+		}
+		
+		// ignore multiple atomic objects intersections POI / Streets > 2!
 		if (a.atomicObject()) {
 			// check limit atomic objects to add
 			List<Long> objects = new ArrayList<Long>(SpatialSearchContext.LIMIT_ATOMIC_OBJECTS);
@@ -192,4 +229,6 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	public String toString() {
 		return toString(false);
 	}
+
+	
 }

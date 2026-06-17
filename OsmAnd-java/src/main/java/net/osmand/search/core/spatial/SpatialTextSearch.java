@@ -18,20 +18,21 @@ import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.CommonWords;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
-import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.util.SearchAlgorithms;
 
 
 
 
 // GENERATION
-// TODO Check file sizes??
-// TODO same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
-// TODO "2-га Нова вулиця" - split by "-"?
 
+// TODO index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048
+// TODO same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
+
+
+// TODO Check file sizes??
+// TODO "2-га Нова вулиця" - split by "-"?
 ////////////////////////
 // BBOX EEFFICIENCY
-// TODO !!! no intersection ! Saks. rayon! (multiple boundaries)
 // TODO !!! implement for tokens READ_COMMON_WORDS = false;
 
 // TODO merge boundaries bbox - extend incomplete boundary same id...
@@ -192,28 +193,7 @@ public class SpatialTextSearch {
 				if (parent.getTokenCount() == 0 || token.sortedOrder < parent.getFirstToken().sortedOrder) {
 //					System.out.println("ITERATION Token [ " + token + " ] + " + parent);
 					SpatialSearchResultsList next = new SpatialSearchResultsList(token, parent);
-					if (parent.getTokenCount() == 0) {
-						next.addResult(token.atoms);
-					} else {
-						for (int i = 0; i < parent.tileIds.size(); i++) {
-							long tileId = parent.tileIds.get(i);
-							int zoom = parent.tileZooms.get(i);
-							final int indx = i;
-							token.quadTree.forEachMatch(zoom, tileId, t -> {
-								next.addResult(parent, indx, t);
-							});
-						}
-					}
-					// reverse search quad tree 
-					final SpatialSearchResultsList p = parent;
-					for (final NameIndexAtom a : token.atoms) {
-						parent.quadTree.forEachMatchHigherZoom(a.coords.bboxTileZoom, a.coords.bboxTileId, indxs -> {
-							for (int indx : indxs) {
-								next.addResult(p, indx, a);
-							}
-						});
-					}
-					
+					next.calculateIntersection(token, parent);
 					candidates.add(next);
 				}
 			}
@@ -270,8 +250,8 @@ public class SpatialTextSearch {
 				System.out.println(r);
 			}
 			int unique = res.mainResult.sortResults(true).size();
-			System.out.println("--------");
-			System.out.printf("--- ALL %d results, unique %d\n", all, unique);
+			System.out.printf("------ ALL %d results, unique %d ------- \n ", all, unique);
+			System.out.println("---------------------------------------");
 		}
 		
 		System.out.println("\nTokens: " + res.tokens);
@@ -280,6 +260,14 @@ public class SpatialTextSearch {
 			if (s.getTokenCount() >= 2) {
 				s.sortResults(true);
 				System.out.println("  " + s.toString(false));
+//				int limit = LIMIT_PRINT;
+//				for (SpatialSearchResult r : s.getResult()) {
+//					if (limit-- < 0) {
+//						System.out.println(".............");
+//						break;
+//					}
+//					System.out.println(r);
+//				}
 			}
 		}
 		
@@ -300,7 +288,7 @@ public class SpatialTextSearch {
 	}
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
-		DEDUPLICATE_RES = true;
+		DEDUPLICATE_RES = false;
 		File folder = new File("/Users/victorshcherb/osmand/maps/");
 		String pattern = "Germany_b";
 		String query = "Berlin hauptstrasse"; // slow 
@@ -318,14 +306,15 @@ public class SpatialTextSearch {
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
 		pattern = "Ukraine";
-		query = "нова пошта Бульварно Кудрявська"; 
-		// TODO Бульварно-Кудрявська, 2-га?
+		query = "нова пошта Бульварно кудрявс.";
+		query = "kyiv Бульварно кудряв.";
+		// TODO Бульварно-Кудрявська (not searching), 2-га? (searching?)
 		// Catedral-Basílica de Nuestra Señora del Pilar
 		// TODO №59 (366443448) missing?
 //		query = "Ukraine kyiv saks.";
 //		query = "Ukraine kyiv";
-		query = "пузата хата mcdonal.";
-		query = "Нова пошта 53";
+//		query = "пузата хата mcdonal.";
+//		query = "Нова пошта 53";
 		
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";

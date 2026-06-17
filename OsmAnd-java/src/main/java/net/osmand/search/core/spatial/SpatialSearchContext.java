@@ -23,7 +23,7 @@ public class SpatialSearchContext {
 
 	public static boolean SEARCH_POI = true;
 
-	public static boolean READ_POI_OBJECTS = false;
+	public static boolean READ_POI_OBJECTS = false; // FIXME review read
 	public static boolean READ_ADDR_OBJECTS = true;
 
 
