@@ -3,11 +3,13 @@ package net.osmand.search.core.spatial;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.binary.NameIndexReader.PrefixNameValue;
+import net.osmand.binary.NameIndexReader.ValueFreq;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.Amenity;
@@ -83,32 +85,67 @@ public class SpatialSearchContext {
 			}
 		}
 	}
+	
+	private record ReadTokens(boolean init, boolean readCommonTokens, boolean readFreqTokens) {
+		
+	}
+	
+	private ReadTokens computeReadTokens(List<SpatialSearchToken> tokens, NameIndexReader indx) {
+		Map<String, ValueFreq> frequentWords = indx.getCommonWordsStats();
+		boolean readCommonTokens = true;
+		boolean readFreqTokens = true;
+		if (frequentWords != null) {
+			for (SpatialSearchToken t : tokens) {
+				boolean number2Letters = SearchAlgorithms.isNumber2Letters(t.word);
+				if (number2Letters) {
+					continue;
+				}
+				ValueFreq freqWord = frequentWords.get(t.word);
+				if (freqWord == null) {
+					// special case token "2" could match "2-nd" atom
+					// rare word
+					if (!SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
+						readCommonTokens = false;
+					}
+					if (!SpatialTextSearchSettings.ALWAYS_READ_FREQ_WORDS_ATOMS) {
+						readFreqTokens = false;
+					}
+				} else {
+					int nonIndexed = (int) (freqWord.freq - freqWord.extra);
+					if (nonIndexed == 0) {
+						// frequent word is ok to specialize
+						if (!SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
+							readCommonTokens = false;
+						}
+					}
+				}
+			}
+		}
+		return new ReadTokens(frequentWords != null, readCommonTokens, readFreqTokens);
+	}
 
 	private void readAtoms(List<SpatialSearchToken> tokens, BinaryMapIndexReader b, NameIndexReader indx, int indxInd)
 			throws IOException {
-		
-//		boolean readAllTokens = true;
-//		if (!SpatialTextSearch.SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
-//			for (SpatialSearchToken t : tokens) {
-//				if (!t.almostNumber && t.commonNonIndexed == 0) {
-//					readAllTokens = false;
-//				}
-//			}
-//		}
+		ReadTokens read = computeReadTokens(tokens, indx);
 		for (SpatialSearchToken t : tokens) {
-//			Map<String, ValueFreq> vs = indx.getCommonWordsStats();
-//			if (vs != null) {
-//				ValueFreq vf = indx.getCommonWordsStats().get(token.word);
-//				if (vf != null) {
-//					token.frequent += vf.freq;
-//					token.commonNonIndexed += (int) (vf.freq - vf.extra);
-//				}
-//			}
-//			if ((t.commonNonIndexed > 0) && !readAllTokens) {
-//				System.out.println("___");
-//				continue;
-//			}
-
+			Map<String, ValueFreq> frequentWords = indx.getCommonWordsStats();
+			if (!read.init && frequentWords != null) {
+				read = computeReadTokens(tokens, indx);
+			}
+			boolean number2Letters = SearchAlgorithms.isNumber2Letters(t.word);
+			// always search numbers as they could be very specific - "2" token could match "2-nd" atom
+			if (!number2Letters && !read.readFreqTokens) {
+				ValueFreq freqWord = frequentWords.get(t.word);
+				if (freqWord != null) {
+					continue;
+				}
+			} else if (!number2Letters && !read.readCommonTokens) {
+				ValueFreq freqWord = frequentWords.get(t.word);
+				// non indexed > 0 common
+				if (freqWord != null && freqWord.freq - freqWord.extra > 0) {
+					continue;
+				}
+			}
 			List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
 			if (matchedPrefixes == null) {
 				stats.readTokensTime -= System.nanoTime();
@@ -155,7 +192,7 @@ public class SpatialSearchContext {
 				: prefix.poi.getSuffixesCommonDictionaryList()) {
 			commonSuffixes.add(indx.getCommonIndexed(i));
 		}
-		if (addr) {
+		if (addr && SpatialTextSearchSettings.SEARCH_ADDR) {
 			for (AddressNameIndexDataAtom a : prefix.addr.getAtomList()) {
 				long lid = makeAddrId(indInd, prefix.shift - a.getShiftToIndex(0));
 				long pid = 0;
@@ -171,14 +208,15 @@ public class SpatialSearchContext {
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, pid, obj, allTokens);
 			}
-		} else if (SpatialTextSearchSettings.SEARCH_POI) {
+		} else if (!addr && SpatialTextSearchSettings.SEARCH_POI) {
 			for (OsmAndPoiNameIndexDataAtom a : prefix.poi.getAtomsList()) {
-				if(a.getPoiIndInBlockCount() == 0 ) {
+				if (a.getPoiIndInBlockCount() == 0) {
 					// intermediate version ignore
 					continue;
 				}
 				long lid = makePoiId(indInd, BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()),
 						a.getPoiIndInBlock(0));
+				System.out.println(t.word + " " + a.getPoiIndInBlock(0));
 				MapObject amenity = null;
 				if (SpatialTextSearchSettings.READ_POI_OBJECTS) {
 					amenity = readPoiObject(lid);
@@ -207,6 +245,7 @@ public class SpatialSearchContext {
 		
 		long tm = System.nanoTime();
 		List<Amenity> lst = files.get(c.fileInd).readAmenityBlock(nameIndex.poiRegion, shift);
+		System.out.println(lst + " " + c.file + " ");
 		MapObject amenity = lst.get(poiInd);
 		stats.readObjTime += (System.nanoTime() - tm);
 		return amenity;

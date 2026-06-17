@@ -40,10 +40,9 @@ import net.osmand.util.SearchAlgorithms;
 
 /////////////////////////////////
 // EEFFICIENCY
-// TODO Catedral-Basílica de Nuestra Señora del Pilar
 // TODO !!! implement for tokens READ_COMMON_WORDS = false; Нова вулиця very slow!
-// TODO don't compute all combinations... (!) and do it in the right order
 
+// TODO don't compute all combinations... (!) and do it in the right order 2^7
 // TODO Load objects by groups file order efficiently!
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 
@@ -56,6 +55,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Progress / cancel
 // TODO Abbreviations Phase
 // TODO Sugggestion-correction
+// TODO Combine by wikidata id ?
 
 // ISSUES
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
@@ -89,19 +89,22 @@ public class SpatialTextSearch {
 	
 	public static class SpatialTextSearchSettings {
 		
+		public static boolean SEARCH_ADDR = true;
 		public static boolean SEARCH_POI = true;
 
+		// Deduplicate results in the end by checking osm id of the first object in combination
 		public static boolean DEDUPLICATE_RES = true;
 
-		// READ OBJECTS to reduce number of duplicates needs to be tested performance 
-		public static boolean READ_ADDR_OBJECTS = false;
+		// READ OBJECTS before intersection to reduce number of duplicates from different maps by osm id
+		// - needs to be tested performance mostly slows down
+		public static boolean READ_ADDR_OBJECTS = true;
+		public static boolean READ_POI_OBJECTS = true; // TODO crash
 		
-		public static boolean READ_POI_OBJECTS = false; // mostly slows down 
-		
+		// no need to find 3 street intersection or 3 POI intersection
 		public static int LIMIT_ATOMIC_OBJECTS = 2;
 		
-		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = false;
-		
+		// Performance improvement assuming for rare words we don't read common atoms 
+		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
 		public static boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
 
 	}
@@ -149,8 +152,6 @@ public class SpatialTextSearch {
 		
 		public List<SpatialSearchResultsList> combinations;
 	}
-
-		
 	
 	SpatialSearchGlobalCache cache = new SpatialSearchGlobalCache(); // reusable between sessions
 	
@@ -186,7 +187,7 @@ public class SpatialTextSearch {
 			}
 			for (SpatialSearchToken token : tokens) {
 				if (parent.getTokenCount() == 0 || token.sortedOrder < parent.getFirstToken().sortedOrder) {
-					System.out.println("ITERATION Token [ " + token + " ] + " + parent);
+//					System.out.println("ITERATION Token [ " + token + " ] + " + parent);
 					SpatialSearchResultsList next = new SpatialSearchResultsList(token, parent);
 					next.calculateIntersection(token, parent);
 					candidates.add(next);
@@ -262,7 +263,7 @@ public class SpatialTextSearch {
 		}
 		
 		System.out.println("\nTokens: " + res.tokens);
-		System.out.println("All Results: ");
+		System.out.printf("All Combinations - %d: \n", res.combinations.size());
 		for (SpatialSearchResultsList s : res.combinations) {
 			if (s.getTokenCount() >= 2) {
 				s.sortResults(true);
@@ -325,9 +326,9 @@ public class SpatialTextSearch {
 //		query = "Нова пошта 53";
 		query = "2 Нова вулиця";
 		
-		// TODO Catedral-Basílica de Nuestra Señora del Pilar
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";
+//		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
 		
 		long t = System.nanoTime();
 		
