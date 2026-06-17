@@ -11,7 +11,6 @@ import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 
 public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
-	public static boolean USE_ORDER_TYPE = true;
 	final int parentInd;
 	final SpatialSearchResultsList parent;
 	final List<SpatialSearchResultRef> objs = new ArrayList<>(); 
@@ -36,29 +35,23 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			}
 			ref.tokens.add(token);
 		}
-		if (USE_ORDER_TYPE) {
-			useSmallestObjectOrder();
-		} else {
-			useOriginalOrder();
-		}
+		sortObjects();
 	}
 	
-	void useSmallestObjectOrder() {
+	void sortObjects() {
 		for (SpatialSearchResultRef r : objs) {
 			Collections.sort(r.tokens, (o1, o2) -> Integer.compare(o1.originalOrder, o2.originalOrder));
 		}
 		Collections.sort(objs,
-				(o1, o2) -> Integer.compare(o1.typeOrder(), o2.typeOrder()));
+				(o1, o2) -> {
+					int r = Integer.compare(o1.typeOrder(), o2.typeOrder());
+					if (r != 0) {
+						return r;
+					}
+					return Integer.compare(o1.tokens.get(0).originalOrder, o2.tokens.get(0).originalOrder);
+				});
 	}
 
-	void useOriginalOrder() {
-		for (SpatialSearchResultRef r : objs) {
-			Collections.sort(r.tokens, (o1, o2) -> Integer.compare(o1.originalOrder, o2.originalOrder));
-		}
-		Collections.sort(objs,
-				(o1, o2) -> Integer.compare(o1.tokens.get(0).originalOrder, o2.tokens.get(0).originalOrder));
-
-	}
 	
 	public List<MapObject> getObjects() {
 		List<MapObject> o = new ArrayList<>();

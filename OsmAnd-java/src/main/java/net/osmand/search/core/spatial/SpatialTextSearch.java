@@ -23,14 +23,13 @@ import net.osmand.util.SearchAlgorithms;
 
 
 
-// GENERATION
+// GENERATION !
 
 // TODO index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048
 // TODO same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182
-
+// TODO "2-га Нова вулиця" - split by "-"?
 
 // TODO Check file sizes??
-// TODO "2-га Нова вулиця" - split by "-"?
 ////////////////////////
 // BBOX EEFFICIENCY
 // TODO !!! implement for tokens READ_COMMON_WORDS = false;
@@ -288,15 +287,17 @@ public class SpatialTextSearch {
 	}
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
-		DEDUPLICATE_RES = false;
+		DEDUPLICATE_RES = true;
 		File folder = new File("/Users/victorshcherb/osmand/maps/");
 		String pattern = "Germany_b";
 		String query = "Berlin hauptstrasse"; // slow 
 		query = "Kelterstraße Kernen im Remstal";
 		query = "Germany Kelter. Kernen im Remstal";
 		
-//		pattern = "Us_";
+		pattern = "Us_";
+		query = "Salt Lake City Pennsylvania Place";
 //		query = "Salt Lake City Pennsylvania Street";
+		query = "Salt Lake City";
 		
 //		pattern = "Liechtenstein_europe.obf";
 //		query = "Vaduz Lettstrasse";
@@ -305,9 +306,9 @@ public class SpatialTextSearch {
 		
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-		pattern = "Ukraine";
+		pattern = "Ukraine_";
 		query = "нова пошта Бульварно кудрявс.";
-		query = "kyiv Бульварно кудряв.";
+//		query = "kyiv Бульварно кудряв.";
 		// TODO Бульварно-Кудрявська (not searching), 2-га? (searching?)
 		// Catedral-Basílica de Nuestra Señora del Pilar
 		// TODO №59 (366443448) missing?
