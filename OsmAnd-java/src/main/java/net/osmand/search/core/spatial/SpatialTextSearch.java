@@ -424,26 +424,26 @@ public class SpatialTextSearch {
 //		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
 //		query ="Township";
 
-//		pattern = "Liechtenstein_europe.obf";
-//		query = "Vaduz Lettstrasse";
-//		query = "Vaduz ";
-//		query = "Jugendheim Malbun";
+		pattern = "Liechtenstein_europe.obf";
+		query = "Vaduz Lettstrasse";
+		query = "Vaduz ";
+		query = "Jugendheim Malbun";
 
-//		pattern = "Ukraine_kyiv-city_europe.obf";
+		pattern = "Ukraine_";
 //		pattern = "Map";
-//		query = "нова пошта Бульварно Кудрявська";
+		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
 //		query = "Ukraine kyiv saks.";
-//		query = "пузата хата mcdonal.";
-//		query = "Нова пошта 53";
+		query = "пузата хата mcdonal.";
+		query = "Нова пошта 53";
 //		query = "2-га Нова вулиця"; // unit test
 //		query = "2 Нова вулиця"; // unit test
 //		query = "саксаг.";
 //		query = "школа 25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
 
-		pattern = "Spain_aragon_europe_";
-		query = "Basílica de Nuestra Señora del Pilar";
-		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
+//		pattern = "Spain_aragon_europe_";
+//		query = "Basílica de Nuestra Señora del Pilar";
+//		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
 
 		long t = System.nanoTime();
 
