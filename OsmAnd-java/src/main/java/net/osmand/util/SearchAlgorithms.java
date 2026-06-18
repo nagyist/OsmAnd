@@ -249,7 +249,8 @@ public class SearchAlgorithms {
     }
 
     private static final int MARKER_LCP_LENGTH = SUFFIX_DICT_MARKER_MAX - SUFFIX_DICT_MARKER_BASE;
-    public static final String EMPTY_SUFFIX_DICTIONARY_SENTINEL = "\uE100";
+    // compatible with default writer split "" 
+    public static final String EMPTY_SUFFIX_DICTIONARY_SENTINEL = "";
     
 
     private static boolean startsWithSuffixMarker(String value) {

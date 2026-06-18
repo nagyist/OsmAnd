@@ -523,7 +523,6 @@ public class BinaryMapPoiReaderAdapter {
 
 //				LOG.info("Searched poi structure in " + (System.currentTimeMillis() - time) +
 //						"ms. Found " + offKeys.length + " subtrees");
-//				System.out.println(Arrays.toString(offKeys)); // FIXME
 				for (int j = 0; j < offKeys.length; j++) {
 					if (metrics != null) metrics.beginLoadObject(codedIS);
 					codedIS.seek(offKeys[j] + indexOffset);
@@ -656,6 +655,10 @@ public class BinaryMapPoiReaderAdapter {
 						suffixDictionary = new ArrayList<>();
 					}
 					if (EMPTY_SUFFIX_DICTIONARY_SENTINEL.equals(encodedSuffix)) {
+						if (prefix != null && token != null && !token.matchFullPrefix(prefix.key())) {
+							codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+							return;
+						}
 						break;
 					}
 					String prevSuffix = suffixDictionary.isEmpty() ? null : suffixDictionary.get(suffixDictionary.size() - 1);
@@ -868,7 +871,6 @@ public class BinaryMapPoiReaderAdapter {
 				}
 				codedIS.popLimit(oldLim);
 				if (am != null) {
-//					System.out.println(am + " " + am.getOsmId()); // FIXME
 					boolean matches = matcher.matches(am.getName().toLowerCase(Locale.ROOT))
 							|| matcher.matches(am.getEnName(true).toLowerCase(Locale.ROOT));
 					if (!matches) {
