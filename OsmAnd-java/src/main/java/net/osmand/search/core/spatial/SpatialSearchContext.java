@@ -316,7 +316,6 @@ public class SpatialSearchContext {
 		String name = "";
 		int wInd = 0;
 		int type = a != null ? a.getType() : SpatialSearchToken.POI_TYPE;
-		
 		for (int i = 0; i < cnt; i++) {
 			int suffBit = a != null ? a.getSuffixesBitsetIndex(i) : b.getSuffixesBitsetIndex(i);
 			if (suffBit % 2 == 0) {

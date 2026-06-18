@@ -34,14 +34,15 @@ import net.osmand.util.SearchAlgorithms;
 
 
 //////////// TESTING //////////
-// BUG Shell -
+// BUG Shell -...
+// BUG school Number- indexed
+// - EMPTY_SUFFIX_DICTIONARY_SENTINEL used?
 
 //////////// IN PROGRESSS /////////////////
-// FIXME школа
-
 // TODO don't compute all combinations... (!) and do it in the right order 2^7
-// TODO Ignore same embedded boundary city / county - deduplicate on the fly
 
+// BUILDINGS
+// TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO [[2, нова, вулиця] STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 // TODO Search Buildings (to search buildings most complete street is needed (largest city sort?))
 
@@ -321,7 +322,7 @@ public class SpatialTextSearch {
 //		query = "Jugendheim Malbun";
 		
 		
-		pattern = "Ukraine_kyiv-c";
+		pattern = "Ukraine_kyiv-city_europe.obf";
 //		pattern = "Map";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
