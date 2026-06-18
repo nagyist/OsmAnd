@@ -1,12 +1,13 @@
 package net.osmand.plus.gallery.ui.holders
 
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.isVisible
 import net.osmand.plus.OsmandApplication
 import net.osmand.plus.R
 import net.osmand.plus.gallery.data.MediaPosterLoader
@@ -14,8 +15,6 @@ import net.osmand.plus.helpers.AndroidUiHelper
 import net.osmand.plus.utils.ColorUtilities
 import net.osmand.shared.media.domain.MediaItem
 import net.osmand.shared.media.domain.MediaType
-import androidx.core.view.isVisible
-import androidx.core.graphics.drawable.toDrawable
 
 class MediaPreviewDelegate(
 	private val app: OsmandApplication,
@@ -38,12 +37,27 @@ class MediaPreviewDelegate(
 	private var durationLabel: String? = null
 	private var nightMode = false
 
-	val morphIcon: Drawable?
-		get() = if (!showsPreviewBitmap && imageView.isVisible) {
-			imageView.drawable
-		} else {
-			null
+	val morphPreviewSnapshotView: View?
+		get() = imageView.takeIf { showsPreviewBitmap && it.isVisible }
+
+	val morphCenterIcon: Drawable?
+		get() = when {
+			!showsPreviewBitmap && imageView.isVisible -> imageView.drawable
+			playIcon?.isVisible == true -> playIcon.drawable
+			else -> null
 		}
+
+	val morphShowsScrim: Boolean
+		get() = videoScrim?.isVisible == true
+
+	val morphDurationLabel: String?
+		get() = durationLabel
+
+	val morphShowsDuration: Boolean
+		get() = durationText?.isVisible == true
+
+	val morphDurationTextColor: Int
+		get() = getDurationTextColor()
 
 	fun bind(
 		item: MediaItem,
@@ -120,14 +134,25 @@ class MediaPreviewDelegate(
 		}
 		if (visible) {
 			text.text = label
-			val color = if (boundType == MediaType.VIDEO) {
-				ContextCompat.getColor(app, R.color.active_buttons_and_links_text_light)
-			} else {
-				ColorUtilities.getSecondaryTextColor(app, nightMode)
-			}
-			text.setTextColor(color)
+			text.setTextColor(getDurationTextColor())
+			updateDurationPosition(text)
+		} else {
+			text.translationY = 0f
 		}
 		AndroidUiHelper.updateVisibility(text, visible)
+	}
+
+	private fun getDurationTextColor(): Int =
+		if (boundType == MediaType.VIDEO) {
+			ContextCompat.getColor(app, R.color.active_buttons_and_links_text_light)
+		} else {
+			ColorUtilities.getSecondaryTextColor(app, nightMode)
+		}
+
+	private fun updateDurationPosition(text: TextView) {
+		val iconSize = app.resources.getDimensionPixelSize(R.dimen.standard_icon_size)
+		val gap = app.resources.displayMetrics.density * DURATION_GAP_DP
+		text.translationY = iconSize / 2f + gap + text.lineHeight / 2f
 	}
 
 	private fun hideVideoChrome() {
@@ -137,6 +162,8 @@ class MediaPreviewDelegate(
 	}
 
 	companion object {
+		private const val DURATION_GAP_DP = 2f
+
 		fun getPlaceholderIconId(type: MediaType): Int = when (type) {
 			MediaType.VIDEO -> R.drawable.ic_type_video
 			MediaType.AUDIO -> R.drawable.ic_action_music_note

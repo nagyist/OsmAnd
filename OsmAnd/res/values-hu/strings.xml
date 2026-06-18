@@ -5531,8 +5531,8 @@
     <string name="calculating_indication_message">Számítás…</string>
     <string name="rendering_attr_showClimbingRoutes_description">Hegymászó utak megjelenítése</string>
     <string name="rendering_attr_showClimbingRoutes_name">Hegymászó utak</string>
-    <string name="display_distance_to_first_intermediate_summary">A következő megállásig tartó időt és távolságot jeleníti meg. Tiltsa le, hogy ehelyett mindig az úti cél részleteit mutassa.</string>
-    <string name="display_distance_to_first_intermediate">A következő megállásig tartó útvonal részleteinek megjelenítése</string>
+    <string name="display_distance_to_first_intermediate_summary">Megjeleníti a következő megállásig tartó időt és távolságot. Kikapcsolva mindig az úti cél adatait jeleníti meg.</string>
+    <string name="display_distance_to_first_intermediate">Útvonaladatok a következő megállásig</string>
     <string name="popular_places_nearby">Népszerű helyek a közelben</string>
     <string name="recently_visited">Nemrég meglátogatott</string>
     <string name="shared_string_avg_altitude">Átlagos magasság</string>
@@ -6085,4 +6085,26 @@
     <string name="coordinate_format_select_other">Más formátum kiválasztása</string>
     <string name="coordinate_format_recent">Legutóbbi</string>
     <string name="coordinate_format_primary">Elsődleges</string>
+    <string name="gallery_media_playback_error">Nem sikerült lejátszani a médiát.</string>
+    <string name="gallery_open_in">Megnyitás ezzel:</string>
+    <string name="gallery_seek_back_seconds">−%1$d mp</string>
+    <string name="gallery_stats_counts">%1$d fotó, %2$d videó, %3$d hangfájl.</string>
+    <string name="gallery_stats_size">Méret: %1$s.</string>
+    <string name="gallery_sort_nearest">Legközelebbi</string>
+    <string name="gallery_sort_last_modified">Utoljára módosítva</string>
+    <string name="gallery_sort_name_a_z">Név szerint A - Z</string>
+    <string name="gallery_sort_name_z_a">Név szerint Z - A</string>
+    <string name="gallery_sort_newest_first">Legújabbak elöl</string>
+    <string name="gallery_sort_oldest_first">Legrégebbiek elöl</string>
+    <string name="gallery_sort_duration_long_short">Leghosszabbak elöl</string>
+    <string name="gallery_sort_duration_short_long">Legrövidebbek elöl</string>
+    <string name="gallery_seek_forward_seconds">+%1$d mp</string>
+    <string name="show_discount_bottom_sheet_description">Kedvezmények sáv megjelenítése egy egyéni fejlesztési válasszal.</string>
+    <string name="show_discount_bottom_sheet">Kedvezmények sáv megjelenítése</string>
+    <string name="tracks_backup_promo_button">OsmAnd Pro beszerzése</string>
+    <string name="tracks_backup_promo_description">Szinkronizálja nyomvonalait az eszközei és a Weboldal között az OsmAnd Pro segítségével.</string>
+    <string name="tracks_backup_promo_title">Szinkronizálja és készítsen biztonsági mentést a nyomvonalairól</string>
+    <string name="free_download_limit_reached">Elérte az ingyenes letöltési korlátot</string>
+    <string name="free_download_limit_reached_description">Oldja fel a korlátlan térképletöltést és a frissítéseket</string>
+    <string name="get_unlimited_downloads">Korlátlan letöltés szerzése</string>
 </resources>

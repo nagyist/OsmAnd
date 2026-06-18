@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import net.osmand.search.core.spatial.SpatialTextSearch.NameIndexAtom;
-import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchToken;
-import net.osmand.util.MapUtils;
+import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
+import net.osmand.binary.ObfConstants;
+import net.osmand.data.MapObject;
+import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 
 public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
@@ -34,16 +35,41 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			}
 			ref.tokens.add(token);
 		}
-		useOriginalOrder();
+		sortObjects();
 	}
 	
-	private void useOriginalOrder() {
+	void sortObjects() {
 		for (SpatialSearchResultRef r : objs) {
 			Collections.sort(r.tokens, (o1, o2) -> Integer.compare(o1.originalOrder, o2.originalOrder));
 		}
 		Collections.sort(objs,
-				(o1, o2) -> Integer.compare(o1.tokens.get(0).originalOrder, o2.tokens.get(0).originalOrder));
+				(o1, o2) -> {
+					int r = Integer.compare(o1.typeOrder(), o2.typeOrder());
+					if (r != 0) {
+						return r;
+					}
+					return Integer.compare(o1.tokens.get(0).originalOrder, o2.tokens.get(0).originalOrder);
+				});
+	}
 
+	
+	public List<MapObject> getObjects() {
+		List<MapObject> o = new ArrayList<>();
+		for (SpatialSearchResultRef r : objs) {
+			o.add(r.atom.object);
+		}
+		return o;
+	}
+	
+	public long getIdDeduplication() {
+		if (objs.size() > 0) {
+			NameIndexAtom atom = objs.get(0).atom;
+			if (atom.object != null) {
+				return ObfConstants.getOsmObjectId(atom.object);
+			}
+			return atom.id;
+		}
+		return -1;
 	}
 
 	@Override
@@ -60,27 +86,80 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			this.atom = atom;
 		}
 		
+		public int typeOrder() {
+			if (atom.type == SpatialSearchToken.POI_TYPE) {
+				return 0;
+			} else if (atom.type == SpatialSearchToken.STREET_TYPE) {
+				return 1;
+			} else if(atom.type == CityBlocks.POSTCODES_TYPE.index) {
+				return 2;
+			} else if(atom.type == CityBlocks.BOUNDARY_TYPE.index) {
+				return 5;
+			}
+			return 3;
+		}
 		
+
+
 		@Override
 		public String toString() {
 			List<String> words = new ArrayList<String>();
-			for(SpatialSearchToken s : tokens) {
+			for (SpatialSearchToken s : tokens) {
 				words.add(s.word);
 			}
-			return String.format("%s %s %d (%.4f, %.4f) ",
-					atom.getType(),
-					words, (atom.id % 0xffff), 
-					MapUtils.get31LatitudeY(atom.y16 << 15),
-					MapUtils.get31LongitudeX(atom.x16 << 15));
+			if (atom.object != null) {
+				return String.format("%s %s (%s) %.4f %.4f ", words, 
+						atom.typeStr() + " " + atom.object.getName(), 
+						"" + ObfConstants.getOsmObjectId(atom.object) 
+								//+ " " + atom.id,
+						, atom.object.getLocation().getLatitude(), atom.object.getLocation().getLongitude());
+			}
+			return atom.simpleName(words.toString()); 
 		}
+	}
+	
+	public int matchedTokens() {
+		return parent.tCount;
+	}
+	
+
+	public int sumOther() {
+		int s1 = 0;
+		for (SpatialSearchResultRef r : objs) {
+			s1 += r.atom.otherWordsCnt;
+		}
+		return s1;
+	}
+	
+	public int sumTypeOrder() {
+		int s1 = 0;
+		for (SpatialSearchResultRef r : objs) {
+			s1 += r.typeOrder();
+		}
+		return s1;
 	}
 
 	@Override
 	public int compareTo(SpatialSearchResult o) {
-		int res = Integer.compare(objs.size(), o.objs.size());
+		int res = -Integer.compare(parent.tCount, o.parent.tCount);
 		if (res != 0) {
 			return res;
 		}
+		res = Integer.compare(objs.size(), o.objs.size());
+		if (res != 0) {
+			return res;
+		}
+		res = Integer.compare(sumOther(), o.sumOther());
+		if (res != 0) {
+			return res;
+		}
+		res = -Integer.compare(sumTypeOrder(), o.sumTypeOrder());
+		if (res != 0) {
+			return res;
+		}
+		
+		
 		return -Integer.compare(parentInd, o.parentInd);
 	}
 }
+	

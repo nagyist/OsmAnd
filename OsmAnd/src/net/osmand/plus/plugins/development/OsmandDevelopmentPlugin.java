@@ -116,6 +116,7 @@ public class OsmandDevelopmentPlugin extends OsmandPlugin {
 		pluginPreferences.add(settings.SIMULATE_OBD_DATA);
 		pluginPreferences.add(settings.DEBUG_RENDERING_INFO);
 		pluginPreferences.add(settings.SHOULD_SHOW_FREE_VERSION_BANNER);
+		pluginPreferences.add(settings.SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET);
 		pluginPreferences.add(settings.TRANSPARENT_STATUS_BAR);
 		pluginPreferences.add(settings.MEMORY_ALLOCATED_FOR_ROUTING);
 		pluginPreferences.add(settings.SHOW_INFO_ABOUT_PRESSED_KEY);

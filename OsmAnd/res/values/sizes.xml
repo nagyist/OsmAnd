@@ -497,4 +497,6 @@
 	<dimen name="nearby_place_error_image_size_big">36dp</dimen>
 	<dimen name="nearby_place_item_height_non_image">122dp</dimen>
 	<dimen name="nearby_place_image_vertical_size">66dp</dimen>
+
+	<dimen name="banner_main_icon_size">66dp</dimen>
 </resources>

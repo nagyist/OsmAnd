@@ -10,19 +10,20 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.io.Reader;
-import java.util.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,7 +31,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import net.osmand.*;
 import org.apache.commons.logging.Log;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -49,7 +49,15 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TIntHashSet;
+import net.osmand.Collator;
+import net.osmand.CollatorStringMatcher;
 import net.osmand.CollatorStringMatcher.StringMatcherMode;
+import net.osmand.IndexConstants;
+import net.osmand.Location;
+import net.osmand.OsmAndCollator;
+import net.osmand.PlatformUtil;
+import net.osmand.ResultMatcher;
+import net.osmand.StringMatcher;
 import net.osmand.binary.BinaryHHRouteReaderAdapter.HHRouteRegion;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CitiesBlock;
@@ -518,6 +526,10 @@ public class BinaryMapIndexReader {
 		}
 	}
 
+	public static final int convertFixed32ToRef(int k) {
+		return Integer.reverseBytes(k);
+	}
+	
 	public final long readInt() throws IOException {
 		long l = readByte();
 		boolean _8byte = l > 0x7f;
@@ -753,6 +765,49 @@ public class BinaryMapIndexReader {
 		}
 		return size;
 	}
+	
+	
+	public List<Amenity> readAmenityBlock(PoiRegion pr, long offset, int index) throws IOException {
+		poiAdapter.initCategories(pr);
+		codedIS.seek(pr.filePointer + offset);
+		long len = readInt(); 
+		long oldLim = codedIS.pushLimitLong((long) len);
+		SearchRequest<Amenity> sr = new SearchRequest<Amenity>();
+		poiAdapter.readPoiData(0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE, 
+				sr, pr, index, null, 0);
+		codedIS.popLimit(oldLim);
+		return sr.getSearchResults();
+	}
+	
+	public City readCityObject(AddressRegion r, long offset) throws IOException {
+		if (!(offset >= r.filePointer && offset <= (r.length + r.filePointer))) {
+			throw new IllegalArgumentException();
+		}
+		codedIS.seek(offset);
+		long length = codedIS.readRawVarint32();
+		long oldLim = codedIS.pushLimitLong((long) length);
+		// city header
+		City city = addressAdapter.readCityHeader(null, null, offset, r.getAttributeTagsTable());
+		codedIS.popLimit(oldLim);
+		return city;
+	}
+	
+	public MapObject readStreetObject(AddressRegion r, City city, long offset) throws IOException {
+		if (!(offset >= r.filePointer && offset <= (r.length + r.filePointer))) {
+			throw new IllegalArgumentException();
+		}
+		int cx24 = MapUtils.get31TileNumberX(city.getLocation().getLongitude()) >> 7;
+		int cy24 = MapUtils.get31TileNumberY(city.getLocation().getLatitude()) >> 7;
+		codedIS.seek(offset);
+		Street s = new Street(city);
+		s.setFileOffset(offset);
+		long length = codedIS.readRawVarint32();
+		long oldLim = codedIS.pushLimitLong((long) length);
+		// cityx
+		addressAdapter.readStreet(s, null, true, cx24, cy24, null, r.attributeTagsTable);
+		codedIS.popLimit(oldLim);
+		return s;
+	}
 
 	private AddressRegion checkAddressIndex(long offset) {
 		for (AddressRegion r : addressIndexes) {
@@ -760,7 +815,6 @@ public class BinaryMapIndexReader {
 				return r;
 			}
 		}
-		
 		throw new IllegalArgumentException("Illegal offset " + offset); //$NON-NLS-1$
 	}
 
@@ -1060,14 +1114,14 @@ public class BinaryMapIndexReader {
 				return;
 			case MapDataBlock.BASEID_FIELD_NUMBER:
 				baseId = codedIS.readUInt64();
-				if(READ_STATS) {
+				if (READ_STATS) {
 					req.stat.addBlockHeader(MapDataBlock.BASEID_FIELD_NUMBER, 0);
 				}
 				break;
 			case MapDataBlock.DATAOBJECTS_FIELD_NUMBER:
 				int length = codedIS.readRawVarint32();
 				long oldLimit = codedIS.pushLimitLong((long) length);
-				if(READ_STATS) {
+				if (READ_STATS) {
 					req.stat.lastObjectSize += length;
 					req.stat.addBlockHeader(MapDataBlock.DATAOBJECTS_FIELD_NUMBER, length);
 				}
@@ -1447,22 +1501,17 @@ public class BinaryMapIndexReader {
 		return req.getSearchResults();
 	}
 	
-	public NameIndexInspector readFullNameIndex(PoiRegion p, String prefix) throws IOException {
-		codedIS.seek(p.filePointer);
-		NameIndexInspector res = poiAdapter.readNameIndex(prefix);
-		long old = codedIS.pushLimitLong((long) p.length);
+	public NameIndexReader readFullNameIndex(NameIndexReader res, String prefix) throws IOException {
+		codedIS.seek(res.poiRegion != null ? res.poiRegion.filePointer : res.addressRegion.filePointer);
+		long old = codedIS.pushLimitLong(res.poiRegion != null ? res.poiRegion.length : res.addressRegion.length);
+		if (res.poiRegion != null) {
+			poiAdapter.readNameIndex(prefix, res);
+		} else {
+			addressAdapter.readNameIndex(prefix, res);
+		}
 		codedIS.popLimit(old);
 		return res;
 	}
-	
-	public NameIndexInspector readFullNameIndex(AddressRegion p, String prefix) throws IOException {
-		codedIS.seek(p.filePointer);
-		NameIndexInspector res = addressAdapter.readNameIndex(prefix);
-		long old = codedIS.pushLimitLong((long) p.length);
-		codedIS.popLimit(old);
-		return res;
-	}
-	
 	
 
 	public Map<PoiCategory, List<String>> searchPoiCategoriesByName(String query, Map<PoiCategory, List<String>> map) throws IOException {
@@ -2403,7 +2452,7 @@ public class BinaryMapIndexReader {
 
 	public static void main(String[] args) throws IOException {
 		File fl = new File(System.getProperty("maps") + "/Synthetic_test_rendering.obf");
-		fl = new File(System.getProperty("maps") +"/Liechtenstein_europe.obf");
+		fl = new File(System.getProperty("maps") +"/Ukraine_kyiv_europe_2.obf");
 		
 		RandomAccessFile raf = new RandomAccessFile(fl, "r");
 		SearchStat stat = new SearchStat();
@@ -2431,7 +2480,7 @@ public class BinaryMapIndexReader {
 			PoiRegion poiRegion = reader.getPoiIndexes().get(0);
 			if (testPoiSearch) {
 				testPoiSearch(reader, poiRegion, stat);
-				testPoiSearchByName(reader, "Jugendhe", 0, 0, stat);
+				testPoiSearchByName(reader, "shell", 0, 0, stat);
 			}
 			if (testPoiSearchOnPath) {
 				testSearchOnthePath(reader, stat);
@@ -2678,7 +2727,7 @@ public class BinaryMapIndexReader {
 		return result;
 	}
 	
-	void readNameIndexInspector(String prefix, NameIndexInspector inspector, String filter) throws InvalidProtocolBufferException, IOException {
+	void readNameIndexInspector(String prefix, NameIndexReader inspector, String query) throws InvalidProtocolBufferException, IOException {
 		String key = null;
 		boolean match = true;
 		while (true) {
@@ -2692,23 +2741,19 @@ public class BinaryMapIndexReader {
 				if (prefix != null) {
 					key = prefix + key;
 				}
-				match = filter == null || filter.startsWith(key);
-				if (!match && filter.endsWith(".")) {
-					String pr = filter.substring(0, filter.length() - 1);
-					match = key.startsWith(pr) || pr.startsWith(key);
-				}
+				match = inspector.matchKey(key, query);
 				break;
 			case OsmandOdb.IndexedStringTable.VAL_FIELD_NUMBER :
 				int val = (int) readInt(); // FIXME for 64 bit support
 				if (match) {
-					inspector.putKey(key, val, prefix);
+					inspector.putKey(key, val, prefix, query);
 				}
 				break;
 			case OsmandOdb.IndexedStringTable.SUBTABLES_FIELD_NUMBER :
 				long len = codedIS.readRawVarint32();
 				long oldLim = codedIS.pushLimitLong((long) len);
 				if (match) {
-					readNameIndexInspector(key, inspector, filter);
+					readNameIndexInspector(key, inspector, query);
 				} else {
 					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
 				}

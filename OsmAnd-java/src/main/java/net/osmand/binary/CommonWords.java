@@ -42,7 +42,7 @@ public class CommonWords {
 		addFrequent(string);
 	}
 	public static boolean isNumber2Letters(String name) {
-		return !name.isEmpty() && Character.isDigit(name.charAt(0)) && letters(name) < 2;
+		return SearchAlgorithms.isNumber2Letters(name);
 	}
 
 	public static boolean isCommon(String name) {
@@ -70,16 +70,7 @@ public class CommonWords {
 	}
 
 	public static int getCommonSearch(String name) {
-		boolean startsWithDigit = false;
-		for (int i = 0; i < name.length(); i++) {
-			if (Character.isDigit(name.charAt(i))) {
-				startsWithDigit = true;
-				break;
-			} else if (Character.isLetter(name.charAt(i))) {
-				break;
-			}
-		}
-		if (startsWithDigit && letters(name) < 2) {
+		if (SearchAlgorithms.isNumber2Letters(name)) {
 			name = NUMBER_WITH_LESS_THAN_2_LETTERS;
 		}
 		Integer i = commonWordsDictionary.get(name);
@@ -108,16 +99,7 @@ public class CommonWords {
 		return -1;
 	}
 	
-	private static int letters(String s) {
-		int count = 0;
-		for (int i = 0; i < s.length(); i++) {
-			if (!Character.isDigit(s.charAt(i)) && Character.isLetter(s.charAt(i))) {
-				count++;
-			}
-		}
-		return count;
-	}
-
+	
 	private static void addAbbrevationsToCommon() {
 		Map<String, String> abbreviations = Abbreviations.getAbbreviations();
 		Iterator<Entry<String, String>> it = abbreviations.entrySet().iterator();
@@ -5769,7 +5751,7 @@ public class CommonWords {
 		};
 		
 		for (String name : array) {
-			List<String> tokens = SearchAlgorithms.splitAndNormalize(name);
+			List<String> tokens = SearchAlgorithms.splitAndNormalize(name, true);
 			for (String token : tokens) {
 				if (CommonWords.getCommonSearch(token) < 0) {
 					System.out.println("Missing " + token);

@@ -6004,4 +6004,26 @@
     <string name="coordinate_format_select_other">選擇其他格式</string>
     <string name="coordinate_format_recent">最近</string>
     <string name="coordinate_format_primary">主要</string>
+    <string name="gallery_media_playback_error">無法播放多媒體。</string>
+    <string name="gallery_open_in">在…開啟</string>
+    <string name="gallery_seek_back_seconds">−%1$d 秒</string>
+    <string name="gallery_seek_forward_seconds">+%1$d 秒</string>
+    <string name="gallery_stats_counts">影像 %1$d，影片 %2$d，聲音 %3$d。</string>
+    <string name="gallery_stats_size">大小 %1$s。</string>
+    <string name="gallery_sort_nearest">最近</string>
+    <string name="gallery_sort_last_modified">最後更改時間</string>
+    <string name="gallery_sort_name_a_z">名稱 A - Z</string>
+    <string name="gallery_sort_name_z_a">名稱 Z-A</string>
+    <string name="gallery_sort_newest_first">最新日期優先顯示</string>
+    <string name="gallery_sort_oldest_first">最舊日期優先顯示</string>
+    <string name="gallery_sort_duration_long_short">最長片段優先顯示</string>
+    <string name="gallery_sort_duration_short_long">最短片段優先顯示</string>
+    <string name="show_discount_bottom_sheet">顯示折扣底頁</string>
+    <string name="show_discount_bottom_sheet_description">同時顯示折扣底頁以及自訂開發回應。</string>
+    <string name="tracks_backup_promo_button">取得 OsmAnd Pro</string>
+    <string name="tracks_backup_promo_description">用 OsmAnd Pro 跨裝置與網路同步您的軌跡。</string>
+    <string name="tracks_backup_promo_title">備份與同步您的軌跡</string>
+    <string name="free_download_limit_reached">已經到達免費下載的上限了</string>
+    <string name="free_download_limit_reached_description">解鎖無限地圖下載與更新功能</string>
+    <string name="get_unlimited_downloads">取得無限下載功能</string>
 </resources>

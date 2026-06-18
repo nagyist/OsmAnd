@@ -67,8 +67,23 @@ class GalleryMediaListViewHolder(
 	val previewView: View
 		get() = ivImage.parent as View
 
-	val morphPlaceholderIcon
-		get() = previewDelegate.morphIcon
+	val morphPreviewSnapshotView
+		get() = previewDelegate.morphPreviewSnapshotView
+
+	val morphCenterIcon
+		get() = previewDelegate.morphCenterIcon
+
+	val morphShowsScrim
+		get() = previewDelegate.morphShowsScrim
+
+	val morphDurationLabel
+		get() = previewDelegate.morphDurationLabel
+
+	val morphShowsDuration
+		get() = previewDelegate.morphShowsDuration
+
+	val morphDurationTextColor
+		get() = previewDelegate.morphDurationTextColor
 
 	val morphBgColor: Int
 		get() = previewDelegate.placeholderBgColor

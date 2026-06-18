@@ -745,7 +745,8 @@ public class BinaryMapAddressReaderAdapter {
 						suffixMask = queryToken.new SuffixMask(matchedPrefix);
 					}
 					int stag = 0;
-					do {
+					boolean emptySuffixes = false;
+					loopAtoms: do {
 						int st = codedIS.readTag();
 						stag = WireFormat.getTagFieldNumber(st);
 						if (stag == AddressNameIndexData.SUFFIXESDICTIONARY_FIELD_NUMBER) {
@@ -753,13 +754,22 @@ public class BinaryMapAddressReaderAdapter {
 								suffixDictionary = new ArrayList<>();
 							}
 							String encodedSuffix = codedIS.readString();
-							if (SearchAlgorithms.EMPTY_SUFFIX_DICTIONARY_SENTINEL.equals(encodedSuffix)) {
+							if (SearchAlgorithms.OLD_EMPTY_SUFFIX_DICTIONARY_SENTINEL.equals(encodedSuffix)) {
+								emptySuffixes = true;
 								continue;
 							}
+							
 							String previousSuffix = suffixDictionary.isEmpty() ? null : suffixDictionary.get(suffixDictionary.size() - 1);
 							String decodedSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(previousSuffix, encodedSuffix);
 							suffixDictionary.add(decodedSuffix);
 						} else if (stag == AddressNameIndexData.ATOM_FIELD_NUMBER) {
+							if (emptySuffixes || (suffixDictionary  != null && suffixDictionary.size() == 1
+									&& suffixDictionary.get(0).equals(SearchAlgorithms.EMPTY_SUFFIX_DICTIONARY_SENTINEL))) {
+								if (matchedPrefix != null && queryToken != null && !queryToken.matchFullPrefix(matchedPrefix.key())) {
+									codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+									break loopAtoms;
+								}
+							}
 							if (!suffixDictionaryInitialized && suffixMask != null) {
 								suffixMask.setDictionary(suffixDictionary);
 								suffixDictionaryInitialized = true;
@@ -896,18 +906,17 @@ public class BinaryMapAddressReaderAdapter {
 
 	}
 	
-	protected NameIndexInspector readNameIndex(String prefix) throws IOException {
-		NameIndexInspector nameIndexInspector = new NameIndexInspector();
+	protected NameIndexReader readNameIndex(String prefix, NameIndexReader nameIndex) throws IOException {
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
 			switch (tag) {
 			case 0:
-				return nameIndexInspector;
+				return nameIndex;
 			case OsmandOdb.OsmAndAddressIndex.NAMEINDEX_FIELD_NUMBER:
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
-				readNameIndexInternal(nameIndexInspector, prefix);
+				readNameIndexInternal(nameIndex, prefix);
 				codedIS.popLimit(oldLimit);
 				break;
 			default:
@@ -917,9 +926,9 @@ public class BinaryMapAddressReaderAdapter {
 		}
 	}
 	
-	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexInspector pi, String prefix) throws IOException {
+	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexReader pi, String query) throws IOException {
 		OsmandOdb.IndexedStringTable res = null;
-		TLongArrayList loffsets = prefix == null ? null : new TLongArrayList();
+		TLongArrayList loffsets = query == null ? null : new TLongArrayList();
 		int ind = -1;
 		while (true) {
 			int t = codedIS.readTag();
@@ -928,23 +937,28 @@ public class BinaryMapAddressReaderAdapter {
 			case 0:
 				return res;
 			case OsmAndAddressNameIndexData.TABLE_FIELD_NUMBER :
+				pi.resetMatchedKeys(query);
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
-				pi.setInitialShift(codedIS.getTotalBytesRead());
-				map.readNameIndexInspector(null, pi, prefix);
+				pi.setTablePointer(codedIS.getTotalBytesRead());
+				map.readNameIndexInspector(null, pi, query);
 				codedIS.popLimit(oldLimit);
 				break;
 			case OsmAndAddressNameIndexData.COMMONSTATS_FIELD_NUMBER:
 				length = codedIS.readRawVarint32();
 				oldLimit = codedIS.pushLimitLong(length);
-				CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
-				pi.setCommonIndexed(stat);
+				if (pi.getCommonStats() != null) {
+					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+				} else {
+					CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
+					pi.setCommonIndexed(stat);
+				}
 				codedIS.popLimit(oldLimit);
 				break;
 			case OsmAndAddressNameIndexData.ATOM_FIELD_NUMBER :
 				long shift = codedIS.getTotalBytesRead();
 				if (ind == -1 && loffsets != null) {
-					loffsets.addAll(pi.getIndexByRef().keySet());
+					pi.getAtomsToLoad(loffsets, query);
 					loffsets.sort();
 					ind = 0;
 				}

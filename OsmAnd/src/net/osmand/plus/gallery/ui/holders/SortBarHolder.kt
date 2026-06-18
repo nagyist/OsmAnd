@@ -23,7 +23,7 @@ class SortBarHolder(
 
 	fun bindView(item: GalleryItem.SortBar, nightMode: Boolean, gridMode: Boolean) {
 		val activeColor = ColorUtilities.getActiveColor(app, nightMode)
-		ivIcon.setImageDrawable(app.uiUtilities.getPaintedIcon(R.drawable.ic_action_list_sort, activeColor))
+		ivIcon.setImageDrawable(app.uiUtilities.getPaintedIcon(item.sortMode.iconId, activeColor))
 		tvTitle.setText(item.sortMode.titleId)
 		tvTitle.setTextColor(activeColor)
 		itemView.setOnClickListener { onActionClicked(it, SORT_ACTION) }
