@@ -29,6 +29,7 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.search.SearchBar;
 import com.google.android.material.search.SearchView;
 
+import net.osmand.StateChangedListener;
 import net.osmand.plus.R;
 import net.osmand.plus.base.BaseFullScreenDialogFragment;
 import net.osmand.plus.helpers.AndroidUiHelper;
@@ -38,6 +39,7 @@ import net.osmand.plus.settings.coordinates.CoordinateFormat;
 import net.osmand.plus.settings.coordinates.CoordinateFormatHelper;
 import net.osmand.plus.settings.coordinates.CoordinateFormatIds;
 import net.osmand.plus.settings.coordinates.CoordinateFormatSettingsStorage;
+import net.osmand.plus.settings.enums.DayNightMode;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.plus.utils.InsetTarget;
@@ -80,6 +82,7 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 	private boolean addToEditDraft;
 	private boolean focusSearch;
 	private int previousSoftInputMode = SOFT_INPUT_MODE_NOT_SET;
+	private StateChangedListener<DayNightMode> dayNightModeListener;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -112,6 +115,13 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 				onBackPressed();
 			}
 		});
+
+		dayNightModeListener = mode -> app.runInUIThread(() -> {
+			if (isResumed()) {
+				updateStatusBarAppearance(getContentView());
+			}
+		});
+		settings.DAYNIGHT_MODE.addListener(dayNightModeListener);
 	}
 
 	@Nullable
@@ -149,7 +159,7 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 	@Override
 	public void onResume() {
 		super.onResume();
-		updateStatusBarContentColor();
+		updateStatusBarAppearance(getContentView());
 		if (!addToEditDraft) {
 			excludedIds.clear();
 			excludedIds.addAll(formatPreferences.getPreferredIds(appMode));
@@ -162,6 +172,14 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 		coordinateFormatHelper.cancelSearch();
 		restoreSearchSoftInputMode();
 		super.onDestroyView();
+	}
+
+	@Override
+	public void onDestroy() {
+		if (dayNightModeListener != null) {
+			settings.DAYNIGHT_MODE.removeListener(dayNightModeListener);
+		}
+		super.onDestroy();
 	}
 
 	@Override
@@ -187,13 +205,25 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 		return nightMode ? R.color.activity_background_color_dark : R.color.activity_background_color_light;
 	}
 
-	private void updateStatusBarContentColor() {
+	private void updateStatusBarAppearance(@Nullable View contentView) {
+		updateNightMode();
 		Dialog dialog = getDialog();
-		if (dialog != null && dialog.getWindow() != null) {
-			AndroidUiHelper.setStatusBarContentColor(dialog.getWindow().getDecorView(), nightMode);
+		Window window = dialog != null ? dialog.getWindow() : null;
+		if (window != null) {
+			AndroidUiHelper.setStatusBarColor(window, getColor(getStatusBarColorId()));
+			AndroidUiHelper.setStatusBarContentColor(window.getDecorView(), nightMode);
 		} else {
-			AndroidUiHelper.setStatusBarContentColor(getView(), nightMode);
+			Activity activity = getActivity();
+			if (activity != null) {
+				AndroidUiHelper.setStatusBarColor(activity, getColor(getStatusBarColorId()));
+			}
+			AndroidUiHelper.setStatusBarContentColor(contentView, nightMode);
 		}
+	}
+
+	@Nullable
+	private View getContentView() {
+		return searchInputView != null && searchInputView.isShowing() ? searchInputView : getView();
 	}
 
 	private void setupToolbar(@NonNull View view) {
@@ -240,11 +270,11 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 		}
 		searchInputView.addTransitionListener((searchView, previousState, newState) -> {
 			if (newState == SearchView.TransitionState.SHOWN) {
-				AndroidUiHelper.setStatusBarContentColor(searchView, nightMode);
+				updateStatusBarAppearance(searchView);
 				applySearchSoftInputMode();
 				searchInputView.getEditText().setSelection(searchInputView.getEditText().length());
 			} else if (newState == SearchView.TransitionState.HIDDEN) {
-				AndroidUiHelper.setStatusBarContentColor(searchView, nightMode);
+				updateStatusBarAppearance(getView());
 				restoreSearchSoftInputMode();
 			}
 		});
@@ -412,12 +442,13 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 
 	@NonNull
 	private MaterialCardView createCard(int marginStart, int marginTop, int marginEnd, int marginBottom) {
-		MaterialCardView card = new MaterialCardView(getMaterialThemedContext());
+		Context themedContext = getMaterialThemedContext();
+		MaterialCardView card = new MaterialCardView(themedContext);
 		card.setCardElevation(0);
 		card.setRadius(dp(12));
 		card.setStrokeWidth(0);
 		card.setUseCompatPadding(false);
-		card.setCardBackgroundColor(AndroidUtils.getColorFromAttr(requireContext(), R.attr.list_background_color));
+		card.setCardBackgroundColor(AndroidUtils.getColorFromAttr(themedContext, R.attr.list_background_color));
 		LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
 				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 		params.setMargins(dp(marginStart), dp(marginTop), dp(marginEnd), dp(marginBottom));
@@ -427,7 +458,7 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 
 	@NonNull
 	private LinearLayout createVerticalContainer() {
-		LinearLayout layout = new LinearLayout(requireContext());
+		LinearLayout layout = new LinearLayout(getMaterialThemedContext());
 		layout.setOrientation(LinearLayout.VERTICAL);
 		layout.setLayoutParams(new LinearLayout.LayoutParams(
 				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -436,9 +467,10 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 
 	@NonNull
 	private TextView createTitleText(@NonNull String text) {
-		TextView textView = new TextView(requireContext());
+		Context themedContext = getMaterialThemedContext();
+		TextView textView = new TextView(themedContext);
 		textView.setText(text);
-		textView.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
+		textView.setTextColor(AndroidUtils.getColorFromAttr(themedContext, android.R.attr.textColorPrimary));
 		textView.setTextSize(16);
 		textView.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
 		return textView;
@@ -447,7 +479,8 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 	@NonNull
 	private View createFormatRow(@NonNull CoordinateFormat format, boolean addRow, boolean primary,
 	                             boolean showDivider, @NonNull View.OnClickListener clickListener) {
-		View row = inflate(R.layout.coordinate_format_settings_item, null, false);
+		View row = LayoutInflater.from(getMaterialThemedContext())
+				.inflate(R.layout.coordinate_format_settings_item, null, false);
 		bindFormatRow(row, format, addRow, primary, showDivider, clickListener);
 		return row;
 	}
@@ -543,7 +576,8 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 		@NonNull
 		@Override
 		public FormatViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-			View view = inflate(R.layout.coordinate_format_settings_item, parent, false);
+			View view = LayoutInflater.from(getMaterialThemedContext())
+					.inflate(R.layout.coordinate_format_settings_item, parent, false);
 			return new FormatViewHolder(view);
 		}
 
