@@ -194,7 +194,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 
 	private boolean acceptIntersection(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
-		// no cache for now
+		// 1. Precise intersection
+		// no cache for parent now needed
 		boolean intersect = true;
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
@@ -206,8 +207,25 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		if (!intersect) {
 			return false;
 		}
+		// 2. Duplicate words		
+		for (int i = 0; parent != null && i < parent.tCount; i++) {
+			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
+			if (pa.id == a.id && tokens[0].word.equals(tokens[i + 1].word)) {
+				// NameIndexAtom supports "<word> <...> <word>" but it's not present in DATA now
+				int indexOf = a.name.indexOf(tokens[0].word, pindx);
+				if (indexOf != -1 && a.name.indexOf(tokens[0].word, indexOf + 1) >= 0) {
+					// duplicate name in object
+				} else {
+					return false;
+				}
+			}
+			if (!pa.coords.intersects(a.coords)) {
+				intersect = false;
+				break;
+			}
+		}
 		
-		// ignore multiple atomic objects intersections POI / Streets > 2!
+		// 3. ignore multiple atomic objects intersections POI / Streets > 2!
 		if (a.atomicObject()) {
 			// check limit atomic objects to add
 			List<Long> objects = new ArrayList<Long>(SpatialTextSearchSettings.LIMIT_ATOMIC_OBJECTS);

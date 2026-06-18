@@ -23,26 +23,26 @@ import net.osmand.util.SearchAlgorithms;
 
 //////////// OTHER TASKS ///////
 // Check file sizes: 
-// 1. REVIEW ADD_TOP_X_FREQ_WORDS (many common?)
-// 2. REVIEW added bbox31 size
-// 3. REVIEW if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
+// 1. FILE SIZE: REVIEW ADD_TOP_X_FREQ_WORDS (many common?)
+// 2. FILE SIZE: REVIEW added bbox31 size
+// 3. REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
 //    - 2-га Нова (2 Нова), Бульварно-Кудрявська
-// 4. TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania
-// 5. English postcodes
-// 6. TEST / REVIEW - COLLATOR + Last dot [CONSTANT] as incomplete, [NameIndexReader, SpatialSearchToken]
+// 4. TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania +
+// 6. TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
+// 7. TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
+// 8. DATA: English postcodes
 
 
-// DONE TEST
-// Load objects by groups file order efficiently!
+//////////// TESTING //////////
 // Index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048 bytes[2] >= 1
-// "2-га Нова вулиця" - split by "-"?
 // !!! implement for tokens READ_COMMON_WORDS = false; Нова вулиця very slow!
-// Same street in multiple city (assign same id?) - https://www.openstreetmap.org/way/74728182 - TODO
 
-/////////////////////////////////
+//////////// IN PROGRESSS /////////////////
+// FIXME BUG Shell
+// FIXME школа
+
 // TODO [[2, нова, вулиця] STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 //  to search buildings most complete street is needed (largest city sort?)
-
 // TODO don't compute all combinations... (!) and do it in the right order 2^7
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 
@@ -52,14 +52,14 @@ import net.osmand.util.SearchAlgorithms;
 // TODO POI Categories implement categories
 // TODO World basemap ! POI  
 // TODO Street intersection match
-// TODO Progress / cancel
 // TODO Abbreviations Phase
 // TODO Sugggestion-correction
-// TODO Combine by wikidata id ?
 
 // ISSUES
+// TODO Progress / cancel
+// TODO read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
+// TODO Combine by wikidata id ?
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
-// TODO ? test: duplicate words in query
 // TODO ? review settings: don't read objects while preparing tokens ? id duplicate between maps?
 // TODO ? in the end recheck bbox boundary after load coordinates 31 (not 15)
 
@@ -83,6 +83,7 @@ import net.osmand.util.SearchAlgorithms;
 // 4. POI CATEGORIES. ? 
 // 5. READ_ALL. Switch ALWAYS_READ_COMMON_WORDS_ATOMS=true 
 //    It couldn't give any new complete result but could give partial results
+// 6. OPTIMIZE POI READ. Read only 1 POI in block
 public class SpatialTextSearch {
 	
 	private static final int LIMIT_PRINT = 300;
@@ -232,7 +233,7 @@ public class SpatialTextSearch {
 	public List<SpatialSearchToken> splitWords(String input) {
 		List<String> owords = new ArrayList<String>();
 		// split by hyphen as we supposed to index them separately
-		List<String> words = SearchAlgorithms.splitAndNormalize(input, owords);
+		List<String> words = SearchAlgorithms.splitAndNormalize(input, owords, false);
 		List<SpatialSearchToken> tokens = new ArrayList<>();
 		for (int order = 0; order < words.size(); order++) {
 			String w = words.get(order);
@@ -303,28 +304,36 @@ public class SpatialTextSearch {
 		query = "Kelterstraße Kernen im Remstal";
 		query = "Germany Kelter. Kernen im Remstal";
 		
-		pattern = "Us_";
-		query = "Salt Lake City Pennsylvania Place";
-		query = "Salt Lake City Pennsylvania Street";
+		pattern = "Us_penn";
+		query = "Salt Lake City Pennsylvania Place UT USA";
+//		query = "Salt Lake City Lake";
+//		query = "Salt Lake City Pennsylvania Street";
 //		query = "Salt Lake City";
+//		query = "USA Salt Lake City Pennsylvania Street 41";
+		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
+		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; 
+		query = "Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA";
+		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
+//		query ="Township";
+		
 		
 //		pattern = "Liechtenstein_europe.obf";
 //		query = "Vaduz Lettstrasse";
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 		
-//		query = "USA Salt Lake City Pennsylvania Street 41";
 		
-		pattern = "Ukraine_kyiv";
-		pattern = "Map";
+		pattern = "Ukraine_kyiv-c";
+//		pattern = "Map";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
-//		query = "2 Нова вулиця"; 
 //		query = "Ukraine kyiv saks.";
-//		query = "Ukraine Київ";
 //		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 53";
-		query = "2 Нова вулиця";
+//		query = "2-га Нова вулиця"; // unit test
+//		query = "2 Нова вулиця"; // unit test
+//		query = "саксаг.";
+		query = "школа";
 		
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";

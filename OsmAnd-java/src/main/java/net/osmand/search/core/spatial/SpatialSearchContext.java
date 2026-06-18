@@ -251,7 +251,7 @@ public class SpatialSearchContext {
 		}
 
 		long tm = System.nanoTime();
-		List<Amenity> lst = files.get(c.fileInd).readAmenityBlock(nameIndex.poiRegion, shift);
+		List<Amenity> lst = files.get(c.fileInd).readAmenityBlock(nameIndex.poiRegion, shift, poiInd);
 		if (cache != null) {
 			long ofirstid = oid - (poiInd << SHIFT_FILE_IND);
 			for (int i = 0; i < lst.size(); i++) {
@@ -371,7 +371,7 @@ public class SpatialSearchContext {
 			NameIndexAtomXY coords, List<SpatialSearchToken> allTokens) {
 		List<SpatialSearchToken> otherTokens = null;
 		if (name.indexOf(' ') != -1) {
-			List<String> split = SearchAlgorithms.splitAndNormalize(name);
+			List<String> split = SearchAlgorithms.splitAndNormalize(name, false);
 			for (int k = 1; k < split.size(); k++) {
 				boolean matched = false;
 				for (SpatialSearchToken token : allTokens) {

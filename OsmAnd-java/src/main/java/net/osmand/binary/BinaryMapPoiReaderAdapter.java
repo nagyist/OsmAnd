@@ -523,6 +523,7 @@ public class BinaryMapPoiReaderAdapter {
 
 //				LOG.info("Searched poi structure in " + (System.currentTimeMillis() - time) +
 //						"ms. Found " + offKeys.length + " subtrees");
+//				System.out.println(Arrays.toString(offKeys)); // FIXME
 				for (int j = 0; j < offKeys.length; j++) {
 					if (metrics != null) metrics.beginLoadObject(codedIS);
 					codedIS.seek(offKeys[j] + indexOffset);
@@ -557,7 +558,7 @@ public class BinaryMapPoiReaderAdapter {
 		TIntLongHashMap offsets = new TIntLongHashMap();
 		long offset = 0;
 		List<TIntLongHashMap> listOfSepOffsets = new ArrayList<TIntLongHashMap>();
-		List<String> queries = splitAndNormalize(query);
+		List<String> queries = splitAndNormalize(query, true);
 		List<QueryToken> queryTokens = null;
 		while (true) {
 			final long subStart = req.beginSubSearchStats(), bytes = codedIS.getBytesCounter();
@@ -804,7 +805,7 @@ public class BinaryMapPoiReaderAdapter {
 					codedIS.seek(offsets[j] + indexOffset);
 					long len = readInt();
 					long oldLim = codedIS.pushLimitLong((long) len);
-					boolean read = readPoiData(left31, right31, top31, bottom31, req, region, skipTiles,
+					boolean read = readPoiData(left31, right31, top31, bottom31, req, region,  -1, skipTiles,
 							req.zoom == -1 ? 31 : req.zoom + ZOOM_TO_SKIP_FILTER);
 					if (read && skipVal != -1 && skipTiles != null) {
 						skipTiles.add(skipVal);
@@ -867,6 +868,7 @@ public class BinaryMapPoiReaderAdapter {
 				}
 				codedIS.popLimit(oldLim);
 				if (am != null) {
+//					System.out.println(am + " " + am.getOsmId()); // FIXME
 					boolean matches = matcher.matches(am.getName().toLowerCase(Locale.ROOT))
 							|| matcher.matches(am.getEnName(true).toLowerCase(Locale.ROOT));
 					if (!matches) {
@@ -906,7 +908,7 @@ public class BinaryMapPoiReaderAdapter {
 	}
 
 	boolean readPoiData(int left31, int right31, int top31, int bottom31,
-			SearchRequest<Amenity> req, PoiRegion region, TLongHashSet toSkip, int zSkip) throws IOException {
+			SearchRequest<Amenity> req, PoiRegion region, int index, TLongHashSet toSkip, int zSkip) throws IOException {
 		int x = 0;
 		int y = 0;
 		int zoom = 0;
@@ -956,6 +958,11 @@ public class BinaryMapPoiReaderAdapter {
 							read = true;
 						}
 					}
+				}
+				if (--index == -1) {
+					// index initially could be -1
+					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+					return read;
 				}
 				break;
 			default:

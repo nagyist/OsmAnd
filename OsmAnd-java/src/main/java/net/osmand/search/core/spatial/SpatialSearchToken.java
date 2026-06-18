@@ -39,11 +39,8 @@ public class SpatialSearchToken {
 		originalWord = original;
 		word = w;
 		this.originalOrder = order;
-		if (w.endsWith(DOT_INCOMPLETE_STRING)) {
-			collator = new CollatorStringMatcher(w, StringMatcherMode.CHECK_STARTS_FROM_SPACE);
-		} else {
-			collator = new CollatorStringMatcher(w, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
-		}
+		// alreadyn in collator w.endsWith(DOT_INCOMPLETE_STRING)
+		collator = new CollatorStringMatcher(w, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
 	}
 
 	@Override
