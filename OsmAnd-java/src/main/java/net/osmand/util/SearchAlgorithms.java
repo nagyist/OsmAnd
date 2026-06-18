@@ -11,7 +11,6 @@ import com.google.protobuf.CodedInputStream;
 import gnu.trove.list.array.TIntArrayList;
 import net.osmand.binary.Abbreviations;
 import net.osmand.binary.CommonWords;
-import net.osmand.search.core.SearchPhrase;
 
 /**
  * Basic algorithms that are used in Search
@@ -251,6 +250,7 @@ public class SearchAlgorithms {
     private static final int MARKER_LCP_LENGTH = SUFFIX_DICT_MARKER_MAX - SUFFIX_DICT_MARKER_BASE;
     // compatible with default writer split "" 
     public static final String EMPTY_SUFFIX_DICTIONARY_SENTINEL = "";
+    public static final String OLD_EMPTY_SUFFIX_DICTIONARY_SENTINEL = "\uE100";
     
 
     private static boolean startsWithSuffixMarker(String value) {

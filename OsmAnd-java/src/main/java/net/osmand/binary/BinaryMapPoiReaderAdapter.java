@@ -4,7 +4,6 @@ package net.osmand.binary;
 import static net.osmand.binary.ObfConstants.isTagIndexedAsSearchRelated;
 import static net.osmand.binary.ObfConstants.isTagIndexedForSearchAsId;
 import static net.osmand.binary.ObfConstants.isTagIndexedForSearchAsName;
-import static net.osmand.util.SearchAlgorithms.EMPTY_SUFFIX_DICTIONARY_SENTINEL;
 import static net.osmand.util.SearchAlgorithms.nameIndexDecodeDictionarySuffix;
 import static net.osmand.util.SearchAlgorithms.splitAndNormalize;
 
@@ -44,6 +43,7 @@ import net.osmand.data.QuadTree;
 import net.osmand.osm.MapPoiTypes;
 import net.osmand.osm.PoiCategory;
 import net.osmand.util.MapUtils;
+import net.osmand.util.SearchAlgorithms;
 
 public class BinaryMapPoiReaderAdapter {
 	static final Log LOG = PlatformUtil.getLog(BinaryMapPoiReaderAdapter.class);
@@ -643,6 +643,7 @@ public class BinaryMapPoiReaderAdapter {
 		List<String> suffixDictionary = null;
 		QueryToken.SuffixMask mask = token == null || prefix == null ? null : token.new SuffixMask(prefix);
 		boolean suffixDictionaryInitialized = false;
+		boolean emptySuffixes = false;
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
@@ -654,18 +655,22 @@ public class BinaryMapPoiReaderAdapter {
 					if (suffixDictionary == null) {
 						suffixDictionary = new ArrayList<>();
 					}
-					if (EMPTY_SUFFIX_DICTIONARY_SENTINEL.equals(encodedSuffix)) {
-						if (prefix != null && token != null && !token.matchFullPrefix(prefix.key())) {
-							codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
-							return;
-						}
-						break;
+					if (SearchAlgorithms.OLD_EMPTY_SUFFIX_DICTIONARY_SENTINEL.equals(encodedSuffix)) {
+						emptySuffixes = true;
+						continue;
 					}
 					String prevSuffix = suffixDictionary.isEmpty() ? null : suffixDictionary.get(suffixDictionary.size() - 1);
 					String entry = nameIndexDecodeDictionarySuffix(prevSuffix, encodedSuffix);
 					suffixDictionary.add(entry);
 					break;
 				case OsmAndPoiNameIndexData.ATOMS_FIELD_NUMBER:
+					if (emptySuffixes || (suffixDictionary != null && suffixDictionary.size() == 1
+							&& suffixDictionary.get(0).equals(SearchAlgorithms.EMPTY_SUFFIX_DICTIONARY_SENTINEL))) {
+						if (prefix != null && token != null && !token.matchFullPrefix(prefix.key())) {
+							codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+							return;
+						}
+					}
 					if (!suffixDictionaryInitialized && mask != null) {
 						mask.setDictionary(suffixDictionary);
 						suffixDictionaryInitialized = true;

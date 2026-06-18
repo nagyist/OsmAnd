@@ -34,20 +34,18 @@ import net.osmand.util.SearchAlgorithms;
 
 
 //////////// TESTING //////////
-// Index street longer - Street Бульварно-Кудрявська вулиця(775) 15 19160 11048 bytes[2] >= 1
-// !!! implement for tokens READ_COMMON_WORDS = false; Нова вулиця very slow!
+// BUG Shell -
 
 //////////// IN PROGRESSS /////////////////
-// FIXME BUG Shell
 // FIXME школа
 
-// TODO [[2, нова, вулиця] STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
-//  to search buildings most complete street is needed (largest city sort?)
 // TODO don't compute all combinations... (!) and do it in the right order 2^7
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 
+// TODO [[2, нова, вулиця] STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
+// TODO Search Buildings (to search buildings most complete street is needed (largest city sort?))
+
 // FEATURES
-// TODO Search Buildings
 // TODO Read all top poi categories for files
 // TODO POI Categories implement categories
 // TODO World basemap ! POI  
