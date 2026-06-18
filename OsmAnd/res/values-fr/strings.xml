@@ -6108,4 +6108,6 @@
     <string name="get_unlimited_downloads">Téléchargez sans limite</string>
     <string name="tracks_backup_promo_description">Synchronisez vos traces entre vos appareils et sur le web avec OsmAnd Pro.</string>
     <string name="tracks_backup_promo_title">Synchronisez et restaurez vos traces</string>
+    <string name="show_discount_bottom_sheet">Afficher la feuille inférieure de réduction</string>
+    <string name="show_discount_bottom_sheet_description">Afficher la fiche de fond relative à la remise avec une réponse de développement personnalisée.</string>
 </resources>
