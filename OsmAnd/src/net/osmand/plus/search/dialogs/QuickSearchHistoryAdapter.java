@@ -1,0 +1,185 @@
+package net.osmand.plus.search.dialogs;
+
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
+
+import net.osmand.plus.OsmandApplication;
+import net.osmand.plus.R;
+import net.osmand.plus.search.SearchResultViewHolder;
+import net.osmand.plus.search.listitems.QuickSearchListItem;
+import net.osmand.plus.track.data.GPXInfo;
+import net.osmand.plus.utils.ColorUtilities;
+import net.osmand.plus.utils.UiUtilities;
+import net.osmand.plus.utils.UpdateLocationUtils;
+import net.osmand.plus.utils.UpdateLocationUtils.UpdateLocationViewCache;
+import net.osmand.search.core.ObjectType;
+import net.osmand.search.core.SearchResult;
+import net.osmand.util.Algorithms;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
+public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAdapter.Item> {
+
+	private static final int TYPE_HEADER = 0;
+	private static final int TYPE_RESULT = 1;
+
+	private final OsmandApplication app;
+	private final LayoutInflater inflater;
+	private final boolean nightMode;
+	private final Calendar calendar = Calendar.getInstance();
+	private final UpdateLocationViewCache locationViewCache;
+
+	private final List<Item> items = new ArrayList<>();
+	private boolean useMapCenter;
+
+	public QuickSearchHistoryAdapter(@NonNull OsmandApplication app, @NonNull FragmentActivity activity,
+			boolean nightMode) {
+		super(activity, R.layout.search_list_item);
+		this.app = app;
+		this.nightMode = nightMode;
+		inflater = UiUtilities.getInflater(activity, nightMode);
+		locationViewCache = UpdateLocationUtils.getUpdateLocationViewCache(activity);
+	}
+
+	public void setUseMapCenter(boolean useMapCenter) {
+		this.useMapCenter = useMapCenter;
+		notifyDataSetChanged();
+	}
+
+	public void setItems(@NonNull List<Item> items) {
+		this.items.clear();
+		this.items.addAll(items);
+		notifyDataSetChanged();
+	}
+
+	@Override
+	public int getCount() {
+		return items.size();
+	}
+
+	@Nullable
+	@Override
+	public Item getItem(int position) {
+		return items.get(position);
+	}
+
+	@Override
+	public int getViewTypeCount() {
+		return 2;
+	}
+
+	@Override
+	public int getItemViewType(int position) {
+		Item item = getItem(position);
+		return item != null && item.headerTitle != null ? TYPE_HEADER : TYPE_RESULT;
+	}
+
+	@Override
+	public boolean isEnabled(int position) {
+		return getItemViewType(position) == TYPE_RESULT;
+	}
+
+	@NonNull
+	@Override
+	public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+		Item item = getItem(position);
+		if (item == null) {
+			return new View(parent.getContext());
+		}
+		if (item.headerTitle != null) {
+			TextView view = (TextView) getView(convertView, R.layout.quick_search_history_section_header);
+			view.setText(item.headerTitle);
+			ViewGroup.MarginLayoutParams params = ensureMarginLayoutParams(view);
+			params.topMargin = position == 0 ? 0 : app.getResources().getDimensionPixelSize(R.dimen.content_padding);
+			view.setLayoutParams(params);
+			return view;
+		}
+		QuickSearchListItem listItem = item.getListItem();
+		return listItem != null ? bindResultItem(position, convertView, listItem) : new View(parent.getContext());
+	}
+
+	@NonNull
+	private View bindResultItem(int position, @Nullable View convertView, @NonNull QuickSearchListItem listItem) {
+		SearchResult searchResult = listItem.getSearchResult();
+		LinearLayout view;
+		if (searchResult != null && searchResult.objectType == ObjectType.GPX_TRACK) {
+			view = getView(convertView, R.layout.search_gpx_list_item);
+			QuickSearchListAdapter.bindGpxTrack(view, listItem, (GPXInfo) searchResult.relatedObject);
+		} else if (searchResult != null && searchResult.objectType == ObjectType.POI) {
+			view = getView(convertView, R.layout.search_list_item_full);
+			SearchResultViewHolder.bindPOISearchResult(view, listItem, nightMode, calendar);
+		} else {
+			view = getView(convertView, R.layout.search_list_item);
+			SearchResultViewHolder.bindSearchResult(view, listItem, calendar);
+		}
+		if (view.findViewById(R.id.compass_layout) != null) {
+			QuickSearchListAdapter.updateCompass(view, listItem, locationViewCache, useMapCenter);
+		}
+		view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
+		updateDivider(position, view);
+		return view;
+	}
+
+	private void updateDivider(int position, @NonNull View view) {
+		View divider = view.findViewById(R.id.divider);
+		if (divider != null) {
+			boolean last = position == getCount() - 1 || getItemViewType(position + 1) == TYPE_HEADER;
+			divider.setVisibility(last ? View.GONE : View.VISIBLE);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@NonNull
+	private <T extends View> T getView(@Nullable View convertView, int layoutId) {
+		if (convertView == null || !Algorithms.objectEquals(convertView.getTag(), layoutId)) {
+			convertView = inflater.inflate(layoutId, null);
+			convertView.setTag(layoutId);
+		}
+		return (T) convertView;
+	}
+
+	@NonNull
+	private ViewGroup.MarginLayoutParams ensureMarginLayoutParams(@NonNull View view) {
+		ViewGroup.LayoutParams params = view.getLayoutParams();
+		if (params instanceof ViewGroup.MarginLayoutParams marginParams) {
+			return marginParams;
+		}
+		return new ViewGroup.MarginLayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+	}
+
+	public static Item header(@NonNull String title) {
+		return new Item(title, null);
+	}
+
+	public static Item result(@NonNull QuickSearchListItem item) {
+		return new Item(null, item);
+	}
+
+	public static class Item {
+		@Nullable
+		private final String headerTitle;
+		@Nullable
+		private final QuickSearchListItem listItem;
+
+		private Item(@Nullable String headerTitle, @Nullable QuickSearchListItem listItem) {
+			this.headerTitle = headerTitle;
+			this.listItem = listItem;
+		}
+
+		@Nullable
+		public QuickSearchListItem getListItem() {
+			return listItem;
+		}
+	}
+}
