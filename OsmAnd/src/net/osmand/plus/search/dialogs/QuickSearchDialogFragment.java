@@ -84,7 +84,6 @@ import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.settings.enums.HistorySource;
 import net.osmand.plus.settings.fragments.BaseSettingsFragment;
 import net.osmand.plus.settings.fragments.OnPreferenceChanged;
-import net.osmand.plus.settings.fragments.SearchHistorySettingsFragment;
 import net.osmand.plus.settings.fragments.SettingsScreenType;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
@@ -811,7 +810,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		dismissAllowingStateLoss();
 	}
 
-	private void openHistorySettingsAndReturnToSearch() {
+	public void openHistorySettingsAndReturnToSearch() {
 		FragmentActivity activity = requireActivity();
 		FragmentManager fragmentManager = activity.getSupportFragmentManager();
 		removeReturnToSearchListener(fragmentManager);
@@ -2135,7 +2134,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 							getString(R.string.shared_string_view_all), v -> {
 						FragmentManager fragmentManager = getFragmentManager();
 						if (fragmentManager != null) {
-							SearchHistorySettingsFragment.showInstance(fragmentManager, this);
+							QuickSearchHistoryFragment.showInstance(fragmentManager, this);
 						}
 					}));
 				} else {
@@ -3004,6 +3003,25 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		searchEditText.setHint(R.string.popular_places);
 		searchEditText.setEnabled(false);
 		toolbar.setVisibility(View.VISIBLE);
+	}
+
+	public void showSearchHistoryResult(@NonNull SearchResult searchResult) {
+		if (mainSearchFragment == null) {
+			return;
+		}
+		if (searchResult.objectType == POI
+				|| searchResult.objectType == LOCATION
+				|| searchResult.objectType == HOUSE
+				|| searchResult.objectType == FAVORITE
+				|| searchResult.objectType == RECENT_OBJ
+				|| searchResult.objectType == WPT
+				|| searchResult.objectType == STREET_INTERSECTION
+				|| searchResult.objectType == GPX_TRACK) {
+			mainSearchFragment.showResult(searchResult);
+		} else {
+			completeQueryWithObject(searchResult);
+			onSearchResultSelected();
+		}
 	}
 
 	public void onSearchResultSelected() {
