@@ -45,7 +45,8 @@ public class SpatialSearchToken {
 
 	@Override
 	public String toString() {
-		return String.format("%d. %s - %d atoms", originalOrder, originalWord, atoms.size());
+		return String.format("%d. %s - %d atoms", sortedOrder, 
+				originalWord, atoms.size());
 	}
 
 	void addAtom(NameIndexAtom atom) {

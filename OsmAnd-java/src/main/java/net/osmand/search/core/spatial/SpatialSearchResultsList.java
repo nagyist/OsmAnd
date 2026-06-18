@@ -41,11 +41,18 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		tCount = tokens.length;
+		if (parent != null) {
+			calculateIntersection(token, parent);
+		}
 	}
 	
 	private void loadObjects(SpatialSearchContext ctx, int type, TLongObjectHashMap<MapObject> cache) throws IOException {
 		TLongObjectHashMap<Long> lstMap = new TLongObjectHashMap<>();
 		for (NameIndexAtom a : linearResults) {
+			if (a.object != null) {
+				cache.put(a.id, a.object);
+				continue;
+			}
 			if (a.type == type || (type == -2 && a.type != SpatialSearchToken.POI_TYPE
 					&& a.type != SpatialSearchToken.STREET_TYPE)) {
 				lstMap.put(a.id, a.parentid);
@@ -85,10 +92,6 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return linearResults.get(combination * tokens.length + pos);
 	}
 	
-	public List<SpatialSearchResult> getResult() {
-		return finalResult;
-	}
-
 	public List<NameIndexAtom> getAtoms(int combination) {
 		if (finalResult != null) {
 			combination = finalResult.get(combination).parentInd;
@@ -108,12 +111,21 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	public int getTokenCount() {
 		return tCount;
 	}
+	
+	public List<SpatialSearchResult> getFinalResult() {
+		return finalResult;
+	}
 
 	public List<SpatialSearchResult> sortResults(boolean deduplicate) {
 		finalResult = new ArrayList<>(tileIds.size());
 		for (int i = 0; i < tileIds.size(); i++) {
 			finalResult.add(new SpatialSearchResult(this, i));
 		}		
+		finalResult = sortResults(finalResult, deduplicate);
+		return finalResult;
+	}
+
+	public List<SpatialSearchResult> sortResults(List<SpatialSearchResult> finalResult, boolean deduplicate) {
 		Collections.sort(finalResult);
 		if (deduplicate) {
 			List<SpatialSearchResult> res = new ArrayList<SpatialSearchResult>();
@@ -130,10 +142,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return finalResult;
 	}
 	
-	public void calculateIntersection(SpatialSearchToken token, SpatialSearchResultsList parent) {
+	private void calculateIntersection(SpatialSearchToken token, SpatialSearchResultsList parent) {
 		if (parent.getTokenCount() == 0) {
 			addResult(null, 0, token.atoms);
-		} else {
+		} else if (parent.getCombinations() > 0) {
 			// 1. iterate parent objects and find all objects from <parent>
 			//    that are fully inside object <token> or have same the same tile 
 			for (int i = 0; i < parent.tileIds.size(); i++) {
@@ -262,10 +274,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		for (SpatialSearchToken t : tokens) {
 			words.add(t.originalWord);
 		}
-		return String.format("Results list %d matched %s - %d (%d unique) results: %s", tCount, words,
-				getCombinations(),
-				finalResult == null ? -1 : finalResult.size(),
-				extended ? linearResults : Collections.EMPTY_LIST);
+		return String.format("Results %d tokens %,d%s - %s %s", tCount, getCombinations(),
+				finalResult == null ? "" : String.format(" (%,d unique)", finalResult.size()), 
+				words,
+				!extended ? "" : (" results: " + linearResults));
 	}
 	
 	

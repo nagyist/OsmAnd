@@ -7,7 +7,6 @@ import java.util.List;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.ObfConstants;
 import net.osmand.data.MapObject;
-import net.osmand.data.Street;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 
 public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
@@ -119,6 +118,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		}
 	}
 	
+	public int matchedTokens() {
+		return parent.tCount;
+	}
+	
 
 	public int sumOther() {
 		int s1 = 0;
@@ -138,7 +141,11 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
 	@Override
 	public int compareTo(SpatialSearchResult o) {
-		int res = Integer.compare(objs.size(), o.objs.size());
+		int res = -Integer.compare(parent.tCount, o.parent.tCount);
+		if (res != 0) {
+			return res;
+		}
+		res = Integer.compare(objs.size(), o.objs.size());
 		if (res != 0) {
 			return res;
 		}
