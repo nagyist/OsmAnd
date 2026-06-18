@@ -1,17 +1,11 @@
 package net.osmand.plus.search.dialogs;
 
-import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.PopupWindow;
-import android.widget.RadioButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -98,14 +92,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private AppCompatEditText searchEditText;
 	private ImageButton settingsButton;
 	private ImageButton clearButton;
-	private LinearLayout sortChip;
-	private TextView sortChipTitle;
-	private ImageView sortChipIcon;
-	private LinearLayout sourceChip;
-	private TextView sourceChipTitle;
-	private ImageView sourceChipIcon;
-	private View topFiltersChipScroll;
-	private LinearLayout topFiltersChipContainer;
+	private QuickSearchChipsToolbarView chipsToolbar;
 
 	private Float heading;
 	private Location location;
@@ -163,29 +150,32 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	}
 
 	private void setupChips(@NonNull View view) {
-		view.findViewById(R.id.filter_chip).setVisibility(View.GONE);
-		sortChip = view.findViewById(R.id.sort_chip);
-		sortChipIcon = view.findViewById(R.id.sort_chip_icon);
-		sortChipTitle = view.findViewById(R.id.sort_chip_title);
-		ImageView sortChipArrow = view.findViewById(R.id.sort_chip_arrow);
-		sortChipArrow.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_arrow_drop_down));
-		sortChip.setOnClickListener(v -> {
-			sortChip.setSelected(true);
-			showSortPopupMenu();
+		chipsToolbar = view.findViewById(R.id.chips_toolbar);
+		chipsToolbar.setOnSortSelectedListener(optionId -> {
+			HistorySortMode[] modes = HistorySortMode.values();
+			if (optionId >= 0 && optionId < modes.length) {
+				selectedSortMode = modes[optionId];
+				updateSortChip();
+				updateHistoryItems(searchEditText.getText().toString());
+			}
 		});
-
-		sourceChip = view.findViewById(R.id.search_around_chip);
-		sourceChipIcon = view.findViewById(R.id.search_around_chip_icon);
-		sourceChipTitle = view.findViewById(R.id.search_around_chip_title);
-		ImageView sourceChipArrow = view.findViewById(R.id.search_around_chip_arrow);
-		sourceChipArrow.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_arrow_drop_down));
-		sourceChip.setOnClickListener(v -> {
-			sourceChip.setSelected(true);
-			showSourcePopupMenu();
+		chipsToolbar.setOnSourceSelectedListener(optionId -> {
+			HistorySourceFilter[] filters = HistorySourceFilter.values();
+			if (optionId >= 0 && optionId < filters.length) {
+				selectedSourceFilter = filters[optionId];
+				selectedTypeFilters.clear();
+				updateSourceChip();
+				updateHistoryItems(searchEditText.getText().toString());
+			}
 		});
-
-		topFiltersChipScroll = view.findViewById(R.id.top_filters_chip_scroll);
-		topFiltersChipContainer = view.findViewById(R.id.top_filters_chip_container);
+		chipsToolbar.setOnTypeChipClickListener(typeName -> {
+			if (selectedTypeFilters.remove(typeName)) {
+				updateHistoryItems(searchEditText.getText().toString());
+			} else {
+				selectedTypeFilters.add(typeName);
+				updateHistoryItems(searchEditText.getText().toString());
+			}
+		});
 		updateSortChip();
 		updateSourceChip();
 	}
@@ -405,10 +395,9 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	}
 
 	private void updateTypeFilterChips(@NonNull List<HistoryRecord> records) {
-		if (topFiltersChipContainer == null || topFiltersChipScroll == null) {
+		if (chipsToolbar == null) {
 			return;
 		}
-		topFiltersChipContainer.removeAllViews();
 		Map<String, String> typeNames = new LinkedHashMap<>();
 		for (HistoryRecord record : records) {
 			if (!Algorithms.isEmpty(record.typeName)) {
@@ -416,176 +405,40 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 			}
 		}
 		selectedTypeFilters.retainAll(typeNames.keySet());
+		List<String> chips = new ArrayList<>();
 		for (String selected : new ArrayList<>(selectedTypeFilters)) {
 			String typeName = typeNames.remove(selected);
 			if (typeName != null) {
-				topFiltersChipContainer.addView(createTypeChip(typeName));
+				chips.add(typeName);
 			}
 		}
 		for (String typeName : typeNames.values()) {
-			topFiltersChipContainer.addView(createTypeChip(typeName));
+			chips.add(typeName);
 		}
-		topFiltersChipScroll.setVisibility(topFiltersChipContainer.getChildCount() > 0 ? View.VISIBLE : View.GONE);
-	}
-
-	@NonNull
-	private View createTypeChip(@NonNull String typeName) {
-		LinearLayout chip = new LinearLayout(requireContext());
-		chip.setGravity(Gravity.CENTER_VERTICAL);
-		chip.setOrientation(LinearLayout.HORIZONTAL);
-		chip.setBackgroundResource(R.drawable.bg_search_toolbar_chip);
-		chip.setClickable(true);
-		chip.setFocusable(true);
-		chip.setMinimumWidth(AndroidUtils.dpToPx(requireContext(), 68));
-		chip.setPadding(AndroidUtils.dpToPx(requireContext(), 12), 0,
-				AndroidUtils.dpToPx(requireContext(), 12), 0);
-		chip.setSelected(selectedTypeFilters.contains(typeName));
-
-		LinearLayout.LayoutParams chipParams = new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, AndroidUtils.dpToPx(requireContext(), 36));
-		chipParams.setMarginEnd(getDimensionPixelSize(R.dimen.content_padding_half));
-		chip.setLayoutParams(chipParams);
-
-		TextView title = new TextView(requireContext());
-		title.setText(typeName);
-		title.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
-		title.setTextSize(14);
-		title.setSingleLine(true);
-		title.setEllipsize(TextUtils.TruncateAt.END);
-		chip.addView(title, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		chip.setOnClickListener(v -> {
-			if (selectedTypeFilters.remove(typeName)) {
-				updateHistoryItems(searchEditText.getText().toString());
-			} else {
-				selectedTypeFilters.add(typeName);
-				updateHistoryItems(searchEditText.getText().toString());
-			}
-		});
-		return chip;
-	}
-
-	private void showSortPopupMenu() {
-		LinearLayout content = createPopupContent();
-		PopupWindow popupWindow = createPopupWindow(content);
-		addPopupTitle(content, R.string.sort_by);
-		addSortOption(content, popupWindow, HistorySortMode.RECENT);
-		addSortOption(content, popupWindow, HistorySortMode.NEAREST);
-		addSortOption(content, popupWindow, HistorySortMode.MAP_CENTER);
-		popupWindow.setOnDismissListener(() -> sortChip.setSelected(false));
-		popupWindow.showAsDropDown(sortChip, 0, AndroidUtils.dpToPx(requireContext(), 4));
-	}
-
-	private void showSourcePopupMenu() {
-		LinearLayout content = createPopupContent();
-		PopupWindow popupWindow = createPopupWindow(content);
-		addSourceOption(content, popupWindow, HistorySourceFilter.ALL);
-		addSourceOption(content, popupWindow, HistorySourceFilter.SEARCH);
-		addSourceOption(content, popupWindow, HistorySourceFilter.NAVIGATION);
-		popupWindow.setOnDismissListener(() -> sourceChip.setSelected(false));
-		popupWindow.showAsDropDown(sourceChip, 0, AndroidUtils.dpToPx(requireContext(), 4));
-	}
-
-	@NonNull
-	private LinearLayout createPopupContent() {
-		LinearLayout content = new LinearLayout(requireContext());
-		content.setOrientation(LinearLayout.VERTICAL);
-		content.setPadding(0, AndroidUtils.dpToPx(requireContext(), 8), 0, AndroidUtils.dpToPx(requireContext(), 8));
-		return content;
-	}
-
-	@NonNull
-	private PopupWindow createPopupWindow(@NonNull View content) {
-		GradientDrawable background = new GradientDrawable();
-		background.setColor(ColorUtilities.getListBgColor(requireContext(), nightMode));
-		background.setCornerRadius(AndroidUtils.dpToPx(requireContext(), 4));
-
-		PopupWindow popupWindow = new PopupWindow(content,
-				AndroidUtils.dpToPx(requireContext(), 268), LinearLayout.LayoutParams.WRAP_CONTENT, true);
-		popupWindow.setBackgroundDrawable(background);
-		popupWindow.setOutsideTouchable(true);
-		popupWindow.setElevation(AndroidUtils.dpToPx(requireContext(), 24));
-		return popupWindow;
-	}
-
-	private void addPopupTitle(@NonNull LinearLayout content, int titleId) {
-		TextView title = new TextView(requireContext());
-		title.setText(titleId);
-		title.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorSecondary));
-		title.setTextSize(16);
-		title.setPadding(AndroidUtils.dpToPx(requireContext(), 24), AndroidUtils.dpToPx(requireContext(), 12),
-				AndroidUtils.dpToPx(requireContext(), 24), AndroidUtils.dpToPx(requireContext(), 8));
-		content.addView(title, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-	}
-
-	private void addSortOption(@NonNull LinearLayout content, @NonNull PopupWindow popupWindow,
-			@NonNull HistorySortMode sortMode) {
-		addRadioOption(content, sortMode.titleId, selectedSortMode == sortMode, () -> {
-			selectedSortMode = sortMode;
-			updateSortChip();
-			popupWindow.dismiss();
-			updateHistoryItems(searchEditText.getText().toString());
-		});
-	}
-
-	private void addSourceOption(@NonNull LinearLayout content, @NonNull PopupWindow popupWindow,
-			@NonNull HistorySourceFilter sourceFilter) {
-		addRadioOption(content, sourceFilter.titleId, selectedSourceFilter == sourceFilter, () -> {
-			selectedSourceFilter = sourceFilter;
-			selectedTypeFilters.clear();
-			updateSourceChip();
-			popupWindow.dismiss();
-			updateHistoryItems(searchEditText.getText().toString());
-		});
-	}
-
-	private void addRadioOption(@NonNull LinearLayout content, int titleId, boolean selected,
-			@NonNull Runnable action) {
-		LinearLayout row = new LinearLayout(requireContext());
-		row.setGravity(Gravity.CENTER_VERTICAL);
-		row.setOrientation(LinearLayout.HORIZONTAL);
-		row.setPadding(AndroidUtils.dpToPx(requireContext(), 24), 0,
-				AndroidUtils.dpToPx(requireContext(), 24), 0);
-		row.setMinimumHeight(AndroidUtils.dpToPx(requireContext(), 56));
-		row.setBackgroundResource(AndroidUtils.resolveAttribute(requireContext(), android.R.attr.selectableItemBackground));
-
-		RadioButton radioButton = new RadioButton(requireContext());
-		radioButton.setClickable(false);
-		radioButton.setChecked(selected);
-		row.addView(radioButton, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		TextView text = new TextView(requireContext());
-		text.setText(titleId);
-		text.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
-		text.setTextSize(18);
-		LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-		textParams.setMarginStart(AndroidUtils.dpToPx(requireContext(), 16));
-		row.addView(text, textParams);
-
-		row.setOnClickListener(v -> action.run());
-		content.addView(row, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+		chipsToolbar.setTypeChips(chips, new ArrayList<>(selectedTypeFilters));
 	}
 
 	private void updateSortChip() {
-		if (sortChipTitle != null) {
-			sortChipTitle.setText(selectedSortMode.titleId);
-		}
-		if (sortChipIcon != null) {
-			sortChipIcon.setImageDrawable(iconsCache.getThemedIcon(selectedSortMode.iconId));
+		if (chipsToolbar != null) {
+			chipsToolbar.setSortChip(selectedSortMode.titleId, selectedSortMode.iconId);
+			List<QuickSearchChipsToolbarView.Option> options = new ArrayList<>();
+			for (HistorySortMode sortMode : HistorySortMode.values()) {
+				options.add(new QuickSearchChipsToolbarView.Option(
+						sortMode.ordinal(), sortMode.titleId, selectedSortMode == sortMode));
+			}
+			chipsToolbar.setSortOptions(options);
 		}
 	}
 
 	private void updateSourceChip() {
-		if (sourceChipTitle != null) {
-			sourceChipTitle.setText(selectedSourceFilter.titleId);
-		}
-		if (sourceChipIcon != null) {
-			sourceChipIcon.setImageDrawable(iconsCache.getThemedIcon(selectedSourceFilter.iconId));
+		if (chipsToolbar != null) {
+			chipsToolbar.setSourceChip(selectedSourceFilter.titleId, selectedSourceFilter.iconId);
+			List<QuickSearchChipsToolbarView.Option> options = new ArrayList<>();
+			for (HistorySourceFilter sourceFilter : HistorySourceFilter.values()) {
+				options.add(new QuickSearchChipsToolbarView.Option(
+						sourceFilter.ordinal(), sourceFilter.titleId, selectedSourceFilter == sourceFilter));
+			}
+			chipsToolbar.setSourceOptions(options);
 		}
 	}
 

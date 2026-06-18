@@ -93,7 +93,10 @@
 
 		</androidx.appcompat.widget.Toolbar>
 
-		<include layout="@layout/quick_search_chips_toolbar" />
+		<net.osmand.plus.search.dialogs.QuickSearchChipsToolbarView
+			android:id="@+id/chips_toolbar"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content" />
 
 	</com.google.android.material.appbar.AppBarLayout>
 

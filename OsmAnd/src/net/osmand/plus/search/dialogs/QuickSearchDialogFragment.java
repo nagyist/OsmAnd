@@ -339,7 +339,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		ImageView filterChipIcon = view.findViewById(R.id.filter_chip_icon);
 		filterChipIcon.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_filter));
 		filterChip.setOnClickListener(v -> {
-			filterChip.setSelected(true);
 			SearchPhrase searchPhrase = searchUICore.getPhrase();
 			if (searchPhrase.isLastWord(POI_TYPE)) {
 				String filterId = null;
@@ -951,6 +950,10 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		updateSearchAroundChip();
 		updateSortChip();
 		updateTopFilterChipsSelection();
+	}
+
+	void refreshFilterChipState() {
+		updateToolbarButton();
 	}
 
 	private void updateTopFilterChips() {
