@@ -20,6 +20,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StyleRes;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -29,7 +30,6 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.search.SearchBar;
 import com.google.android.material.search.SearchView;
 
-import net.osmand.StateChangedListener;
 import net.osmand.plus.R;
 import net.osmand.plus.base.BaseFullScreenDialogFragment;
 import net.osmand.plus.helpers.AndroidUiHelper;
@@ -39,12 +39,10 @@ import net.osmand.plus.settings.coordinates.CoordinateFormat;
 import net.osmand.plus.settings.coordinates.CoordinateFormatHelper;
 import net.osmand.plus.settings.coordinates.CoordinateFormatIds;
 import net.osmand.plus.settings.coordinates.CoordinateFormatSettingsStorage;
-import net.osmand.plus.settings.enums.DayNightMode;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.plus.utils.InsetTarget;
 import net.osmand.plus.utils.InsetTargetsCollection;
-import net.osmand.plus.utils.UiUtilities;
 import net.osmand.plus.widgets.tools.SimpleTextWatcher;
 import net.osmand.util.Algorithms;
 
@@ -82,7 +80,12 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 	private boolean addToEditDraft;
 	private boolean focusSearch;
 	private int previousSoftInputMode = SOFT_INPUT_MODE_NOT_SET;
-	private StateChangedListener<DayNightMode> dayNightModeListener;
+
+	@Override
+	@StyleRes
+	protected int getDialogThemeId() {
+		return nightMode ? R.style.OsmandMaterialDarkTheme : R.style.OsmandMaterialLightTheme;
+	}
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -115,13 +118,6 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 				onBackPressed();
 			}
 		});
-
-		dayNightModeListener = mode -> app.runInUIThread(() -> {
-			if (isResumed()) {
-				updateStatusBarAppearance(getContentView());
-			}
-		});
-		settings.DAYNIGHT_MODE.addListener(dayNightModeListener);
 	}
 
 	@Nullable
@@ -129,8 +125,7 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
 	                         @Nullable Bundle savedInstanceState) {
 		updateNightMode();
-		View view = LayoutInflater.from(getMaterialThemedContext())
-				.inflate(R.layout.coordinate_format_add_fragment, container, false);
+		View view = inflate(R.layout.coordinate_format_add_fragment, container, false);
 		contentContainer = view.findViewById(R.id.content_container);
 		setupToolbar(view);
 		setupSearch(view);
@@ -172,14 +167,6 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 		coordinateFormatHelper.cancelSearch();
 		restoreSearchSoftInputMode();
 		super.onDestroyView();
-	}
-
-	@Override
-	public void onDestroy() {
-		if (dayNightModeListener != null) {
-			settings.DAYNIGHT_MODE.removeListener(dayNightModeListener);
-		}
-		super.onDestroy();
 	}
 
 	@Override
@@ -304,8 +291,7 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 	}
 
 	private View createInfoCard() {
-		return LayoutInflater.from(getMaterialThemedContext())
-				.inflate(R.layout.coordinate_format_add_info_card, contentContainer, false);
+		return inflate(R.layout.coordinate_format_add_info_card, contentContainer, false);
 	}
 
 	@Nullable
@@ -425,12 +411,6 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 		previousSoftInputMode = SOFT_INPUT_MODE_NOT_SET;
 	}
 
-	@NonNull
-	private Context getMaterialThemedContext() {
-		return UiUtilities.getThemedContext(requireContext(), nightMode,
-				R.style.OsmandMaterialLightTheme, R.style.OsmandMaterialDarkTheme);
-	}
-
 	private int dp(float value) {
 		return AndroidUtils.dpToPx(app, value);
 	}
@@ -442,7 +422,7 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 
 	@NonNull
 	private MaterialCardView createCard(int marginStart, int marginTop, int marginEnd, int marginBottom) {
-		Context themedContext = getMaterialThemedContext();
+		Context themedContext = getThemedContext();
 		MaterialCardView card = new MaterialCardView(themedContext);
 		card.setCardElevation(0);
 		card.setRadius(dp(12));
@@ -458,7 +438,7 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 
 	@NonNull
 	private LinearLayout createVerticalContainer() {
-		LinearLayout layout = new LinearLayout(getMaterialThemedContext());
+		LinearLayout layout = new LinearLayout(getThemedContext());
 		layout.setOrientation(LinearLayout.VERTICAL);
 		layout.setLayoutParams(new LinearLayout.LayoutParams(
 				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -467,7 +447,7 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 
 	@NonNull
 	private TextView createTitleText(@NonNull String text) {
-		Context themedContext = getMaterialThemedContext();
+		Context themedContext = getThemedContext();
 		TextView textView = new TextView(themedContext);
 		textView.setText(text);
 		textView.setTextColor(AndroidUtils.getColorFromAttr(themedContext, android.R.attr.textColorPrimary));
@@ -479,8 +459,7 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 	@NonNull
 	private View createFormatRow(@NonNull CoordinateFormat format, boolean addRow, boolean primary,
 	                             boolean showDivider, @NonNull View.OnClickListener clickListener) {
-		View row = LayoutInflater.from(getMaterialThemedContext())
-				.inflate(R.layout.coordinate_format_settings_item, null, false);
+		View row = inflate(R.layout.coordinate_format_settings_item, null, false);
 		bindFormatRow(row, format, addRow, primary, showDivider, clickListener);
 		return row;
 	}
@@ -576,8 +555,7 @@ public class AddCoordinateFormatFragment extends BaseFullScreenDialogFragment {
 		@NonNull
 		@Override
 		public FormatViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-			View view = LayoutInflater.from(getMaterialThemedContext())
-					.inflate(R.layout.coordinate_format_settings_item, parent, false);
+			View view = inflate(R.layout.coordinate_format_settings_item, parent, false);
 			return new FormatViewHolder(view);
 		}
 
