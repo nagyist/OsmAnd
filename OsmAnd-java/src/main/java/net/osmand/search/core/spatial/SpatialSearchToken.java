@@ -19,6 +19,7 @@ import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 public class SpatialSearchToken {
+	public static final int BUILDING_TYPE = -2;
 	public static final int POI_TYPE = -1;
 	public static final int STREET_TYPE = CityBlocks.STREET_TYPE.index;
 	public static final String DOT_INCOMPLETE_STRING = ".";
@@ -32,25 +33,29 @@ public class SpatialSearchToken {
 	TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
 	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
 	HashQuadTree<NameIndexAtom> quadTree = new HashQuadTree<>(16);
-	CollatorStringMatcher collator;
-	
+
+	CollatorStringMatcher collatorEq;
 
 	public SpatialSearchToken(String w, String original, int order) {
 		originalWord = original;
 		word = w;
 		this.originalOrder = order;
-		// alreadyn in collator w.endsWith(DOT_INCOMPLETE_STRING)
-		collator = new CollatorStringMatcher(w, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+		// . implemented already in collator w.endsWith(DOT_INCOMPLETE_STRING)
+		collatorEq = new CollatorStringMatcher(w, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+	}
+	
+	public CollatorStringMatcher getCollator() {
+		return collatorEq;
 	}
 
 	@Override
 	public String toString() {
-		return String.format("%d. %s - %d atoms", sortedOrder, 
-				originalWord, atoms.size());
+		return String.format("%d. %s - %d atoms", sortedOrder, originalWord, atoms.size());
 	}
 
 	void addAtom(NameIndexAtom atom) {
-		if (atom.object != null && !(atom.object instanceof Street) && atom.object.getId() > 0) {
+		if (atom.object != null && !(atom.object instanceof Street) && 
+				atom.object.getId() != null &&  atom.object.getId() > 0) {
 			long osmId = ObfConstants.getOsmIdFromMapObjectId(atom.object.getId());
 			NameIndexAtom ex = indexByOsmIds.get(osmId);
 			if (ex != null) {
@@ -73,7 +78,7 @@ public class SpatialSearchToken {
 	}
 
 	boolean acceptName(String name) {
-		return collator.matches(name);
+		return collatorEq.matches(name);
 	}
 
 	public static class NameIndexAtomXY {
@@ -179,6 +184,7 @@ public class SpatialSearchToken {
 		MapObject object;
 		int otherWordsCnt = 0;
 		NameIndexAtomXY coords;
+		int buildingInd = -1;
 
 		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, int otherWordsCnt,
 				NameIndexAtomXY coords) {
@@ -192,13 +198,15 @@ public class SpatialSearchToken {
 		}
 
 		public boolean atomicObject() {
-			return type == STREET_TYPE || type == POI_TYPE;
+			return type == STREET_TYPE || type == POI_TYPE || type == BUILDING_TYPE;
 		}
 
 		String typeStr() {
 			String typeS = "";
 			if (type == POI_TYPE) {
 				typeS = "POI";
+			} else if (type == BUILDING_TYPE) {
+				typeS = "Building";
 			} else {
 				typeS = CityBlocks.getByType(type).toString();
 			}

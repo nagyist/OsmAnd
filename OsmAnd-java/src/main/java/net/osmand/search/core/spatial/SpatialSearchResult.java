@@ -27,6 +27,11 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			for (SpatialSearchResultRef ex : objs) {
 				if (atom.id == ex.atom.id) {
 					ref = ex;
+					// building
+					if (ref.atom.type > atom.type) {
+						ref.parent = ref.atom;
+						ref.atom = atom;
+					}
 					atom = null;
 					break;
 				}
@@ -59,6 +64,9 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		List<MapObject> o = new ArrayList<>();
 		for (SpatialSearchResultRef r : objs) {
 			o.add(r.atom.object);
+			if (r.parent != null && r.parent.object != null) {
+				o.add(r.parent.object);
+			}
 		}
 		return o;
 	}
@@ -72,11 +80,14 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	
 	public long getIdDeduplication() {
 		if (objs.size() > 0) {
-			NameIndexAtom atom = objs.get(0).atom;
-			if (atom.object != null) {
-				return ObfConstants.getOsmObjectId(atom.object);
+			SpatialSearchResultRef first = objs.get(0);
+			if (first.parent != null && first.parent.object != null) {
+				return ObfConstants.getOsmObjectId(first.parent.object);
 			}
-			return atom.id;
+			if (first.atom.object != null) {
+				return ObfConstants.getOsmObjectId(first.atom.object);
+			}
+			return first.atom.id;
 		}
 		return -1;
 	}
@@ -88,15 +99,18 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	
 	
 	public static class SpatialSearchResultRef {
-		public final NameIndexAtom atom;
-		public final List<SpatialSearchToken> tokens = new ArrayList<>();
+		NameIndexAtom atom;
+		NameIndexAtom parent; // street for building
+		List<SpatialSearchToken> tokens = new ArrayList<>();
 		
 		public SpatialSearchResultRef(NameIndexAtom atom) {
 			this.atom = atom;
 		}
 		
 		public int typeOrder() {
-			if (atom.type == SpatialSearchToken.POI_TYPE) {
+			if (atom.type == SpatialSearchToken.BUILDING_TYPE) {
+				return -1;
+			} else if (atom.type == SpatialSearchToken.POI_TYPE) {
 				return 0;
 			} else if (atom.type == SpatialSearchToken.STREET_TYPE) {
 				return 1;
@@ -117,9 +131,13 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				words.add(s.word);
 			}
 			if (atom.object != null) {
+				MapObject idObject = atom.object;
+				if (parent != null && parent.object != null) {
+					idObject = parent.object;
+				}
 				return String.format("%s %s (%s) %.4f %.4f ", words, 
 						atom.typeStr() + " " + atom.object.getName(), 
-						"" + ObfConstants.getOsmObjectId(atom.object) 
+						"" + ObfConstants.getOsmObjectId(idObject) 
 								//+ " " + atom.id,
 						, atom.object.getLocation().getLatitude(), atom.object.getLocation().getLongitude());
 			}
@@ -134,7 +152,6 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	public int matchedTokens() {
 		return parent.tCount;
 	}
-	
 
 	public int sumOther() {
 		int s1 = 0;

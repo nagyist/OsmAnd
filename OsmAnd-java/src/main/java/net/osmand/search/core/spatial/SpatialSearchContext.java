@@ -213,7 +213,7 @@ public class SpatialSearchContext {
 					continue;
 				}
 				MapObject obj = null;
-				if (SpatialTextSearchSettings.READ_ADDR_OBJECTS) {
+				if (SpatialTextSearchSettings.READ_ADDR_OBJECTS || SpatialTextSearchSettings.ATTACH_BUILDINGS) {
 					obj = readAddrObject(lid, pid, null);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, pid, obj, allTokens);
@@ -234,7 +234,7 @@ public class SpatialSearchContext {
 			}
 		}
 	}
-	
+
 	public MapObject readPoiObject(long id, TLongObjectHashMap<MapObject> cache) throws IOException {
 		if (cache != null) {
 			MapObject mapObject = cache.get(id);
@@ -416,6 +416,18 @@ public class SpatialSearchContext {
 		if (otherTokens != null) {
 			for (SpatialSearchToken token : otherTokens) {
 				token.addAtom(atom);
+			}
+		}
+		boolean street = type == SpatialSearchToken.STREET_TYPE;
+		if (street && SpatialTextSearchSettings.SEARCH_BUILDINGS) {
+			for (SpatialSearchToken token : allTokens) {
+				if (t != token && SearchAlgorithms.isNumber2Letters(token.word)
+						&& (otherTokens == null || !otherTokens.contains(token))) {
+					NameIndexAtom atomB = new NameIndexAtom(name, 
+							SpatialSearchToken.BUILDING_TYPE, lid, pid, obj, other, coords);
+					atomB.buildingInd = t.originalOrder;
+					token.addAtom(atomB);
+				}
 			}
 		}
 

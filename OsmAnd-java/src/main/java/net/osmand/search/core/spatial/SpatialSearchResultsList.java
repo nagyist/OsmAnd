@@ -3,16 +3,24 @@ package net.osmand.search.core.spatial;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
+import net.osmand.CollatorStringMatcher;
+import net.osmand.CollatorStringMatcher.StringMatcherMode;
+import net.osmand.data.Building;
 import net.osmand.data.MapObject;
+import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
+import net.osmand.util.Algorithms;
 
 public class SpatialSearchResultsList implements Comparable<SpatialSearchResultsList> {
 	final SpatialSearchToken[] tokens; // non modifieable!
@@ -23,9 +31,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	List<NameIndexAtom> linearResults = new ArrayList<>();
 	TLongArrayList tileIds = new TLongArrayList();
 	TIntArrayList tileZooms = new TIntArrayList();
-	List<SpatialSearchResult> finalResult = null;
 	HashQuadTree<Integer> quadTree = new HashQuadTree<>(16);
 
+	TIntObjectHashMap<Boolean> skipResults = new TIntObjectHashMap<>();
+	List<SpatialSearchResult> finalResult = null;
+	
 	public SpatialSearchResultsList() {
 		this(null, null);
 	}
@@ -77,6 +87,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 	}
+	
 	public void loadObjects(SpatialSearchContext ctx) throws IOException {
 		TLongObjectHashMap<MapObject> cache = new TLongObjectHashMap<MapObject>();
 		loadObjects(ctx, SpatialSearchToken.POI_TYPE, cache);
@@ -84,20 +95,95 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		loadObjects(ctx, -2, cache);
 		loadObjects(ctx, SpatialSearchToken.STREET_TYPE, cache);
 	}
-
-	public NameIndexAtom getAtom(int combination, int pos) {
-		if (finalResult != null) {
-			combination = finalResult.get(combination).parentInd;
+	
+	public void loadObjectsAndCalcBuildings(SpatialSearchContext ctx) throws IOException {
+		loadObjects(ctx);
+		Map<String, Building> bldCheckCache = new HashMap<>();
+		for (int indx = 0; indx < getCombinations(); indx++) {
+			calcBuilding(indx, bldCheckCache);
 		}
-		return linearResults.get(combination * tokens.length + pos);
 	}
 	
-	public List<NameIndexAtom> getAtoms(int combination) {
-		if (finalResult != null) {
-			combination = finalResult.get(combination).parentInd;
+	private void calcBuilding(int indx, Map<String, Building> bldCheckCache) {
+		for (int i = 0; i < tCount; i++) {
+			NameIndexAtom bld = linearResults.get(indx * tCount + i);
+			if (bld.buildingInd >= 0) {
+				Building bldObj = null;
+				int strTokenInd = getTokenByOriginalOrder(bld.buildingInd);
+				if (strTokenInd >= 0) {
+					NameIndexAtom str = linearResults.get(indx * tCount + strTokenInd);
+					String cacheKey = str.id + " " + tokens[i].word;
+					if (bldCheckCache.containsKey(cacheKey)) {
+						bldObj = bldCheckCache.get(cacheKey);
+					} else {
+						if (str.id == bld.id) {
+							bldObj = checkBuilding((Street) str.object, tokens[i], bld);
+							if (bldObj == null) {
+//								System.out.printf("No building '%s': %s\n", tokens[i].word, str.object);
+							}
+						} else {
+//							System.out.printf("Wrong street: %s [%s] != %s [%s]\n", str.object,
+//									strTokenInd == -1 ? "" : tokens[strTokenInd], bld.object, tokens[i]);
+						}
+						bldCheckCache.put(cacheKey, bldObj);
+					}
+				}
+				if (bldObj == null) {
+					skipResults.put(indx, true);
+					break;
+				} else {
+					bld.object = bldObj;
+					bld.name = bldObj.getName();
+					if (bldObj.isInterpolation()) {
+						bld.name = tokens[i].word;
+					}
+				}
+			}
 		}
-		int st = combination * tCount;
-		return linearResults.subList(st, st + tCount);
+	}
+
+
+	private Building checkBuilding(Street street, SpatialSearchToken  bldToken, NameIndexAtom bld) {
+		Building interpolation = null;
+		Building partial = null;
+		Building partial2 = null;
+		int number = Algorithms.extractFirstIntegerNumber(bldToken.word);
+		for (Building b : street.getBuildings()) {
+			if (bldToken.getCollator().matches(b.getName())) {
+				return b;
+			} else if (b.belongsToInterpolation(bldToken.word)) {
+				interpolation = b;
+			} else if (number > 0 && number == Algorithms.extractFirstIntegerNumber(b.getName())) {
+				if (bldToken.word.startsWith(b.getName())) {
+					partial = b;
+				} else {
+					partial2 = b;
+				}
+			}
+		}
+		if (partial != null) {
+			return partial;
+		}
+		if (interpolation != null) {
+			// use name interpolation
+//			res.localeName = lw;
+//			res.location = b.getLocation(b.interpolation(lw));
+			return interpolation;
+		}
+		if (partial2 != null) {
+			return partial2;
+		}
+		return null;
+		
+	}
+
+	private int getTokenByOriginalOrder(int originalOrder) {
+		for(int ind = 0; ind < tokens.length; ind++) {
+			if (tokens[ind].originalOrder == originalOrder) {
+				return ind;
+			}
+		}
+		return -1;
 	}
 
 	public SpatialSearchToken getFirstToken() {
@@ -119,7 +205,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	public List<SpatialSearchResult> sortResults(SpatialSearchContext ctx, boolean deduplicate) {
 		finalResult = new ArrayList<>(tileIds.size());
 		for (int i = 0; i < tileIds.size(); i++) {
-			finalResult.add(new SpatialSearchResult(this, i));
+			if (!skipResults.containsKey(i)) {
+				finalResult.add(new SpatialSearchResult(this, i));
+			}
 		}		
 		finalResult = sortResults(ctx, finalResult, deduplicate);
 		return finalResult;
@@ -144,7 +232,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	
 	private void calculateIntersection(SpatialSearchToken token, SpatialSearchResultsList parent) {
 		if (parent.getTokenCount() == 0) {
-			addResult(null, 0, token.atoms);
+			addResult(null, 0, token, token.atoms);
 		} else if (parent.getCombinations() > 0) {
 			// 1. iterate parent objects and find all objects from <parent>
 			//    that are fully inside object <token> or have same the same tile 
@@ -153,7 +241,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				int zoom = parent.tileZooms.get(i);
 				final int indx = i;
 				token.quadTree.forEachMatch(zoom, tileId, t -> {
-					addResult(parent, indx, t);
+					addResult(parent, indx, token, t);
 				});
 			}
 			// 2. reverse search quad tree from <token> and find objects
@@ -162,7 +250,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			for (final NameIndexAtom a : token.atoms) {
 				parent.quadTree.forEachMatchHigherZoom(a.coords.bboxTileZoom, a.coords.bboxTileId, indxs -> {
 					for (int indx : indxs) {
-						addResult(p, indx, a);
+						addResult(p, indx, token, a);
 					}
 				});
 			}
@@ -170,9 +258,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 
 
-	void addResult(SpatialSearchResultsList parent, int indx, List<NameIndexAtom> atoms) {
+	void addResult(SpatialSearchResultsList parent, int indx, SpatialSearchToken token, List<NameIndexAtom> atoms) {
 		for (NameIndexAtom a : atoms) {
-			addResult(parent, indx, a);
+			addResult(parent, indx, token, a);
 		}
 	}
 
@@ -184,8 +272,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return sum;
 	}
 
-	boolean addResult(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
-		boolean acceptIntersection = acceptIntersection(parent, pindx, a);
+	boolean addResult(SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
+		boolean acceptIntersection = acceptIntersection(parent, pindx, token, a);
 		if (!acceptIntersection) {
 			return false;
 		}
@@ -205,7 +293,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return true;
 	}
 
-	private boolean acceptIntersection(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
+	private boolean acceptIntersection(SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
 		// 1. Precise intersection
 		// no cache for parent now needed
 		boolean intersect = true;
@@ -219,7 +307,18 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		if (!intersect) {
 			return false;
 		}
-		// 2. Duplicate words		
+		// 2. Don't allow intersect potential building with other object
+		for (int i = 0; parent != null && i < parent.tCount; i++) {
+			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
+			if (parent.tokens[i].originalOrder == a.buildingInd && pa.id != a.id) {
+				return false;
+			}
+			if (pa.buildingInd == token.originalOrder && pa.id != a.id) {
+				return false;
+			}
+		}
+		
+		// 3. Duplicate words		
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 			if (pa.id == a.id && tokens[0].word.equals(tokens[i + 1].word)) {
@@ -237,7 +336,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		
-		// 3. ignore multiple atomic objects intersections POI / Streets > 2!
+		// 4. ignore multiple atomic objects intersections POI / Streets > 2!
 		if (a.atomicObject()) {
 			// check limit atomic objects to add
 			List<Long> objects = new ArrayList<Long>(SpatialTextSearchSettings.LIMIT_ATOMIC_OBJECTS);
@@ -276,8 +375,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		return String.format("Results %d tokens %,d%s - %s %s", tCount, getCombinations(),
 				finalResult == null ? "" : String.format(" (%,d unique)", finalResult.size()), 
-				words,
-				!extended ? "" : (" results: " + linearResults));
+				words, !extended ? "" : (" results: " + linearResults));
 	}
 	
 	
@@ -286,6 +384,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	public String toString() {
 		return toString(false);
 	}
+
+	
 
 	
 }

@@ -21,52 +21,6 @@ import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
 import net.osmand.util.SearchAlgorithms;
 
-//////////// OTHER TASKS ///////
-// Check file sizes: 
-// 1. FILE SIZE: REVIEW ADD_TOP_X_FREQ_WORDS (many common?)
-// 2. FILE SIZE: REVIEW added bbox31 size
-// 3. DATA: English postcodes
-// 4. TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania +
-// 5. TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
-// 5. REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
-//    - 2-га Нова (2 Нова), Бульварно-Кудрявськаб NC-42 (geocoding
-// 6. TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
-// 7. TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
-
-//////////// TESTING //////////
-// TODO Search Buildings (to search buildings most complete street is needed (largest city sort?))
-
-// BUILDINGS
-// TODO Postcode + building
-// TODO Ignore same embedded boundary city / county - deduplicate on the fly
-// TODO Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
-
-
-// FEATURES
-// TODO Read all top poi categories for files
-// TODO POI Categories implement categories
-// TODO World basemap ! POI  
-// TODO Street intersection match
-// TODO Abbreviations Phase
-// TODO Sugggestion-correction
-// TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
-// TODO Search near key objects (subway station artificial bbox)
-
-// ISSUES
-// TODO Progress / cancel
-// TODO read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
-// TODO Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
-// TODO Enable ALWAYS_READ_COMMON_WORDS_ATOMS = true to find new results (common word in City) or suggest POI category 
-// TODO Geocoding tokenizing (?) - Strip dashes before split to match "NC 42" == "NC-42"
-// TODO Web - search maps by key word like "Arizona"
-
-// TEST
-// TODO relevant if results > 2-5K don't read all objects, sort by distance?
-// TODO test: merge boundaries bbox - extend incomplete boundary same id...
-// TODO ? review settings: read objects after some intersections (but not too early)
-//      - Results 5 tokens 1,949 (139 unique) - compact objects during combinations?
-// TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
-
 //////////////// SEARCH ALGORITHM //////////////////
 // 1. Init files + read caches
 // 2. Split tokens
@@ -92,7 +46,10 @@ public class SpatialTextSearch {
 	public static class SpatialTextSearchSettings {
 
 		public static boolean SEARCH_ADDR = true;
+		
 		public static boolean SEARCH_POI = true;
+		
+		public static boolean SEARCH_BUILDINGS = true;
 		
 		// max prefixes for each name reader
 		public static int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
@@ -122,6 +79,9 @@ public class SpatialTextSearch {
 		// Filter within same matched words but different number of objects [3 matched tokens - 1 single object]
 		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {3, 10};
 //		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {};
+		
+		// temp
+		public static boolean ATTACH_BUILDINGS = false;
 		
 	}
 
@@ -268,11 +228,10 @@ public class SpatialTextSearch {
 			}
 			if (goalRes.getCombinations() > 0) {
 				ctx.stats.atoms -= System.nanoTime();
-				goalRes.loadObjects(ctx);
+				goalRes.loadObjectsAndCalcBuildings(ctx);
 				ctx.stats.atoms += System.nanoTime();
 				List<SpatialSearchResult> res = goalRes.sortResults(ctx, true);
 				uniqueObjects += res.size();
-				System.out.println(goalRes);
 				fullResult.add(goalRes);
 				if (SpatialTextSearchSettings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0
 						&& uniqueObjects >= SpatialTextSearchSettings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS) {
@@ -400,7 +359,7 @@ public class SpatialTextSearch {
 					System.out.println(".............");
 					break;
 				}
-				System.out.println(r.matchedTokens() + " " + r);
+				System.out.printf("Result %d - %s\n", r.matchedTokens(), r);
 			}
 			System.out.printf("------ ALL %d results ------- \n ", all);
 			System.out.println("---------------------------------------");
@@ -427,90 +386,13 @@ public class SpatialTextSearch {
 		System.out.println();
 	}
 
-	private static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {
+	static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {
 		if (f.exists() && (f.getName().endsWith(".obf") || f.getName().equals(OsmandRegions.REGIONS_OCBF))) {
 			BinaryMapIndexReader bir = new BinaryMapIndexReader(new RandomAccessFile(f, "r"), f);
 			ls.add(bir);
 		}
 	}
 
-	public static void main(String[] args) throws IOException, InterruptedException {
-		SpatialTextSearchSettings.DEDUPLICATE_RES = true;
-		File folder = new File("/Users/victorshcherb/osmand/maps/");
-		String pattern = "Germany_b";
-		String query = "Berlin hauptstrasse"; // slow
-		query = "Kelterstraße Kernen im Remstal";
-		query = "Germany Kelter. Kernen im Remstal";
-
-		pattern = "Us_";
-		query = "Salt Lake City Pennsylvania Place UT USA";
-//		query = "Salt Lake City Lake";
-//		query = "Salt Lake City Pennsylvania Street";
-//		query = "Salt Lake City";
-//		query = "USA Salt Lake City Pennsylvania Street 41";
-//		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
-//		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; 
-//		query = "Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA";
-//		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
-//		query ="Township";
-
-		pattern = "Liechtenstein_europe.obf";
-		query = "Vaduz Lettstrasse";
-		query = "Vaduz ";
-		query = "Jugendheim Malbun";
-
-		pattern = "Netherlands_";
-		query = "1186RM Logger 387";
-		query = "Farm";
-		
-//		pattern = "Turkey_";
-		pattern = "Map";
-//		query = "Sokak 23018. Balikesir"; // no results?
-//		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
-//		query = "Sokak 23018."; // Test calle 2
-		
-		pattern = "Ukraine_";
-//		pattern = "Map";
-		pattern = "regions.ocbf" ; // TODO
-//		query = "нова пошта Бульварно Кудрявська";
-//		query = "Бульварно-кудрявс.";
-//		query = "Ukraine kyiv saks.";
-//		query = "пузата хата mcdonal.";
-//		query = "Нова пошта 3 харків";
-//		query = "2-га Нова вулиця"; // unit test
-//		query = "2 Нова вулиця"; // unit test
-//		query = "саксаг.";
-//		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
-//		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
-//		query = "Школа А+";
-//		query = "школа 25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
-//		query = "ВЕЛОwatt";
-//		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
-		query = "Букове. m."; 
-		
-
-//		pattern = "Spain_aragon_europe_";
-//		query = "Basílica de Nuestra Señora del Pilar";
-//		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
-
-		long t = System.nanoTime();
-
-		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
-		for (File f : folder.listFiles()) {
-			if (f.getName().startsWith(pattern) || f.getName().equals(OsmandRegions.REGIONS_OCBF)) {
-				initFile(ls, f);
-			}
-		}
-		SpatialTextSearch a = new SpatialTextSearch();
-		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
-
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls , null);
-		a.searchTest(query, searchContext);
-
-		searchContext = new SpatialSearchContext(ls, null);
-		SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS = true;
-		a.searchTest(query, searchContext);
-	}
 
 	public static void mainTest(String[] subArgsArray) throws FileNotFoundException, IOException {
 		long t = System.nanoTime();

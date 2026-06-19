@@ -1788,6 +1788,7 @@ public class SearchCoreFactory {
 				NameStringMatcher buildingMatch = phrase.getUnknownWordToSearchBuildingNameMatcher();
 				NameStringMatcher startMatch = new NameStringMatcher(lw, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
 				int number = Algorithms.extractFirstIntegerNumber(lw);
+				
 				if (phrase.isSearchTypeAllowed(ObjectType.HOUSE)) {
 					for (Building b : s.getBuildings()) {
 						SearchResult res = new SearchResult(phrase);
