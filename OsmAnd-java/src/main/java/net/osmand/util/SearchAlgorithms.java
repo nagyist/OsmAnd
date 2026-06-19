@@ -77,7 +77,7 @@ public class SearchAlgorithms {
      * Produces unique normalized tokens from the query, plus Arabic-normalized variants when applicable.
      */
 	public static List<String> splitAndNormalize(String query, boolean unique) {
-		return splitAndNormalize(query, null, true);
+		return splitAndNormalize(query, null, unique);
 	}
 	
 	public static List<String> splitAndNormalize(String query, List<String> original, boolean unique) {

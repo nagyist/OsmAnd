@@ -19,6 +19,7 @@ public class CollatorStringMatcher implements StringMatcher {
 	private final Collator collator;
 	private final StringMatcherMode mode;
 	private final String part;
+	public static final char INCOMPLETE_DOT = '.';
 	
 	public static enum StringMatcherMode {
 		// tests only first word as base starts with part
@@ -39,7 +40,7 @@ public class CollatorStringMatcher implements StringMatcher {
 	public CollatorStringMatcher(String part, StringMatcherMode mode) {
 		this.collator = OsmAndCollator.primaryCollator();
 		part = lowercaseAndAlignChars(part);
-		if (part.length() > 0 && part.charAt(part.length() - 1) == '.') {
+		if (part.length() > 0 && part.charAt(part.length() - 1) == INCOMPLETE_DOT) {
 			part = part.substring(0, part.length() - 1);
 			if (mode == StringMatcherMode.CHECK_EQUALS_FROM_SPACE) {
 				mode = StringMatcherMode.CHECK_STARTS_FROM_SPACE;

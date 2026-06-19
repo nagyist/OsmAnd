@@ -26,7 +26,7 @@ import net.osmand.util.SearchAlgorithms;
 // 1. FILE SIZE: REVIEW ADD_TOP_X_FREQ_WORDS (many common?)
 // 2. FILE SIZE: REVIEW added bbox31 size
 // 3. REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
-//    - 2-га Нова (2 Нова), Бульварно-Кудрявська
+//    - 2-га Нова (2 Нова), Бульварно-Кудрявськаб NC-42
 // 4. TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania +
 // 6. TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
 // 7. TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
@@ -61,6 +61,8 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Progress / cancel
 // TODO read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
 // TODO Combine by osmid (poi type internet) & wikidata id ?
+// TODO Enable ALWAYS_READ_COMMON_WORDS_ATOMS = true to find new results (common word in City) or suggest POI category 
+// TODO Problem - Sokak 23018. Balikesir 
 
 // TEST
 // TODO relevant if results > 10K don't read all objects, sort by distance?
@@ -68,7 +70,6 @@ import net.osmand.util.SearchAlgorithms;
 // TODO ? review settings: read objects after some intersections (but not too early)
 //      - Results 5 tokens 1,949 (139 unique) - compact objects during combinations?
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
-// TODO Enable ALWAYS_READ_COMMON_WORDS_ATOMS = true to find new results (common word in City) or suggest POI category 
 
 //////////////// SEARCH ALGORITHM //////////////////
 // 1. Init files + read caches
@@ -392,7 +393,7 @@ public class SpatialTextSearch {
 	public void searchTest(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = searchAPI(input, ctx);
 		ctx.stats.finish();
-		if (res.mainResults != null) {
+		if (res.mainResults != null && res.mainResults.size() > 0) {
 			System.out.println("--------");
 			System.out.println("Main: " + res.combinations.get(0));
 			int limit = LIMIT_PRINT;
@@ -465,13 +466,19 @@ public class SpatialTextSearch {
 		query = "1186RM Logger 387";
 		query = "Farm";
 		
-		pattern = "Ukraine_";
+//		pattern = "Turkey_";
+		pattern = "Map";
+//		query = "Sokak 23018. Balikesir"; // no results?
+//		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
+		query = "Sokak 23018.";
+		
+//		pattern = "Ukraine_";
 //		pattern = "Map";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
 //		query = "Ukraine kyiv saks.";
 //		query = "пузата хата mcdonal.";
-		query = "Нова пошта 3 харків";
+//		query = "Нова пошта 3 харків";
 //		query = "2-га Нова вулиця"; // unit test
 //		query = "2 Нова вулиця"; // unit test
 //		query = "саксаг.";
@@ -479,6 +486,8 @@ public class SpatialTextSearch {
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа А+";
 //		query = "школа 25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
+//		query = "ВЕЛОwatt";
+//		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
 		
 
 //		pattern = "Spain_aragon_europe_";

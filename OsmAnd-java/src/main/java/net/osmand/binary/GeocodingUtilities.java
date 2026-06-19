@@ -223,7 +223,7 @@ public class GeocodingUtilities {
 		}
 		return words; // keep original order ("NC 42" - search by "NC" not by "42")
 	}
-
+	
 	private boolean matchStreetName(String s1, String s2, boolean matchWithCommonWords) {
 		if (Algorithms.isEmpty(s1) || Algorithms.isEmpty(s2)) {
 			return false;

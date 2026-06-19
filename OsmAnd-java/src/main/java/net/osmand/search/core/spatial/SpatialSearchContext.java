@@ -323,23 +323,28 @@ public class SpatialSearchContext {
 			List<SpatialSearchToken> allTokens) {
 		int cnt = a != null ? a.getSuffixesBitsetIndexCount() : b.getSuffixesBitsetIndexCount();
 		String name = "";
-		int wInd = 0;
+		int wordInd = 0;
 		int type = a != null ? a.getType() : SpatialSearchToken.POI_TYPE;
 		for (int i = 0; i < cnt; i++) {
 			int suffBit = a != null ? a.getSuffixesBitsetIndex(i) : b.getSuffixesBitsetIndex(i);
 			if (suffBit % 2 == 0) {
 				int ind = suffBit / 2 - 1;
 				if (ind == -1) {
+					if (a != null && wordInd < a.getExtraSuffixCount()) {
+						name += a.getExtraSuffix(wordInd);
+					} else if(b != null && wordInd < b.getExtraSuffixCount()) {
+						name += b.getExtraSuffix(wordInd);
+					}
 					if (acceptName(t, name)) {
 						int other;
 						if (a != null) {
-							other = wInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wInd) : 0;
+							other = wordInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wordInd) : 0;
 						} else {
-							other = wInd < b.getOtherWordsCountCount() ? b.getOtherWordsCount(wInd) : 0;
+							other = wordInd < b.getOtherWordsCountCount() ? b.getOtherWordsCount(wordInd) : 0;
 						}
 						addObject(t, name, type, cid, pid, obj, other, new NameIndexAtomXY(a, b), allTokens);
 					}
-					wInd++;
+					wordInd++;
 					name = "";
 				} else if (ind < suffixes.size()) {
 					name += suffixes.get(ind);
@@ -357,12 +362,17 @@ public class SpatialSearchContext {
 				}
 			}
 		}
+		if (a != null && wordInd < a.getExtraSuffixCount()) {
+			name += a.getExtraSuffix(wordInd);
+		} else if (b != null && wordInd < b.getExtraSuffixCount()) {
+			name += b.getExtraSuffix(wordInd);
+		}
 		if (name.length() != 0 && acceptName(t, name)) {
 			int other;
 			if (a != null) {
-				other = wInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wInd) : 0;
+				other = wordInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wordInd) : 0;
 			} else {
-				other = wInd < b.getOtherWordsCountCount() ? b.getOtherWordsCount(wInd) : 0;
+				other = wordInd < b.getOtherWordsCountCount() ? b.getOtherWordsCount(wordInd) : 0;
 			}
 			addObject(t, name, type, cid, pid, obj, other, new NameIndexAtomXY(a, b), allTokens);
 		}
