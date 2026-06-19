@@ -788,6 +788,9 @@ public class NameIndexReader {
 	public void gcPrefixes(int limit) {
 		if (limit > 0 && indexByRef.size() > limit) {
 			indexByRef.clear();
+			if (matchedKeys != null) {
+				matchedKeys.clear();
+			}
 		}
 	}
 

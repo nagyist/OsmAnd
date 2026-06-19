@@ -34,15 +34,10 @@ import net.osmand.util.SearchAlgorithms;
 // 7. TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
 
 //////////// TESTING //////////
-// - EMPTY_SUFFIX_DICTIONARY_SENTINEL used only on client?
-// - don't compute all combinations... (!) and do it in the right order 2^7
-// - NameIndexReader in caches ( > 200 - indexByRef, matchedKeys) full clear
-// - Problem - Sokak 23018. Balikesir, Sokak 153
-
+// TODO Search Buildings (to search buildings most complete street is needed (largest city sort?))
 
 // BUILDINGS
 // TODO Postcode + building
-// TODO Search Buildings (to search buildings most complete street is needed (largest city sort?))
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 
@@ -54,7 +49,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Street intersection match
 // TODO Abbreviations Phase
 // TODO Sugggestion-correction
-// TODO Search in large parks, neighborhood same as in boundaries (index bbox POI)
+// TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Search near key objects (subway station artificial bbox)
 
 // ISSUES
@@ -63,6 +58,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 // TODO Enable ALWAYS_READ_COMMON_WORDS_ATOMS = true to find new results (common word in City) or suggest POI category 
 // TODO Geocoding tokenizing (?) - Strip dashes before split to match "NC 42" == "NC-42"
+// TODO Web - search maps by key word like "Arizona"
 
 // TEST
 // TODO relevant if results > 2-5K don't read all objects, sort by distance?
@@ -471,10 +467,11 @@ public class SpatialTextSearch {
 		pattern = "Map";
 //		query = "Sokak 23018. Balikesir"; // no results?
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
-//		query = "Sokak 23018.";
-		// Test calle 2
+//		query = "Sokak 23018."; // Test calle 2
 		
 		pattern = "Ukraine_";
+		pattern = "Romania_";
+		// regions.ocbf  // TODO
 //		pattern = "Map";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
@@ -490,7 +487,7 @@ public class SpatialTextSearch {
 //		query = "школа 25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
-		query = "буковель ma."; 
+		query = "Букове. m."; 
 		
 
 //		pattern = "Spain_aragon_europe_";
