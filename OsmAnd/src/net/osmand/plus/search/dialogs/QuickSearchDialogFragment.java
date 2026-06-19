@@ -134,7 +134,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private static final String NEAREST_POIS_FILTER_ID = "nearest_pois";
 	private static final String NEAREST_POIS_UI_FILTER_ID = PoiUIFilter.STD_PREFIX + "null";
 	private static final double MIN_COMPASS_DEGREES_TO_UPDATE_CONTENT = 5.0;
-	private static final int EXPLORE_HISTORY_ITEMS_LIMIT = 25;
+	private static final int EXPLORE_HISTORY_CARD_ITEMS_LIMIT = 25;
 
 	private Toolbar toolbar;
 	private LockableViewPager viewPager;
@@ -2126,7 +2126,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 					if (res != null) {
 						int count = 0;
 						for (SearchResult sr : res.getCurrentSearchResults()) {
-							if (count >= EXPLORE_HISTORY_ITEMS_LIMIT) {
+							if (count >= EXPLORE_HISTORY_CARD_ITEMS_LIMIT) {
 								break;
 							}
 							rows.add(new QuickSearchListItem(app, sr));

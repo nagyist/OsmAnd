@@ -1,13 +1,16 @@
 package net.osmand.plus.search.dialogs;
 
+import android.app.Dialog;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatEditText;
@@ -24,6 +27,7 @@ import net.osmand.plus.OsmAndLocationProvider.OsmAndLocationListener;
 import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.base.BaseFullScreenDialogFragment;
+import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.search.QuickSearchHelper.SearchHistoryAPI;
 import net.osmand.plus.search.history.HistoryEntry;
 import net.osmand.plus.search.listitems.QuickSearchListItem;
@@ -73,7 +77,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private enum HistorySourceFilter {
 		ALL(R.string.shared_string_all, R.drawable.ic_action_history, null),
 		SEARCH(R.string.shared_string_search, R.drawable.ic_action_search_dark, HistorySource.SEARCH),
-		NAVIGATION(R.string.shared_string_navigation, R.drawable.ic_action_marker_dark, HistorySource.NAVIGATION);
+		NAVIGATION(R.string.shared_string_navigation, R.drawable.ic_action_gdirections_dark, HistorySource.NAVIGATION);
 
 		final int titleId;
 		final int iconId;
@@ -104,6 +108,18 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private HistorySourceFilter selectedSourceFilter = HistorySourceFilter.ALL;
 	private final List<String> selectedTypeFilters = new ArrayList<>();
 
+	@ColorRes
+	@Override
+	protected int getStatusBarColorId() {
+		return ColorUtilities.getListBgColorId(nightMode);
+	}
+
+	@Override
+	public void onStart() {
+		super.onStart();
+		updateStatusBarAppearance();
+	}
+
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -115,8 +131,18 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		setupChips(view);
 		setupList(view);
 		updateHistoryItems("");
+		updateStatusBarAppearance();
 
 		return view;
+	}
+
+	private void updateStatusBarAppearance() {
+		Dialog dialog = getDialog();
+		Window window = dialog != null ? dialog.getWindow() : null;
+		if (window != null) {
+			AndroidUiHelper.setStatusBarColor(window, getColor(getStatusBarColorId()));
+			AndroidUiHelper.setStatusBarContentColor(window.getDecorView(), nightMode);
+		}
 	}
 
 	private void setupToolbar(@NonNull View view) {
@@ -160,6 +186,9 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 			}
 		});
 		chipsToolbar.setOnSourceSelectedListener(optionId -> {
+			if (isSourceMenuDisabled()) {
+				return;
+			}
 			HistorySourceFilter[] filters = HistorySourceFilter.values();
 			if (optionId >= 0 && optionId < filters.length) {
 				selectedSourceFilter = filters[optionId];
@@ -176,6 +205,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 				updateHistoryItems(searchEditText.getText().toString());
 			}
 		});
+		updateSourceFilterFromSettings();
 		updateSortChip();
 		updateSourceChip();
 	}
@@ -376,17 +406,29 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		if (isSameDay(now, item)) {
 			return getString(R.string.today);
 		}
-		Calendar yesterday = (Calendar) now.clone();
-		yesterday.add(Calendar.DAY_OF_YEAR, -1);
-		if (isSameDay(yesterday, item)) {
+		Calendar todayStart = startOfDay(now);
+		Calendar yesterdayStart = (Calendar) todayStart.clone();
+		yesterdayStart.add(Calendar.DAY_OF_YEAR, -1);
+		Calendar itemStart = startOfDay(item);
+		if (!itemStart.before(yesterdayStart) && itemStart.before(todayStart)) {
 			return getString(R.string.yesterday);
 		}
-		Calendar lastWeek = (Calendar) now.clone();
-		lastWeek.add(Calendar.DAY_OF_YEAR, -7);
-		if (item.after(lastWeek)) {
+		Calendar lastWeekStart = (Calendar) todayStart.clone();
+		lastWeekStart.add(Calendar.DAY_OF_YEAR, -7);
+		if (!itemStart.before(lastWeekStart) && itemStart.before(yesterdayStart)) {
 			return getString(R.string.last_week);
 		}
 		return new SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(item.getTime());
+	}
+
+	@NonNull
+	private Calendar startOfDay(@NonNull Calendar calendar) {
+		Calendar result = (Calendar) calendar.clone();
+		result.set(Calendar.HOUR_OF_DAY, 0);
+		result.set(Calendar.MINUTE, 0);
+		result.set(Calendar.SECOND, 0);
+		result.set(Calendar.MILLISECOND, 0);
+		return result;
 	}
 
 	private boolean isSameDay(@NonNull Calendar first, @NonNull Calendar second) {
@@ -432,7 +474,9 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 
 	private void updateSourceChip() {
 		if (chipsToolbar != null) {
+			updateSourceFilterFromSettings();
 			chipsToolbar.setSourceChip(selectedSourceFilter.titleId, selectedSourceFilter.iconId);
+			chipsToolbar.setSourceMenuEnabled(!isSourceMenuDisabled());
 			List<QuickSearchChipsToolbarView.Option> options = new ArrayList<>();
 			for (HistorySourceFilter sourceFilter : HistorySourceFilter.values()) {
 				options.add(new QuickSearchChipsToolbarView.Option(
@@ -440,6 +484,26 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 			}
 			chipsToolbar.setSourceOptions(options);
 		}
+	}
+
+	private void updateSourceFilterFromSettings() {
+		HistorySourceFilter previousSourceFilter = selectedSourceFilter;
+		boolean searchHistoryEnabled = settings.SEARCH_HISTORY.get();
+		boolean navigationHistoryEnabled = settings.NAVIGATION_HISTORY.get();
+		if (!searchHistoryEnabled && navigationHistoryEnabled) {
+			selectedSourceFilter = HistorySourceFilter.NAVIGATION;
+		} else if (searchHistoryEnabled && !navigationHistoryEnabled) {
+			selectedSourceFilter = HistorySourceFilter.SEARCH;
+		} else if (!searchHistoryEnabled) {
+			selectedSourceFilter = HistorySourceFilter.ALL;
+		}
+		if (previousSourceFilter != selectedSourceFilter) {
+			selectedTypeFilters.clear();
+		}
+	}
+
+	private boolean isSourceMenuDisabled() {
+		return !settings.SEARCH_HISTORY.get() || !settings.NAVIGATION_HISTORY.get();
 	}
 
 	private static class HistoryRecord {
@@ -467,6 +531,10 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	@Override
 	public void onResume() {
 		super.onResume();
+		if (chipsToolbar != null && searchEditText != null) {
+			updateSourceChip();
+			updateHistoryItems(searchEditText.getText().toString());
+		}
 		startLocationUpdate();
 	}
 

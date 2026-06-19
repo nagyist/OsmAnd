@@ -7,19 +7,21 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -83,6 +85,7 @@ class QuickSearchChipsToolbarView @JvmOverloads constructor(
 	private var selectedTypeChips by mutableStateOf<Set<String>>(emptySet())
 	private var sortMenuExpanded by mutableStateOf(false)
 	private var sourceMenuExpanded by mutableStateOf(false)
+	private var sourceChipMenuEnabled by mutableStateOf(true)
 	private var sortSelectedListener: OnMenuOptionSelectedListener? = null
 	private var sourceSelectedListener: OnMenuOptionSelectedListener? = null
 	private var typeChipClickListener: OnTypeChipClickListener? = null
@@ -103,6 +106,13 @@ class QuickSearchChipsToolbarView @JvmOverloads constructor(
 
 	fun setSourceOptions(options: List<Option>) {
 		sourceMenuOptions = options.toList()
+	}
+
+	fun setSourceMenuEnabled(enabled: Boolean) {
+		sourceChipMenuEnabled = enabled
+		if (!enabled) {
+			sourceMenuExpanded = false
+		}
 	}
 
 	fun setTypeChips(chips: List<String>, selectedChips: List<String>) {
@@ -137,6 +147,7 @@ class QuickSearchChipsToolbarView @JvmOverloads constructor(
 			sourceTitleId = sourceTitleId,
 			sourceIconId = sourceIconId,
 			sourceOptions = sourceMenuOptions,
+			sourceMenuEnabled = sourceChipMenuEnabled,
 			sourceMenuExpanded = sourceMenuExpanded,
 			onSourceMenuExpandedChange = { sourceMenuExpanded = it },
 			onSourceSelected = {
@@ -161,6 +172,7 @@ private fun SearchChipsToolbar(
 	@StringRes sourceTitleId: Int,
 	@DrawableRes sourceIconId: Int,
 	sourceOptions: List<QuickSearchChipsToolbarView.Option>,
+	sourceMenuEnabled: Boolean,
 	sourceMenuExpanded: Boolean,
 	onSourceMenuExpandedChange: (Boolean) -> Unit,
 	onSourceSelected: (Int) -> Unit,
@@ -175,6 +187,7 @@ private fun SearchChipsToolbar(
 	val activeBackground = colorAttr(R.attr.active_color_secondary)
 	val textColor = colorAttr(android.R.attr.textColorPrimary)
 	val secondaryTextColor = colorAttr(android.R.attr.textColorSecondary)
+	val disabledColor = colorAttr(android.R.attr.textColorTertiary)
 	val toolbarPadding = dimensionResource(R.dimen.content_padding)
 	val smallPadding = dimensionResource(R.dimen.content_padding_small)
 	val halfPadding = dimensionResource(R.dimen.content_padding_half)
@@ -222,6 +235,7 @@ private fun SearchChipsToolbar(
 						selected = sortMenuExpanded,
 						options = sortOptions,
 						menuTitleId = R.string.sort_by,
+						dividerAfterOptionId = null,
 						menuExpanded = sortMenuExpanded,
 						onExpandedChange = onSortMenuExpandedChange,
 						onOptionSelected = onSortSelected,
@@ -230,6 +244,7 @@ private fun SearchChipsToolbar(
 						activeColor = activeColor,
 						activeBackground = activeBackground,
 						textColor = textColor,
+						disabledColor = disabledColor,
 						secondaryTextColor = secondaryTextColor
 					)
 					MenuChip(
@@ -237,7 +252,9 @@ private fun SearchChipsToolbar(
 						iconId = sourceIconId,
 						selected = sourceMenuExpanded,
 						options = sourceOptions,
-						menuTitleId = null,
+						enabled = sourceMenuEnabled,
+						menuTitleId = R.string.shared_string_type,
+						dividerAfterOptionId = 0,
 						menuExpanded = sourceMenuExpanded,
 						onExpandedChange = onSourceMenuExpandedChange,
 						onOptionSelected = onSourceSelected,
@@ -246,6 +263,7 @@ private fun SearchChipsToolbar(
 						activeColor = activeColor,
 						activeBackground = activeBackground,
 						textColor = textColor,
+						disabledColor = disabledColor,
 						secondaryTextColor = secondaryTextColor
 					)
 				}
@@ -284,7 +302,9 @@ private fun MenuChip(
 	@DrawableRes iconId: Int,
 	selected: Boolean,
 	options: List<QuickSearchChipsToolbarView.Option>,
+	enabled: Boolean = true,
 	@StringRes menuTitleId: Int?,
+	dividerAfterOptionId: Int?,
 	menuExpanded: Boolean,
 	onExpandedChange: (Boolean) -> Unit,
 	onOptionSelected: (Int) -> Unit,
@@ -293,6 +313,7 @@ private fun MenuChip(
 	activeColor: Color,
 	activeBackground: Color,
 	textColor: Color,
+	disabledColor: Color,
 	secondaryTextColor: Color
 ) {
 	Box {
@@ -300,16 +321,18 @@ private fun MenuChip(
 			title = stringResource(titleId),
 			selected = selected,
 			onClick = { onExpandedChange(true) },
+			enabled = enabled,
 			listBackground = listBackground,
 			dividerColor = dividerColor,
 			activeColor = activeColor,
 			activeBackground = activeBackground,
 			textColor = textColor,
+			disabledColor = disabledColor,
 			leadingIconId = iconId,
 			trailingIconId = R.drawable.ic_action_arrow_drop_down
 		)
 		DropdownMenu(
-			expanded = menuExpanded,
+			expanded = enabled && menuExpanded,
 			onDismissRequest = { onExpandedChange(false) },
 			modifier = Modifier.background(listBackground),
 			offset = DpOffset(x = 0.dp, y = 4.dp)
@@ -323,24 +346,34 @@ private fun MenuChip(
 				)
 			}
 			options.forEach { option ->
-				DropdownMenuItem(
-					text = {
-						Row(verticalAlignment = Alignment.CenterVertically) {
-							RadioButton(
-								selected = option.selected,
-								onClick = null,
-								colors = RadioButtonDefaults.colors(selectedColor = activeColor)
-							)
-							Text(
-								text = stringResource(option.titleId),
-								color = textColor,
-								fontSize = 18.sp,
-								modifier = Modifier.padding(start = 16.dp)
-							)
-						}
-					},
-					onClick = { onOptionSelected(option.id) }
-				)
+				Row(
+					modifier = Modifier
+						.fillMaxWidth()
+						.defaultMinSize(minHeight = 56.dp)
+						.clickable { onOptionSelected(option.id) }
+						.padding(start = 24.dp, end = 24.dp),
+					verticalAlignment = Alignment.CenterVertically
+				) {
+					RadioButton(
+						selected = option.selected,
+						onClick = null,
+						colors = RadioButtonDefaults.colors(selectedColor = activeColor)
+					)
+					Spacer(modifier = Modifier.width(24.dp))
+					Text(
+						text = stringResource(option.titleId),
+						color = textColor,
+						fontSize = 18.sp
+					)
+				}
+				if (option.id == dividerAfterOptionId) {
+					Spacer(
+						modifier = Modifier
+							.fillMaxWidth()
+							.height(1.dp)
+							.background(dividerColor)
+					)
+				}
 			}
 		}
 	}
@@ -351,17 +384,22 @@ private fun HistoryFilterChip(
 	title: String,
 	selected: Boolean,
 	onClick: () -> Unit,
+	enabled: Boolean = true,
 	listBackground: Color,
 	dividerColor: Color,
 	activeColor: Color,
 	activeBackground: Color,
 	textColor: Color,
+	disabledColor: Color = textColor,
 	@DrawableRes leadingIconId: Int? = null,
 	@DrawableRes trailingIconId: Int? = null
 ) {
+	val iconColor = if (enabled) activeColor else disabledColor
+	val trailingIconColor = if (enabled) textColor else disabledColor
 	FilterChip(
 		selected = selected,
 		onClick = onClick,
+		enabled = enabled,
 		label = {
 			Text(
 				text = title,
@@ -377,6 +415,7 @@ private fun HistoryFilterChip(
 				Icon(
 					painter = painterResource(it),
 					contentDescription = null,
+					tint = iconColor,
 					modifier = Modifier.size(24.dp)
 				)
 			}
@@ -386,6 +425,7 @@ private fun HistoryFilterChip(
 				Icon(
 					painter = painterResource(it),
 					contentDescription = null,
+					tint = trailingIconColor,
 					modifier = Modifier.size(24.dp)
 				)
 			}
