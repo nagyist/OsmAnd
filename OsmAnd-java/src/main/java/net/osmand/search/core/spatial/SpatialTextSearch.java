@@ -25,26 +25,26 @@ import net.osmand.util.SearchAlgorithms;
 // Check file sizes: 
 // 1. FILE SIZE: REVIEW ADD_TOP_X_FREQ_WORDS (many common?)
 // 2. FILE SIZE: REVIEW added bbox31 size
-// 3. REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
-//    - 2-га Нова (2 Нова), Бульварно-Кудрявськаб NC-42
+// 3. DATA: English postcodes
 // 4. TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania +
-// 6. TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
-// 7. TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
-// 8. DATA: English postcodes
-// 9. TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
+// 5. TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
+// 5. REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
+//    - 2-га Нова (2 Нова), Бульварно-Кудрявськаб NC-42 (geocoding
+// 6. TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
+// 7. TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
 
 //////////// TESTING //////////
 // - EMPTY_SUFFIX_DICTIONARY_SENTINEL used only on client?
 // - don't compute all combinations... (!) and do it in the right order 2^7
 // - NameIndexReader in caches ( > 200 - indexByRef, matchedKeys) full clear
-// - Sokak 153
+// - Problem - Sokak 23018. Balikesir, Sokak 153
 
 
 // BUILDINGS
 // TODO Postcode + building
 // TODO Search Buildings (to search buildings most complete street is needed (largest city sort?))
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
-// TODO [[2, нова, вулиця] STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
+// TODO Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 
 
 // FEATURES
@@ -60,12 +60,12 @@ import net.osmand.util.SearchAlgorithms;
 // ISSUES
 // TODO Progress / cancel
 // TODO read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
-// TODO Combine by osmid (poi type internet) & wikidata id ?
+// TODO Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 // TODO Enable ALWAYS_READ_COMMON_WORDS_ATOMS = true to find new results (common word in City) or suggest POI category 
-// TODO Problem - Sokak 23018. Balikesir 
+// TODO Geocoding tokenizing (?) - Strip dashes before split to match "NC 42" == "NC-42"
 
 // TEST
-// TODO relevant if results > 10K don't read all objects, sort by distance?
+// TODO relevant if results > 2-5K don't read all objects, sort by distance?
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
 // TODO ? review settings: read objects after some intersections (but not too early)
 //      - Results 5 tokens 1,949 (139 unique) - compact objects during combinations?
@@ -125,6 +125,7 @@ public class SpatialTextSearch {
 		
 		// Filter within same matched words but different number of objects [3 matched tokens - 1 single object]
 		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {3, 10};
+//		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {};
 		
 	}
 
@@ -364,7 +365,7 @@ public class SpatialTextSearch {
 			int sz = res.mainResults.get(0).getObjectsSize(), ind = 0, lind = 0;
 			for (SpatialSearchResult r : res.mainResults) {
 				if(sz != r.getObjectsSize()) {
-					if(limits[lind] <= ind) {
+					if (lind < limits.length && limits[lind] <= ind) {
 						res.mainResults = res.mainResults.subList(0, ind);
 						break;
 					}
@@ -470,9 +471,10 @@ public class SpatialTextSearch {
 		pattern = "Map";
 //		query = "Sokak 23018. Balikesir"; // no results?
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
-		query = "Sokak 23018.";
+//		query = "Sokak 23018.";
+		// Test calle 2
 		
-//		pattern = "Ukraine_";
+		pattern = "Ukraine_";
 //		pattern = "Map";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
@@ -488,6 +490,7 @@ public class SpatialTextSearch {
 //		query = "школа 25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
+		query = "буковель ma."; 
 		
 
 //		pattern = "Spain_aragon_europe_";
