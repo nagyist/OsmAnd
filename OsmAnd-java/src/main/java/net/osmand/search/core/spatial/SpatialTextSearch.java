@@ -36,9 +36,9 @@ import net.osmand.util.SearchAlgorithms;
 //////////// TESTING //////////
 // - EMPTY_SUFFIX_DICTIONARY_SENTINEL used only on client?
 // - don't compute all combinations... (!) and do it in the right order 2^7
+// - NameIndexReader in caches ( > 200 - indexByRef, matchedKeys) full clear
+// - Sokak 153
 
-// CACHE
-// TODO Evict - NameIndexReader in caches ( > 200 - indexByRef, matchedKeys) full clear
 
 // BUILDINGS
 // TODO Postcode + building
@@ -54,7 +54,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Street intersection match
 // TODO Abbreviations Phase
 // TODO Sugggestion-correction
-// TODO Search in large parks, neighborhood same as in boundaries
+// TODO Search in large parks, neighborhood same as in boundaries (index bbox POI)
 // TODO Search near key objects (subway station artificial bbox)
 
 // ISSUES
@@ -70,7 +70,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
 // TODO Enable ALWAYS_READ_COMMON_WORDS_ATOMS = true to find new results (common word in City) or suggest POI category 
 
-//////////////// SEARCH ALGORITHM /////////////////
+//////////////// SEARCH ALGORITHM //////////////////
 // 1. Init files + read caches
 // 2. Split tokens
 // 3. Read tokens -> atoms (
@@ -79,13 +79,15 @@ import net.osmand.util.SearchAlgorithms;
 // 6. Sort results, filter results
 // 7. Expand poi categories if needed
 
-////////////// TODO THINK OPTIMIZATIONS /////////////
+////////////// FUTURE OPTIMIZATIONS ////////////////
 // 1. PARTIAL SEARCH. Perform equals search and then with '.'
 // 2. MAPS. Do search first with closest maps and then with others
 // 3. ALL COMBINATIONS. Stop on one combination or find all
-// 4. POI CATEGORIES. ? 
+// 4. POI CATEGORIES. -? 
 // 5. READ_ALL. Switch ALWAYS_READ_COMMON_WORDS_ATOMS=true (new results + school intersections)
 // 6. OPTIMIZE POI READ. Read only 1 POI in block
+////////////////////////////////////////////////////
+
 public class SpatialTextSearch {
 
 	private static final int LIMIT_PRINT = 300;
@@ -94,6 +96,9 @@ public class SpatialTextSearch {
 
 		public static boolean SEARCH_ADDR = true;
 		public static boolean SEARCH_POI = true;
+		
+		// max prefixes for each name reader
+		public static int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
 
 		// Deduplicate results in the end by checking osm id of the first object in combination
 		public static boolean DEDUPLICATE_RES = true;
@@ -116,6 +121,9 @@ public class SpatialTextSearch {
 		public static int LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS = 1; // could be 3
 		// don't go level-2 if there are on level matching results
 		public static int LIMIT_GOAL_LEVEL_2 = 1;
+		
+		// Filter within same matched words but different number of objects [3 matched tokens - 1 single object]
+		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {3, 10};
 		
 	}
 
@@ -333,19 +341,39 @@ public class SpatialTextSearch {
 		res.combinations = findLongestCombinations(ctx, res.tokens);
 		ctx.stats.computeTime += System.nanoTime();
 		// 5. sort combinations, load objects, objects and filter duplicate
+		res.mainResults = new ArrayList<>();
 		if (res.combinations.size() > 0) {
-			res.mainResults = new ArrayList<>();
-			SpatialSearchResultsList main = res.combinations.get(0);
-			for (SpatialSearchResultsList m : res.combinations) {
-				List<SpatialSearchResult> lst = m.getFinalResult();
-				if (lst == null) {
-					lst = m.sortResults(ctx, true);
-				}
-				res.mainResults.addAll(lst);
-			}
-			res.mainResults = main.sortResults(ctx, res.mainResults, SpatialTextSearchSettings.DEDUPLICATE_RES);
+			combineSortFilterResults(ctx, res);
 		}
 		return res;
+	}
+
+	private void combineSortFilterResults(SpatialSearchContext ctx, SpatialSearchResults res) {
+		SpatialSearchResultsList main = res.combinations.get(0);
+		for (SpatialSearchResultsList m : res.combinations) {
+			List<SpatialSearchResult> lst = m.getFinalResult();
+			if (lst == null) {
+				lst = m.sortResults(ctx, SpatialTextSearchSettings.DEDUPLICATE_RES);
+			}
+			res.mainResults.addAll(lst);
+		}
+		res.mainResults = main.sortResults(ctx, res.mainResults, SpatialTextSearchSettings.DEDUPLICATE_RES);
+		if (res.mainResults.size() > 0) {
+			int[] limits = SpatialTextSearchSettings.FILTER_MIN_WORDS_COUNT.clone();
+			int sz = res.mainResults.get(0).getObjectsSize(), ind = 0, lind = 0;
+			for (SpatialSearchResult r : res.mainResults) {
+				if(sz != r.getObjectsSize()) {
+					if(limits[lind] <= ind) {
+						res.mainResults = res.mainResults.subList(0, ind);
+						break;
+					}
+					if (lind < limits.length - 1) {
+						lind++;
+					}
+				}
+				ind++;
+			}
+		}
 	}
 
 	public List<SpatialSearchToken> splitWords(String input) {
@@ -443,12 +471,12 @@ public class SpatialTextSearch {
 //		query = "Бульварно-кудрявс.";
 //		query = "Ukraine kyiv saks.";
 //		query = "пузата хата mcdonal.";
-//		query = "Нова пошта 3 харків";
+		query = "Нова пошта 3 харків";
 //		query = "2-га Нова вулиця"; // unit test
 //		query = "2 Нова вулиця"; // unit test
 //		query = "саксаг.";
-		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
-		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
+//		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
+//		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа А+";
 //		query = "школа 25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
 		

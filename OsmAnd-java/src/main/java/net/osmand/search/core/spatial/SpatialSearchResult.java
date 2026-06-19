@@ -127,6 +127,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		}
 	}
 	
+	public int getObjectsSize() {
+		return objs.size();
+	}
+	
 	public int matchedTokens() {
 		return parent.tCount;
 	}

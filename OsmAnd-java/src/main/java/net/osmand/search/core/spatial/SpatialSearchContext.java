@@ -78,6 +78,9 @@ public class SpatialSearchContext {
 			this.internalFile.add(fc);
 			indexInd += fc.indexReaders.size();
 			fileInd++;
+			for (NameIndexReader r : fc.indexReaders) {
+				r.gcPrefixes(SpatialTextSearchSettings.AUTO_CLEAR_PREFIX_CACHE_LIMIT);
+			}
 		}
 	}
 

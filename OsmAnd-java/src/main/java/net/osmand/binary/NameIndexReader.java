@@ -785,6 +785,12 @@ public class NameIndexReader {
 		return r;
 	}
 
+	public void gcPrefixes(int limit) {
+		if (limit > 0 && indexByRef.size() > limit) {
+			indexByRef.clear();
+		}
+	}
+
 	
 
 }
