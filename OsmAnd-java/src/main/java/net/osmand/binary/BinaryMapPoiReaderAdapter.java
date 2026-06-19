@@ -1,14 +1,39 @@
 package net.osmand.binary;
 
 
+import static net.osmand.binary.ObfConstants.isTagIndexedAsSearchRelated;
+import static net.osmand.binary.ObfConstants.isTagIndexedForSearchAsId;
+import static net.osmand.binary.ObfConstants.isTagIndexedForSearchAsName;
+import static net.osmand.util.SearchAlgorithms.nameIndexDecodeDictionarySuffix;
+import static net.osmand.util.SearchAlgorithms.splitAndNormalize;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.WireFormat;
+
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TIntLongHashMap;
 import gnu.trove.set.hash.TLongHashSet;
-import net.osmand.*;
+import net.osmand.Collator;
+import net.osmand.CollatorStringMatcher;
 import net.osmand.CollatorStringMatcher.StringMatcherMode;
+import net.osmand.Location;
+import net.osmand.PlatformUtil;
 import net.osmand.binary.BinaryMapIndexReader.SearchRequest;
 import net.osmand.binary.BinaryMapIndexReader.TagValuePair;
+import net.osmand.binary.OsmandOdb.CommonIndexedStats;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.data.Amenity;
 import net.osmand.data.Amenity.AmenityRoutePoint;
@@ -18,18 +43,10 @@ import net.osmand.data.QuadTree;
 import net.osmand.osm.MapPoiTypes;
 import net.osmand.osm.PoiCategory;
 import net.osmand.util.MapUtils;
-import org.apache.commons.logging.Log;
-
-import static net.osmand.binary.ObfConstants.isTagIndexedForSearchAsId;
-import static net.osmand.binary.ObfConstants.isTagIndexedForSearchAsName;
-import static net.osmand.binary.ObfConstants.isTagIndexedAsSearchRelated;
-import static net.osmand.util.SearchAlgorithms.*;
-
-import java.io.IOException;
-import java.util.*;
+import net.osmand.util.SearchAlgorithms;
 
 public class BinaryMapPoiReaderAdapter {
-	private static final Log LOG = PlatformUtil.getLog(BinaryMapPoiReaderAdapter.class);
+	static final Log LOG = PlatformUtil.getLog(BinaryMapPoiReaderAdapter.class);
 
 	public static final int SHIFT_BITS_CATEGORY = 7;
 	private static final int CATEGORY_MASK = (1 << SHIFT_BITS_CATEGORY) - 1;
@@ -45,16 +62,22 @@ public class BinaryMapPoiReaderAdapter {
 	public static class PoiSubType {
 		public boolean text;
 		public String name;
+		public int frequency;
 		//int estiatedSize;
 		public List<String> possibleValues = null;
+		public TIntArrayList possibleValuesFreqs = null;
 	}
 
 	public static class PoiRegion extends BinaryIndexPart {
 		List<String> categories = new ArrayList<String>();
 		List<PoiCategory> categoriesType = new ArrayList<PoiCategory>();
 		List<List<String>> subcategories = new ArrayList<List<String>>();
+		TIntArrayList categoryFreqs = new TIntArrayList();
+		List<TIntArrayList> subcategoryFreqs = new ArrayList<TIntArrayList>();
+		
 		List<PoiSubType> subTypes = new ArrayList<PoiSubType>();
 		List<PoiSubType> topIndexSubTypes = new ArrayList<PoiSubType>();
+		// tag groups
 		Map<Integer, List<TagValuePair>> tagGroups = new HashMap<>();
 		QuadTree<Void> bboxIndexCache = new QuadTree<Void>(new QuadRect(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE),
 				8, 0.55f);
@@ -92,6 +115,14 @@ public class BinaryMapPoiReaderAdapter {
 		
 		public List<List<String>> getSubcategories() {
 			return subcategories;
+		}
+		
+		public TIntArrayList getCategoryFreqs() {
+			return categoryFreqs;
+		}
+		
+		public List<TIntArrayList> getSubcategoryFreqs() {
+			return subcategoryFreqs;
 		}
 		
 		public List<PoiSubType> getSubTypes() {
@@ -237,11 +268,20 @@ public class BinaryMapPoiReaderAdapter {
 			case OsmandOdb.OsmAndCategoryTable.CATEGORY_FIELD_NUMBER:
 				String cat = codedIS.readString().intern();
 				region.categories.add(cat);
-				region.categoriesType.add(poiTypes.getPoiCategoryByName(cat.toLowerCase(), true));
+				region.categoriesType.add(poiTypes.getPoiCategoryByName(cat.toLowerCase(Locale.ROOT), true));
 				region.subcategories.add(new ArrayList<String>());
+				region.subcategoryFreqs.add(new TIntArrayList());
 				break;
 			case OsmandOdb.OsmAndCategoryTable.SUBCATEGORIES_FIELD_NUMBER:
 				region.subcategories.get(region.subcategories.size() - 1).add(codedIS.readString().intern());
+				break;
+			case OsmandOdb.OsmAndCategoryTable.FREQUENCY_FIELD_NUMBER:
+				int freq = codedIS.readUInt32();
+				region.categoryFreqs.add(freq);
+				break;
+			case OsmandOdb.OsmAndCategoryTable.SUBCATFREQ_FIELD_NUMBER:
+				int sfreq = codedIS.readUInt32();
+				region.subcategoryFreqs.get(region.subcategoryFreqs.size() - 1).add(sfreq);
 				break;
 			default:
 				skipUnknownField(t);
@@ -270,11 +310,20 @@ public class BinaryMapPoiReaderAdapter {
 					case OsmandOdb.OsmAndPoiSubtype.NAME_FIELD_NUMBER:
 						st.name = codedIS.readString().intern();
 						break;
+					case OsmandOdb.OsmAndPoiSubtype.FREQUENCY_FIELD_NUMBER:
+						st.frequency = codedIS.readUInt32();
+						break;
 					case OsmandOdb.OsmAndPoiSubtype.SUBTYPEVALUE_FIELD_NUMBER:
 						if (st.possibleValues == null) {
 							st.possibleValues = new ArrayList<String>();
 						}
 						st.possibleValues.add(codedIS.readString().intern());
+						break;
+					case OsmandOdb.OsmAndPoiSubtype.SUBTYPEVALUESFREQ_FIELD_NUMBER:
+						if (st.possibleValuesFreqs == null) {
+							st.possibleValuesFreqs = new TIntArrayList();
+						}
+						st.possibleValuesFreqs.add(codedIS.readUInt32());
 						break;
 					case OsmandOdb.OsmAndPoiSubtype.ISTEXT_FIELD_NUMBER:
 						st.text = codedIS.readBool();
@@ -307,9 +356,90 @@ public class BinaryMapPoiReaderAdapter {
 	}
 
 	private String normalizeSearchPoiByNameQuery(String query) {
-		return query.replace("\"", "").toLowerCase();
+		return query.replace("\"", "").toLowerCase(Locale.ROOT);
+	}
+	
+	
+	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexReader pi, String query) throws IOException {
+		OsmandOdb.IndexedStringTable res = null;
+		TLongArrayList loffsets = query == null ? null : new TLongArrayList();
+		int ind = -1;
+		while (true) {
+			int t = codedIS.readTag();
+			int tag = WireFormat.getTagFieldNumber(t);
+			switch (tag) {
+			case 0:
+				return res;
+			case OsmandOdb.OsmAndPoiNameIndex.TABLE_FIELD_NUMBER :
+				pi.resetMatchedKeys(query);
+				long length = readInt();
+				long oldLimit = codedIS.pushLimitLong((long) length);
+				pi.setTablePointer(codedIS.getTotalBytesRead());
+				map.readNameIndexInspector(null, pi, query);
+				codedIS.popLimit(oldLimit);
+				break;
+				
+			case OsmandOdb.OsmAndPoiNameIndex.COMMONSTATS_FIELD_NUMBER :
+				length = codedIS.readRawVarint32();
+				oldLimit = codedIS.pushLimitLong(length);
+				if (pi.getCommonStats() != null) {
+					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+				} else {
+					CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
+					pi.setCommonIndexed(stat);
+				}
+				codedIS.popLimit(oldLimit);
+				break;
+			case OsmandOdb.OsmAndPoiNameIndex.DATA_FIELD_NUMBER :
+				long shift = codedIS.getTotalBytesRead();
+				if (ind == -1 && loffsets != null) {
+					pi.getAtomsToLoad(loffsets, query);
+					loffsets.sort();
+					ind = 0;
+				}
+				if (loffsets != null) {
+					if (ind >= loffsets.size()) {
+						codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+						break;
+					} else if (loffsets.get(ind) != shift) {
+						codedIS.skipRawBytes(loffsets.get(ind) - shift);
+						shift = codedIS.getTotalBytesRead();
+					}
+					ind++;
+				}
+				int len = codedIS.readRawVarint32();
+				oldLimit = codedIS.pushLimitLong((long) len);
+				pi.addData(OsmAndPoiNameIndexData.parseFrom(codedIS), shift);
+				codedIS.popLimit(oldLimit);
+				break;
+
+			default:
+				skipUnknownField(t);
+				break;
+			}
+		}
 	}
 
+	protected NameIndexReader readNameIndex(String prefix, NameIndexReader nameIndexReader) throws IOException {
+		while (true) {
+			int t = codedIS.readTag();
+			int tag = WireFormat.getTagFieldNumber(t);
+			switch (tag) {
+			case 0:
+				return nameIndexReader;
+			case OsmandOdb.OsmAndPoiIndex.NAMEINDEX_FIELD_NUMBER:
+				long length = readInt();
+				long oldLimit = codedIS.pushLimitLong((long) length);
+				readNameIndexInternal(nameIndexReader, prefix);
+				codedIS.popLimit(oldLimit);
+				break;
+			default:
+				skipUnknownField(t);
+				break;
+			}
+		}
+	}
+	
 	protected void searchPoiByName(PoiRegion region, SearchRequest<Amenity> req) throws IOException {
 		TIntLongHashMap offsets = new TIntLongHashMap();
 		String query = normalizeSearchPoiByNameQuery(req.nameQuery);
@@ -427,7 +557,7 @@ public class BinaryMapPoiReaderAdapter {
 		TIntLongHashMap offsets = new TIntLongHashMap();
 		long offset = 0;
 		List<TIntLongHashMap> listOfSepOffsets = new ArrayList<TIntLongHashMap>();
-		List<String> queries = splitAndNormalize(query);
+		List<String> queries = splitAndNormalize(query, true);
 		List<QueryToken> queryTokens = null;
 		while (true) {
 			final long subStart = req.beginSubSearchStats(), bytes = codedIS.getBytesCounter();
@@ -513,6 +643,7 @@ public class BinaryMapPoiReaderAdapter {
 		List<String> suffixDictionary = null;
 		QueryToken.SuffixMask mask = token == null || prefix == null ? null : token.new SuffixMask(prefix);
 		boolean suffixDictionaryInitialized = false;
+		boolean emptySuffixes = false;
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
@@ -524,14 +655,22 @@ public class BinaryMapPoiReaderAdapter {
 					if (suffixDictionary == null) {
 						suffixDictionary = new ArrayList<>();
 					}
-					if (EMPTY_SUFFIX_DICTIONARY_SENTINEL.equals(encodedSuffix)) {
-						break;
+					if (SearchAlgorithms.OLD_EMPTY_SUFFIX_DICTIONARY_SENTINEL.equals(encodedSuffix)) {
+						emptySuffixes = true;
+						continue;
 					}
 					String prevSuffix = suffixDictionary.isEmpty() ? null : suffixDictionary.get(suffixDictionary.size() - 1);
 					String entry = nameIndexDecodeDictionarySuffix(prevSuffix, encodedSuffix);
 					suffixDictionary.add(entry);
 					break;
 				case OsmAndPoiNameIndexData.ATOMS_FIELD_NUMBER:
+					if (emptySuffixes || (suffixDictionary != null && suffixDictionary.size() == 1
+							&& suffixDictionary.get(0).equals(SearchAlgorithms.EMPTY_SUFFIX_DICTIONARY_SENTINEL))) {
+						if (prefix != null && token != null && !token.matchFullPrefix(prefix.key())) {
+							codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+							return;
+						}
+					}
 					if (!suffixDictionaryInitialized && mask != null) {
 						mask.setDictionary(suffixDictionary);
 						suffixDictionaryInitialized = true;
@@ -554,13 +693,18 @@ public class BinaryMapPoiReaderAdapter {
 		int y = 0;
 		int zoom = 15;
 		int shift = Integer.MIN_VALUE;
-		boolean matched = suffixMask != null && suffixMask.shouldPassThrough();
+		boolean matched = false;
+		boolean noBisetIndex = true;
 		int maskIndex = 0;
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
 			switch (tag) {
 			case 0:
+				if ((suffixMask != null && suffixMask.shouldPassThrough()) || noBisetIndex) {
+					// intermediate version ignore 
+					matched = true;
+				}
 				if (!matched) {
 					return;
 				}
@@ -592,23 +736,24 @@ public class BinaryMapPoiReaderAdapter {
 			case OsmandOdb.OsmAndPoiNameIndexDataAtom.ZOOM_FIELD_NUMBER:
 				zoom = codedIS.readUInt32();
 				break;
-			case OsmandOdb.OsmAndPoiNameIndexDataAtom.SUFFIXESBITSET_FIELD_NUMBER:
-				int mask = codedIS.readUInt32();
-				if (!matched && suffixMask != null && suffixMask.isMatched(maskIndex, mask)) {
+			case OsmandOdb.OsmAndPoiNameIndexDataAtom.SUFFIXESBITSETINDEX_FIELD_NUMBER:
+				noBisetIndex = false;
+				int index = codedIS.readUInt32();
+				if (!matched && suffixMask != null && suffixMask.isMatched(maskIndex, index)) {
 					matched = true;
 				}
 				maskIndex++;
 				break;
 			case OsmandOdb.OsmAndPoiNameIndexDataAtom.SHIFTTO_FIELD_NUMBER:
 				long l = readInt();
-				if(l > Integer.MAX_VALUE) {
+				if (l > Integer.MAX_VALUE) {
 					throw new IllegalStateException();
 				}
 				shift = (int) l;
-				if (!matched) {
-					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
-					return;
-				}
+//				if (!matched) {
+//					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+//					return;
+//				}
 				break;
 			default:
 				skipUnknownField(t);
@@ -620,7 +765,6 @@ public class BinaryMapPoiReaderAdapter {
 	protected void searchPoiIndex(int left31, int right31, int top31, int bottom31,
 			SearchRequest<Amenity> req, PoiRegion region) throws IOException {
 		long indexOffset = codedIS.getTotalBytesRead();
-		long time = System.currentTimeMillis();
 		TLongHashSet skipTiles = null;
 		if (req.zoom >= 0 && req.zoom < 16) {
 			skipTiles = new TLongHashSet();
@@ -669,7 +813,7 @@ public class BinaryMapPoiReaderAdapter {
 					codedIS.seek(offsets[j] + indexOffset);
 					long len = readInt();
 					long oldLim = codedIS.pushLimitLong((long) len);
-					boolean read = readPoiData(left31, right31, top31, bottom31, req, region, skipTiles,
+					boolean read = readPoiData(left31, right31, top31, bottom31, req, region,  -1, skipTiles,
 							req.zoom == -1 ? 31 : req.zoom + ZOOM_TO_SKIP_FILTER);
 					if (read && skipVal != -1 && skipTiles != null) {
 						skipTiles.add(skipVal);
@@ -693,7 +837,7 @@ public class BinaryMapPoiReaderAdapter {
 		}
 	}
 
-	private void readPoiData(CollatorStringMatcher matcher, SearchRequest<Amenity> req, PoiRegion region,
+	void readPoiData(CollatorStringMatcher matcher, SearchRequest<Amenity> req, PoiRegion region,
 			BinaryMapIndexReaderStats.PoiReadMetricSet metrics) throws IOException {
 		int x = 0;
 		int y = 0;
@@ -732,11 +876,11 @@ public class BinaryMapPoiReaderAdapter {
 				}
 				codedIS.popLimit(oldLim);
 				if (am != null) {
-					boolean matches = matcher.matches(am.getName().toLowerCase())
-							|| matcher.matches(am.getEnName(true).toLowerCase());
+					boolean matches = matcher.matches(am.getName().toLowerCase(Locale.ROOT))
+							|| matcher.matches(am.getEnName(true).toLowerCase(Locale.ROOT));
 					if (!matches) {
 						for (String s : am.getOtherNames()) {
-							matches = matcher.matches(s.toLowerCase());
+							matches = matcher.matches(s.toLowerCase(Locale.ROOT));
 							if (matches) {
 								break;
 							}
@@ -770,8 +914,8 @@ public class BinaryMapPoiReaderAdapter {
 		}
 	}
 
-	private boolean readPoiData(int left31, int right31, int top31, int bottom31,
-			SearchRequest<Amenity> req, PoiRegion region, TLongHashSet toSkip, int zSkip) throws IOException {
+	boolean readPoiData(int left31, int right31, int top31, int bottom31,
+			SearchRequest<Amenity> req, PoiRegion region, int index, TLongHashSet toSkip, int zSkip) throws IOException {
 		int x = 0;
 		int y = 0;
 		int zoom = 0;
@@ -821,6 +965,11 @@ public class BinaryMapPoiReaderAdapter {
 							read = true;
 						}
 					}
+				}
+				if (--index == -1) {
+					// index initially could be -1
+					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+					return read;
 				}
 				break;
 			default:
@@ -941,13 +1090,13 @@ public class BinaryMapPoiReaderAdapter {
 				retValue.setLength(0);
 				hasSubcategoriesField = true;
 				PoiSubType st = region.getSubtypeFromId(subtypev, retValue);
-				boolean topIndex = region.topIndexSubTypes.contains(st);
+				// boolean topIndex = region.topIndexSubTypes.contains(st);
 				if (req.poiAdditionalFilter != null) {
 					if (st != null && req.poiAdditionalFilter.accept(st, retValue.toString())) {
 						topIndexAdditonalFound = true;
 					}
 				}
-				if (st != null && !topIndex) {
+				if (st != null ) {
 					am.setAdditionalInfo(st.name, retValue.toString());
 				}
 				break;

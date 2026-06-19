@@ -1,12 +1,13 @@
 package net.osmand.plus.plugins.audionotes;
 
-import static net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin.IMG_EXTENSION;
-import static net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin.MPEG4_EXTENSION;
-import static net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin.THREEGP_EXTENSION;
+import static net.osmand.plus.plugins.audionotes.RecordingsFileHelper.IMG_EXTENSION;
+import static net.osmand.plus.plugins.audionotes.RecordingsFileHelper.MPEG4_EXTENSION;
+import static net.osmand.plus.plugins.audionotes.RecordingsFileHelper.THREEGP_EXTENSION;
 
 import android.content.Context;
 import android.media.MediaPlayer;
 
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 
 import net.osmand.Location;
@@ -15,6 +16,7 @@ import net.osmand.data.LatLon;
 import net.osmand.data.PointDescription;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
+import net.osmand.plus.media.MediaFileUtils;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.util.Algorithms;
 
@@ -121,7 +123,7 @@ public class Recording {
 		lat = latLon.getLatitude();
 		lon = latLon.getLongitude();
 		if (directory != null) {
-			File to = AudioVideoNotesPlugin.getBaseFileName(lat, lon, directory, Algorithms.getFileExtension(file));
+			File to = MediaFileUtils.getBaseFileName(lat, lon, directory, Algorithms.getFileExtension(file));
 			if (file.renameTo(to)) {
 				file = to;
 				return true;
@@ -361,5 +363,23 @@ public class Recording {
 			return app.getString(R.string.shared_string_audio) + " " + formatDateTime(app, lastModified);
 		}
 		return "";
+	}
+
+	@DrawableRes
+	public int getIconId() {
+		return getIconIdForRecordingFile(file);
+	}
+
+	@DrawableRes
+	public static int getIconIdForRecordingFile(@NonNull File file) {
+		String fileName = file.getName();
+		if (fileName.endsWith(IMG_EXTENSION)) {
+			return R.drawable.ic_action_photo_dark;
+		} else if (fileName.endsWith(MPEG4_EXTENSION)) {
+			return R.drawable.ic_action_video_dark;
+		} else if (fileName.endsWith(THREEGP_EXTENSION)) {
+			return R.drawable.ic_action_micro_dark;
+		}
+		return -1;
 	}
 }

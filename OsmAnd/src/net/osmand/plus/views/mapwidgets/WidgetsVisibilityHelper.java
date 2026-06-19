@@ -14,7 +14,6 @@ import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.exploreplaces.ExplorePlacesFragment;
 import net.osmand.plus.helpers.AndroidUiHelper;
-import net.osmand.plus.helpers.DiscountHelper.DiscountBarController;
 import net.osmand.plus.helpers.MapFragmentsHelper;
 import net.osmand.plus.mapcontextmenu.MapContextMenu;
 import net.osmand.plus.mapcontextmenu.MapContextMenuFragment;
@@ -82,7 +81,7 @@ public class WidgetsVisibilityHelper {
 	public boolean shouldShowTopCoordinatesWidget() {
 		return !mapActivity.shouldHideTopControls()
 				&& mapActivity.getMapRouteInfoMenu().shouldShowTopControls()
-				&& (!mapActivity.isTopToolbarActive() || isTopToolbarDiscountBar())
+				&& !mapActivity.isTopToolbarActive()
 				&& !isInRouteLineAppearanceMode()
 				&& !isInChoosingRoutesMode()
 				&& !isInWaypointsChoosingMode()
@@ -98,15 +97,11 @@ public class WidgetsVisibilityHelper {
 	public boolean shouldHideVerticalWidgets() {
 		return isMapRouteInfoMenuVisible()
 				|| isExplorePlacesMode()
-				|| (mapActivity.isTopToolbarActive() && !isTopToolbarDiscountBar())
+				|| mapActivity.isTopToolbarActive()
 				|| mapActivity.shouldHideTopControls()
 				|| isInRouteLineAppearanceMode()
 				|| isInConfigureMapOptionMode()
 				|| !shouldShowElementOnActiveScreen(VERTICAL_WIDGETS);
-	}
-
-	public boolean isTopToolbarDiscountBar() {
-		return mapLayers.getMapInfoLayer().getTopToolbarController() instanceof DiscountBarController;
 	}
 
 	public boolean shouldHideBottomWidgets() {

@@ -42,6 +42,7 @@ import net.osmand.plus.download.local.LocalItem;
 import net.osmand.plus.exploreplaces.ExplorePlacesOnlineProvider;
 import net.osmand.plus.feedback.AnalyticsHelper;
 import net.osmand.plus.feedback.FeedbackHelper;
+import net.osmand.plus.gallery.GalleryHelper;
 import net.osmand.plus.help.HelpArticlesHelper;
 import net.osmand.plus.helpers.*;
 import net.osmand.plus.importfiles.ImportHelper;
@@ -52,7 +53,6 @@ import net.osmand.plus.keyevent.KeyEventHelper;
 import net.osmand.plus.mapmarkers.MapMarkersDbHelper;
 import net.osmand.plus.mapmarkers.MapMarkersHelper;
 import net.osmand.plus.myplaces.favorites.FavouritesHelper;
-import net.osmand.plus.myplaces.favorites.dialogs.FavoriteSortModesHelper;
 import net.osmand.plus.notifications.NotificationHelper;
 import net.osmand.plus.onlinerouting.OnlineRoutingHelper;
 import net.osmand.plus.plugins.PluginsHelper;
@@ -257,6 +257,33 @@ public class AppInitializer implements IProgress {
 				InputStream stream = OsmandRegions.class.getResourceAsStream("regions.ocbf");
 				Algorithms.streamCopy(stream, new FileOutputStream(file));
 			}
+			app.regions.setTranslator(new RegionTranslation() {
+
+				@Override
+				public String getTranslation(String id) {
+					if (WorldRegion.AFRICA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_africa);
+					} else if (WorldRegion.AUSTRALIA_AND_OCEANIA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_oceania);
+					} else if (WorldRegion.ASIA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_asia);
+					} else if (WorldRegion.CENTRAL_AMERICA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_central_america);
+					} else if (WorldRegion.EUROPE_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_europe);
+					} else if (WorldRegion.RUSSIA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_russia);
+					} else if (WorldRegion.NORTH_AMERICA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_north_america);
+					} else if (WorldRegion.SOUTH_AMERICA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_south_america);
+					} else if (WorldRegion.ANTARCTICA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_antarctica);
+					}
+					return null;
+				}
+			});
+			app.regions.setLocale(app.getLanguage(), app.getLocaleHelper().getCountry());
 			app.regions.prepareFile(file.getAbsolutePath());
 			PlatformUtil.setOsmandRegions(app.regions);
 		} catch (Exception e) {
@@ -320,10 +347,6 @@ public class AppInitializer implements IProgress {
 		app.favoritesHelper = startupInit(new FavouritesHelper(app), FavouritesHelper.class);
 		app.waypointHelper = startupInit(new WaypointHelper(app), WaypointHelper.class);
 		app.aidlApi = startupInit(new OsmandAidlApi(app), OsmandAidlApi.class);
-
-		app.regions = startupInit(new OsmandRegions(), OsmandRegions.class);
-		updateRegionVars();
-
 		app.poiFilters = startupInit(new PoiFiltersHelper(app), PoiFiltersHelper.class);
 		app.rendererRegistry = startupInit(new RendererRegistry(app), RendererRegistry.class);
 		app.geocodingLookupService = startupInit(new GeocodingLookupService(app), GeocodingLookupService.class);
@@ -361,6 +384,7 @@ public class AppInitializer implements IProgress {
 		app.helpArticlesHelper = startupInit(new HelpArticlesHelper(app), HelpArticlesHelper.class);
 		app.clickableWayHelper = startupInit(new ClickableWayHelper(app), ClickableWayHelper.class);
 		app.autoBackupHelper = startupInit(new AutoBackupHelper(app), AutoBackupHelper.class);
+		app.galleryHelper = startupInit(new GalleryHelper(app), GalleryHelper.class);
 		initOpeningHoursParser();
 	}
 
@@ -382,36 +406,9 @@ public class AppInitializer implements IProgress {
 		OpeningHoursParser.setAdditionalString("will_open_on_short", app.getString(R.string.open_from_short));
 	}
 
-	private void updateRegionVars() {
-		app.regions.setTranslator(new RegionTranslation() {
+	private void updateRegionVars(OsmandRegions regions) {
 
-			@Override
-			public String getTranslation(String id) {
-				if (WorldRegion.AFRICA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_africa);
-				} else if (WorldRegion.AUSTRALIA_AND_OCEANIA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_oceania);
-				} else if (WorldRegion.ASIA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_asia);
-				} else if (WorldRegion.CENTRAL_AMERICA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_central_america);
-				} else if (WorldRegion.EUROPE_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_europe);
-				} else if (WorldRegion.RUSSIA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_russia);
-				} else if (WorldRegion.NORTH_AMERICA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_north_america);
-				} else if (WorldRegion.SOUTH_AMERICA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_south_america);
-				} else if (WorldRegion.ANTARCTICA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_antarctica);
-				}
-				return null;
-			}
-		});
-		app.regions.setLocale(app.getLanguage(), app.getLocaleHelper().getCountry());
 	}
-
 
 	private <T> T startupInit(T object, Class<T> class1) {
 		long t = System.currentTimeMillis();
@@ -588,14 +585,22 @@ public class AppInitializer implements IProgress {
 					continue;
 				}
 				int updateFrequencyOrd = preferenceUpdateFrequency(fileName, settings).get();
-				UpdateFrequency updateFrequency = UpdateFrequency.values()[updateFrequencyOrd];
+				UpdateFrequency[] updateFrequencies = UpdateFrequency.values();
+				if (updateFrequencyOrd < 0 || updateFrequencyOrd >= updateFrequencies.length) {
+					continue;
+				}
+				UpdateFrequency updateFrequency = updateFrequencies[updateFrequencyOrd];
 				long lastCheck = preferenceLastSuccessfulUpdateCheck(fileName, settings).get();
 
 				if (System.currentTimeMillis() - lastCheck > updateFrequency.intervalMillis * 2) {
 					runLiveUpdate(app, fileName, false, null);
 					PendingIntent alarmIntent = getPendingIntent(app, fileName);
 					int timeOfDayOrd = preferenceTimeOfDayToUpdate(fileName, settings).get();
-					TimeOfDay timeOfDayToUpdate = TimeOfDay.values()[timeOfDayOrd];
+					TimeOfDay[] timeOfDayValues = TimeOfDay.values();
+					if (timeOfDayOrd < 0 || timeOfDayOrd >= timeOfDayValues.length) {
+						continue;
+					}
+					TimeOfDay timeOfDayToUpdate = timeOfDayValues[timeOfDayOrd];
 					setAlarmForPendingIntent(alarmIntent, manager, updateFrequency, timeOfDayToUpdate);
 				}
 			}

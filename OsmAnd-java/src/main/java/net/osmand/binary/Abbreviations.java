@@ -17,6 +17,7 @@ public class Abbreviations {
 	private static final Set<String> conjunctions = new TreeSet<>();
 
     static {
+    	// articles
     	conjunctions.add("the");
 		conjunctions.add("der");
 		conjunctions.add("den");
@@ -49,6 +50,7 @@ public class Abbreviations {
         abbreviations.put("rd", "Road");
         abbreviations.put("ave", "Avenue");
         abbreviations.put("st", "Street");
+        abbreviations.put("hwy", "Highway");
         abbreviations.put("blvd", "Boulevard");
     }
     

@@ -2,7 +2,7 @@ package net.osmand;
 
 import net.osmand.util.ArabicNormalizer;
 import net.osmand.util.SearchAlgorithms;
-
+import net.osmand.util.UnicodeDiacritics;
 
 import java.util.Locale;
 
@@ -62,14 +62,18 @@ public class CollatorStringMatcher implements StringMatcher {
 	
 	@Override
 	public boolean matches(String name) {
-		return cmatches(collator, name, part, false, mode);
+		return cmatches(collator, name, part, false, true, mode);
 	}
 
 	public static boolean cmatches(Collator collator, String fullName, String part, StringMatcherMode mode) {
-		return cmatches(collator, fullName, part, true, mode);
+		return cmatches(collator, fullName, part, true, true, mode);
+	}
+	
+	public static boolean cmatchesNoAlign(Collator collator, String fullName, String part, StringMatcherMode mode) {
+		return cmatches(collator, fullName, part, false, false, mode);
 	}
 		
-	private static boolean cmatches(Collator collator, String fullName, String part, boolean alignPart,
+	private static boolean cmatches(Collator collator, String fullName, String part, boolean alignPart, boolean alignFull,
 			StringMatcherMode mode) {
 		if (fullName != null && fullName.indexOf('-') != -1) {
 			// Test if it matches without space
@@ -80,9 +84,12 @@ public class CollatorStringMatcher implements StringMatcher {
 		if (alignPart) {
 			part = alignChars(part);
 		}
-		// FUTURE: This is not effective code, it runs on each comparison
-		// It would be more efficient to normalize all strings in file and normalize search string before collator
-		fullName = lowercaseAndAlignChars(fullName);
+		if (alignFull) {
+			// FUTURE: This is not effective code, it runs on each comparison
+			// It would be more efficient to normalize all strings in file and normalize
+			// search string before collator
+			fullName = lowercaseAndAlignChars(fullName);
+		}
 		
 		switch (mode) {
 		case CHECK_CONTAINS:
@@ -221,6 +228,7 @@ public class CollatorStringMatcher implements StringMatcher {
 		}
 		fullText = SearchAlgorithms.removeApostrophes(fullText);
 		fullText = SearchAlgorithms.replaceGermanSS(fullText);
+		fullText = UnicodeDiacritics.getInstance().stripDiacritics(fullText);
 		return fullText;
 	}
 

@@ -34,12 +34,37 @@ public class Street extends MapObject {
 		}
 		return intersectedStreets;
 	}
-
+	
 	public void addIntersectedStreet(Street s) {
 		if (intersectedStreets == null) {
 			intersectedStreets = new ArrayList<Street>();
 		}
 		intersectedStreets.add(s);
+	}
+	
+	public QuadRect getBboxPoints() {
+		LatLon ll = getLocation();
+		if (ll != null) {
+			QuadRect qr = new QuadRect(ll.getLongitude(), ll.getLatitude(), 
+					ll.getLongitude() + 0.00001, ll.getLatitude() - 0.00001);
+			if (buildings.isEmpty()) {
+				// use intersected streets however it's much larger
+				for (Street is : getIntersectedStreets()) {
+					LatLon l2 = is.getLocation();
+					if (l2 != null) {
+						qr.include(l2.getLongitude(), l2.getLatitude());
+					}
+				}
+			}
+			for (Building b : buildings) {
+				LatLon l2 = b.getLocation();
+				if (l2 != null) {
+					qr.include(l2.getLongitude(), l2.getLatitude());
+				}
+			}
+			return qr;
+		}
+		return null;
 	}
 
 	public void addBuildingCheckById(Building building) {

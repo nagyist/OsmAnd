@@ -51,6 +51,8 @@ import net.osmand.plus.auto.screens.RequestPermissionScreen.LocationPermissionCh
 import net.osmand.plus.helpers.LocationCallback;
 import net.osmand.plus.helpers.LocationServiceHelper;
 import net.osmand.plus.helpers.RestoreNavigationHelper;
+import net.osmand.plus.plugins.PluginsHelper;
+import net.osmand.plus.plugins.development.OsmandDevelopmentPlugin;
 import net.osmand.plus.routing.RouteCalculationProgressListener;
 import net.osmand.plus.search.history.HistoryEntry;
 import net.osmand.plus.helpers.TargetPoint;
@@ -65,6 +67,7 @@ import net.osmand.plus.settings.enums.LocationSource;
 import net.osmand.plus.simulation.OsmAndLocationSimulation;
 import net.osmand.plus.track.helpers.GpxUiHelper;
 import net.osmand.plus.views.OsmandMapTileView;
+import net.osmand.plus.views.layers.GPXLayer;
 import net.osmand.router.FastRoutingState;
 import net.osmand.search.core.ObjectType;
 import net.osmand.search.core.SearchResult;
@@ -213,6 +216,8 @@ public class NavigationSession extends Session implements NavigationListener, Os
 			checkAppInitialization(new RestoreNavigationHelper(app, null));
 		}
 		app.getRoutingHelper().addCalculationProgressListener(this);
+		GPXLayer gpxLayer = app.getOsmandMap().getMapLayers().getGpxLayer();
+		gpxLayer.setInvalidated(true);
 	}
 
 	@Override
@@ -488,7 +493,7 @@ public class NavigationSession extends Session implements NavigationListener, Os
 	public void routeWasFinished() {
 		ScreenManager screenManager = getScreenManager();
 		screenManager.popToRoot();
-		screenManager.push(new DestinationReachedScreen(carContext));
+		screenManager.push(new DestinationReachedScreen(carContext, settingsAction));
 	}
 
 	private boolean isRoutePreviewPresent() {
@@ -640,7 +645,7 @@ public class NavigationSession extends Session implements NavigationListener, Os
 			this.navigationManager.setNavigationManagerCallback(new NavigationManagerCallback() {
 				@Override
 				public void onStopNavigation() {
-					if (!routingHelper.isRouteCalculated() || !routingHelper.isFollowingMode()) {
+					if (routingHelper.isRouteCalculated() && routingHelper.isFollowingMode()) {
 						getApp().stopNavigation();
 					}
 					carNavigationShouldBeActive = false;

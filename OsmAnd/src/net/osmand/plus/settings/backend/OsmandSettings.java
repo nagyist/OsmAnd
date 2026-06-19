@@ -97,6 +97,7 @@ import net.osmand.plus.settings.backend.menuitems.MainContextMenuItemsSettings;
 import net.osmand.plus.settings.backend.preferences.*;
 import net.osmand.plus.settings.backend.storages.ImpassableRoadsStorage;
 import net.osmand.plus.settings.backend.storages.IntermediatePointsStorage;
+import net.osmand.plus.settings.coordinates.CoordinateFormatSettingsStorage;
 import net.osmand.plus.settings.enums.*;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.FileUtils;
@@ -163,6 +164,7 @@ public class OsmandSettings {
 
 	private final ImpassableRoadsStorage impassableRoadsStorage = new ImpassableRoadsStorage(this);
 	private final IntermediatePointsStorage intermediatePointsStorage = new IntermediatePointsStorage(this);
+	private final CoordinateFormatSettingsStorage coordinateFormatSettingsStorage = new CoordinateFormatSettingsStorage(this);
 
 	private StateChangedListener<ApplicationMode> appModeListener;
 
@@ -243,6 +245,11 @@ public class OsmandSettings {
 			}
 		}
 		return map;
+	}
+
+	@NonNull
+	public CoordinateFormatSettingsStorage getCoordinateFormatSettingsStorage() {
+		return coordinateFormatSettingsStorage;
 	}
 
 	public static boolean isRendererPreference(String key) {
@@ -487,7 +494,9 @@ public class OsmandSettings {
 	}
 
 	public boolean isExportAvailableForPref(@NonNull OsmandPreference<?> preference) {
-		if (APPLICATION_MODE.getId().equals(preference.getId())) {
+		if (CoordinateFormatSettingsStorage.LEGACY_FORMAT_ID.equals(preference.getId())) {
+			return false;
+		} else if (APPLICATION_MODE.getId().equals(preference.getId())) {
 			return true;
 		} else if (preference instanceof CommonPreference) {
 			CommonPreference<?> commonPreference = (CommonPreference<?>) preference;
@@ -1162,8 +1171,6 @@ public class OsmandSettings {
 		}
 	}.makeProfile();
 
-	//public final OsmandPreference<Integer> COORDINATES_FORMAT = new IntPreference("coordinates_format", PointDescription.FORMAT_DEGREES).makeGlobal();
-
 	public final OsmandPreference<AngularConstants> ANGULAR_UNITS = new EnumStringPreference<AngularConstants>(this,
 			"angular_measurement", AngularConstants.DEGREES, AngularConstants.values()).makeProfile();
 
@@ -1488,6 +1495,7 @@ public class OsmandSettings {
 
 	public final OsmandPreference<Boolean> ONLINE_PHOTOS_ROW_COLLAPSED = new BooleanPreference(this, "online_photos_menu_collapsed", true).makeGlobal().makeShared();
 	public final OsmandPreference<Boolean> EXPLORE_NEARBY_ITEMS_ROW_COLLAPSED = new BooleanPreference(this, "online_photos_menu_collapsed", true).makeGlobal().makeShared();
+	public final OsmandPreference<Boolean> ATTACHED_MEDIA_ROW_COLLAPSED = new BooleanPreference(this, "attached_media_menu_collapsed", true).makeGlobal().makeShared();
 	public final OsmandPreference<Boolean> WEBGL_SUPPORTED = new BooleanPreference(this, "webgl_supported", true).makeGlobal();
 
 	public final OsmandPreference<String> PREFERRED_LOCALE = new StringPreference(this, "preferred_locale", "").makeGlobal().makeShared();
@@ -1504,7 +1512,8 @@ public class OsmandSettings {
 	public final OsmandPreference<Boolean> MAP_SHOW_LOCAL_NAMES = new BooleanPreference(this, "map_show_local_names", false).makeGlobal().makeShared().cache();
 
 	public boolean usingEnglishNames() {
-		return MAP_PREFERRED_LOCALE.get().equals("en");
+		String locale = MAP_PREFERRED_LOCALE.get();
+		return "en".equals(locale) || locale.startsWith("en_") || locale.startsWith("en-");
 	}
 
 	public static final String BILLING_USER_DONATION_WORLD_PARAMETER = "";
@@ -2053,6 +2062,7 @@ public class OsmandSettings {
 	public CommonPreference<String> PREVIOUS_INSTALLED_VERSION = new StringPreference(this, "previous_installed_version", "").makeGlobal();
 
 	public final OsmandPreference<Boolean> SHOULD_SHOW_FREE_VERSION_BANNER = new BooleanPreference(this, "should_show_free_version_banner", false).makeGlobal().makeShared().cache();
+	public final OsmandPreference<Boolean> SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET = new BooleanPreference(this, "should_show_discount_bottom_sheet", false).makeGlobal().makeShared().cache();
 
 	public final OsmandPreference<Boolean> USE_DISCRETE_AUTO_ZOOM = new BooleanPreference(this, "use_v1_auto_zoom", false).makeGlobal().makeShared().cache();
 
@@ -2295,6 +2305,8 @@ public class OsmandSettings {
 		}
 		return map;
 	}
+
+	public final OsmandPreference<Boolean> AUTO_COPY_MEDIA_TO_OSMAND_STORAGE = new BooleanPreference(this, "auto_copy_media_to_osmand_storage", false).makeGlobal().makeShared();
 
 	public final OsmandPreference<Boolean> SHARED_STORAGE_MIGRATION_FINISHED = new BooleanPreference(this,
 			"shared_storage_migration_finished", false).makeGlobal();
@@ -3346,8 +3358,6 @@ public class OsmandSettings {
 
 	public final OsmandPreference<String> CONTRIBUTION_INSTALL_APP_DATE = new StringPreference(this, "CONTRIBUTION_INSTALL_APP_DATE", null).makeGlobal();
 
-	public final OsmandPreference<Integer> COORDINATES_FORMAT = new IntPreference(this, "coordinates_format", PointDescription.FORMAT_DEGREES).makeProfile();
-
 	public final OsmandPreference<Boolean> FOLLOW_THE_ROUTE = new BooleanPreference(this, "follow_to_route", false).makeGlobal();
 	public final OsmandPreference<String> FOLLOW_THE_GPX_ROUTE = new StringPreference(this, "follow_gpx", null).makeGlobal();
 	public final OsmandPreference<Boolean> SHOW_RESTART_NAVIGATION_DIALOG = new BooleanPreference(this, "show_restart_navigation_dialog", true).makeGlobal().makeShared();
@@ -3477,13 +3487,7 @@ public class OsmandSettings {
 			new BooleanPreference(this, "show_coordinates_grid", false).makeProfile();
 
 	public final OsmandPreference<GridFormat> COORDINATE_GRID_FORMAT =
-			new EnumStringPreference<>(this, "coordinates_grid_format", GridFormat.DMS, GridFormat.values()) {
-				@Override
-				public GridFormat getProfileDefaultValue(@Nullable ApplicationMode mode) {
-					int formatId = COORDINATES_FORMAT.getModeValue(mode);
-					return GridFormat.valueOf(formatId);
-				}
-			}.makeProfile();
+			new EnumStringPreference<>(this, "coordinates_grid_format", GridFormat.DIGITAL, GridFormat.values()).makeProfile();
 
 	public final CommonPreference<Integer> COORDINATE_GRID_MIN_ZOOM =
 			new IntPreference(this, "coordinate_grid_min_zoom", 0).makeProfile();
@@ -3521,6 +3525,9 @@ public class OsmandSettings {
 
 	public final OsmandPreference<Boolean> FAVORITES_FREE_ACCOUNT_CARD_DISMISSED =
 			new BooleanPreference(this, "favorites_free_account_card_dismissed", false).makeGlobal();
+
+	public final OsmandPreference<Boolean> TRACKS_FREE_ACCOUNT_CARD_DISMISSED =
+			new BooleanPreference(this, "tracks_free_account_card_dismissed", false).makeGlobal();
 
 	public final OsmandPreference<Boolean> CONFIGURE_PROFILE_FREE_ACCOUNT_CARD_DISMISSED =
 			new BooleanPreference(this, "configure_profile_free_account_card_dismissed", false).makeGlobal();

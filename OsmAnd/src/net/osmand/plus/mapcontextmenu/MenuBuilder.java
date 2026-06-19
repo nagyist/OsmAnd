@@ -14,7 +14,6 @@ import static net.osmand.plus.mapcontextmenu.builders.MenuRowBuilder.ROUTE_MEMBE
 import static net.osmand.plus.mapcontextmenu.builders.MenuRowBuilder.ROUTE_PART_OF_ROW_KEY;
 import static net.osmand.plus.mapcontextmenu.builders.MenuRowBuilder.ROUTE_RELATED_ROUTES_ROW_KEY;
 import static net.osmand.plus.mapcontextmenu.builders.MenuRowBuilder.WITHIN_POLYGONS_ROW_KEY;
-import static net.osmand.plus.gallery.model.GalleryMediaGroup.WIKIMEDIA;
 
 import android.content.Context;
 import android.content.Intent;
@@ -40,6 +39,7 @@ import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -64,24 +64,18 @@ import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.chooseplan.ChoosePlanFragment;
 import net.osmand.plus.chooseplan.OsmAndFeature;
-import net.osmand.plus.gallery.model.GalleryItem;
+import net.osmand.plus.gallery.attached.AttachedMediaRowController;
+import net.osmand.plus.gallery.controller.GalleryRowController;
+import net.osmand.plus.gallery.data.GalleryKey;
 import net.osmand.plus.helpers.LocaleHelper;
 import net.osmand.plus.mapcontextmenu.SearchAmenitiesTask.SearchAmenitiesListener;
 import net.osmand.plus.mapcontextmenu.SearchByRouteIdTask.SearchByRouteIdListener;
 import net.osmand.plus.mapcontextmenu.SearchByRouteIdTask.SearchType;
 import net.osmand.plus.mapcontextmenu.builders.MenuRowBuilder;
-import net.osmand.plus.mapcontextmenu.gallery.GalleryRowBuilder;
 import net.osmand.plus.mapcontextmenu.controllers.AmenityMenuController;
 import net.osmand.plus.mapcontextmenu.controllers.TransportStopController;
-import net.osmand.plus.gallery.controller.GalleryController;
-import net.osmand.plus.gallery.ui.GalleryGridConfig;
-import net.osmand.plus.gallery.controller.GalleryItemsHolder;
-import net.osmand.plus.gallery.cache.PhotoCacheManager;
-import net.osmand.shared.media.RemoteMediaFactory;
-import net.osmand.plus.gallery.tasks.CacheReadTask;
-import net.osmand.plus.gallery.tasks.CacheWriteTask;
-import net.osmand.plus.gallery.tasks.GetOnlineImagesTask;
-import net.osmand.plus.gallery.tasks.GetOnlineImagesTask.GetImageCardsListener;
+import net.osmand.plus.mapcontextmenu.gallery.GalleryRowBuilder;
+import net.osmand.plus.gallery.online.OnlinePhotosRowController;
 import net.osmand.plus.mapcontextmenu.other.MenuObject;
 import net.osmand.plus.mapcontextmenu.other.MenuObjectUtils;
 import net.osmand.plus.plugins.OsmandPlugin;
@@ -90,6 +84,8 @@ import net.osmand.plus.poi.PoiFiltersHelper;
 import net.osmand.plus.poi.PoiUIFilter;
 import net.osmand.plus.search.dialogs.QuickSearchToolbarController;
 import net.osmand.plus.settings.backend.OsmAndAppCustomization;
+import net.osmand.plus.settings.backend.preferences.OsmandPreference;
+import net.osmand.plus.settings.coordinates.FormattedCoordinate;
 import net.osmand.plus.settings.enums.ThemeUsageContext;
 import net.osmand.plus.track.clickable.ClickableWayHelper;
 import net.osmand.plus.transport.TransportStopRoute;
@@ -112,11 +108,9 @@ import net.osmand.plus.wikipedia.WikiArticleHelper;
 import net.osmand.plus.wikipedia.WikipediaPlugin;
 import net.osmand.plus.wikivoyage.data.TravelGpx;
 import net.osmand.plus.wikivoyage.data.TravelHelper;
-import net.osmand.shared.wiki.WikiHelper;
-import net.osmand.shared.wiki.WikiImage;
+import net.osmand.shared.gpx.primitives.Linkable;
 import net.osmand.util.Algorithms;
 import net.osmand.util.MapUtils;
-import net.osmand.shared.wiki.WikiCoreHelper;
 
 import org.apache.commons.logging.Log;
 
@@ -154,56 +148,17 @@ public class MenuBuilder {
 
 	private final List<OsmandPlugin> menuPlugins = new ArrayList<>();
 
-	private GalleryController galleryController;
 	@Nullable
-	private GalleryRowBuilder onlinePhotosRow;
-	private List<GalleryItem> onlinePhotoItems;
+	private OnlinePhotosRowController onlinePhotosRowController;
+	@Nullable
+	private AttachedMediaRowController mediaRowController;
 
 	private CollapseExpandListener collapseExpandListener;
-	private GetOnlineImagesTask getOnlineImagesTask;
 	private final List<SearchAmenitiesTask> searchAmenitiesTasks = new ArrayList<>();
 
 	private final String preferredMapLang;
 	private String preferredMapAppLang;
 	private final boolean transliterateNames;
-	private final GetImageCardsListener imageCardListener = new GetImageCardsListener() {
-		@Override
-		public void onTaskStarted() {
-			if (!isHidden()) {
-				onLoadingImages(true);
-				PluginsHelper.onGetImageCardsStart();
-			}
-		}
-
-		@Override
-		public void onFinish(GalleryItemsHolder mediaHolder) {
-			if (!isHidden()) {
-				onLoadingImages(false);
-				if (galleryController != null) {
-					galleryController.setCurrentGalleryItemsHolder(mediaHolder);
-				}
-				setOnlinePhotoItems(mediaHolder.getOrderedGalleryItems());
-				PluginsHelper.onGetImageCardsFinished(mediaHolder);
-			}
-		}
-	};
-
-	private void setOnlinePhotoItems(@NonNull List<GalleryItem> onlinePhotoItems) {
-		List<GalleryItem> items = new ArrayList<>(onlinePhotoItems);
-		if (onlinePhotoItems.isEmpty() && mapActivity != null) {
-			items.add(new GalleryItem.NoMedia());
-		}
-		if (onlinePhotosRow != null) {
-			onlinePhotosRow.setItems(items);
-		}
-		this.onlinePhotoItems = items;
-	}
-
-	private void onLoadingImages(boolean loading) {
-		if (onlinePhotosRow != null) {
-			onlinePhotosRow.onLoadingImage(loading);
-		}
-	}
 
 	public interface CollapseExpandListener {
 		void onCollapseExpand(boolean collapsed);
@@ -215,7 +170,6 @@ public class MenuBuilder {
 		this.customization = app.getAppCustomization();
 		this.menuRowBuilder = new MenuRowBuilder(mapActivity);
 		this.plainMenuItems = new LinkedList<>();
-		this.galleryController = (GalleryController) app.getDialogManager().findController(GalleryController.PROCESS_ID);
 
 		preferredMapLang = app.getSettings().MAP_PREFERRED_LOCALE.get();
 		preferredMapAppLang = preferredMapLang;
@@ -381,10 +335,11 @@ public class MenuBuilder {
 	}
 
 	public void buildPhotosRow(@NonNull ViewGroup view, @Nullable Object object) {
-		galleryController = (GalleryController) app.getDialogManager().findController(GalleryController.PROCESS_ID);
-		if (customization.isFeatureEnabled(CONTEXT_MENU_ONLINE_PHOTOS_ID) && showOnlinePhotos && galleryController != null) {
-			buildOnlinePhotosRow(view);
-			buildPluginGalleryRows(view, object);
+		if (customization.isFeatureEnabled(CONTEXT_MENU_ONLINE_PHOTOS_ID) && showOnlinePhotos) {
+			Map<String, String> imageParams = new LinkedHashMap<>(getAdditionalImageParams());
+			GalleryKey.Location galleryKey = new GalleryKey.Location(latLon, imageParams);
+			buildOnlinePhotosRow(view, galleryKey);
+			buildPluginGalleryRows(view, galleryKey);
 		}
 	}
 
@@ -404,16 +359,24 @@ public class MenuBuilder {
 
 	void onHide() {
 		hidden = true;
+		// Cancel in-flight nearby-amenity and image loads when the menu is replaced (see #25137).
+		resetLoadingState();
 	}
 
 	void onClose() {
-		onlinePhotosRow = null;
-		onlinePhotoItems = null;
-		if (galleryController != null) {
-			galleryController.clearHolder();
+		resetLoadingState();
+	}
+
+	private void resetLoadingState() {
+		if (onlinePhotosRowController != null) {
+			onlinePhotosRowController.detach();
+			onlinePhotosRowController = null;
+		}
+		if (mediaRowController != null) {
+			mediaRowController.detach();
+			mediaRowController = null;
 		}
 		clearPluginRows();
-		stopLoadingImagesTask();
 		stopSearchAmenitiesTasks();
 	}
 
@@ -451,9 +414,9 @@ public class MenuBuilder {
 		}
 	}
 
-	protected void buildPluginGalleryRows(@NonNull View view, @Nullable Object object) {
+	protected void buildPluginGalleryRows(@NonNull View view, @NonNull GalleryKey.Location key) {
 		for (OsmandPlugin plugin : menuPlugins) {
-			plugin.buildContextMenuGalleryRows(this, view, object);
+			plugin.buildContextMenuGalleryRows(this, view, key);
 		}
 	}
 
@@ -661,105 +624,100 @@ public class MenuBuilder {
 		}
 	}
 
-	protected void buildOnlinePhotosRow(View view) {
-		boolean needUpdateOnly = onlinePhotosRow != null && onlinePhotosRow.getMenuBuilder() == this;
-		boolean nightMode = app.getDaynightHelper().isNightMode(ThemeUsageContext.OVER_MAP);
-		onlinePhotosRow = new GalleryRowBuilder(this);
-		onlinePhotosRow.build(galleryController, new GalleryGridConfig(), nightMode);
+	protected void buildOnlinePhotosRow(@NonNull View view, @NonNull GalleryKey.Location key) {
+		onlinePhotosRowController = resolveOnlinePhotosRowController(key);
+
+		buildGalleryRow(view, onlinePhotosRowController, R.drawable.ic_action_photo,
+				app.getString(R.string.online_photos),
+				app.getSettings().ONLINE_PHOTOS_ROW_COLLAPSED);
+	}
+
+	protected void buildAttachedMediaRow(@NonNull View view,
+	                                     @NonNull GalleryKey key,
+	                                     @NonNull Linkable target) {
+		LatLon latLon = getLatLon();
+		app.getGalleryHelper().getAttachedMediaRegistry().register(key, target);
+		mediaRowController = resolveAttachedMediaRowController(key, target, latLon);
+
+		buildGalleryRow(view, mediaRowController,
+				R.drawable.ic_action_photo,
+				app.getString(R.string.shared_string_media),
+				app.getSettings().ATTACHED_MEDIA_ROW_COLLAPSED);
+	}
+
+	public void buildGalleryRow(@NonNull View view, @NonNull GalleryRowController controller,
+	                            @DrawableRes int iconId, @NonNull String title,
+	                            @NonNull OsmandPreference<Boolean> collapsePreference) {
+		GalleryRowBuilder galleryRowBuilder = new GalleryRowBuilder(this, controller);
 
 		LinearLayout parent = new LinearLayout(view.getContext());
-		parent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-				LinearLayout.LayoutParams.WRAP_CONTENT));
+		parent.setLayoutParams(new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.MATCH_PARENT,
+				LinearLayout.LayoutParams.WRAP_CONTENT)
+		);
 		parent.setOrientation(LinearLayout.VERTICAL);
-		parent.addView(onlinePhotosRow.getGalleryView());
-		CollapsableView collapsableView = new CollapsableView(parent, this, app.getSettings().ONLINE_PHOTOS_ROW_COLLAPSED);
-		collapsableView.setCollapseExpandListener(collapsed -> {
-			if (!collapsed && onlinePhotoItems == null) {
-				startLoadingImages();
-			}
-		});
+		parent.addView(galleryRowBuilder.getGalleryView());
+
+		CollapsableView collapsableView = new CollapsableView(parent, this, collapsePreference);
+		collapsableView.setCollapseExpandListener(controller::onCollapseExpandRow);
+
 		buildRow(view, new BuildRowAttrs.Builder()
-				.setIconId(R.drawable.ic_action_photo).setText(app.getString(R.string.online_photos))
-				.setCollapsable(true).setCollapsableView(collapsableView)
-				.setTextLinesLimit(1).build());
-
-		if (needUpdateOnly && onlinePhotoItems != null) {
-			onlinePhotosRow.setItems(onlinePhotoItems);
-		} else if (!collapsableView.isCollapsed() && onlinePhotoItems == null) {
-			startLoadingImages();
-		}
+				.setIconId(iconId)
+				.setText(title)
+				.setCollapsable(true)
+				.setCollapsableView(collapsableView)
+				.setTextLinesLimit(1)
+				.build()
+		);
+		controller.onRowBuilt(collapsableView.isCollapsed());
 	}
 
-	private void buildCoordinatesRow(View view) {
-		Map<Integer, String> locationData = PointDescription.getLocationData(mapActivity, latLon.getLatitude(), latLon.getLongitude(), true);
-		String title = Objects.requireNonNull(locationData.remove(PointDescription.LOCATION_LIST_HEADER));
+	@NonNull
+	private OnlinePhotosRowController resolveOnlinePhotosRowController(@NonNull GalleryKey.Location key) {
+		if (onlinePhotosRowController != null && onlinePhotosRowController.matches(key)) {
+			return onlinePhotosRowController;
+		}
+		if (onlinePhotosRowController != null) {
+			onlinePhotosRowController.detach();
+		}
+		return new OnlinePhotosRowController(app, key);
+	}
+
+	@NonNull
+	private AttachedMediaRowController resolveAttachedMediaRowController(@NonNull GalleryKey key,
+	                                                                     @NonNull Linkable target,
+	                                                                     @Nullable LatLon latLon) {
+		if (mediaRowController != null && mediaRowController.matches(key, target, latLon)) {
+			return mediaRowController;
+		}
+		if (mediaRowController != null) {
+			mediaRowController.detach();
+		}
+		return new AttachedMediaRowController(app, key, target, latLon);
+	}
+
+	private void buildCoordinatesRow(@NonNull View view) {
+		double latitude = latLon.getLatitude();
+		double longitude = latLon.getLongitude();
+		List<FormattedCoordinate> coordinateRows = PointDescription.getPreferredLocationData(mapActivity, latitude, longitude);
+		FormattedCoordinate primaryRow = coordinateRows.isEmpty() ? null : coordinateRows.get(0);
+		String title = primaryRow != null
+				? primaryRow.getText()
+				: PointDescription.getLocationName(mapActivity, latitude, longitude, true);
+		List<FormattedCoordinate> collapsableRows = PointDescription.getCollapsedLocationData(mapActivity, latitude, longitude, coordinateRows);
+		boolean collapsable = !collapsableRows.isEmpty();
 		buildRow(view, new BuildRowAttrs.Builder().setText(title).setIconId(R.drawable.ic_action_get_my_location)
-				.setTextPrefix(app.getString(R.string.coordinates)).setClipboardText(title).setCollapsable(true)
-				.setCollapsableView(getLocationCollapsableView(locationData))
+				.setTextPrefix(getCoordinatesRowPrefix(primaryRow)).setClipboardText(title).setCollapsable(collapsable)
+				.setCollapsableView(getLocationCollapsableView(collapsableRows))
 				.setTextLinesLimit(1).build());
 	}
 
-	public void startLoadingImages() {
-		startLoadingImagesTask();
-	}
-
-	private void startLoadingImagesTask() {
-		if (galleryController == null) {
-			return;
+	@NonNull
+	private String getCoordinatesRowPrefix(@Nullable FormattedCoordinate primaryRow) {
+		if (primaryRow != null && primaryRow.getFormat().getEpsgCode() != null) {
+			return "EPSG:" + primaryRow.getFormat().getEpsgCode();
 		}
-
-		onlinePhotoItems = new ArrayList<>();
-		LatLon latLon = getLatLon();
-		Map<String, String> params = getAdditionalImageParams();
-
-		PhotoCacheManager cacheManager = new PhotoCacheManager(app);
-		WikiHelper.WikiTagData wikiTagData = WikiHelper.INSTANCE.extractWikiTagData(params);
-		String wikidataId = wikiTagData.getWikidataId();
-		String wikiCategory = wikiTagData.getWikiCategory();
-		String wikiTitle = wikiTagData.getWikiTitle();
-		String rawKey = PhotoCacheManager.buildRawKey(wikidataId, wikiCategory, wikiTitle);
-
-		if (galleryController.isCurrentHolderEquals(latLon, params)) {
-			imageCardListener.onFinish(galleryController.getCurrentGalleryItemsHolder());
-		} else if(!app.getSettings().isInternetConnectionAvailable()){
-			loadFromCache(cacheManager, rawKey, params, wikiTagData, latLon);
-		} else {
-			stopLoadingImagesTask();
-			galleryController.clearHolder();
-			getOnlineImagesTask = new GetOnlineImagesTask(app, getLatLon(),
-					getAdditionalImageParams(), imageCardListener,
-					response -> savePhotoListToCache(cacheManager, rawKey, response));
-			OsmAndTaskManager.executeTask(getOnlineImagesTask);
-		}
-	}
-
-	private void savePhotoListToCache(@NonNull PhotoCacheManager cacheManager, @NonNull String rawKey, @NonNull String response){
-		if (!Algorithms.isEmpty(response)) {
-			CacheWriteTask cacheWriteTask = new CacheWriteTask(cacheManager, rawKey, response);
-			OsmAndTaskManager.executeTask(cacheWriteTask);
-		}
-	}
-
-	private void loadFromCache(@NonNull PhotoCacheManager cacheManager, @NonNull String rawKey,
-	                           @NonNull Map<String, String> params, @NonNull WikiHelper.WikiTagData wikiTagData,
-	                           @NonNull LatLon latLon){
-		if (cacheManager.exists(rawKey)) {
-			imageCardListener.onTaskStarted();
-			CacheReadTask cacheReadTask = new CacheReadTask(cacheManager, rawKey, json -> {
-				if (!Algorithms.isEmpty(json)) {
-					GalleryItemsHolder holder = new GalleryItemsHolder(latLon, params);
-					List<WikiImage> wikimediaImageList = WikiCoreHelper.INSTANCE.getImagesFromJson(json, wikiTagData.getWikiImages());
-					for (WikiImage wikiImage : wikimediaImageList) {
-						holder.addMediaItem(WIKIMEDIA, RemoteMediaFactory.fromWikiImage(wikiImage));
-					}
-					imageCardListener.onFinish(holder);
-				} else {
-					imageCardListener.onFinish(null);
-				}
-				return true;
-			});
-			OsmAndTaskManager.executeTask(cacheReadTask);
-		}
+		return app.getString(R.string.coordinates);
 	}
 
 	private void stopSearchAmenitiesTasks() {
@@ -773,13 +731,8 @@ public class MenuBuilder {
 		}
 	}
 
-	private void stopLoadingImagesTask() {
-		if (getOnlineImagesTask != null && getOnlineImagesTask.getStatus() == AsyncTask.Status.RUNNING) {
-			getOnlineImagesTask.cancel(false);
-		}
-	}
-
-	protected Map<String, String> getAdditionalImageParams() {
+	@NonNull
+	public Map<String, String> getAdditionalImageParams() {
 		return Collections.emptyMap();
 	}
 
@@ -1185,34 +1138,30 @@ public class MenuBuilder {
 		menuRowBuilder.copyToClipboard(text, ctx);
 	}
 
-	protected CollapsableView getLocationCollapsableView(Map<Integer, String> locationData) {
+	protected CollapsableView getLocationCollapsableView(@NonNull List<FormattedCoordinate> coordinateRows) {
 		LinearLayout llv = buildCollapsableContentView(mapActivity, true, true);
-		for (Map.Entry<Integer, String> line : locationData.entrySet()) {
+		for (FormattedCoordinate coordinate : coordinateRows) {
 			TextViewEx button = buildButtonInCollapsableView(mapActivity, false, false);
 			SpannableStringBuilder ssb = new SpannableStringBuilder();
-			if (line.getKey() == OsmAndFormatter.UTM_FORMAT) {
-				ssb.append("UTM: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			} else if (line.getKey() == OsmAndFormatter.MGRS_FORMAT) {
-				ssb.append("MGRS: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			} else if (line.getKey() == OsmAndFormatter.OLC_FORMAT) {
-				ssb.append("OLC: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			} else if (line.getKey() == OsmAndFormatter.SWISS_GRID_FORMAT) {
-				ssb.append("CH1903: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 7, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			} else if (line.getKey() == OsmAndFormatter.SWISS_GRID_PLUS_FORMAT) {
-				ssb.append("CH1903+: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			}
-			ssb.append(line.getValue());
+			appendCoordinateFormatPrefix(ssb, coordinate);
+			ssb.append(coordinate.getText());
 			button.setText(ssb);
-			button.setOnClickListener(v -> copyToClipboard(line.getValue(), mapActivity));
+			button.setOnClickListener(v -> copyToClipboard(coordinate.getText(), mapActivity));
 			llv.addView(button);
 		}
 		return new CollapsableView(llv, this, true);
+	}
 
+	private void appendCoordinateFormatPrefix(@NonNull SpannableStringBuilder ssb,
+	                                          @NonNull FormattedCoordinate coordinate) {
+		Integer epsgCode = coordinate.getFormat().getEpsgCode();
+		String title = epsgCode != null ? "EPSG:" + epsgCode : coordinate.getFormat().getTitle();
+		if (!TextUtils.isEmpty(title)) {
+			int start = ssb.length();
+			ssb.append(title).append(": ");
+			ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)),
+					start, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+		}
 	}
 
 	public CollapsableView getDistanceCollapsableView(Set<String> distanceData) {
@@ -1403,7 +1352,7 @@ public class MenuBuilder {
 		LinearLayout.LayoutParams typeTextParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 		typeTextView.setLayoutParams(typeTextParams);
 		typeTextView.setText(route.getTypeStrRes());
-		AndroidUtils.setTextSecondaryColor(getMapActivity(), typeTextView, getApplication().getDaynightHelper().isNightMode(ThemeUsageContext.OVER_MAP));
+		AndroidUtils.setTextSecondaryColor(getMapActivity(), typeTextView, isNightMode());
 		typeView.addView(typeTextView);
 
 		baseView.setOnClickListener(listener);
@@ -1731,5 +1680,9 @@ public class MenuBuilder {
 
 	protected boolean isLightContent() {
 		return menuRowBuilder.isLightContent();
+	}
+
+	public boolean isNightMode() {
+		return app.getDaynightHelper().isNightMode(ThemeUsageContext.OVER_MAP);
 	}
 }
