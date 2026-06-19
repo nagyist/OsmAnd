@@ -470,9 +470,8 @@ public class SpatialTextSearch {
 //		query = "Sokak 23018."; // Test calle 2
 		
 		pattern = "Ukraine_";
-		pattern = "Romania_";
-		// regions.ocbf  // TODO
 //		pattern = "Map";
+		pattern = "regions.ocbf" ; // TODO
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
 //		query = "Ukraine kyiv saks.";
@@ -523,7 +522,9 @@ public class SpatialTextSearch {
 				if (i == 1) {
 					initFile(ls, new File(fl.getParentFile(), OsmandRegions.REGIONS_OCBF));
 				}
-				initFile(ls, fl);
+				if (!fl.getName().equals(OsmandRegions.REGIONS_OCBF)) {
+					initFile(ls, fl);
+				}
 			} else {
 				for (File f : fl.listFiles()) {
 					initFile(ls, f);
