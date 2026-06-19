@@ -133,29 +133,32 @@ public class SpatialSearchToken {
 				int xy16 = addr.getXy16(0);
 				this.x16 = (xy16 >>> 16);
 				this.y16 = (xy16 & ((1 << 16) - 1));
-				ByteString bbox = addr.getBbox();
 				bboxTileZoom = 15;
 				bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16 / 2, y16 / 2);
-				if (bbox != null && addr.hasBbox()) {
-					bbox31 = SearchAlgorithms.decodeBboxForNameAtomsBytes(bbox, x16, y16);
-					if (bbox31 != null) {
-						int z = 31;
-						int xleft = bbox31[0], xright = bbox31[2];
-						int ytop = bbox31[1], ybottom = bbox31[3];
-						while (xleft != xright || ytop != ybottom) {
-							z--;
-							xleft >>= 1;
-							xright >>= 1;
-							ytop >>= 1;
-							ybottom >>= 1;
-						}
-						bboxTileZoom = z;
-						bboxTileId = HashQuadTree.encodeTileId(z, xleft, ytop);
-					}
-				}
+				decodeBBox(addr.hasBbox() ? addr.getBbox() : null);
 			}
 			
 			
+		}
+
+		private void decodeBBox(ByteString bbox) {
+			if (bbox != null) {
+				bbox31 = SearchAlgorithms.decodeBboxForNameAtomsBytes(bbox, x16, y16);
+				if (bbox31 != null) {
+					int z = 31;
+					int xleft = bbox31[0], xright = bbox31[2];
+					int ytop = bbox31[1], ybottom = bbox31[3];
+					while (xleft != xright || ytop != ybottom) {
+						z--;
+						xleft >>= 1;
+						xright >>= 1;
+						ytop >>= 1;
+						ybottom >>= 1;
+					}
+					bboxTileZoom = z;
+					bboxTileId = HashQuadTree.encodeTileId(z, xleft, ytop);
+				}
+			}
 		}
 
 		private void init(OsmAndPoiNameIndexDataAtom poi) {
@@ -163,6 +166,7 @@ public class SpatialSearchToken {
 			this.y16 = poi.getY();
 			bboxTileZoom = 16;
 			bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16, y16);
+			decodeBBox(poi.hasBbox() ? poi.getBbox() : null);
 		}
 	}
 

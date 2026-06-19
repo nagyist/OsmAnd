@@ -15,6 +15,7 @@ import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.Amenity;
 import net.osmand.data.City;
+import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtomXY;
@@ -29,8 +30,8 @@ public class SpatialSearchContext {
 	private static int SHIFT_POI_IND = 10; // maximum poi 1024
 
 	final List<BinaryMapIndexReader> files;
-
 	final List<SpatialSearchFileCache> internalFile = new ArrayList<>();
+	final LatLon location; // could be null
 
 	SpatialSearchStats stats = new SpatialSearchStats();
 
@@ -54,8 +55,13 @@ public class SpatialSearchContext {
 		}
 	}
 
-	public SpatialSearchContext(List<BinaryMapIndexReader> files) {
+	public SpatialSearchContext(List<BinaryMapIndexReader> files, LatLon location) {
 		this.files = files;
+		this.location = location;
+	}
+	
+	public LatLon getLocation() {
+		return location;
 	}
 
 	public void initFiles(SpatialSearchGlobalCache cache) {

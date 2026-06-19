@@ -1156,18 +1156,6 @@ public class BinaryMapPoiReaderAdapter {
 			case OsmandOdb.OsmAndPoiBoxDataAtom.NAMEEN_FIELD_NUMBER:
 				am.setEnName(codedIS.readString());
 				break;
-			case OsmandOdb.OsmAndPoiBoxDataAtom.OPENINGHOURS_FIELD_NUMBER:
-				am.setOpeningHours(codedIS.readString());
-				break;
-			case OsmandOdb.OsmAndPoiBoxDataAtom.SITE_FIELD_NUMBER:
-				am.setSite(codedIS.readString());
-				break;
-			case OsmandOdb.OsmAndPoiBoxDataAtom.PHONE_FIELD_NUMBER:
-				am.setPhone(codedIS.readString());
-				break;
-			case OsmandOdb.OsmAndPoiBoxDataAtom.NOTE_FIELD_NUMBER:
-				am.setDescription(codedIS.readString());
-				break;
 			case OsmandOdb.OsmAndPoiBoxDataAtom.PRECISIONXY_FIELD_NUMBER:
 				if (hasLocation) {
 					precisionXY = codedIS.readInt32();

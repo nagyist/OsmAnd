@@ -116,17 +116,17 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return finalResult;
 	}
 
-	public List<SpatialSearchResult> sortResults(boolean deduplicate) {
+	public List<SpatialSearchResult> sortResults(SpatialSearchContext ctx, boolean deduplicate) {
 		finalResult = new ArrayList<>(tileIds.size());
 		for (int i = 0; i < tileIds.size(); i++) {
 			finalResult.add(new SpatialSearchResult(this, i));
 		}		
-		finalResult = sortResults(finalResult, deduplicate);
+		finalResult = sortResults(ctx, finalResult, deduplicate);
 		return finalResult;
 	}
 
-	public List<SpatialSearchResult> sortResults(List<SpatialSearchResult> finalResult, boolean deduplicate) {
-		Collections.sort(finalResult);
+	public List<SpatialSearchResult> sortResults(SpatialSearchContext ctx, List<SpatialSearchResult> finalResult, boolean deduplicate) {
+		Collections.sort(finalResult, (o1, o2) -> SpatialSearchResult.compare(o1, o2, ctx.location));
 		if (deduplicate) {
 			List<SpatialSearchResult> res = new ArrayList<SpatialSearchResult>();
 			TLongHashSet duplicateIds = new TLongHashSet();

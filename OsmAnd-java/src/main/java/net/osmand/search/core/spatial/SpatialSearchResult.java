@@ -6,8 +6,10 @@ import java.util.List;
 
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.ObfConstants;
+import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
+import net.osmand.util.MapUtils;
 
 public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
@@ -59,6 +61,13 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			o.add(r.atom.object);
 		}
 		return o;
+	}
+	
+	public LatLon getLatLon() {
+		if (objs.size() > 0 && objs.get(0).atom.object != null) {
+			return objs.get(0).atom.object.getLocation();
+		}
+		return null;
 	}
 	
 	public long getIdDeduplication() {
@@ -138,28 +147,42 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		}
 		return s1;
 	}
+	
+	public static int compare(SpatialSearchResult o1, SpatialSearchResult o2, LatLon center) {
+		int res = -Integer.compare(o1.parent.tCount, o2.parent.tCount);
+		if (res != 0) {
+			return res;
+		}
+		res = Integer.compare(o1.objs.size(), o2.objs.size());
+		if (res != 0) {
+			return res;
+		}
+		res = Integer.compare(o1.sumOther(), o2.sumOther());
+		if (res != 0) {
+			return res;
+		}
+		res = -Integer.compare(o1.sumTypeOrder(), o2.sumTypeOrder());
+		if (res != 0) {
+			return res;
+		}
+		res = -Integer.compare(o1.sumTypeOrder(), o2.sumTypeOrder());
+		if (res != 0) {
+			return res;
+		}
+		if (center != null) {
+			double d1 = o1.getLatLon() == null ? 0 : MapUtils.getDistance(center, o1.getLatLon());
+			double d2 = o2.getLatLon() == null ? 0 : MapUtils.getDistance(center, o2.getLatLon());
+			res = Double.compare(d1, d2);
+		}
+		if (res != 0) {
+			return res;
+		}
+		return -Integer.compare(o1.parentInd, o2.parentInd);
+	}
 
 	@Override
 	public int compareTo(SpatialSearchResult o) {
-		int res = -Integer.compare(parent.tCount, o.parent.tCount);
-		if (res != 0) {
-			return res;
-		}
-		res = Integer.compare(objs.size(), o.objs.size());
-		if (res != 0) {
-			return res;
-		}
-		res = Integer.compare(sumOther(), o.sumOther());
-		if (res != 0) {
-			return res;
-		}
-		res = -Integer.compare(sumTypeOrder(), o.sumTypeOrder());
-		if (res != 0) {
-			return res;
-		}
-		
-		
-		return -Integer.compare(parentInd, o.parentInd);
+		return compare(this, o, null);
 	}
 }
 	
