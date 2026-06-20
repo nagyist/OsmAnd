@@ -182,8 +182,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
 		
-//		query = "Australia_";
-//		pattern = "Holmby street 18-B";
+//		pattern = "Australia";
+//		query = "Holmby road 18B"; 
 		
 //		pattern = "World_";
 //		query = "New york";

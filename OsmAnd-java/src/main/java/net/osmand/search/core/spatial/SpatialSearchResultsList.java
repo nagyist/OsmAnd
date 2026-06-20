@@ -149,7 +149,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				} else {
 					bldObj = checkBuilding((Street) str.object, bldName);
 					if (bldObj == null) {
-//						System.out.printf("No building '%s': %s\n", tokens[i].word, str.object);
+						System.out.printf("No building '%s': %s\n", bldName, str.object);
 					} else {
 						System.out.printf("Building found '%s' -'%s': %s\n", bldObj, bldName, str.object);
 					}
@@ -190,7 +190,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				if (resultSet == null) {
 					resultSet = new TreeSet<String>();
 				}
-				resultSet.add(currentToken.toString());
+				resultSet.add(currentToken.toString().toLowerCase());
 				currentToken.setLength(0); // Clear buffer
 			}
 			if (type > 0) {
@@ -200,12 +200,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		if (currentToken.length() > 0) {
 			if (resultSet == null) {
-				return Collections.singleton(currentToken.toString());
+				return Collections.singleton(currentToken.toString().toLowerCase());
 			}
-			resultSet.add(currentToken.toString());
+			resultSet.add(currentToken.toString().toLowerCase());
 		}
 		if (resultSet == null) {
-			return Collections.singleton(name);
+			return Collections.singleton(name.toLowerCase());
 		}
 		return resultSet;
 	}
@@ -222,6 +222,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 			} else {
 				Set<String> cmp = getBuildingCompareSet(b.getName());
+				System.out.println(cmp + " " + original);
 				if (cmp.equals(original)) {
 					// exact
 					return b;
