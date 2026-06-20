@@ -22,37 +22,35 @@ import net.osmand.util.SearchAlgorithms;
 //    - 2-га Нова (2 Нова), Бульварно-Кудрявськаб NC-42 (geocoding
 // 6. TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
 // 7. TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
-// 8. Find largest indexed tokens intersection: suspect 'Calle'x'Calle'.
+// 8. REVIEW - Find largest indexed tokens intersection: suspect 'Calle'x'Calle'.
 
 //////////// TESTING //////////
-// SIMPLE Search Buildings (
-// Postcode + building
 // Building find best approximation for - interpolation / partial match
 // Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
 // Building entrances refs ', 3' ("18/32, 2")
+// TODO World basemap ! POI  (publish / test)
 
 // BUILDINGS
 // TODO Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 // TODO to search buildings most complete street is needed - check id ? (largest city sort?))
 // FIXME Building inside City <Salt lake city> (filter City)
 //      <CITY> no intersect with any other street
-// FIXME Web precise location for interpolation
+// FIXME Precise name / location for interpolation (WEB)
+// TODO Street intersection match
 
 // POI 
 // FIXME read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
-// FIXME World basemap ! POI  
 // FIXME Read all top poi categories for files
 // FIXME POI Categories implement categories
 
 // FEATURES
 // FIXME Abbreviations Phase
-// TODO Street intersection match
-// TODO Ignore same embedded boundary city / county - deduplicate on the fly
-// TODO Sugggestion-correction
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
-// TODO Search near key objects (subway station artificial bbox)
+// TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO Postcode needs to load street and check buildings! like '1186RZ 324' (NL, UK) - special search
+// TODO Search near key objects (subway station artificial bbox)
+// TODO Sugggestion-correction
 
 // ISSUES
 // TODO Progress / cancel
