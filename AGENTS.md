@@ -114,6 +114,7 @@ Many resources (icons, fonts, voice files) are not in the main `res` folder but 
 
 ## 9. Restrictions
 - **Building Gradle project:** YOU MUST NEVER run Gradle buid task by yourself! EVEN for verifying build errors!!!
+- **New files for git** When creating new file, add them to VCS, but not perform commit
 
 ## 10. Language Preference
 - **This is a modern Android project. Always generate new classes, functions, and components in Kotlin.

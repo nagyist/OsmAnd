@@ -116,6 +116,9 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 		} else if (searchResult != null && searchResult.objectType == ObjectType.POI) {
 			view = getView(convertView, R.layout.search_list_item_full);
 			SearchResultViewHolder.bindPOISearchResult(view, listItem, nightMode, calendar);
+		} else if (listItem.isDestinationHistoryItem()) {
+			view = getView(convertView, R.layout.search_list_item_full);
+			SearchResultViewHolder.bindFullSearchResult(view, listItem);
 		} else {
 			view = getView(convertView, R.layout.search_list_item);
 			SearchResultViewHolder.bindSearchResult(view, listItem, calendar);

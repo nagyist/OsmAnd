@@ -480,6 +480,11 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 			SearchResultViewHolder.bindPOISearchResult(view, listItem, nightMode, calendar);
 			setupCheckBox(position, view, listItem);
 			updateCompass(view, listItem, updateLocationViewCache, useMapCenter);
+		} else if (listItem.isDestinationHistoryItem()) {
+			view = getLinearLayout(convertView, R.layout.search_list_item_full);
+			SearchResultViewHolder.bindFullSearchResult(view, listItem);
+			updateCompass(view, listItem, updateLocationViewCache, useMapCenter);
+			setupCheckBox(position, view, listItem);
 		} else {
 			view = getLinearLayout(convertView, R.layout.search_list_item);
 			SearchResultViewHolder.bindSearchResult(view, listItem, calendar);

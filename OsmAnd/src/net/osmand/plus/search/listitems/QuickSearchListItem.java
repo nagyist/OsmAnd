@@ -28,6 +28,7 @@ import net.osmand.plus.myplaces.favorites.FavoriteGroup;
 import net.osmand.plus.poi.PoiFilterUtils;
 import net.osmand.plus.poi.PoiUIFilter;
 import net.osmand.plus.render.RenderingIcons;
+import net.osmand.plus.settings.enums.HistorySource;
 import net.osmand.plus.settings.enums.ThemeUsageContext;
 import net.osmand.plus.track.clickable.ClickableWayHelper;
 import net.osmand.plus.utils.OsmAndFormatter;
@@ -76,6 +77,10 @@ public class QuickSearchListItem {
 
 	public SearchResult getSearchResult() {
 		return searchResult;
+	}
+
+	public boolean isDestinationHistoryItem() {
+		return isDestinationHistory(searchResult);
 	}
 
 	public static String getCityTypeStr(Context ctx, CityType type) {
@@ -332,6 +337,9 @@ public class QuickSearchListItem {
 				break;
 			case RECENT_OBJ:
 				HistoryEntry entry = (HistoryEntry) searchResult.object;
+				if (isDestinationHistory(entry)) {
+					return app.getString(R.string.route_descr_destination);
+				}
 				if (!Algorithms.isEmpty(entry.getTypeName())) {
 					return entry.getTypeName();
 				}
@@ -384,6 +392,9 @@ public class QuickSearchListItem {
 				return app.getUIUtilities().getThemedIcon(R.drawable.ic_action_group_name_16);
 			case RECENT_OBJ:
 				HistoryEntry historyEntry = (HistoryEntry) searchResult.object;
+				if (isDestinationHistory(historyEntry)) {
+					return null;
+				}
 				String typeName = !Algorithms.isEmpty(historyEntry.getTypeName())
 						? historyEntry.getTypeName()
 						: historyEntry.getName().getTypeName();
@@ -483,6 +494,9 @@ public class QuickSearchListItem {
 				return getIcon(app, R.drawable.ic_world_globe_dark);
 			case RECENT_OBJ:
 				HistoryEntry entry = (HistoryEntry) searchResult.object;
+				if (isDestinationHistory(entry)) {
+					return app.getUIUtilities().getThemedIcon(R.drawable.ic_action_point_destination);
+				}
 				iconId = getHistoryIconId(app, entry);
 				try {
 					return getIcon(app, iconId);
@@ -555,6 +569,9 @@ public class QuickSearchListItem {
 
 	public static int getHistoryIconId(@NonNull OsmandApplication app,
 	                                   @NonNull HistoryEntry entry) {
+		if (isDestinationHistory(entry)) {
+			return R.drawable.ic_action_point_destination;
+		}
 		int iconId = -1;
 		PointDescription name = entry.getName();
 		if (name != null && !Algorithms.isEmpty(name.getIconName())) {
@@ -569,6 +586,17 @@ public class QuickSearchListItem {
 			iconId = name.getItemIcon();
 		}
 		return iconId;
+	}
+
+	private static boolean isDestinationHistory(@NonNull HistoryEntry entry) {
+		return entry.getSource() == HistorySource.NAVIGATION;
+	}
+
+	private static boolean isDestinationHistory(@Nullable SearchResult searchResult) {
+		return searchResult != null
+				&& searchResult.objectType == ObjectType.RECENT_OBJ
+				&& searchResult.object instanceof HistoryEntry entry
+				&& isDestinationHistory(entry);
 	}
 
 	@NonNull
