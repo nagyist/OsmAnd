@@ -38,6 +38,7 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 	private boolean selectionMode;
 	private NearbyPlacesCard nearbyPlacesCard;
 	private boolean historyCollapsed;
+	private View historyTitleContainer;
 	private ImageView historyCollapseIndicator;
 
 	@Override
@@ -84,12 +85,19 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 
 	public void setSelectionMode(boolean selectionMode, int position) {
 		this.selectionMode = selectionMode;
-		getListAdapter().setSelectionMode(selectionMode, position);
+		QuickSearchListAdapter adapter = getListAdapter();
+		if (adapter != null) {
+			adapter.setSelectionMode(selectionMode, position);
+		}
 	}
 
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
+		QuickSearchListAdapter adapter = getListAdapter();
+		if (adapter != null) {
+			adapter.setExploreHistoryCard(true);
+		}
 		if (savedInstanceState != null) {
 			historyCollapsed = savedInstanceState.getBoolean(HISTORY_COLLAPSED_KEY, false);
 			updateHistoryCollapseIndicator();
@@ -164,6 +172,7 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 		nearbyPlacesCard = new NearbyPlacesCard(requireMapActivity(), this, nightMode, !dialogFragment.isSearchHidden());
 		getListView().addHeaderView(nearbyPlacesCard, null, false);
 		View historyHeader = inflate(R.layout.recently_visited_header, getListView(), false);
+		historyTitleContainer = historyHeader.findViewById(R.id.history_title_container);
 		historyCollapseIndicator = historyHeader.findViewById(R.id.explicit_indicator);
 		historyHeader.setOnClickListener(v -> {
 			historyCollapsed = !historyCollapsed;
@@ -179,6 +188,11 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 	}
 
 	private void updateHistoryCollapseIndicator() {
+		if (historyTitleContainer != null) {
+			historyTitleContainer.setBackgroundResource(historyCollapsed
+					? R.drawable.bg_quick_search_explore_card
+					: R.drawable.bg_quick_search_explore_card_top);
+		}
 		if (historyCollapseIndicator != null) {
 			int iconRes = historyCollapsed ? R.drawable.ic_action_arrow_down : R.drawable.ic_action_arrow_up;
 			historyCollapseIndicator.setImageDrawable(app.getUIUtilities().getIcon(iconRes, nightMode));

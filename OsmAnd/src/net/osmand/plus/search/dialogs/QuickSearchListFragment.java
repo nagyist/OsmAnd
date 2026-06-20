@@ -245,7 +245,7 @@ public abstract class QuickSearchListFragment extends BaseNestedListFragment {
 
 				SearchHistoryHelper historyHelper = app.getSearchHistoryHelper();
 				historyHelper.addNewItemToHistory(searchResult.location.getLatitude(),
-						searchResult.location.getLongitude(), pair.first, HistorySource.SEARCH);
+						searchResult.location.getLongitude(), pair.first, HistorySource.SEARCH, searchResult);
 
 				travelHelper.openTrackMenu(travelGpx, activity, amenity.getGpxFileName(null), amenity.getLocation(), true);
 				return; // TravelGpx
@@ -254,9 +254,10 @@ public abstract class QuickSearchListFragment extends BaseNestedListFragment {
 				return; // ClickableWay
 			}
 		}
+		Object historyObject = SearchHistoryHelper.createHistoryObject(pair.second, searchResult);
 		showOnMap(activity, dialogFragment,
 				searchResult.location.getLatitude(), searchResult.location.getLongitude(),
-				searchResult.preferredZoom, pair.first, pair.second);
+				searchResult.preferredZoom, pair.first, historyObject);
 	}
 
 	private void showGpxTrackResult(SearchResult searchResult) {

@@ -103,6 +103,7 @@ Many resources (icons, fonts, voice files) are not in the main `res` folder but 
 - **Use the Plugin system** for new optional features.
 - **Follow existing style:** OsmAnd has a long history, so consistency with existing code is crucial.
 - **Resource handling:** Be aware that many resources are dynamically collected; check `OsmAnd/build-common.gradle` for details.
+- **Using code for newer versions on Android** The project should work correctly on every supported version of Android starting from minSdk, so avoid using code that is not supported by all supported versions
 
 ## 8. Common Tasks for Agents
 - **Adding a new Setting:** Register it in `OsmandSettings` and add it to the relevant settings fragment.
@@ -114,5 +115,8 @@ Many resources (icons, fonts, voice files) are not in the main `res` folder but 
 ## 9. Restrictions
 - **Building Gradle project:** YOU MUST NEVER run Gradle buid task by yourself! EVEN for verifying build errors!!!
 
+## 10. Language Preference
+- **This is a modern Android project. Always generate new classes, functions, and components in Kotlin.
+- **Do not generate Java code under any circumstances unless explicitly modifying an existing legacy `.java` file.
 ---
 *Note: This file is a living document and should be updated as the project evolves.*

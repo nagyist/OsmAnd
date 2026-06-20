@@ -2,8 +2,10 @@ package net.osmand.plus.search.history;
 
 import androidx.annotation.NonNull;
 
+import net.osmand.data.City.CityType;
 import net.osmand.data.PointDescription;
 import net.osmand.plus.settings.enums.HistorySource;
+import net.osmand.search.core.ObjectType;
 import net.osmand.util.Algorithms;
 
 public class HistoryEntry {
@@ -20,6 +22,18 @@ public class HistoryEntry {
 	private long lastAccessedTime;
 	private int[] intervals = new int[0];
 	private double[] intervalValues = new double[0];
+	private ObjectType objectType;
+	private CityType cityType;
+	private String displayName;
+	private String poiCategoryKey;
+	private String poiSubtypeKey;
+	private String typeName;
+	private String address;
+	private String relatedObjectName;
+	private String openingHours;
+	private String alternateName;
+	private String photoUrl;
+	private Long osmId;
 
 
 	public HistoryEntry(double lat, double lon, @NonNull PointDescription name,
@@ -160,5 +174,124 @@ public class HistoryEntry {
 
 	public void setLastAccessTime(long time) {
 		lastAccessedTime = time;
+	}
+
+	public void copyMetadataFrom(@NonNull HistoryEntry entry) {
+		objectType = entry.objectType;
+		cityType = entry.cityType;
+		displayName = entry.displayName;
+		poiCategoryKey = entry.poiCategoryKey;
+		poiSubtypeKey = entry.poiSubtypeKey;
+		typeName = entry.typeName;
+		address = entry.address;
+		relatedObjectName = entry.relatedObjectName;
+		openingHours = entry.openingHours;
+		alternateName = entry.alternateName;
+		photoUrl = entry.photoUrl;
+		osmId = entry.osmId;
+	}
+
+	public boolean hasMetadata() {
+		return objectType != null || cityType != null || !Algorithms.isEmpty(displayName) || !Algorithms.isEmpty(typeName)
+				|| !Algorithms.isEmpty(address) || !Algorithms.isEmpty(relatedObjectName)
+				|| !Algorithms.isEmpty(openingHours)
+				|| !Algorithms.isEmpty(alternateName) || !Algorithms.isEmpty(photoUrl)
+				|| osmId != null || !Algorithms.isEmpty(poiCategoryKey) || !Algorithms.isEmpty(poiSubtypeKey);
+	}
+
+	public ObjectType getObjectType() {
+		return objectType;
+	}
+
+	public void setObjectType(ObjectType objectType) {
+		this.objectType = objectType;
+	}
+
+	public CityType getCityType() {
+		return cityType;
+	}
+
+	public void setCityType(CityType cityType) {
+		this.cityType = cityType;
+	}
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+
+	public String getPoiCategoryKey() {
+		return poiCategoryKey;
+	}
+
+	public void setPoiCategoryKey(String poiCategoryKey) {
+		this.poiCategoryKey = poiCategoryKey;
+	}
+
+	public String getPoiSubtypeKey() {
+		return poiSubtypeKey;
+	}
+
+	public void setPoiSubtypeKey(String poiSubtypeKey) {
+		this.poiSubtypeKey = poiSubtypeKey;
+	}
+
+	public String getTypeName() {
+		return typeName;
+	}
+
+	public void setTypeName(String typeName) {
+		this.typeName = typeName;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public String getRelatedObjectName() {
+		return relatedObjectName;
+	}
+
+	public void setRelatedObjectName(String relatedObjectName) {
+		this.relatedObjectName = relatedObjectName;
+	}
+
+	public String getOpeningHours() {
+		return openingHours;
+	}
+
+	public void setOpeningHours(String openingHours) {
+		this.openingHours = openingHours;
+	}
+
+	public String getAlternateName() {
+		return alternateName;
+	}
+
+	public void setAlternateName(String alternateName) {
+		this.alternateName = alternateName;
+	}
+
+	public String getPhotoUrl() {
+		return photoUrl;
+	}
+
+	public void setPhotoUrl(String photoUrl) {
+		this.photoUrl = photoUrl;
+	}
+
+	public Long getOsmId() {
+		return osmId;
+	}
+
+	public void setOsmId(Long osmId) {
+		this.osmId = osmId;
 	}
 }

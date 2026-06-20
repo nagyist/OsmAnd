@@ -7,6 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import net.osmand.PlatformUtil;
+import net.osmand.data.Amenity;
+import net.osmand.data.City;
 import net.osmand.data.PointDescription;
 import net.osmand.osm.AbstractPoiType;
 import net.osmand.osm.MapPoiTypes;
@@ -22,6 +24,7 @@ import net.osmand.search.core.ObjectType;
 import net.osmand.search.core.SearchPhrase;
 import net.osmand.search.core.SearchResult;
 import net.osmand.util.CollectionUtils;
+import net.osmand.util.Algorithms;
 
 import org.apache.commons.logging.Log;
 
@@ -45,6 +48,31 @@ public class SearchHistoryHelper {
 
 	private List<HistoryEntry> loadedEntries;
 
+	public static class HistoryObject {
+		private final Object object;
+		private final SearchResult searchResult;
+
+		private HistoryObject(@Nullable Object object, @NonNull SearchResult searchResult) {
+			this.object = object;
+			this.searchResult = searchResult;
+		}
+
+		@Nullable
+		public Object getObject() {
+			return object;
+		}
+
+		@NonNull
+		public SearchResult getSearchResult() {
+			return searchResult;
+		}
+	}
+
+	@NonNull
+	public static Object createHistoryObject(@Nullable Object object, @NonNull SearchResult searchResult) {
+		return new HistoryObject(object, searchResult);
+	}
+
 	public SearchHistoryHelper(@NonNull OsmandApplication app) {
 		this.app = app;
 		this.dbHelper = new SearchHistoryDBHelper(app);
@@ -59,8 +87,15 @@ public class SearchHistoryHelper {
 	}
 
 	public void addNewItemToHistory(double latitude, double longitude, PointDescription name,
+			HistorySource source, @Nullable Object object) {
+		HistoryEntry entry = new HistoryEntry(latitude, longitude, name, source);
+		applyObjectMetadata(entry, name, object);
+		addNewItemToHistory(entry);
+	}
+
+	public void addNewItemToHistory(double latitude, double longitude, PointDescription name,
 			HistorySource source) {
-		addNewItemToHistory(new HistoryEntry(latitude, longitude, name, source));
+		addNewItemToHistory(latitude, longitude, name, source, null);
 	}
 
 	public void addNewItemToHistory(AbstractPoiType poiType, HistorySource source) {
@@ -218,9 +253,14 @@ public class SearchHistoryHelper {
 		if (app.getSettings().SEARCH_HISTORY.get()) {
 			checkLoadedEntries();
 			if (map.containsKey(model.getName())) {
-				model = map.get(model.getName());
-				model.markAsAccessed(System.currentTimeMillis());
-				dbHelper.update(model);
+				HistoryEntry existingModel = map.get(model.getName());
+				if (existingModel != null) {
+					if (model.hasMetadata()) {
+						existingModel.copyMetadataFrom(model);
+					}
+					existingModel.markAsAccessed(System.currentTimeMillis());
+					dbHelper.update(existingModel);
+				}
 			} else {
 				loadedEntries = CollectionUtils.addToList(loadedEntries, model);
 				map.put(model.getName(), model);
@@ -320,5 +360,71 @@ public class SearchHistoryHelper {
 			}
 		}
 		searchUICore.selectSearchResult(result);
+	}
+
+	private void applyObjectMetadata(@NonNull HistoryEntry entry, @NonNull PointDescription name,
+			@Nullable Object object) {
+		entry.setDisplayName(name.getSimpleName(app, false));
+		if (!Algorithms.isEmpty(name.getTypeName())) {
+			entry.setTypeName(name.getTypeName());
+		}
+		if (object instanceof SearchResult searchResult) {
+			applySearchResultMetadata(entry, searchResult);
+			object = searchResult.object;
+		} else if (object instanceof HistoryObject historyObject) {
+			applySearchResultMetadata(entry, historyObject.getSearchResult());
+			object = historyObject.getObject();
+		}
+		if (object instanceof Amenity amenity) {
+			String lang = app.getSettings().MAP_PREFERRED_LOCALE.get();
+			boolean transliterate = app.getSettings().MAP_TRANSLITERATE_NAMES.get();
+			entry.setObjectType(ObjectType.POI);
+			String displayName = Amenity.getPoiStringWithoutType(amenity, lang, transliterate);
+			if (!Algorithms.isEmpty(displayName)) {
+				entry.setDisplayName(displayName);
+			}
+			entry.setTypeName(amenity.getType() != null ? amenity.getSubTypeStr() : amenity.getSubType());
+			if (amenity.getType() != null) {
+				entry.setPoiCategoryKey(amenity.getType().getKeyName());
+			}
+			entry.setPoiSubtypeKey(amenity.getSubType());
+			entry.setOpeningHours(amenity.getOpeningHours());
+			entry.setPhotoUrl(amenity.getWikiIconUrl());
+			entry.setOsmId(amenity.getOsmId());
+		}
+	}
+
+	private void applySearchResultMetadata(@NonNull HistoryEntry entry, @NonNull SearchResult searchResult) {
+		if (searchResult.objectType != null) {
+			entry.setObjectType(searchResult.objectType);
+		}
+		if (searchResult.object instanceof City city) {
+			entry.setCityType(city.getType());
+		}
+		if (!Algorithms.isEmpty(searchResult.localeName)) {
+			entry.setDisplayName(searchResult.localeName);
+		}
+		if (!Algorithms.isEmpty(searchResult.addressName)) {
+			entry.setAddress(searchResult.addressName);
+		}
+		if (!Algorithms.isEmpty(searchResult.localeRelatedObjectName)) {
+			entry.setRelatedObjectName(searchResult.localeRelatedObjectName);
+		}
+		if (!Algorithms.isEmpty(searchResult.alternateName)) {
+			entry.setAlternateName(searchResult.alternateName);
+		}
+		String typeName = getSearchResultTypeName(searchResult);
+		if (!Algorithms.isEmpty(typeName)) {
+			entry.setTypeName(typeName);
+		}
+	}
+
+	@Nullable
+	private String getSearchResultTypeName(@NonNull SearchResult searchResult) {
+		try {
+			return net.osmand.plus.search.listitems.QuickSearchListItem.getTypeName(app, searchResult);
+		} catch (RuntimeException e) {
+			return searchResult.localeRelatedObjectName;
+		}
 	}
 }

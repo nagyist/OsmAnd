@@ -3014,6 +3014,11 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		}
 		if (searchResult.objectType == POI
 				|| searchResult.objectType == LOCATION
+				|| searchResult.objectType == CITY
+				|| searchResult.objectType == VILLAGE
+				|| searchResult.objectType == BOUNDARY
+				|| searchResult.objectType == POSTCODE
+				|| searchResult.objectType == STREET
 				|| searchResult.objectType == HOUSE
 				|| searchResult.objectType == FAVORITE
 				|| searchResult.objectType == RECENT_OBJ

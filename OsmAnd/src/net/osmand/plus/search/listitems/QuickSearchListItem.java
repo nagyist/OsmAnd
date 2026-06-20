@@ -144,6 +144,9 @@ public class QuickSearchListItem {
 				break;
 			case RECENT_OBJ:
 				HistoryEntry historyEntry = (HistoryEntry) searchResult.object;
+				if (!Algorithms.isEmpty(historyEntry.getDisplayName())) {
+					return historyEntry.getDisplayName();
+				}
 				PointDescription pd = historyEntry.getName();
 				return pd.getSimpleName(app, false);
 			case LOCATION:
@@ -231,6 +234,7 @@ public class QuickSearchListItem {
 	public static String getTypeName(OsmandApplication app, SearchResult searchResult) {
 		switch (searchResult.objectType) {
 			case CITY:
+			case BOUNDARY:
 				City city = (City) searchResult.object;
 				return getCityTypeStr(app, city.getType());
 			case POSTCODE:
@@ -328,6 +332,9 @@ public class QuickSearchListItem {
 				break;
 			case RECENT_OBJ:
 				HistoryEntry entry = (HistoryEntry) searchResult.object;
+				if (!Algorithms.isEmpty(entry.getTypeName())) {
+					return entry.getTypeName();
+				}
 				boolean hasTypeInDescription = !Algorithms.isEmpty(entry.getName().getTypeName());
 				if (hasTypeInDescription) {
 					return entry.getName().getTypeName();
@@ -377,7 +384,9 @@ public class QuickSearchListItem {
 				return app.getUIUtilities().getThemedIcon(R.drawable.ic_action_group_name_16);
 			case RECENT_OBJ:
 				HistoryEntry historyEntry = (HistoryEntry) searchResult.object;
-				String typeName = historyEntry.getName().getTypeName();
+				String typeName = !Algorithms.isEmpty(historyEntry.getTypeName())
+						? historyEntry.getTypeName()
+						: historyEntry.getName().getTypeName();
 				if (typeName != null && !typeName.isEmpty()) {
 					return app.getUIUtilities().getThemedIcon(R.drawable.ic_action_group_name_16);
 				} else {
@@ -417,6 +426,7 @@ public class QuickSearchListItem {
 		int defIconColor = nightMode ? R.color.icon_color_default_dark : R.color.icon_color_default_light;
 		switch (searchResult.objectType) {
 			case CITY:
+			case BOUNDARY:
 				boolean town = (searchResult.object instanceof City)
 						&& (((City) searchResult.object).getType() == CityType.TOWN);
 				return town
@@ -619,11 +629,17 @@ public class QuickSearchListItem {
 				pointDescription = fav.getPointDescription(app);
 				break;
 			case VILLAGE:
+			case BOUNDARY:
 			case CITY:
 				String cityName = searchResult.localeName;
 				String typeNameCity = getTypeName(app, searchResult);
 				pointDescription = new PointDescription(PointDescription.POINT_TYPE_ADDRESS, typeNameCity, cityName);
 				pointDescription.setIconName("ic_action_building_number");
+				break;
+			case POSTCODE:
+				pointDescription = new PointDescription(PointDescription.POINT_TYPE_ADDRESS,
+						app.getString(R.string.postcode), searchResult.localeName);
+				pointDescription.setIconName("ic_action_postcode");
 				break;
 			case STREET:
 				String streetName = searchResult.localeName;

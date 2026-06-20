@@ -79,6 +79,7 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 	private OnSelectionListener selectionListener;
 	private boolean selectionMode;
 	private boolean selectAll;
+	private boolean exploreHistoryCard;
 	private final List<QuickSearchListItem> selectedItems = new ArrayList<>();
 	private final UpdateLocationViewCache updateLocationViewCache;
 
@@ -121,6 +122,10 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 
 	public void setUseMapCenter(boolean useMapCenter) {
 		this.useMapCenter = useMapCenter;
+	}
+
+	public void setExploreHistoryCard(boolean exploreHistoryCard) {
+		this.exploreHistoryCard = exploreHistoryCard;
 	}
 
 	public boolean isSelectionMode() {
@@ -256,7 +261,7 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 					searchResult.objectType != ObjectType.GPX_TRACK;
 		}
 
-		setupBackground(view);
+		setupBackground(position, view, listItem);
 		setupDivider(position, view, listItem, useBigDividerMargin);
 		ViewCompat.setAccessibilityDelegate(view, accessibilityAssistant);
 		return view;
@@ -566,7 +571,15 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 		}
 	}
 
-	private void setupBackground(View view) {
+	private void setupBackground(int position, @NonNull View view, @NonNull QuickSearchListItem listItem) {
+		if (exploreHistoryCard && listItem.getType() != QuickSearchListItemType.DISABLED_HISTORY) {
+			if (position == getCount() - 1) {
+				view.setBackgroundResource(R.drawable.bg_quick_search_explore_card_bottom);
+			} else {
+				view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
+			}
+			return;
+		}
 		view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
 	}
 

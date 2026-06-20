@@ -97,11 +97,9 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 			return new View(parent.getContext());
 		}
 		if (item.headerTitle != null) {
-			TextView view = (TextView) getView(convertView, R.layout.quick_search_history_section_header);
-			view.setText(item.headerTitle);
-			ViewGroup.MarginLayoutParams params = ensureMarginLayoutParams(view);
-			params.topMargin = position == 0 ? 0 : app.getResources().getDimensionPixelSize(R.dimen.content_padding);
-			view.setLayoutParams(params);
+			View view = getView(convertView, R.layout.quick_search_history_section_header);
+			TextView title = view.findViewById(R.id.title);
+			title.setText(item.headerTitle);
 			return view;
 		}
 		QuickSearchListItem listItem = item.getListItem();
@@ -146,16 +144,6 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 			convertView.setTag(layoutId);
 		}
 		return (T) convertView;
-	}
-
-	@NonNull
-	private ViewGroup.MarginLayoutParams ensureMarginLayoutParams(@NonNull View view) {
-		ViewGroup.LayoutParams params = view.getLayoutParams();
-		if (params instanceof ViewGroup.MarginLayoutParams marginParams) {
-			return marginParams;
-		}
-		return new ViewGroup.MarginLayoutParams(
-				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 	}
 
 	public static Item header(@NonNull String title) {
