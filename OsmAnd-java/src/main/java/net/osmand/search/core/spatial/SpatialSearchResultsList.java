@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -20,7 +22,6 @@ import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
-import net.osmand.util.Algorithms;
 
 public class SpatialSearchResultsList implements Comparable<SpatialSearchResultsList> {
 	final SpatialSearchToken[] tokens; // non modifieable!
@@ -147,11 +148,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					bldObj = bldCheckCache.get(cacheKey);
 				} else {
 					bldObj = checkBuilding((Street) str.object, bldName);
-//					if (bldObj == null) {
+					if (bldObj == null) {
 //						System.out.printf("No building '%s': %s\n", tokens[i].word, str.object);
-//					} else {
-//						System.out.printf("Building found '%s' -'%s': %s\n", bldObj, tokens[i].word, str.object);
-//					}
+					} else {
+						System.out.printf("Building found '%s' -'%s': %s\n", bldObj, bldName, str.object);
+					}
 					bldCheckCache.put(cacheKey, bldObj);
 				}
 				if (bldObj == null) {
@@ -173,22 +174,67 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 	}
 	
+	// Split '18B', '18/B', '18-B', '18 B' -> ['18', 'B']
+	public static Set<String> getBuildingCompareSet(String name) {
+		Set<String> resultSet = null;
+		StringBuilder currentToken = new StringBuilder();
+		int lastType = 0;
+		for (int i = 0; i < name.length(); i++) {
+			char ch = name.charAt(i);
+			int type = Character.isDigit(ch) ? 1 : (Character.isLetter(ch) ? 2 : 0);
+			boolean addToken = false;
+			if (type != lastType) {
+				addToken = true;
+			}
+			if (addToken && currentToken.length() > 0) {
+				if (resultSet == null) {
+					resultSet = new TreeSet<String>();
+				}
+				resultSet.add(currentToken.toString());
+				currentToken.setLength(0); // Clear buffer
+			}
+			if (type > 0) {
+				currentToken.append(ch);
+			}
+			lastType = type;
+		}
+		if (currentToken.length() > 0) {
+			if (resultSet == null) {
+				return Collections.singleton(currentToken.toString());
+			}
+			resultSet.add(currentToken.toString());
+		}
+		if (resultSet == null) {
+			return Collections.singleton(name);
+		}
+		return resultSet;
+	}
+	
 	private Building checkBuilding(Street street, String bld) {
 		Building interpolation = null;
 		Building partial = null;
-		Building partial2 = null;
-		int number = Algorithms.extractFirstIntegerNumber(bld);
-		System.out.println(street + " " + bld);
+		Set<String> original = getBuildingCompareSet(bld);
 		for (Building b : street.getBuildings()) {
-			if (bld.equals(b.getName())) {
-				return b;
-			} else if (b.belongsToInterpolation(bld)) {
-				interpolation = b;
-			} else if (number > 0 && number == Algorithms.extractFirstIntegerNumber(b.getName())) {
-				if (bld.startsWith(b.getName())) {
-					partial = b;
-				} else {
-					partial2 = b;
+			if (b.isInterpolation()) {
+				// interpolation only over 1 set
+				if (original.size() == 1 && b.belongsToInterpolation(original.iterator().next())) {
+					interpolation = b;
+				}
+			} else {
+				Set<String> cmp = getBuildingCompareSet(b.getName());
+				if (cmp.equals(original)) {
+					// exact
+					return b;
+				}
+				// 18-B == 18
+				if (cmp.size() == original.size() + 1) {
+					if (cmp.containsAll(original)) {
+						partial = b;
+					}
+				} else if (cmp.size() + 1 == original.size()) {
+					if (original.containsAll(cmp)) {
+						partial = b;
+					}
 				}
 			}
 		}
@@ -196,57 +242,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			return partial;
 		}
 		if (interpolation != null) {
-			// use name interpolation
-//			res.localeName = lw;
-//			res.location = b.getLocation(b.interpolation(lw));
 			return interpolation;
 		}
-		if (partial2 != null) {
-			return partial2;
-		}
 		return null;
-		
-	}
-	
-
-	private void altCalcBuilding(int indx, Map<String, Building> bldCheckCache) {
-		for (int i = 0; i < tCount; i++) {
-			NameIndexAtom bld = linearResults.get(indx * tCount + i);
-			if (bld.buildingInd >= 0) {
-				Building bldObj = null;
-				int strTokenInd = getTokenByOriginalOrder(bld.buildingInd);
-				if (strTokenInd >= 0) {
-					NameIndexAtom str = linearResults.get(indx * tCount + strTokenInd);
-					String cacheKey = str.id + " " + tokens[i].word;
-					if (bldCheckCache.containsKey(cacheKey)) {
-						bldObj = bldCheckCache.get(cacheKey);
-					} else {
-						if (str.id == bld.id) {
-							bldObj = checkBuilding((Street) str.object, tokens[i].word);
-//							if (bldObj == null) {
-//								System.out.printf("No building '%s': %s\n", tokens[i].word, str.object);
-//							} else {
-//								System.out.printf("Building found '%s' -'%s': %s\n", bldObj, tokens[i].word, str.object);
-//							}
-						} else {
-//							System.out.printf("Wrong street: %s [%s] != %s [%s]\n", str.object,
-//									strTokenInd == -1 ? "" : tokens[strTokenInd], bld.object, tokens[i]);
-						}
-						bldCheckCache.put(cacheKey, bldObj);
-					}
-				}
-				if (bldObj == null) {
-					skipResults.put(indx, true);
-					break;
-				} else {
-					bld.object = bldObj;
-					bld.name = bldObj.getName();
-					if (bldObj.isInterpolation()) {
-						bld.name = tokens[i].word;
-					}
-				}
-			}
-		}
 	}
 
 	private int getTokenByOriginalOrder(int originalOrder) {

@@ -28,11 +28,10 @@ import net.osmand.util.SearchAlgorithms;
 // SIMPLE Search Buildings (
 // Postcode + building
 // Building find best approximation for - interpolation / partial match
-
+// Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
+// Building entrances refs ', 3' ("18/32, 2")
 
 // BUILDINGS
-// TODO Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
-// TODO Building entrances refs ', 3' ("18/32, 2")
 // TODO Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 // TODO to search buildings most complete street is needed - check id ? (largest city sort?))
 // FIXME Building inside City <Salt lake city> (filter City)
@@ -174,9 +173,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Нова пошта 3 харків";
 //		query = "2-га Нова вулиця"; // unit test
 //		query = "2 Нова вулиця"; // unit test
-//		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
-		query = "саксаг. 63/28, 2";
-//		query = "саксаг. 63/28 подъезд 2";
+		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
+//		query = "саксаг. 63/28, 2";
+//		query = "саксаг. 63/28 подъезд 1";
 //		query = "Яр. вал 29-г";
 //		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
