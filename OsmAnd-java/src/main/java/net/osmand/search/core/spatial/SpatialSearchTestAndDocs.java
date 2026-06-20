@@ -24,27 +24,34 @@ import net.osmand.util.SearchAlgorithms;
 // 7. TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
 // 8. REVIEW - Find largest indexed tokens intersection: suspect 'Calle'x'Calle'.
 
+// TODO Web add regions.ocbf to search
+
 //////////// TESTING //////////
 // Building find best approximation for - interpolation / partial match
 // Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
 // Building entrances refs ', 3' ("18/32, 2")
-// TODO World basemap ! POI  (publish / test)
 
-// BUILDINGS
+// IN PROGRESS 
+
+// TODO World basemap ! Push up POI
 // TODO Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 // TODO to search buildings most complete street is needed - check id ? (largest city sort?))
 // FIXME Building inside City <Salt lake city> (filter City)
 //      <CITY> no intersect with any other street
+
+// BUILDINGS
 // FIXME Precise name / location for interpolation (WEB)
-// TODO Street intersection match
+// FIXME Street intersection match
 
 // POI 
 // FIXME read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
+//       Combine regions.ocbf (boundary)
 // FIXME Read all top poi categories for files
 // FIXME POI Categories implement categories
 
 // FEATURES
+// TODO Include high rating objects in world basemap (Eiffel Tour)
 // FIXME Abbreviations Phase
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
@@ -53,13 +60,15 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Sugggestion-correction
 
 // ISSUES
+// FIXME Read common = true -> ('centre', 'school') to find 'common word' in 'City' or suggest POI category
+// FIXME Read common = true ->  Calle 20 188 Lima San Isidro (VERY SLOW)
 // TODO Progress / cancel
-// TODO Read common = true -> ('centre', 'school') to find 'common word' in 'City' or suggest POI category 
 // TODO Geocoding tokenizing (?) - Strip dashes before split to match "NC 42" == "NC-42"
 // TODO Web - search maps by key word like "Arizona"
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
 
 // TEST
+// TODO Not forget to include regions.ocbf on client 
 // TODO! Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
 // TODO ? review settings: read objects after some intersections (but not too early)
 //      - Results 5 tokens 1,949 (139 unique) - compact objects during combinations?
@@ -171,9 +180,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Нова пошта 3 харків";
 //		query = "2-га Нова вулиця"; // unit test
 //		query = "2 Нова вулиця"; // unit test
-		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
+//		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
 //		query = "саксаг. 63/28, 2";
-//		query = "саксаг. 63/28 подъезд 1";
+		query = "саксаг. 63/28 подъезд 2";
 //		query = "Яр. вал 29-г";
 //		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
@@ -182,17 +191,24 @@ public class SpatialSearchTestAndDocs {
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
 		
-		pattern = "Australia";
-		query = "Holmby road 18B";
+//		pattern = "Australia";
+//		query = "Holmby road 18B";
 //		query = "Holmby Melbourne 18B";
 		
-//		pattern = "World_";
+		pattern = "World_";
+		query = "о. Пасхи"; // o. -> остров
 //		query = "New york";
 //		query  = "Madeira";
 		
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";
 //		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
+		
+//		pattern = "Peru_"; 
+		// TODO many duplicates very slow 200K
+//		query ="Calle 20 188 San Isidro Lima";
+//		query ="Lima Calle 20 San Isidro";
+//		query ="Calle 20 ";
 
 		long t = System.nanoTime();
 

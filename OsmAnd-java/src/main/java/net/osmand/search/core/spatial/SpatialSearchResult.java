@@ -6,6 +6,7 @@ import java.util.List;
 
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.ObfConstants;
+import net.osmand.data.Amenity;
 import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
@@ -141,8 +142,14 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				if (parent != null && parent.object != null) {
 					idObject = parent.object;
 				}
+				String rat = "";
+				if (atom.object instanceof Amenity a) {
+					if (a.getTravelEloNumber() > 0) {
+						rat += " elo " + a.getTravelEloNumber();
+					}
+				}
 				return String.format("%s %s (%s) %.4f %.4f ", words, 
-						atom.typeStr() + " " + atom.object.getName(), 
+						atom.typeStr() + " " + atom.object.getName() + rat, 
 						"" + ObfConstants.getOsmObjectId(idObject) 
 								//+ " " + atom.id,
 						, atom.object.getLocation().getLatitude(), atom.object.getLocation().getLongitude());
@@ -175,6 +182,16 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		return s1;
 	}
 	
+	public int getRating() {
+		int rating = 0;
+		for (SpatialSearchResultRef r : objs) {
+			if (r.atom.object instanceof Amenity a) {
+				rating = Math.max(rating, a.getTravelEloNumber());
+			}
+		}
+		return rating;
+	}
+	
 	public static int compare(SpatialSearchResult o1, SpatialSearchResult o2, LatLon center) {
 		int res = -Integer.compare(o1.parent.tCount, o2.parent.tCount);
 		if (res != 0) {
@@ -188,7 +205,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		if (res != 0) {
 			return res;
 		}
-		res = -Integer.compare(o1.sumTypeOrder(), o2.sumTypeOrder());
+		res = -Integer.compare(o1.getRating(), o2.getRating());
 		if (res != 0) {
 			return res;
 		}
