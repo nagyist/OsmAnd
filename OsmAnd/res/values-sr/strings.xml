@@ -6187,4 +6187,22 @@
     <string name="free_download_limit_reached">Достигнуто је ограничење бесплатног преузимања</string>
     <string name="free_download_limit_reached_description">Откључајте неограничена преузимања и ажурирања мапа</string>
     <string name="get_unlimited_downloads">Прибавите неограничена преузимања</string>
+    <string name="data_storage">Складиште података</string>
+    <string name="main_storage">Главно складиште</string>
+    <string name="media_storage">Складиште медија</string>
+    <string name="camera_folder">Фолдер камере</string>
+    <string name="media_storage_main_storage_descr">Датотеке се чувају у приватној меморији апликације. Скривене су од Галерије и других апликација.</string>
+    <string name="media_storage_shared_storage_descr">Датотеке се чувају у јавним фасциклама (Слике, Филмови, Музика). Видљиве су у Галерији и Гугл фотографијама.</string>
+    <string name="media_storage_camera_folder_descr">Датотеке се чувају у фолдеру Камера Рол. Напомена: Аудио се чува у Музика/ОсмАнд.</string>
+    <string name="media_storage_manually_specified_descr">Датотеке се чувају у прилагођеној фасцикли и сортирају по типу (Аудио, Фотографија, Видео).</string>
+    <string name="change_media_storage_question">Променити складиште медија?</string>
+    <string name="change_media_storage_full_description">Преместити постојеће медијске датотеке на нову дестинацију?\n%1$s &gt; %2$s</string>
+    <string name="media_storage_directory_not_writable">Медијске датотеке нису могле бити сачуване у наведеном директоријуму</string>
+    <string name="route_calculation_method">Метод израчунавања руте</string>
+    <string name="route_calculation_method_auto">Аутоматски (најбржи доступан)</string>
+    <string name="route_calculation_method_auto_desc">Покушава да користи брзо рутирање. Аутоматски прелази на стандардни прорачун ако се датуми на мапи не поклапају.</string>
+    <string name="route_calculation_method_standard_only">Само стандардни</string>
+    <string name="route_calculation_method_standard_only_desc">Увек користи стандардно рутирање. Спорије је, али омогућава навигацију са мапама различитих датума.</string>
+    <string name="route_calculation_method_fast_only">Само брзи</string>
+    <string name="route_calculation_method_fast_only_desc">Увек користи брзо рутирање. Прорачун ће се зауставити и затражити ажурирања ако се датуми мапе не подударају.</string>
 </resources>
