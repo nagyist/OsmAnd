@@ -6107,4 +6107,22 @@
     <string name="free_download_limit_reached">Elérte az ingyenes letöltési korlátot</string>
     <string name="free_download_limit_reached_description">Oldja fel a korlátlan térképletöltést és a frissítéseket</string>
     <string name="get_unlimited_downloads">Korlátlan letöltés szerzése</string>
+    <string name="data_storage">Adattárolás</string>
+    <string name="main_storage">Fő tárhely</string>
+    <string name="media_storage">Médiatároló</string>
+    <string name="camera_folder">Kamera mappája</string>
+    <string name="media_storage_main_storage_descr">A fájlok a privát alkalmazástárhelyre lesznek mentve. Rejtve maradnak a galéria és más alkalmazások elől.</string>
+    <string name="media_storage_shared_storage_descr">A fájlok nyilvános mappákba (képek, filmek, zene) lesznek mentve. Láthatóak a galériában és a Google fotókban.</string>
+    <string name="media_storage_camera_folder_descr">A fájlok a kamera mappájába lesznek mentve. Megjegyzés: A hangfájlok pedig a Music/OsmAnd mappába kerülnek.</string>
+    <string name="media_storage_manually_specified_descr">A fájlok egy egyéni mappába lesznek mentve, és típus szerint rendezve (hang, fotó, videó).</string>
+    <string name="change_media_storage_question">Módosítja a médiatárolót?</string>
+    <string name="change_media_storage_full_description">Áthelyezi a meglévő médiafájlokat az új célhelyre?\n%1$s &gt; %2$s</string>
+    <string name="media_storage_directory_not_writable">A médiafájlokat nem sikerült menteni a megadott könyvtárba</string>
+    <string name="route_calculation_method">Útvonaltervezési módszer</string>
+    <string name="route_calculation_method_auto">Automatikus (leggyorsabb elérhető)</string>
+    <string name="route_calculation_method_auto_desc">Kísérlet a gyors útvonaltervezés használatára. Automatikus átváltás normál tervezésre, ha a térképek dátumai nem egyeznek.</string>
+    <string name="route_calculation_method_standard_only">Csak normál</string>
+    <string name="route_calculation_method_standard_only_desc">Mindig a normál útvonaltervezés használata. Lassabb, de lehetővé teszi a navigációt különböző dátumú térképekkel.</string>
+    <string name="route_calculation_method_fast_only">Csak gyors</string>
+    <string name="route_calculation_method_fast_only_desc">Mindig a gyors útvonaltervezés használata. A tervezés leáll, és frissítést igényel, ha a térképek dátumai nem egyeznek.</string>
 </resources>
