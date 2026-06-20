@@ -8,6 +8,7 @@ import java.util.List;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.map.OsmandRegions;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
+import net.osmand.util.SearchAlgorithms;
 
 
 //////////// OTHER TASKS ///////
@@ -21,6 +22,7 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSetting
 //    - 2-га Нова (2 Нова), Бульварно-Кудрявськаб NC-42 (geocoding
 // 6. TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
 // 7. TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
+// 8. Find largest indexed tokens intersection: suspect 'Calle'x'Calle'.
 
 //////////// TESTING //////////
 // SIMPLE Search Buildings (
@@ -29,11 +31,12 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSetting
 
 
 // BUILDINGS
-// TODO Building refs (entrances, units)
-
-// TODO to search buildings most complete street is needed - check id ? (largest city sort?))
+// TODO Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
+// TODO Building entrances refs ', 3' ("18/32, 2")
 // TODO Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
-// TODO Buidling inside City <Salt lake city> (filter City)
+// TODO to search buildings most complete street is needed - check id ? (largest city sort?))
+// TODO Building inside City <Salt lake city> (filter City)
+//      <CITY> no intersect with any other street
 
 // FEATURES
 // TODO Street intersection match
@@ -58,7 +61,7 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSetting
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
 
 // TEST
-// TODO relevant if results > 2-5K don't read all objects, sort by distance?
+// TODO! Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
 // TODO ? review settings: read objects after some intersections (but not too early)
 //      - Results 5 tokens 1,949 (139 unique) - compact objects during combinations?
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
@@ -66,16 +69,55 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSetting
 public class SpatialSearchTestAndDocs {
 
 	/**
-	 * Tokenizer rules
+	 * Tokenizer {@link SearchAlgorithms#splitAndNormalize(String, boolean)}
+	 * 
+	 * Word: Characters or digits (emoji undefined status) 
+	 * Special symbols:
+	 * 
+	 * '.' - part of the word: 'st.', '2039.' (needs to be stored)
+	 * ''' - part of the word: 'Mcdonald's' ()
+	 * '-' - split not numbers, for numbers part of the word 
+	 * '/' - split for not numbers, for numbers part of the word 
+	 * Example: split used for user input '63/28' should keep as 1 word for building
+	 * Specialeeds to be stored but ignored in collator
+	 * 
+	 * Other symbols ignored:
+	 * '#', '№', ...
+	 * 
+	 * Tokenizer splits sentence on input and on search query.
+	 * So later 2 arrays of words are compared.
+	 * 
+	 * Unnecessary split of 'NC-42', '2-B' '63/28' (house number) causes 
+	 * unnecessary complication and computation.
+	 * 
+	 * It's important to not split what very likely will be combined.
+	 * For example 'NC-42' == 'NC42', '2-B' == '2B'.
+	 * 
+	 * However algorithm should support match and search for split words:
+	 * Data: '2-nd street ', Search 'Street 2', 'Street #2', Street 2-nd'
+	 * Data: 'NC 42', Search: 'NC-42', 'NC 42'.'
+	 *
+	 * Index indexes all words except Partial Numbers and some Common.
+	 * So index could have: 'NC-42', 'MC20', '2-nd' (2 letters)
+	 * But not stores: '63/28', '2B', 'B2', 
+	 * --------------------------------
+	 * Potential issue:
+	 * 1. '2nd street' is indexed as '2nd' and not 'street.
+	 * 	  Limitation: user *must* input 2nd as part of search.
+	 *    Input won't work: 'street 2' (commmon words street, 2).
+	 * 2. Data 'NC 42', ok indexed under 'NC'.
+	 *    Query: 'NC-42' will find 'NC' and should match 'NC 42'
+	 *    Other combinations needs to be checked.
+	 * --------------------------------
+	 * 
 	 * 1. 'NC-42', 'NC42', 'NC 42' - 1 token (not searched by number
 	 * 2. Number + suffix - searched by number
 	 * 	   2-nd, 35 bis [35-bis, 35bis] - Missaglia
 	 * 3. 'Friedrich Wilhelm Weber strasse' (Munster) - many tokens
 	 *     Friedrich-Wilhelm-Weber-Straße, Hemauerstraße
 	 *   - Autocorrect -  Weberstrasse -> Weber strasse
-	 * 
-	 * 
-	 * Document matrix - [Data #1 vs Input #2]...
+	 * ..........
+	 * Matrix comparision - [Data #1 vs Input #2]...?
 	 * 
 	 * 
 	 */
@@ -130,16 +172,23 @@ public class SpatialSearchTestAndDocs {
 //		query = "Нова пошта 3 харків";
 //		query = "2-га Нова вулиця"; // unit test
 //		query = "2 Нова вулиця"; // unit test
-		query = "саксаг. 19А";
+//		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
+		query = "саксаг. 63/28, 2";
+//		query = "саксаг. 63/28 подъезд 2";
+//		query = "Яр. вал 29-г";
 //		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа А+";
 //		query = "школа 25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
-//		query = "Букове. m."; 
 		
-
+//		query = "Australia_";
+//		pattern = "Holmby street 18-B";
+		
+		query = "World_";
+		pattern = "New york";
+		
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";
 //		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations

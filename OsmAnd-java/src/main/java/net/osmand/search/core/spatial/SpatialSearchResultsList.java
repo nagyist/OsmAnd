@@ -12,8 +12,6 @@ import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
-import net.osmand.CollatorStringMatcher;
-import net.osmand.CollatorStringMatcher.StringMatcherMode;
 import net.osmand.data.Building;
 import net.osmand.data.MapObject;
 import net.osmand.data.Street;
@@ -149,7 +147,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		Building partial2 = null;
 		int number = Algorithms.extractFirstIntegerNumber(bldToken.word);
 		for (Building b : street.getBuildings()) {
-			if (bldToken.getCollator().matches(b.getName())) {
+			if (bldToken.getCollator().matches(b.getName()) ) {
 				return b;
 			} else if (b.belongsToInterpolation(bldToken.word)) {
 				interpolation = b;

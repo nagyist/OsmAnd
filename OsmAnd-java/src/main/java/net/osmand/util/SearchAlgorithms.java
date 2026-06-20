@@ -200,7 +200,7 @@ public class SearchAlgorithms {
         int nextIndex = index + Character.charCount(character);
         int previousIndex = index > 0 ? value.offsetByCodePoints(index, -1) : -1;
         
-        boolean isHyphenNearNumber = character == '-'
+        boolean isHyphenNearNumber = (character == '-' || character == '/')
                 && ((nextIndex < value.length() && Character.isDigit(value.codePointAt(nextIndex)))
                 || (previousIndex >= 0 && Character.isDigit(value.codePointAt(previousIndex))));
         // dot belongs to word same as '''
