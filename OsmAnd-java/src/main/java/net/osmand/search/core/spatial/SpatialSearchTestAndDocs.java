@@ -35,16 +35,21 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Building entrances refs ', 3' ("18/32, 2")
 // TODO Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 // TODO to search buildings most complete street is needed - check id ? (largest city sort?))
-// TODO Building inside City <Salt lake city> (filter City)
+// FIXME Building inside City <Salt lake city> (filter City)
 //      <CITY> no intersect with any other street
+// FIXME Web precise location for interpolation
+
+// POI 
+// FIXME read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
+// FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
+// FIXME World basemap ! POI  
+// FIXME Read all top poi categories for files
+// FIXME POI Categories implement categories
 
 // FEATURES
+// FIXME Abbreviations Phase
 // TODO Street intersection match
-// TODO World basemap ! POI  
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
-// TODO Read all top poi categories for files
-// TODO POI Categories implement categories
-// TODO Abbreviations Phase
 // TODO Sugggestion-correction
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Search near key objects (subway station artificial bbox)
@@ -52,11 +57,8 @@ import net.osmand.util.SearchAlgorithms;
 
 // ISSUES
 // TODO Progress / cancel
-// TODO read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
-// TODO Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
-// TODO Enable ALWAYS_READ_COMMON_WORDS_ATOMS = true to find new results (common word in City) or suggest POI category 
+// TODO Read common = true -> ('centre', 'school') to find 'common word' in 'City' or suggest POI category 
 // TODO Geocoding tokenizing (?) - Strip dashes before split to match "NC 42" == "NC-42"
-// TODO Web precise location for interpolation
 // TODO Web - search maps by key word like "Arizona"
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
 
@@ -186,8 +188,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Australia_";
 //		pattern = "Holmby street 18-B";
 		
-		query = "World_";
-		pattern = "New york";
+//		pattern = "World_";
+//		query = "New york";
+//		query  = "Madeira";
 		
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";

@@ -20,20 +20,26 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	SpatialSearchResult(SpatialSearchResultsList parentList, int parentInd) {
 		this.parentInd = parentInd;
 		this.parent = parentList;
+		
 		for (int i = 0; i < parent.tCount; i++) {
 			NameIndexAtom atom = parent.linearResults.get(parentInd * parentList.tCount + i);
 			SpatialSearchToken token = parent.tokens[i];
 			SpatialSearchResultRef ref = null;
-			for (SpatialSearchResultRef ex : objs) {
-				if (atom.id == ex.atom.id) {
-					ref = ex;
-					// building
-					if (ref.atom.type > atom.type) {
-						ref.parent = ref.atom;
-						ref.atom = atom;
+			// find same object or object & parent 
+			for (SpatialSearchResultRef existing : objs) {
+				if (atom.id == existing.atom.id) {
+					ref = existing;
+					// building-street
+					if (existing.atom.type > atom.type) {
+						// existing street - swap
+						existing.parent = existing.atom;
+						existing.atom = atom;
+						break;
+					} else if (existing.atom.type < atom.type) {
+						// existing building - swap
+						existing.parent = atom;
+						break;
 					}
-					atom = null;
-					break;
 				}
 			}
 			if (ref == null) {

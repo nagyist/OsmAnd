@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -103,56 +105,87 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	private void calcBuilding(int indx, Map<String, Building> bldCheckCache) {
+//		if (true) {
+//			altCalcBuilding(indx, bldCheckCache);
+//			return;
+//		}
+		Map<NameIndexAtom, String> bldCheckMap = null;
 		for (int i = 0; i < tCount; i++) {
 			NameIndexAtom bld = linearResults.get(indx * tCount + i);
 			if (bld.buildingInd >= 0) {
-				Building bldObj = null;
 				int strTokenInd = getTokenByOriginalOrder(bld.buildingInd);
-				if (strTokenInd >= 0) {
-					NameIndexAtom str = linearResults.get(indx * tCount + strTokenInd);
-					String cacheKey = str.id + " " + tokens[i].word;
-					if (bldCheckCache.containsKey(cacheKey)) {
-						bldObj = bldCheckCache.get(cacheKey);
-					} else {
-						if (str.id == bld.id) {
-							bldObj = checkBuilding((Street) str.object, tokens[i], bld);
-							if (bldObj == null) {
-//								System.out.printf("No building '%s': %s\n", tokens[i].word, str.object);
-							}
-						} else {
-//							System.out.printf("Wrong street: %s [%s] != %s [%s]\n", str.object,
-//									strTokenInd == -1 ? "" : tokens[strTokenInd], bld.object, tokens[i]);
-						}
-						bldCheckCache.put(cacheKey, bldObj);
-					}
+				if (strTokenInd < 0) {
+					skipResults.put(indx, true);
+					break;
+				}
+				NameIndexAtom str = linearResults.get(indx * tCount + strTokenInd);
+				if (str.id != bld.id) {
+					continue;
+				}
+				if (bldCheckMap == null) {
+					bldCheckMap = new HashMap<>();
+				}
+				String searchKey = bldCheckMap.get(str);
+				if (searchKey == null) {
+					searchKey = tokens[i].word;
+				} else {
+					searchKey += " " + tokens[i].word;
+				}
+				bldCheckMap.put(str, searchKey);
+			}
+		}
+		// check many buildings on same street possibly unit or ref
+		if (bldCheckMap != null) {
+			Iterator<Entry<NameIndexAtom, String>> it = bldCheckMap.entrySet().iterator();
+			while(it.hasNext()) {
+				Entry<NameIndexAtom, String> e = it.next();
+				NameIndexAtom str = e.getKey();
+				String bldName = e.getValue();
+				String cacheKey = str.id + " " + bldName;
+				Building bldObj = null;
+				if (bldCheckCache.containsKey(cacheKey)) {
+					bldObj = bldCheckCache.get(cacheKey);
+				} else {
+					bldObj = checkBuilding((Street) str.object, bldName);
+//					if (bldObj == null) {
+//						System.out.printf("No building '%s': %s\n", tokens[i].word, str.object);
+//					} else {
+//						System.out.printf("Building found '%s' -'%s': %s\n", bldObj, tokens[i].word, str.object);
+//					}
+					bldCheckCache.put(cacheKey, bldObj);
 				}
 				if (bldObj == null) {
 					skipResults.put(indx, true);
 					break;
 				} else {
-					bld.object = bldObj;
-					bld.name = bldObj.getName();
-					if (bldObj.isInterpolation()) {
-						bld.name = tokens[i].word;
+					for (int i = 0; i < tCount; i++) {
+						NameIndexAtom bld = linearResults.get(indx * tCount + i);
+						if (bld.buildingInd >= 0 && str.id == bld.id) {
+							bld.object = bldObj;
+							bld.name = bldObj.getName();
+							if (bldObj.isInterpolation()) {
+								bld.name = bldName;
+							}
+						}
 					}
 				}
 			}
 		}
 	}
-
-
-	private Building checkBuilding(Street street, SpatialSearchToken  bldToken, NameIndexAtom bld) {
+	
+	private Building checkBuilding(Street street, String bld) {
 		Building interpolation = null;
 		Building partial = null;
 		Building partial2 = null;
-		int number = Algorithms.extractFirstIntegerNumber(bldToken.word);
+		int number = Algorithms.extractFirstIntegerNumber(bld);
+		System.out.println(street + " " + bld);
 		for (Building b : street.getBuildings()) {
-			if (bldToken.getCollator().matches(b.getName()) ) {
+			if (bld.equals(b.getName())) {
 				return b;
-			} else if (b.belongsToInterpolation(bldToken.word)) {
+			} else if (b.belongsToInterpolation(bld)) {
 				interpolation = b;
 			} else if (number > 0 && number == Algorithms.extractFirstIntegerNumber(b.getName())) {
-				if (bldToken.word.startsWith(b.getName())) {
+				if (bld.startsWith(b.getName())) {
 					partial = b;
 				} else {
 					partial2 = b;
@@ -173,6 +206,47 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		return null;
 		
+	}
+	
+
+	private void altCalcBuilding(int indx, Map<String, Building> bldCheckCache) {
+		for (int i = 0; i < tCount; i++) {
+			NameIndexAtom bld = linearResults.get(indx * tCount + i);
+			if (bld.buildingInd >= 0) {
+				Building bldObj = null;
+				int strTokenInd = getTokenByOriginalOrder(bld.buildingInd);
+				if (strTokenInd >= 0) {
+					NameIndexAtom str = linearResults.get(indx * tCount + strTokenInd);
+					String cacheKey = str.id + " " + tokens[i].word;
+					if (bldCheckCache.containsKey(cacheKey)) {
+						bldObj = bldCheckCache.get(cacheKey);
+					} else {
+						if (str.id == bld.id) {
+							bldObj = checkBuilding((Street) str.object, tokens[i].word);
+//							if (bldObj == null) {
+//								System.out.printf("No building '%s': %s\n", tokens[i].word, str.object);
+//							} else {
+//								System.out.printf("Building found '%s' -'%s': %s\n", bldObj, tokens[i].word, str.object);
+//							}
+						} else {
+//							System.out.printf("Wrong street: %s [%s] != %s [%s]\n", str.object,
+//									strTokenInd == -1 ? "" : tokens[strTokenInd], bld.object, tokens[i]);
+						}
+						bldCheckCache.put(cacheKey, bldObj);
+					}
+				}
+				if (bldObj == null) {
+					skipResults.put(indx, true);
+					break;
+				} else {
+					bld.object = bldObj;
+					bld.name = bldObj.getName();
+					if (bldObj.isInterpolation()) {
+						bld.name = tokens[i].word;
+					}
+				}
+			}
+		}
 	}
 
 	private int getTokenByOriginalOrder(int originalOrder) {
