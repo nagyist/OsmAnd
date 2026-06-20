@@ -304,7 +304,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		List<HistoryRecord> records = new ArrayList<>();
 		String normalizedQuery = query.trim().toLowerCase(Locale.ROOT);
 		SearchPhrase phrase = createHistoryPhrase();
-		for (HistoryEntry entry : app.getSearchHistoryHelper().getHistoryEntries(selectedSourceFilter.source, false, true)) {
+		for (HistoryEntry entry : app.getSearchHistoryHelper().getVisibleHistoryEntries(selectedSourceFilter.source, false, true)) {
 			SearchResult result = SearchHistoryAPI.createSearchResult(app, entry, phrase);
 			QuickSearchListItem item = new QuickSearchListItem(app, result);
 			if (Algorithms.isEmpty(normalizedQuery) || matchesQuery(item, normalizedQuery)) {

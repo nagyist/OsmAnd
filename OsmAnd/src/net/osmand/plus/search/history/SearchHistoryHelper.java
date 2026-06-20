@@ -129,6 +129,18 @@ public class SearchHistoryHelper {
 	@NonNull
 	public List<HistoryEntry> getHistoryEntries(@Nullable HistorySource source, boolean onlyPoints,
 			boolean includeDeleted) {
+		return getHistoryEntries(source, onlyPoints, includeDeleted, false);
+	}
+
+	@NonNull
+	public List<HistoryEntry> getVisibleHistoryEntries(@Nullable HistorySource source, boolean onlyPoints,
+			boolean includeDeleted) {
+		return getHistoryEntries(source, onlyPoints, includeDeleted, true);
+	}
+
+	@NonNull
+	private List<HistoryEntry> getHistoryEntries(@Nullable HistorySource source, boolean onlyPoints,
+			boolean includeDeleted, boolean onlyEnabledSources) {
 		if (loadedEntries == null) {
 			checkLoadedEntries();
 		}
@@ -137,13 +149,22 @@ public class SearchHistoryHelper {
 			PointDescription description = entry.getName();
 
 			boolean exists = isPointDescriptionExists(description);
-			if ((includeDeleted || exists) && (source == null || entry.getSource() == source)) {
+			if ((includeDeleted || exists)
+					&& (!onlyEnabledSources || isHistoryEnabled(entry.getSource()))
+					&& (source == null || entry.getSource() == source)) {
 				if (!onlyPoints || (!description.isPoiType() && !description.isCustomPoiFilter())) {
 					entries.add(entry);
 				}
 			}
 		}
 		return entries;
+	}
+
+	public boolean isHistoryEnabled(@NonNull HistorySource source) {
+		return switch (source) {
+			case SEARCH -> app.getSettings().SEARCH_HISTORY.get();
+			case NAVIGATION -> app.getSettings().NAVIGATION_HISTORY.get();
+		};
 	}
 
 	private boolean isPointDescriptionExists(@NonNull PointDescription description) {
@@ -250,7 +271,7 @@ public class SearchHistoryHelper {
 	}
 
 	private void addNewItemToHistory(HistoryEntry model) {
-		if (app.getSettings().SEARCH_HISTORY.get()) {
+		if (isHistoryEnabled(model.getSource())) {
 			checkLoadedEntries();
 			if (map.containsKey(model.getName())) {
 				HistoryEntry existingModel = map.get(model.getName());

@@ -448,7 +448,7 @@ public class QuickSearchHelper implements ResourceListener {
 		public boolean search(SearchPhrase phrase, SearchResultMatcher resultMatcher) throws IOException {
 			int priority = 0;
 			SearchHistoryHelper historyHelper = app.getSearchHistoryHelper();
-			for (HistoryEntry entry : historyHelper.getHistoryEntries(false)) {
+			for (HistoryEntry entry : historyHelper.getVisibleHistoryEntries(null, false, false)) {
 				SearchResult result = createSearchResult(app, entry, phrase);
 				result.priority = SEARCH_HISTORY_OBJECT_PRIORITY + (priority++);
 
