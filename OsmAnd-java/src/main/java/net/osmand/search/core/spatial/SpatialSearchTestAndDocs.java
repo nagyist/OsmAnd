@@ -122,7 +122,7 @@ public class SpatialSearchTestAndDocs {
 	 */
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-		SpatialTextSearchSettings.DEDUPLICATE_RES = true;
+//		SpatialTextSearchSettings.DEDUPLICATE_RES = true;
 //		SpatialTextSearchSettings.SEARCH_BUILDINGS = false;
 		File folder = new File("/Users/victorshcherb/osmand/maps/");
 		String pattern = "Germany_b";
@@ -182,8 +182,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
 		
-//		pattern = "Australia";
-//		query = "Holmby road 18B"; 
+		pattern = "Australia";
+		query = "Holmby road 18B";
+//		query = "Holmby Melbourne 18B";
 		
 //		pattern = "World_";
 //		query = "New york";

@@ -149,9 +149,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				} else {
 					bldObj = checkBuilding((Street) str.object, bldName);
 					if (bldObj == null) {
-						System.out.printf("No building '%s': %s\n", bldName, str.object);
+//						System.out.printf("No building '%s': %s\n", bldName, str.object);
 					} else {
-						System.out.printf("Building found '%s' -'%s': %s\n", bldObj, bldName, str.object);
+//						System.out.printf("Building found '%s' -'%s': %s\n", bldObj, bldName, str.object);
 					}
 					bldCheckCache.put(cacheKey, bldObj);
 				}
@@ -222,7 +222,6 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 			} else {
 				Set<String> cmp = getBuildingCompareSet(b.getName());
-				System.out.println(cmp + " " + original);
 				if (cmp.equals(original)) {
 					// exact
 					return b;
@@ -408,6 +407,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		
 		// 4. ignore multiple atomic objects intersections POI / Streets > 2!
+		//    Building + Street (counts as 2 objects) - no (Building + Street 1 + Street 2)
 		if (a.atomicObject()) {
 			// check limit atomic objects to add
 			List<Long> objects = new ArrayList<Long>(SpatialTextSearchSettings.LIMIT_ATOMIC_OBJECTS);
@@ -415,8 +415,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			for (int i = 0; parent != null && i < parent.tCount; i++) {
 				NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 				if (pa.atomicObject()) {
-					if (!objects.contains(pa.id)) {
-						objects.add(pa.id);
+					long id = pa.id;
+					if (pa.buildingInd >= 0) {
+//						id += Integer.MAX_VALUE;
+					}
+					if (!objects.contains(id)) {
+						objects.add(id);
 					}
 				}
 				if (objects.size() > SpatialTextSearchSettings.LIMIT_ATOMIC_OBJECTS) {
