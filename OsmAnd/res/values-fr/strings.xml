@@ -6122,7 +6122,7 @@
     <string name="change_media_storage_full_description">Déplacer les fichiers multimédias existants vers la nouvelle destination ?\n%1$s &gt; %2$s</string>
     <string name="media_storage_directory_not_writable">Les fichiers multimédias n\'ont pas pu être enregistrés dans le répertoire indiqué</string>
     <string name="route_calculation_method">Méthode de calcul d\'itinéraire</string>
-    <string name="route_calculation_method_auto">Automatique (la plus rapide disponible)</string>
+    <string name="route_calculation_method_auto">Automatique (le plus rapide)</string>
     <string name="route_calculation_method_auto_desc">Tente d\'utiliser le calcul d\'itinéraire rapide. Passe automatiquement au calcul standard si les dates de la carte ne correspondent pas.</string>
     <string name="route_calculation_method_standard_only">Standard uniquement</string>
     <string name="route_calculation_method_standard_only_desc">Utilise toujours l\'itinéraire standard. C\'est plus lent, mais cela permet de naviguer avec des cartes datant de différentes périodes.</string>
