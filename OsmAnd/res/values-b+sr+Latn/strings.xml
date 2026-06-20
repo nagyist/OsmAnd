@@ -6187,4 +6187,22 @@
     <string name="free_download_limit_reached">Dostignuto je ograničenje besplatnog preuzimanja</string>
     <string name="free_download_limit_reached_description">Otključajte neograničena preuzimanja i ažuriranja mapa</string>
     <string name="get_unlimited_downloads">Pribavite neograničena preuzimanja</string>
+    <string name="data_storage">Skladište podataka</string>
+    <string name="main_storage">Glavno skladište</string>
+    <string name="media_storage">Skladište medija</string>
+    <string name="camera_folder">Folder kamere</string>
+    <string name="media_storage_main_storage_descr">Fajlovi se čuvaju u privatnoj memoriji aplikacije. Skrivene su od Galerije i drugih aplikacija.</string>
+    <string name="media_storage_shared_storage_descr">Fajlovi se čuvaju u javnim fasciklama (Slike, Filmovi, Muzika). Vidljive su u Galeriji i Google fotografijama.</string>
+    <string name="media_storage_camera_folder_descr">Fajlovi se čuvaju u folderu Camera Roll. Napomena: Audio se čuva u Music/OsmAnd.</string>
+    <string name="media_storage_manually_specified_descr">Fajlovi se čuvaju u prilagođenoj fascikli i sortiraju po tipu (Audio, Fotografija, Video).</string>
+    <string name="change_media_storage_question">Promeniti skladište medija?</string>
+    <string name="change_media_storage_full_description">Premestiti postojeće medijske fajlove na novu destinaciju?\n%1$s &gt; %2$s</string>
+    <string name="media_storage_directory_not_writable">Medijski fajlovi nisu mogli biti sačuvani u navedenom direktorijumu</string>
+    <string name="route_calculation_method">Metod izračunavanja rute</string>
+    <string name="route_calculation_method_auto">Automatski (najbrži dostupan)</string>
+    <string name="route_calculation_method_auto_desc">Pokušava da koristi brzo rutiranje. Automatski prelazi na standardni proračun ako se datumi na mapi ne poklapaju.</string>
+    <string name="route_calculation_method_standard_only">Samo standardni</string>
+    <string name="route_calculation_method_standard_only_desc">Uvek koristi standardno rutiranje. Sporije je, ali omogućava navigaciju sa mapama različitih datuma.</string>
+    <string name="route_calculation_method_fast_only">Samo brzi</string>
+    <string name="route_calculation_method_fast_only_desc">Uvek koristi brzo rutiranje. Proračun će se zaustaviti i zatražiti ažuriranja ako se datumi mape ne podudaraju.</string>
 </resources>
