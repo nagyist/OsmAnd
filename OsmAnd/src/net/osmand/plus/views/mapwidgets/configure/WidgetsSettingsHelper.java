@@ -86,7 +86,7 @@ public class WidgetsSettingsHelper {
 
 	public void copyConfigureScreenSettings(@NonNull ApplicationMode fromAppMode) {
 		for (WidgetsPanel panel : WidgetsPanel.values()) {
-			copyWidgetsForPanel(fromAppMode, null, panel); // todo check may be we should use layout mode too
+			copyWidgetsForPanel(fromAppMode, null, panel);
 		}
 		copyPrefFromAppMode(settings.getPanelsLayoutMode(mapActivity, layoutMode), fromAppMode);
 		copyPrefFromAppMode(settings.getTransparentMapThemePreference(layoutMode), fromAppMode);
