@@ -434,6 +434,20 @@ public class QuickSearchHelper implements ResourceListener {
 
 		private final OsmandApplication app;
 
+		public static class HistorySearchResult extends SearchResult {
+			private final HistoryEntry historyEntry;
+
+			public HistorySearchResult(@NonNull SearchPhrase phrase, @NonNull HistoryEntry historyEntry) {
+				super(phrase);
+				this.historyEntry = historyEntry;
+			}
+
+			@NonNull
+			public HistoryEntry getHistoryEntry() {
+				return historyEntry;
+			}
+		}
+
 		public SearchHistoryAPI(OsmandApplication app) {
 			super(ObjectType.RECENT_OBJ);
 			this.app = app;
@@ -466,7 +480,7 @@ public class QuickSearchHelper implements ResourceListener {
 			if (phrase.getSettings() == null) {
 				phrase = SearchPhrase.emptyPhrase(app.getSearchUICore().getCore().getSearchSettings());
 			}
-			SearchResult result = new SearchResult(phrase);
+			SearchResult result = new HistorySearchResult(phrase, entry);
 
 			PointDescription description = entry.getName();
 			String name = description.getName();
