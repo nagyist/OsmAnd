@@ -73,6 +73,7 @@ import net.osmand.plus.search.QuickSearchHelper.SearchHistoryAPI;
 import net.osmand.plus.search.ShareHistoryAsyncTask;
 import net.osmand.plus.search.ShareHistoryAsyncTask.OnShareHistoryListener;
 import net.osmand.plus.search.history.HistoryEntry;
+import net.osmand.plus.search.history.SearchHistoryHelper;
 import net.osmand.plus.search.listitems.QuickSearchButtonListItem;
 import net.osmand.plus.search.listitems.QuickSearchDisabledHistoryItem;
 import net.osmand.plus.search.listitems.QuickSearchHeaderListItem;
@@ -894,9 +895,10 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 					String typeName = QuickSearchListItem.getTypeName(app, searchResult);
 					PointDescription pointDescription = new PointDescription(
 							PointDescription.POINT_TYPE_ADDRESS, typeName, name);
+					Object historyObject = SearchHistoryHelper.createHistoryObject(object, searchResult);
 					settings.setMapLocationToShow(
 							searchResult.location.getLatitude(), searchResult.location.getLongitude(),
-							searchResult.preferredZoom, pointDescription, true, object);
+							searchResult.preferredZoom, pointDescription, true, historyObject);
 
 					hideToolbar();
 					MapActivity.launchMapActivityMoveToTop(requireActivity());
