@@ -6118,7 +6118,7 @@
     <string name="media_storage_shared_storage_descr">Les fichiers sont enregistrés dans des dossiers publics (« Images », « Vidéos », « Musique »). Ils sont visibles dans la Galerie et sur Google Photos.</string>
     <string name="media_storage_camera_folder_descr">Les fichiers sont enregistrés dans la pellicule. Remarque : les fichiers audio sont enregistrés dans le dossier « Musique/OsmAnd ».</string>
     <string name="media_storage_manually_specified_descr">Les fichiers sont enregistrés dans un dossier personnalisé et classés par type (audio, photo, vidéo).</string>
-    <string name="change_media_storage_question">Changer de support de stockage ?</string>
+    <string name="change_media_storage_question">Modifier l\'emplacement du stockage ?</string>
     <string name="change_media_storage_full_description">Déplacer les fichiers multimédias existants vers la nouvelle destination ?\n%1$s &gt; %2$s</string>
     <string name="media_storage_directory_not_writable">Les fichiers multimédias n\'ont pas pu être enregistrés dans le répertoire indiqué</string>
     <string name="route_calculation_method">Méthode de calcul d\'itinéraire</string>
