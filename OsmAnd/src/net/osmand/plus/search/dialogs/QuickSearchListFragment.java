@@ -250,6 +250,10 @@ public abstract class QuickSearchListFragment extends BaseNestedListFragment {
 				travelHelper.openTrackMenu(travelGpx, activity, amenity.getGpxFileName(null), amenity.getLocation(), true);
 				return; // TravelGpx
 			} else if (clickableWayHelper.isClickableWayAmenity(amenity)) {
+				SearchHistoryHelper historyHelper = app.getSearchHistoryHelper();
+				historyHelper.addNewItemToHistory(searchResult.location.getLatitude(),
+						searchResult.location.getLongitude(), pair.first, HistorySource.SEARCH, searchResult);
+
 				clickableWayHelper.openClickableWayAmenity(amenity, true);
 				return; // ClickableWay
 			}
