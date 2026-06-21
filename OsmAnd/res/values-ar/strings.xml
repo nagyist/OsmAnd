@@ -2375,7 +2375,7 @@
     <string name="plan_route">تخطيط الطريق</string>
     <string name="shared_string_sort">فرز</string>
     <string name="coordinate_input">إدخال إحداثية</string>
-    <string name="marker_save_as_track_descr">تصدير علاماتك إلى ملف يمكنك تحديده هنا:</string>
+    <string name="marker_save_as_track_descr">صدِّر علاماتك إلى ملف GPX التالي:</string>
     <string name="move_to_history">نقل إلى السجل</string>
     <string name="group_will_be_removed_after_restart">سيتم إزالة المجموعة بعد إعادة تشغيل التطبيق.</string>
     <string name="shared_string_markers">التوجيه المباشر</string>
@@ -2616,9 +2616,9 @@
     <string name="last_intermediate_dest_description">إضافة نقطة توقف وسيطة</string>
     <string name="first_intermediate_dest_description">إضافة توقف أول</string>
     <string name="subsequent_dest_description">نقل الوجهة لأعلى، وقم بإنشاءها</string>
-    <string name="gpx_file_desc">GPX - مناسب للتصدير إلى JOSM ومحررات OSM الأخرى.</string>
+    <string name="gpx_file_desc">GPX - مناسب للتصدير إلى JOSM ومحرِّرات OSM الأخرى.</string>
     <string name="osc_file_desc">OSC - مناسب للتصدير إلى خريطة الشارع المفتوحة.</string>
-    <string name="osm_edits_export_desc">تصدير كملاحظات OSM أو النقاط المهمة أو كليهما.</string>
+    <string name="osm_edits_export_desc">صدِّر كملاحظات OSM أو النقاط المهمة أو كليهما.</string>
     <string name="add_group_descr">يمكنك استيراد مجموعات من المفضلة أو نقاط مسار.</string>
     <string name="mapillary_menu_title_pano">عرض صور 360° فقط</string>
     <!--string name="release_3_2_pre">• اصلاح الفشل عند بدء التشغيل التي وقعت في بعض الأجهزة
@@ -2903,10 +2903,10 @@
     <string name="quick_action_contour_lines_descr">زر إظهار أو إخفاء الخطوط المحيطية على الخريطة.</string>
     <string name="quick_action_hillshade_descr">زر لإظهار وإخفاء التلال على الخريطة.</string>
     <string name="tts_initialization_error">لا يمكن بدء تشغيل أداة تحويل النص إلى كلام.</string>
-    <string name="export_profile">تصدير الوضع</string>
-    <string name="exported_osmand_profile">وضع أوسماند: %1$s</string>
+    <string name="export_profile">صدِّر ملف التعريف</string>
+    <string name="exported_osmand_profile">ملف تعريف أوسماند: %1$s</string>
     <string name="overwrite_profile_q">الوضع \'%1$s\' موجود بالفعل، هل تريد استبداله؟</string>
-    <string name="export_profile_failed">لا يمكن تصدير الوضع.</string>
+    <string name="export_profile_failed">لا يمكن تصدير ملف التعريف.</string>
     <string name="profile_import">استيراد وضع</string>
     <string name="profile_import_descr">لإضافة وضع، اذهب لمكانه على الجهاز وافتحه باستخدام أوسماند.</string>
     <string name="file_import_error">%1$s استيراد خاطئ: %2$s</string>
@@ -3692,7 +3692,7 @@
     <string name="app_mode_kayak">كاياك (قوارب صغيرة فردية)</string>
     <string name="app_mode_motorboat">زورق</string>
     <string name="shared_string_search_history">سجل البحث</string>
-    <string name="export_not_enough_space_descr">مساحة جهازك %1$s الخالية فقط. يرجى تحرير بعض المساحة أو إلغاء تحديد بعض العناصر للتصدير.</string>
+    <string name="export_not_enough_space_descr">مساحة جهازك %1$s الخالية فقط. يُرجى إفراغ بعض المساحة أو إلغاء تحديد بعض العناصر للتصدير.</string>
     <string name="shared_string_resources">المصادر</string>
     <string name="approximate_file_size">حجم الملف التقريبي</string>
     <string name="select_data_to_export">حدد البيانات التي سيتم تصديرها إلى ملف.</string>
@@ -4734,7 +4734,7 @@
     <string name="changes">التغييرات %1$s</string>
     <string name="last_sync">آخر مزامنة</string>
     <string name="import_export">استيراد/تصدير</string>
-    <string name="export_to_file">تصدير إلى ملف</string>
+    <string name="export_to_file">صدِّر إلى ملف</string>
     <string name="si_nm_ft">ميل بحري/قدم</string>
     <string name="si_nm_mt">ميل بحري/متر</string>
     <string name="set_up_backup">إنشاء نسخة احتياطية</string>
@@ -4937,7 +4937,7 @@
     <string name="osmand_cloud_delete_account_confirmation_descr">هل أنت متأكد من حذف حساب أوسماند آيكلاود؟\n\nلا يمكن التراجع عن هذا الإجراء.</string>
     <string name="osmand_cloud_delete_account_confirmation">حذف الحساب؟</string>
     <string name="osmand_cloud_deletion_secondary_devices_warning">سيتم تسجيل خروج الأجهزة الثانوية من أوسماند آيكلاود وستفقد الوصول إلى الميزات المدفوعة.</string>
-    <string name="folder_export_empty_error">لا شيء للتصدير ، المجلد فارغ</string>
+    <string name="folder_export_empty_error">لا شيء للتصدير، المجلد فارغ</string>
     <string name="delete_account">حذف الحساب</string>
     <string name="verify_account">تحقق من حسابك</string>
     <string name="free_favorites_backup_description">سجل في سحابة أوسماند للحصول على نسخة احتياطية مجانية للمفضلة والإعدادات.</string>
@@ -5319,7 +5319,7 @@
     <string name="gpx_approximation_geo_cpp">يعتمد على برمجة (C++, fast)</string>
     <string name="gpx_approximation_geo_java">يعتمد على برمجة (Java, fast)</string>
     <string name="vertical_exaggeration_description">من خلال تغيير قيمة المقياس، يمكنك التأكيد على التضاريس ثلاثية الأبعاد.</string>
-    <string name="required_maps_calculate_online_summary">قائمة الخرائط المفقودة مبنية على خط مستقيم للحصول على قائمة دقيقة للخرائط،أوسماند يمكن أن يجهز طريقك مسبقا على الانترنت.</string>
+    <string name="required_maps_calculate_online_summary">قائمة الخرائط المفقودة مبنية على خط مستقيم للحصول على قائمة دقيقة للخرائط، أوسماند يمكن أن يجهز طريقك مسبقًا على عبر الإنترنت.</string>
     <string name="fix_north_up_descr">لا تقم بتدوير الخريطة بالإيماءات في اتجاه الخريطة باتجاه الشمال لأعلى</string>
     <string name="fixed_height">ارتفاع ثابت</string>
     <string name="top">أعلى</string>
