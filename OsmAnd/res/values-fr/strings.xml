@@ -6110,4 +6110,22 @@
     <string name="tracks_backup_promo_title">Synchronisez et restaurez vos traces</string>
     <string name="show_discount_bottom_sheet">Afficher la feuille inférieure de réduction</string>
     <string name="show_discount_bottom_sheet_description">Afficher la fiche de fond relative à la remise avec une réponse de développement personnalisée.</string>
+    <string name="data_storage">Stockage des données</string>
+    <string name="main_storage">Stockage principal</string>
+    <string name="media_storage">Stockage multimédia</string>
+    <string name="camera_folder">Dossier « Appareil photo »</string>
+    <string name="media_storage_main_storage_descr">Les fichiers sont enregistrés dans la mémoire interne de l\'application. Ils ne sont pas visibles dans la Galerie ni dans les autres applications.</string>
+    <string name="media_storage_shared_storage_descr">Les fichiers sont enregistrés dans des dossiers publics (« Images », « Vidéos », « Musique »). Ils sont visibles dans la Galerie et sur Google Photos.</string>
+    <string name="media_storage_camera_folder_descr">Les fichiers sont enregistrés dans la pellicule. Remarque : les fichiers audio sont enregistrés dans le dossier « Musique/OsmAnd ».</string>
+    <string name="media_storage_manually_specified_descr">Les fichiers sont enregistrés dans un dossier personnalisé et classés par type (audio, photo, vidéo).</string>
+    <string name="change_media_storage_question">Changer de support de stockage ?</string>
+    <string name="change_media_storage_full_description">Déplacer les fichiers multimédias existants vers la nouvelle destination ?\n%1$s &gt; %2$s</string>
+    <string name="media_storage_directory_not_writable">Les fichiers multimédias n\'ont pas pu être enregistrés dans le répertoire indiqué</string>
+    <string name="route_calculation_method">Méthode de calcul d\'itinéraire</string>
+    <string name="route_calculation_method_auto">Automatique (le plus rapide)</string>
+    <string name="route_calculation_method_auto_desc">Tente d\'utiliser le calcul d\'itinéraire rapide. Passe automatiquement au calcul standard si les dates de la carte ne correspondent pas.</string>
+    <string name="route_calculation_method_standard_only">Standard uniquement</string>
+    <string name="route_calculation_method_standard_only_desc">Utilise toujours l\'itinéraire standard. C\'est plus lent, mais cela permet de naviguer avec des cartes datant de différentes périodes.</string>
+    <string name="route_calculation_method_fast_only">Rapide uniquement</string>
+    <string name="route_calculation_method_fast_only_desc">Utilise toujours l\'itinéraire le plus rapide. Le calcul s\'interrompt et demande des mises à jour si les dates de la carte ne correspondent pas.</string>
 </resources>
