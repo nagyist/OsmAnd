@@ -265,7 +265,7 @@ class SearchHistoryDBHelper {
 								HISTORY_COL_RELATED_OBJECT_NAME + ", " + HISTORY_COL_OPENING_HOURS +
 								", " + HISTORY_COL_ALTERNATE_NAME + ", " + HISTORY_COL_PHOTO_URL + ", " + HISTORY_COL_OSM_ID +
 								" FROM " + HISTORY_TABLE_NAME, null);
-				Map<PointDescription, HistoryEntry> st = new HashMap<>();
+				Map<HistoryEntryKey, HistoryEntry> st = new HashMap<>();
 				if (query != null && query.moveToFirst()) {
 					boolean reinsert = false;
 					do {
@@ -298,11 +298,12 @@ class SearchHistoryDBHelper {
 						entry.setAlternateName(query.getString(16));
 						entry.setPhotoUrl(query.getString(17));
 						entry.setOsmId(query.isNull(18) ? null : query.getLong(18));
-						if (st.containsKey(pd)) {
+						HistoryEntryKey key = new HistoryEntryKey(entry);
+						if (st.containsKey(key)) {
 							reinsert = true;
 						}
 						entries.add(entry);
-						st.put(pd, entry);
+						st.put(key, entry);
 					} while (query.moveToNext());
 					if (reinsert) {
 						log.error("Reinsert all values for search history");

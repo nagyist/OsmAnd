@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SearchHistoryHelper {
@@ -44,7 +45,7 @@ public class SearchHistoryHelper {
 
 	private final OsmandApplication app;
 	private final SearchHistoryDBHelper dbHelper;
-	private final Map<PointDescription, HistoryEntry> map = new ConcurrentHashMap<>();
+	private final Map<HistoryEntryKey, HistoryEntry> map = new ConcurrentHashMap<>();
 
 	private List<HistoryEntry> loadedEntries;
 
@@ -206,6 +207,16 @@ public class SearchHistoryHelper {
 	}
 
 	public void remove(SearchResult searchResult) {
+		HistoryEntry entry = getHistoryEntry(searchResult.object);
+		if (entry == null) {
+			entry = getHistoryEntry(searchResult.relatedObject);
+		}
+
+		if (entry != null) {
+			remove(entry);
+			return;
+		}
+
 		PointDescription pd = getPointDescription(searchResult.object);
 		if (pd == null) {
 			pd = getPointDescription(searchResult.relatedObject);
@@ -240,14 +251,38 @@ public class SearchHistoryHelper {
 		return pd;
 	}
 
+	@Nullable
+	private HistoryEntry getHistoryEntry(@Nullable Object item) {
+		return item instanceof HistoryEntry historyEntry ? historyEntry : null;
+	}
+
+	private void remove(@NonNull HistoryEntry entry) {
+		remove(entry.getName(), entry.getSource());
+	}
+
 	private void remove(PointDescription pd) {
-		HistoryEntry model = map.get(pd);
+		checkLoadedEntries();
+		List<HistoryEntry> toRemove = new ArrayList<>();
+		for (HistoryEntry entry : loadedEntries) {
+			if (Objects.equals(pd, entry.getName())) {
+				toRemove.add(entry);
+			}
+		}
+		for (HistoryEntry entry : toRemove) {
+			remove(entry);
+		}
+	}
+
+	private void remove(@NonNull PointDescription pd, @NonNull HistorySource source) {
+		checkLoadedEntries();
+		HistoryEntryKey key = new HistoryEntryKey(pd, source);
+		HistoryEntry model = map.get(key);
 		if (model != null && checkLoadedEntries().remove(model)) {
 			if (pd.isCustomPoiFilter()) {
 				app.getPoiFilters().markHistory(pd.getName(), false);
 			}
 			loadedEntries = CollectionUtils.removeFromList(loadedEntries, model);
-			map.remove(pd);
+			map.remove(key);
 		}
 	}
 
@@ -264,7 +299,7 @@ public class SearchHistoryHelper {
 		if (loadedEntries == null) {
 			loadedEntries = sortHistoryEntries(dbHelper.getEntries());
 			for (HistoryEntry he : loadedEntries) {
-				map.put(he.getName(), he);
+				map.put(new HistoryEntryKey(he), he);
 			}
 		}
 		return dbHelper;
@@ -273,8 +308,9 @@ public class SearchHistoryHelper {
 	private void addNewItemToHistory(HistoryEntry model) {
 		if (isHistoryEnabled(model.getSource())) {
 			checkLoadedEntries();
-			if (map.containsKey(model.getName())) {
-				HistoryEntry existingModel = map.get(model.getName());
+			HistoryEntryKey key = new HistoryEntryKey(model);
+			if (map.containsKey(key)) {
+				HistoryEntry existingModel = map.get(key);
 				if (existingModel != null) {
 					if (model.hasMetadata()) {
 						existingModel.copyMetadataFrom(model);
@@ -284,7 +320,7 @@ public class SearchHistoryHelper {
 				}
 			} else {
 				loadedEntries = CollectionUtils.addToList(loadedEntries, model);
-				map.put(model.getName(), model);
+				map.put(key, model);
 				model.markAsAccessed(System.currentTimeMillis());
 				dbHelper.add(model);
 			}
@@ -317,21 +353,37 @@ public class SearchHistoryHelper {
 		List<HistoryEntry> historyEntries = new ArrayList<>(loadedEntries);
 
 		PointDescription name = model.getName();
-		if (map.containsKey(name)) {
-			HistoryEntry oldModel = map.remove(name);
+		HistoryEntryKey key = new HistoryEntryKey(model);
+		if (map.containsKey(key)) {
+			HistoryEntry oldModel = map.remove(key);
 			historyEntries.remove(oldModel);
 			dbHelper.remove(model);
 		}
 		historyEntries.add(model);
 		loadedEntries = historyEntries;
 
-		map.put(name, model);
+		map.put(key, model);
 		dbHelper.add(model);
 	}
 
 	@Nullable
 	public HistoryEntry getEntryByName(@Nullable PointDescription pd) {
-		return pd != null ? map.get(pd) : null;
+		if (pd == null) {
+			return null;
+		}
+		checkLoadedEntries();
+		for (HistoryEntry entry : loadedEntries) {
+			if (Objects.equals(pd, entry.getName())) {
+				return entry;
+			}
+		}
+		return null;
+	}
+
+	@Nullable
+	public HistoryEntry getEntryByName(@Nullable PointDescription pd, @NonNull HistorySource source) {
+		checkLoadedEntries();
+		return pd != null ? map.get(new HistoryEntryKey(pd, source)) : null;
 	}
 
 	@NonNull

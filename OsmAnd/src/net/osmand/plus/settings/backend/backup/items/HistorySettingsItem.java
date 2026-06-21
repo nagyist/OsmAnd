@@ -87,8 +87,8 @@ public abstract class HistorySettingsItem extends CollectionSettingsItem<History
 			// leave the last accessed history entry between the duplicate and the original
 			for (HistoryEntry duplicate : duplicateItems) {
 				PointDescription name = duplicate.getName();
-				HistoryEntry original = searchHistoryHelper.getEntryByName(name);
-				if (original.getLastAccessTime() < duplicate.getLastAccessTime()) {
+				HistoryEntry original = searchHistoryHelper.getEntryByName(name, duplicate.getSource());
+				if (original != null && original.getLastAccessTime() < duplicate.getLastAccessTime()) {
 					appliedItems.remove(original);
 					appliedItems.add(duplicate);
 				}
@@ -231,7 +231,8 @@ public abstract class HistorySettingsItem extends CollectionSettingsItem<History
 	public boolean isDuplicate(@NonNull HistoryEntry historyEntry) {
 		PointDescription pointDescription = historyEntry.getName();
 		for (HistoryEntry entry : existingItems) {
-			if (Algorithms.objectEquals(pointDescription, entry.getName())) {
+			if (historyEntry.getSource() == entry.getSource()
+					&& Algorithms.objectEquals(pointDescription, entry.getName())) {
 				return true;
 			}
 		}
