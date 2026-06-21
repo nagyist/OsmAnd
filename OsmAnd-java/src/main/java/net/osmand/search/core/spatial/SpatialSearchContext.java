@@ -408,10 +408,8 @@ public class SpatialSearchContext {
 				}
 			}
 		}
-		if (otherTokens != null) {
-			other += otherTokens.size();
-		}
-		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, other, coords);
+		int otherFound = otherTokens == null ? 0 : otherTokens.size();
+		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, other, otherFound, coords);
 		t.addAtom(atom);
 		if (otherTokens != null) {
 			for (SpatialSearchToken token : otherTokens) {
@@ -424,7 +422,7 @@ public class SpatialSearchContext {
 				if (t != token && SearchAlgorithms.isNumber2Letters(token.word)
 						&& (otherTokens == null || !otherTokens.contains(token))) {
 					NameIndexAtom atomB = new NameIndexAtom(name, 
-							SpatialSearchToken.BUILDING_TYPE, lid, pid, obj, other, coords);
+							SpatialSearchToken.BUILDING_TYPE, lid, pid, obj, other, otherFound, coords);
 					atomB.buildingInd = t.originalOrder;
 					token.addAtom(atomB);
 				}

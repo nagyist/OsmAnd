@@ -196,11 +196,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18B";
 //		query = "Holmby Melbourne 18B";
 		
-		pattern = "World_basemap_mini";
+		pattern = "World_basemap_2";
 		pattern2 = "Ukraine";
 		query = "о. Пасхи"; // o. -> остров
 		query = "New york";
-//		query  = "Madeira";
+		query  = "Madeira"; // short_name	Madeira
+		query  = "Everest";
 		
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";

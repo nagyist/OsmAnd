@@ -54,6 +54,7 @@ public class SpatialSearchToken {
 	}
 
 	void addAtom(NameIndexAtom atom) {
+		// mostly not used as disabled
 		if (atom.object != null && !(atom.object instanceof Street) && 
 				atom.object.getId() != null &&  atom.object.getId() > 0) {
 			long osmId = ObfConstants.getOsmIdFromMapObjectId(atom.object.getId());
@@ -67,7 +68,8 @@ public class SpatialSearchToken {
 		NameIndexAtom aa = index.get(atom.id);
 		if (aa != null) {
 			if (aa != atom) {
-				// ignore duplicates object per token
+				// select shortest avaiable version
+				aa.otherWordsCnt = Math.min(aa.otherWordsCnt, atom.otherWordsCnt);
 //				System.out.println(aa.name + " != " + atom.name  + " " + aa + " " + aa.object.getLocation());
 			}
 			return;
@@ -178,22 +180,25 @@ public class SpatialSearchToken {
 	public static class NameIndexAtom {
 		String name;
 
-		int type; //
-		long id; // used to read object
-		long parentid; // used to read object
+		final int type; //
+		final long id; // used to read object
+		final long parentid; // used to read object
 		MapObject object;
-		int otherWordsCnt = 0;
-		NameIndexAtomXY coords;
+		int otherWordsCnt;
+		final int otherFoundCnt;
+		final NameIndexAtomXY coords;
 		int buildingInd = -1;
 
-		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, int otherWordsCnt,
-				NameIndexAtomXY coords) {
+
+		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, 
+				int otherWordsCnt, int otherFooundCnt, NameIndexAtomXY coords) {
 			this.name = name;
 			this.id = id;
 			this.parentid = pid;
 			this.object = obj;
 			this.type = type;
 			this.otherWordsCnt = otherWordsCnt;
+			this.otherFoundCnt = otherFooundCnt;
 			this.coords = coords;
 		}
 

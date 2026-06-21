@@ -230,7 +230,7 @@ public class SpatialTextSearch {
 				ctx.stats.atoms -= System.nanoTime();
 				goalRes.loadObjectsAndCalcBuildings(ctx);
 				ctx.stats.atoms += System.nanoTime();
-				List<SpatialSearchResult> res = goalRes.sortResults(ctx, true);
+				List<SpatialSearchResult> res = goalRes.sortResults(ctx, SpatialTextSearchSettings.DEDUPLICATE_RES);
 				uniqueObjects += res.size();
 				fullResult.add(goalRes);
 				if (SpatialTextSearchSettings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0

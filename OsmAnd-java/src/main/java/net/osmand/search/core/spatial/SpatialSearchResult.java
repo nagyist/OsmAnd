@@ -169,7 +169,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	public int sumOther() {
 		int s1 = 0;
 		for (SpatialSearchResultRef r : objs) {
-			s1 += r.atom.otherWordsCnt;
+			s1 += r.atom.otherWordsCnt + r.atom.otherFoundCnt;
 		}
 		return s1;
 	}
@@ -183,7 +183,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 	
 	public int getRating() {
-		int rating = 0;
+		int rating = 1400; // MIN Rating to make higher
 		for (SpatialSearchResultRef r : objs) {
 			if (r.atom.object instanceof Amenity a) {
 				rating = Math.max(rating, a.getTravelEloNumber());
