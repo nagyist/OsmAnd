@@ -135,6 +135,7 @@ public class SpatialSearchTestAndDocs {
 //		SpatialTextSearchSettings.SEARCH_BUILDINGS = false;
 		File folder = new File("/Users/victorshcherb/osmand/maps/");
 		String pattern = "Germany_b";
+		String pattern2 = ".....";
 		String query = "Berlin hauptstrasse"; // slow
 		query = "Kelterstraße Kernen im Remstal";
 		query = "Germany Kelter. Kernen im Remstal";
@@ -195,9 +196,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18B";
 //		query = "Holmby Melbourne 18B";
 		
-		pattern = "World_";
+		pattern = "World_basemap_mini";
+		pattern2 = "Ukraine";
 		query = "о. Пасхи"; // o. -> остров
-//		query = "New york";
+		query = "New york";
 //		query  = "Madeira";
 		
 //		pattern = "Spain_aragon_europe_";
@@ -214,7 +216,7 @@ public class SpatialSearchTestAndDocs {
 
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
 		for (File f : folder.listFiles()) {
-			if (f.getName().startsWith(pattern) || f.getName().equals(OsmandRegions.REGIONS_OCBF)) {
+			if (f.getName().startsWith(pattern) || f.getName().startsWith(pattern2) || f.getName().equals(OsmandRegions.REGIONS_OCBF)) {
 				SpatialTextSearch.initFile(ls, f);
 			}
 		}
