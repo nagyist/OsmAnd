@@ -6,7 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.osmand.binary.BinaryMapIndexReader;
+import net.osmand.data.City;
+import net.osmand.data.MapObject;
 import net.osmand.map.OsmandRegions;
+import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchResults;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.SearchAlgorithms;
 
@@ -24,16 +27,15 @@ import net.osmand.util.SearchAlgorithms;
 // 7. TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
 // 8. REVIEW - Find largest indexed tokens intersection: suspect 'Calle'x'Calle'.
 
-// TODO Web add regions.ocbf to search
 
 //////////// TESTING //////////
 // Building find best approximation for - interpolation / partial match
 // Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
 // Building entrances refs ', 3' ("18/32, 2")
+// World basemap ! Push up POI
 
 // IN PROGRESS 
-
-// TODO World basemap ! Push up POI
+// - Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
 // TODO Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
 // TODO to search buildings most complete street is needed - check id ? (largest city sort?))
 // FIXME Building inside City <Salt lake city> (filter City)
@@ -62,17 +64,17 @@ import net.osmand.util.SearchAlgorithms;
 // ISSUES
 // FIXME Read common = true -> ('centre', 'school') to find 'common word' in 'City' or suggest POI category
 // FIXME Read common = true ->  Calle 20 188 Lima San Isidro (VERY SLOW)
+// TODO test: merge boundaries bbox - extend incomplete boundary same id...
 // TODO Progress / cancel
 // TODO Geocoding tokenizing (?) - Strip dashes before split to match "NC 42" == "NC-42"
-// TODO Web - search maps by key word like "Arizona"
-// TODO test: merge boundaries bbox - extend incomplete boundary same id...
 
-// TEST
+// TEST IDEAS
 // TODO Not forget to include regions.ocbf on client 
 // TODO! Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
 // TODO ? review settings: read objects after some intersections (but not too early)
 //      - Results 5 tokens 1,949 (139 unique) - compact objects during combinations?
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
+// TODO ? Store wikidata id for boundaries (regions.ocbf) & display them ? 
 
 public class SpatialSearchTestAndDocs {
 
@@ -183,7 +185,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "2 Нова вулиця"; // unit test
 //		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
 //		query = "саксаг. 63/28, 2";
-		query = "саксаг. 63/28 подъезд 2";
+//		query = "саксаг. 63/28 подъезд 2";
 //		query = "Яр. вал 29-г";
 //		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
@@ -198,10 +200,10 @@ public class SpatialSearchTestAndDocs {
 		
 		pattern = "World_basemap_2";
 		pattern2 = "Ukraine";
-		query = "о. Пасхи"; // o. -> остров
-		query = "New york";
-		query  = "Madeira"; // short_name	Madeira
-		query  = "Everest";
+//		query = "о. Пасхи"; // o. -> остров
+//		query = "New york";
+//		query  = "Madeira"; // short_name	Madeira
+//		query  = "Everest";
 		
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";
@@ -217,16 +219,33 @@ public class SpatialSearchTestAndDocs {
 
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
 		for (File f : folder.listFiles()) {
-			if (f.getName().startsWith(pattern) || f.getName().startsWith(pattern2) || f.getName().equals(OsmandRegions.REGIONS_OCBF)) {
+			if (f.getName().startsWith(pattern) || f.getName().startsWith(pattern2)) {
+				SpatialTextSearch.initFile(ls, f);
+			} else if(f.getName().equals(OsmandRegions.REGIONS_OCBF)){
 				SpatialTextSearch.initFile(ls, f);
 			}
 		}
 		SpatialTextSearch a = new SpatialTextSearch();
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls , null);
-		a.searchTest(query, searchContext);
-
+		SpatialSearchContext searchContext = new SpatialSearchContext(ls, null);
+		SpatialSearchResults rs = a.searchTest(query, searchContext);
+		SpatialSearchResult mainResult = rs.getFirstResult();
+		if (mainResult == null || (mainResult.matchedTokens() < rs.tokens.size() - 2)) {
+			// another way to check to check to get mainResult - boundary object
+			City bbox = null;
+			for(MapObject o : mainResult.getObjects()) {
+				if(o instanceof City c && c.getBbox31() != null) {
+					// check that city is not inside maps searched
+					bbox = c;
+					break;
+				}
+			}
+			if (bbox != null) {
+				System.out.println("Search other region - " + bbox);
+			}
+		}
+		
 		searchContext = new SpatialSearchContext(ls, null);
 		SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS = true;
 		a.searchTest(query, searchContext);

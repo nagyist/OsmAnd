@@ -126,6 +126,11 @@ public class SpatialTextSearch {
 		public List<SpatialSearchResult> mainResults;
 
 		public List<SpatialSearchResultsList> combinations;
+		
+		public SpatialSearchResult getFirstResult() {
+			return mainResults == null || mainResults.size() == 0 ? null : 
+				mainResults.get(0);
+		}
 	}
 
 	SpatialSearchGlobalCache cache = new SpatialSearchGlobalCache(); // reusable between sessions
@@ -346,7 +351,7 @@ public class SpatialTextSearch {
 		return tokens;
 	}
 
-	public void searchTest(String input, SpatialSearchContext ctx) throws IOException {
+	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = searchAPI(input, ctx);
 		ctx.stats.finish();
 		if (res.mainResults != null && res.mainResults.size() > 0) {
@@ -384,6 +389,7 @@ public class SpatialTextSearch {
 
 		System.out.println(ctx.stats);
 		System.out.println();
+		return res;
 	}
 
 	static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {

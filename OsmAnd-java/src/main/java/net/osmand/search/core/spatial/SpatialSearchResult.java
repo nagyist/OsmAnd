@@ -165,6 +165,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	public int matchedTokens() {
 		return parent.tCount;
 	}
+	
+	public SpatialSearchResultsList getParent() {
+		return parent;
+	}
 
 	public int sumOther() {
 		int s1 = 0;
