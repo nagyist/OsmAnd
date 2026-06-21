@@ -6247,4 +6247,22 @@
     <string name="get_unlimited_downloads">Få ubegrænset antal downloads</string>
     <string name="show_discount_bottom_sheet">Vis rabat nederst på ark</string>
     <string name="show_discount_bottom_sheet_description">Vis rabat på bund af ark med et tilpasset udviklingssvar.</string>
+    <string name="data_storage">Datalagring</string>
+    <string name="main_storage">Hovedlager</string>
+    <string name="media_storage">Medielager</string>
+    <string name="camera_folder">Kameramappe</string>
+    <string name="media_storage_main_storage_descr">Filer gemmes i appens private lager. De er skjult for GallerI og andre apps.</string>
+    <string name="media_storage_shared_storage_descr">Filer gemmes i de offentlige mapper (Billeder, Film, Musik). De kan ses i Galleri og Google Fotos.</string>
+    <string name="media_storage_camera_folder_descr">Filer gemmes i Kamerarullen. Bemærk: Lydfiler gemmes i Musik/OsmAnd.</string>
+    <string name="media_storage_manually_specified_descr">Filerne gemmes i en brugerdefineret mappe og sorteres efter type (lyd, foto, video).</string>
+    <string name="change_media_storage_question">Skift medielager?</string>
+    <string name="change_media_storage_full_description">Skal eksisterende mediefiler flyttes til den nye destination?\n%1$s &gt; %2$s</string>
+    <string name="media_storage_directory_not_writable">Mediefilerne kunne ikke gemmes i den angivne mappe</string>
+    <string name="route_calculation_method">Metode til ruteberegning</string>
+    <string name="route_calculation_method_auto">Auto (hurtigst mulige)</string>
+    <string name="route_calculation_method_auto_desc">Forsøger at anvende hurtig ruteberegning. Skifter automatisk til standardberegning, hvis kortdataene ikke stemmer overens.</string>
+    <string name="route_calculation_method_standard_only">Kun standard</string>
+    <string name="route_calculation_method_standard_only_desc">Bruger altid standardruteberegning. Det er langsommere, men gør det muligt at navigere med kort fra forskellige datoer.</string>
+    <string name="route_calculation_method_fast_only">Kun hurtig</string>
+    <string name="route_calculation_method_fast_only_desc">Bruger altid hurtig ruteberegning. Beregningen stopper og beder om opdateringer, hvis kortdataene ikke stemmer overens.</string>
 </resources>
