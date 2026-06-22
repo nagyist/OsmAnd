@@ -5987,4 +5987,27 @@
     <string name="osm_carto_render_descr">Παρόμοιο με το στυλ OpenStreetMap-carto που χρησιμοποιείται στον κύριο ιστότοπο του OSM</string>
     <string name="exit_pan_mode_descr">Πατήστε Επιλογή για να βγείτε από τη λειτουργία κύλισης</string>
     <string name="upload_gpx_description_hint">Αφήστε το κενό, οι ονομασίες των ιχνών θα χρησιμοποιηθούν ως περιγραφή. Η εισαγόμενη περιγραφή θα εφαρμοστεί για κάθε ίχνος.</string>
+    <string name="data_storage">Αποθηκευτικός χώρος δεδομένων</string>
+    <string name="main_storage">Κύριος αποθηκευτικός χώρος</string>
+    <string name="media_storage">Αποθηκευτικός χώρος πολυμέσων</string>
+    <string name="camera_folder">Φάκελος κάμερας</string>
+    <string name="change_media_storage_question">Αλλαγή αποθηκευτικού χώρου πολυμέσων;</string>
+    <string name="gallery_open_in">Άνοιγμα σε</string>
+    <string name="gallery_media_playback_error">Δεν ήταν δυνατή η αναπαραγωγή του πολυμέσου.</string>
+    <string name="gallery_stats_size">Μέγεθος %1$s.</string>
+    <string name="gallery_sort_nearest">Κοντινότερα</string>
+    <string name="gallery_sort_last_modified">Τελευταία τροποποίηση</string>
+    <string name="gallery_sort_name_a_z">Όνομα Α - Ω</string>
+    <string name="gallery_sort_name_z_a">Όνομα Ω - Α</string>
+    <string name="gallery_sort_newest_first">Νεότερη ημερομηνία πρώτα</string>
+    <string name="gallery_sort_oldest_first">Παλαιότερη ημερομηνία πρώτα</string>
+    <string name="gallery_sort_duration_long_short">Μεγαλύτερη διάρκεια πρώτα</string>
+    <string name="gallery_sort_duration_short_long">Μικρότερη διάρκεια πρώτα</string>
+    <string name="gallery_stats_counts">Φωτογραφείες %1$d, βίντεο %2$d, ήχοι %3$d.</string>
+    <string name="route_calculation_method">Μέθοδος υπολογισμού διαδρομής</string>
+    <string name="route_calculation_method_auto">Αυτόματη (Γρηγορότερη διαθέσιμη)</string>
+    <string name="route_calculation_method_standard_only">Τυπική μόνο</string>
+    <string name="route_calculation_method_fast_only">Γρήγορη μόνο</string>
+    <string name="gallery_seek_back_seconds">−%1$d δ</string>
+    <string name="gallery_seek_forward_seconds">+%1$d δ</string>
 </resources>
