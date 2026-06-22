@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -61,13 +62,13 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	private void loadObjects(SpatialSearchContext ctx, int type, TLongObjectHashMap<MapObject> cache) throws IOException {
 		TLongObjectHashMap<Long> lstMap = new TLongObjectHashMap<>();
 		
-		Map<Integer, TLongHashSet> poiBboxes = new HashMap<Integer, TLongHashSet>();
+		Map<Integer, TLongHashSet> poiBboxes = new LinkedHashMap<Integer, TLongHashSet>();
 		for (NameIndexAtom a : linearResults) {
 			if (a.object != null) {
 				cache.put(a.id, a.object);
 				continue;
 			}
-			if (type == SpatialSearchToken.POI_TYPE) {
+			if (a.type == SpatialSearchToken.POI_TYPE) {
 				int indInd = ctx.getFileInd(a.id);
 				if(!poiBboxes.containsKey(indInd)) {
 					poiBboxes.put(indInd, new TLongHashSet());

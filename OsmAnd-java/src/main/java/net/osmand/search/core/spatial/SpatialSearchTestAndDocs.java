@@ -29,7 +29,6 @@ import net.osmand.util.SearchAlgorithms;
 
 
 //////////// TESTING //////////
-// - Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
 // Building find best approximation for - interpolation / partial match
 // Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
 // Building entrances refs ', 3' ("18/32, 2")
@@ -39,23 +38,24 @@ import net.osmand.util.SearchAlgorithms;
 // read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
 
 // IN PROGRESS 
+// TODO Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
 // FIXME Building inside City <Salt lake city> - <CITY> no intersect with any other street
 // FIXME Street intersection match
+// FIXME Abbreviations Phase
 
 // TO DO
 // FIXME POI Categories + top poi categories
 // FIXME Building interpolation - name / location
-// FIXME Abbreviations Phase
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 //       Combine regions.ocbf (boundary)
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
-// TODO add flats: https://www.openstreetmap.org/node/5843642738
 
 // EXTRA FEATURES
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
 // TODO Search near key objects (subway station artificial bbox)
+// TODO Add flats: https://www.openstreetmap.org/node/5843642738
 // TODO Sugggestion-correction
 
 // ISSUES
@@ -173,7 +173,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-		pattern = "Ukraine_kyiv-ci";
+//		pattern = "Ukraine_kyiv-ci";
 //		pattern = "Map";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
@@ -189,7 +189,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа А+";
-		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
+//		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
 		
