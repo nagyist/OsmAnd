@@ -10,6 +10,7 @@
 	- For wording and consistency, please note https://docs.osmand.net/docs/technical/contributions/translating-osmand
 	Thx - Hardy
 -->
+	<string name="attached_media">Attached media</string>
 	<string name="data_storage">Data storage</string>
 	<string name="main_storage">Main storage</string>
 	<string name="media_storage">Media storage</string>
