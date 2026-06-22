@@ -121,10 +121,6 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	private void calcBuilding(int indx, Map<String, Building> bldCheckCache) {
-//		if (true) {
-//			altCalcBuilding(indx, bldCheckCache);
-//			return;
-//		}
 		Map<NameIndexAtom, String> bldCheckMap = null;
 		for (int i = 0; i < tCount; i++) {
 			NameIndexAtom bld = linearResults.get(indx * tCount + i);
@@ -436,6 +432,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					}
 					if (!objects.contains(id)) {
 						objects.add(id);
+					}
+					//    Don't intersect <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street')
+					if ((a.isCityStreetName() && pa.id != a.id) || (pa.isCityStreetName() && a.id != pa.id)) {
+						return false;
 					}
 				}
 				if (objects.size() > SpatialTextSearchSettings.LIMIT_ATOMIC_OBJECTS) {

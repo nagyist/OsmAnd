@@ -186,25 +186,29 @@ public class SpatialSearchToken {
 		final long parentid; // used to read object
 		MapObject object;
 		int otherWordsCnt;
+		final boolean cityAsStreet;
 		final int otherFoundCnt;
 		final NameIndexAtomXY coords;
 		int buildingInd = -1;
 
 
+
 		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, 
-				int otherWordsCnt, int otherFooundCnt, NameIndexAtomXY coords) {
+				boolean cityAsStreet, int otherWordsCnt, int otherFooundCnt, NameIndexAtomXY coords) {
 			this.name = name;
 			this.id = id;
 			this.parentid = pid;
 			this.object = obj;
 			this.type = type;
+			this.cityAsStreet = cityAsStreet;
 			this.otherWordsCnt = otherWordsCnt;
 			this.otherFoundCnt = otherFooundCnt;
 			this.coords = coords;
 		}
 		
+		
 		public boolean isCityStreetName() {
-			return name.contains(NameIndexReader.CITY_AS_STREET_COMMON);
+			return cityAsStreet;
 		}
 
 		public boolean atomicObject() {

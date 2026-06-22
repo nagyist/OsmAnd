@@ -408,12 +408,18 @@ public class SpatialSearchContext {
 	private void addObject(SpatialSearchToken t, String name, int type, long lid, long pid, MapObject obj, int other,
 			NameIndexAtomXY coords, List<SpatialSearchToken> allTokens) {
 		List<SpatialSearchToken> otherTokens = null;
+		boolean streetCity = false;
 		if (name.indexOf(' ') != -1) {
 			List<String> split = SearchAlgorithms.splitAndNormalize(name, false);
 			for (int k = 1; k < split.size(); k++) {
+				String otherName = split.get(k);
+				if (otherName.equalsIgnoreCase(NameIndexReader.CITY_AS_STREET_COMMON)) {
+					streetCity = true;
+					continue;
+				}
 				boolean matched = false;
 				for (SpatialSearchToken token : allTokens) {
-					if (t != token && acceptName(token, name)
+					if (t != token && acceptName(token, otherName)
 							&& (otherTokens == null || !otherTokens.contains(token))) {
 						if (otherTokens == null) {
 							otherTokens = new ArrayList<>();
@@ -429,7 +435,7 @@ public class SpatialSearchContext {
 			}
 		}
 		int otherFound = otherTokens == null ? 0 : otherTokens.size();
-		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, other, otherFound, coords);
+		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, streetCity, other, otherFound, coords);
 		t.addAtom(atom);
 		if (otherTokens != null) {
 			for (SpatialSearchToken token : otherTokens) {
@@ -441,8 +447,8 @@ public class SpatialSearchContext {
 			for (SpatialSearchToken token : allTokens) {
 				if (t != token && SearchAlgorithms.isNumber2Letters(token.word)
 						&& (otherTokens == null || !otherTokens.contains(token))) {
-					NameIndexAtom atomB = new NameIndexAtom(name, 
-							SpatialSearchToken.BUILDING_TYPE, lid, pid, obj, other, otherFound, coords);
+					NameIndexAtom atomB = new NameIndexAtom(name, SpatialSearchToken.BUILDING_TYPE, lid, pid, obj,
+							streetCity, other, otherFound, coords);
 					atomB.buildingInd = t.originalOrder;
 					token.addAtom(atomB);
 				}
