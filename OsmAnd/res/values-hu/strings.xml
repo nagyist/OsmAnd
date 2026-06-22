@@ -6117,7 +6117,7 @@
     <string name="media_storage_manually_specified_descr">A fájlok egy egyéni mappába lesznek mentve, és típus szerint rendezve (hang, fotó, videó).</string>
     <string name="change_media_storage_question">Módosítja a médiatárolót?</string>
     <string name="change_media_storage_full_description">Áthelyezi a meglévő médiafájlokat az új célhelyre?\n%1$s &gt; %2$s</string>
-    <string name="media_storage_directory_not_writable">A médiafájlokat nem sikerült menteni a megadott könyvtárba</string>
+    <string name="media_storage_directory_not_writable">Nem sikerült menteni a médiafájlokat a megadott könyvtárba</string>
     <string name="route_calculation_method">Útvonaltervezési módszer</string>
     <string name="route_calculation_method_auto">Automatikus (leggyorsabb elérhető)</string>
     <string name="route_calculation_method_auto_desc">Kísérlet a gyors útvonaltervezés használatára. Automatikus átváltás normál tervezésre, ha a térképek dátumai nem egyeznek.</string>
