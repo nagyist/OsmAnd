@@ -49,6 +49,7 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TIntHashSet;
+import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.Collator;
 import net.osmand.CollatorStringMatcher;
 import net.osmand.CollatorStringMatcher.StringMatcherMode;
@@ -767,6 +768,21 @@ public class BinaryMapIndexReader {
 	}
 	
 	
+	public boolean readAmenityBboxes(PoiRegion pr, TLongHashSet tileIds) throws IOException {
+		poiAdapter.initCategories(pr);
+		tileIds = pr.checkMissingTagGroups(tileIds);
+		if(tileIds.size() == 0) {
+			return false;
+		}
+		SearchRequest<Amenity> sr = new SearchRequest<Amenity>();
+		codedIS.seek(pr.filePointer);
+		long oldLim = codedIS.pushLimitLong((long) pr.length);
+		poiAdapter.readPoiBboxes(pr, sr, tileIds);
+		pr.updReadTagGroups(tileIds);
+		codedIS.popLimit(oldLim);
+		
+		return true;
+	}
 	public List<Amenity> readAmenityBlock(PoiRegion pr, long offset, int index) throws IOException {
 		poiAdapter.initCategories(pr);
 		codedIS.seek(pr.filePointer + offset);
@@ -2432,18 +2448,18 @@ public class BinaryMapIndexReader {
 
 	private static boolean testMapSearch = false;
 	private static boolean testAddressSearch = false;
-	private static boolean testAddressSearchName = true;
+	private static boolean testAddressSearchName = false;
 	private static boolean testAddressJustifySearch = false;
 	private static boolean testPoiSearch = true;
 	private static boolean testPoiSearchOnPath = false;
 	private static boolean testTransportSearch = false;
-	private static boolean testPoiRouteByName = true;
-	private static boolean testPoiRouteByType = true;
+	private static boolean testPoiRouteByName = false;
+	private static boolean testPoiRouteByType = false;
 
-	private static int sleft = MapUtils.get31TileNumberX(27.55079);
-	private static int sright = MapUtils.get31TileNumberX(27.55317);
-	private static int stop = MapUtils.get31TileNumberY(53.89378);
-	private static int sbottom = MapUtils.get31TileNumberY(53.89276);
+	private static int sleft = MapUtils.get31TileNumberX(30.462835);
+	private static int sright = MapUtils.get31TileNumberX(30.476954);
+	private static int stop = MapUtils.get31TileNumberY(50.443443);
+	private static int sbottom = MapUtils.get31TileNumberY(50.437840);
 	private static int szoom = 15;
 
 	private static void println(String s) {
@@ -2452,7 +2468,7 @@ public class BinaryMapIndexReader {
 
 	public static void main(String[] args) throws IOException {
 		File fl = new File(System.getProperty("maps") + "/Synthetic_test_rendering.obf");
-		fl = new File(System.getProperty("maps") +"/Ukraine_kyiv_europe_2.obf");
+		fl = new File(System.getProperty("maps") +"/Us_pennsylvania_northamerica_2.obf");
 		
 		RandomAccessFile raf = new RandomAccessFile(fl, "r");
 		SearchStat stat = new SearchStat();
@@ -2481,6 +2497,7 @@ public class BinaryMapIndexReader {
 			if (testPoiSearch) {
 				testPoiSearch(reader, poiRegion, stat);
 				testPoiSearchByName(reader, "shell", 0, 0, stat);
+//				testPoiSearchByName(reader, "shell", 0, 0, stat);
 			}
 			if (testPoiSearchOnPath) {
 				testSearchOnthePath(reader, stat);
@@ -2642,17 +2659,17 @@ public class BinaryMapIndexReader {
 		println("Searching by name...");
 		SearchRequest<Amenity> req = buildSearchPoiRequest(x, y, query,
 				0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE, null);
-		
+
 		reader.searchPoiByName(req);
 		for (Amenity a : req.getSearchResults()) {
 			int distance = 0;
 			if (x > 0 && y > 0) {
-				distance = (int)MapUtils.getDistance(a.getLocation(),
-						MapUtils.get31LatitudeY(y), MapUtils.get31LongitudeX(x));
+				distance = (int) MapUtils.getDistance(a.getLocation(), MapUtils.get31LatitudeY(y),
+						MapUtils.get31LongitudeX(x));
 			}
 			println(a.getType().getTranslation() +
 					" " + a.getSubType() + " " + a.getName() + " " + a.getLocation() +
-					(distance > 0 ? (" Dist " + distance + " m") : ""));
+					(distance > 0 ? (" Dist " + distance + " m") : "") + " " + a.getCityFromTagGroups(""));
 		}
 		req.setSearchStat(stat);
 	}
@@ -2670,7 +2687,7 @@ public class BinaryMapIndexReader {
 		req.setSearchStat(stat);
 		List<Amenity> results = reader.searchPoi(req);
 		for (Amenity a : results) {
-			println(a.getType() + " " + a.getSubType() + " " + a.getName() + " " + a.getLocation());
+			println(a.getType() + " " + a.getSubType() + " " + a.getName() + " " + a.getLocation() + " " + a.getCityFromTagGroups(""));
 		}
 	}
 

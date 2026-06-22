@@ -16,6 +16,7 @@ import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
+import net.osmand.binary.BinaryMapPoiReaderAdapter;
 import net.osmand.data.Building;
 import net.osmand.data.MapObject;
 import net.osmand.data.Street;
@@ -59,10 +60,20 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	
 	private void loadObjects(SpatialSearchContext ctx, int type, TLongObjectHashMap<MapObject> cache) throws IOException {
 		TLongObjectHashMap<Long> lstMap = new TLongObjectHashMap<>();
+		
+		Map<Integer, TLongHashSet> poiBboxes = new HashMap<Integer, TLongHashSet>();
 		for (NameIndexAtom a : linearResults) {
 			if (a.object != null) {
 				cache.put(a.id, a.object);
 				continue;
+			}
+			if (type == SpatialSearchToken.POI_TYPE) {
+				int indInd = ctx.getFileInd(a.id);
+				if(!poiBboxes.containsKey(indInd)) {
+					poiBboxes.put(indInd, new TLongHashSet());
+				}
+				poiBboxes.get(indInd).add(HashQuadTree.encodeTileId31(BinaryMapPoiReaderAdapter.EVAL_TAG_GROUP_ZOOM,
+						a.coords.x16 << 15, a.coords.x16 << 15));
 			}
 			if (a.type == type || (type == -2 && a.type != SpatialSearchToken.POI_TYPE
 					&& a.type != SpatialSearchToken.STREET_TYPE)) {
@@ -70,6 +81,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			} else if(type == -2 && a.type == SpatialSearchToken.STREET_TYPE) {
 				lstMap.put(a.parentid, (long) 0);
 			}
+		}
+		for (Map.Entry<Integer, TLongHashSet> poiBoxEntry : poiBboxes.entrySet()) {
+			ctx.readPOIBboxes(poiBoxEntry.getKey(), poiBoxEntry.getValue());
 		}
 		TLongArrayList lst = new TLongArrayList(lstMap.keySet());
 		lst.sort(); // sort is not correct for file ind last bits >>> 12 

@@ -29,48 +29,47 @@ import net.osmand.util.SearchAlgorithms;
 
 
 //////////// TESTING //////////
+// - Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
 // Building find best approximation for - interpolation / partial match
 // Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
 // Building entrances refs ', 3' ("18/32, 2")
 // World basemap ! Push up POI
+// Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ] 
+// Solution: assign min building osm id as a street id 
+// read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
 
 // IN PROGRESS 
-// - Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
-// TODO Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
-// TODO to search buildings most complete street is needed - check id ? (largest city sort?))
-// FIXME Building inside City <Salt lake city> (filter City)
-//      <CITY> no intersect with any other street
-
-// BUILDINGS
-// FIXME Precise name / location for interpolation (WEB)
+// FIXME Building inside City <Salt lake city> - <CITY> no intersect with any other street
 // FIXME Street intersection match
 
-// POI 
-// FIXME read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
+// TO DO
+// FIXME POI Categories + top poi categories
+// FIXME Building interpolation - name / location
+// FIXME Abbreviations Phase
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 //       Combine regions.ocbf (boundary)
-// FIXME Read all top poi categories for files
-// FIXME POI Categories implement categories
-
-// FEATURES
-// TODO Include high rating objects in world basemap (Eiffel Tour)
-// FIXME Abbreviations Phase
-// TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
-// TODO Postcode needs to load street and check buildings! like '1186RZ 324' (NL, UK) - special search
+// TODO test: merge boundaries bbox - extend incomplete boundary same id...
+// TODO add flats: https://www.openstreetmap.org/node/5843642738
+
+// EXTRA FEATURES
+// TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
+// TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
 // TODO Search near key objects (subway station artificial bbox)
 // TODO Sugggestion-correction
 
 // ISSUES
-// FIXME Read common = true -> ('centre', 'school') to find 'common word' in 'City' or suggest POI category
-// FIXME Read common = true ->  Calle 20 188 Lima San Isidro (VERY SLOW)
-// TODO test: merge boundaries bbox - extend incomplete boundary same id...
+// FIXME 'New york s.' - 1 letter very slow
+// TODO Test/Review Match '2nd' and '2'
+// TODO DISABLED Read common = true -> ('centre', 'school') to find 'common word' in 'City' or suggest POI category -
+// TODO DISABLED Read common = true ->  Calle 20 188 Lima San Isidro (VERY SLOW) - 'New york The plaza'
+// TODO! Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
 // TODO Progress / cancel
-// TODO Geocoding tokenizing (?) - Strip dashes before split to match "NC 42" == "NC-42"
 
 // TEST IDEAS
 // TODO Not forget to include regions.ocbf on client 
-// TODO! Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
+// TODO Include high rating objects in world basemap (Eiffel Tour)
+// TODO Geocoding ("NC 42" == "NC-42") - Use new search ?
 // TODO ? review settings: read objects after some intersections (but not too early)
 //      - Results 5 tokens 1,949 (139 unique) - compact objects during combinations?
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
@@ -174,7 +173,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-		pattern = "Ukraine_";
+		pattern = "Ukraine_kyiv-ci";
 //		pattern = "Map";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
@@ -190,7 +189,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа А+";
-//		query = "школа 25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
+		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
 		
@@ -198,14 +197,15 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18B";
 //		query = "Holmby Melbourne 18B";
 		
-		pattern = "World_basemap_2";
-		pattern2 = "Ukraine";
+//		pattern = "World_basemap_2";
+//		pattern2 = "Ukraine";
 //		query = "о. Пасхи"; // o. -> остров
 //		query = "New york";
 //		query  = "Madeira"; // short_name	Madeira
 //		query  = "Everest";
-		
-//		pattern = "Spain_aragon_europe_";
+//		query  = "Rio de Janeiro";
+
+		//		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";
 //		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
 		

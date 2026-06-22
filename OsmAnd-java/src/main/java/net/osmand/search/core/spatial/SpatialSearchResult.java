@@ -145,7 +145,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				String rat = "";
 				if (atom.object instanceof Amenity a) {
 					if (a.getTravelEloNumber() > 0) {
-						rat += " elo " + a.getTravelEloNumber();
+						rat += " elo " + a.getTravelEloNumber() + " " + a.getCityFromTagGroups("");
 					}
 				}
 				return String.format("%s %s (%s) %.4f %.4f ", words, 

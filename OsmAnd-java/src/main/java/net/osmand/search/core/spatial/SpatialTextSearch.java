@@ -59,6 +59,8 @@ public class SpatialTextSearch {
 
 		// READ OBJECTS before intersection to reduce number of duplicates from
 		// different maps by osm id - needs to be tested performance mostly slows down
+		// ! Potential issue READ_ADDR_OBJECTS could deduplicate streets and 
+		//  building won't be found in case same street in cities
 		public static boolean READ_ADDR_OBJECTS = false;
 		public static boolean READ_POI_OBJECTS = false;
 
@@ -66,7 +68,8 @@ public class SpatialTextSearch {
 		public static int LIMIT_ATOMIC_OBJECTS = 2;
 
 		// Performance improvement assuming for rare words we don't read common atoms (school on street)
-		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = false;
+		// Problem search: New york plaza, New York 45 Avenue
+		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
 		public static boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
 
 		// Limit evaluation intersection for unique objects

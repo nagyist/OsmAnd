@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import gnu.trove.map.hash.TLongObjectHashMap;
+import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.NameIndexReader;
@@ -233,6 +234,25 @@ public class SpatialSearchContext {
 				parseSuffixes(t, suffixes, commonSuffixes, null, a, lid, 0, amenity, allTokens);
 			}
 		}
+	}
+	
+	
+	public void readPOIBboxes(int indInd, TLongHashSet tiles) throws IOException {
+		NameIndexReader nameIndex = null;
+		SpatialSearchFileCache c = null;
+		for (int k = 0; k < internalFile.size(); k++) {
+			c = internalFile.get(k);
+			if (indInd < c.indexInd + c.indexReaders.size()) {
+				nameIndex = c.indexReaders.get(indInd - c.indexInd);
+				break;
+			}
+		}
+		files.get(c.fileInd).readAmenityBboxes(nameIndex.poiRegion, tiles);
+	}
+	
+	public int getFileInd(long id) {
+		int indInd = (int) (id & ((1l << SHIFT_FILE_IND) - 1));
+		return indInd;
 	}
 
 	public MapObject readPoiObject(long id, TLongObjectHashMap<MapObject> cache) throws IOException {
