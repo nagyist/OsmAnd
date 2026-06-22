@@ -101,7 +101,8 @@ public class DiscountHelper {
 	public static void checkAndDisplay(MapActivity mapActivity) {
 		OsmandApplication app = mapActivity.getApp();
 		OsmandSettings settings = app.getSettings();
-		if (!settings.INAPPS_READ.get()) {
+		boolean forceShowDiscountBottomSheet = settings.SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET.get();
+		if (!settings.INAPPS_READ.get() && !(Version.isDeveloperVersion(app) && forceShowDiscountBottomSheet)) {
 			return;
 		}
 		if (mBannerVisible) {
