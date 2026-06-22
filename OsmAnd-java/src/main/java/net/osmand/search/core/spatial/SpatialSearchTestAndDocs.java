@@ -173,8 +173,9 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-//		pattern = "Ukraine_kyiv-ci";
+		pattern = "Ukraine_kyiv-city_europe.obf";
 //		pattern = "Map";
+		query = "Kyiv Глушкова 1";
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
 //		query = "Ukraine kyiv saks.";

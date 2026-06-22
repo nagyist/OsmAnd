@@ -9,6 +9,7 @@ import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.CollatorStringMatcher;
 import net.osmand.CollatorStringMatcher.StringMatcherMode;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
+import net.osmand.binary.NameIndexReader;
 import net.osmand.binary.ObfConstants;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
@@ -200,6 +201,10 @@ public class SpatialSearchToken {
 			this.otherWordsCnt = otherWordsCnt;
 			this.otherFoundCnt = otherFooundCnt;
 			this.coords = coords;
+		}
+		
+		public boolean isCityStreetName() {
+			return name.contains(NameIndexReader.CITY_AS_STREET_COMMON);
 		}
 
 		public boolean atomicObject() {

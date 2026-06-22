@@ -30,6 +30,8 @@ import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexReader {
 
+	public static final String CITY_AS_STREET_COMMON = "CITYASSTREETCOMMON";
+	
 	// read params
 	public final PoiRegion poiRegion;
 	public final AddressRegion addressRegion;
