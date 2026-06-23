@@ -301,6 +301,10 @@ public class MediaStorageHelper {
 		Uri collectionUri = MediaStorageUtils.getMediaStoreCollectionUri(dirType);
 		String relativePath = MediaStorageUtils.getMediaStoreRelativePath(storageType, dirType);
 		String type = MediaStorageUtils.getMimeType(mimeType, fileName, dirType);
+
+		if (dirType == MediaDirType.AUDIO && "audio/3gpp".equals(type) && fileName.endsWith(".3gp")) {
+			fileName = Algorithms.getFileNameWithoutExtension(fileName) + ".3ga";
+		}
 		return new MediaStoreMediaTarget(this, collectionUri, relativePath, fileName, type);
 	}
 

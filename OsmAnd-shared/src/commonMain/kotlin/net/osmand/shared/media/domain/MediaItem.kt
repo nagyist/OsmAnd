@@ -38,7 +38,7 @@ enum class MediaType {
 			return when (normalizeExtension(extension)) {
 				"jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "heif", "svg" -> PHOTO
 				"mp4", "m4v", "mov", "avi", "mkv", "webm" -> VIDEO
-				"3gp", "3gpp", "mp3", "m4a", "aac", "wav", "ogg", "oga", "opus", "amr" -> AUDIO
+				"3gp", "3gpp", "3ga", "mp3", "m4a", "aac", "wav", "ogg", "oga", "opus", "amr" -> AUDIO
 				else -> UNKNOWN
 			}
 		}
