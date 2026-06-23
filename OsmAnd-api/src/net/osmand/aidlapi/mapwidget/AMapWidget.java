@@ -18,6 +18,8 @@ public class AMapWidget extends AidlParams {
 	private boolean rightPanelByDefault = true;
 	private Intent intentOnClick;
 
+	private String groupId;
+
 	public AMapWidget(String id, String menuIconName, String menuTitle,
 	                  String lightIconName, String darkIconName, String text, String description,
 	                  int order, Intent intentOnClick) {
@@ -92,6 +94,14 @@ public class AMapWidget extends AidlParams {
 		return intentOnClick;
 	}
 
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
+	}
+
+	public String getGroupId() {
+		return groupId;
+	}
+
 	@Override
 	public void writeToBundle(Bundle bundle) {
 		bundle.putString("id", id);
@@ -104,6 +114,7 @@ public class AMapWidget extends AidlParams {
 		bundle.putInt("order", order);
 		bundle.putBoolean("rightPanelByDefault", rightPanelByDefault);
 		bundle.putParcelable("intentOnClick", intentOnClick);
+		bundle.putString("groupId", groupId);
 	}
 
 	@Override
@@ -119,5 +130,6 @@ public class AMapWidget extends AidlParams {
 		order = bundle.getInt("order");
 		rightPanelByDefault = bundle.getBoolean("rightPanelByDefault");
 		intentOnClick = bundle.getParcelable("intentOnClick");
+		groupId = bundle.getString("groupId");
 	}
 }

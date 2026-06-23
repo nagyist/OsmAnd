@@ -42,6 +42,7 @@ import net.osmand.util.Algorithms;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,6 +68,8 @@ public class ConnectedApp implements Comparable<ConnectedApp> {
 
 	private final Map<String, AidlMapWidgetWrapper> widgets = new ConcurrentHashMap<>();
 	private final Map<String, TextInfoWidget> widgetControls = new ConcurrentHashMap<>();
+
+	private final Map<String, AidlWidgetGroupWrapper> widgetGroups = new ConcurrentHashMap<>();
 
 	private final Map<String, AidlMapLayerWrapper> layers = new ConcurrentHashMap<>();
 	private final Map<String, OsmandMapLayer> mapLayers = new ConcurrentHashMap<>();
@@ -114,6 +117,11 @@ public class ConnectedApp implements Comparable<ConnectedApp> {
 	@NonNull
 	public Map<String, TextInfoWidget> getWidgetControls() {
 		return widgetControls;
+	}
+
+	@NonNull
+	public Map<String, AidlWidgetGroupWrapper> getWidgetGroups() {
+		return widgetGroups;
 	}
 
 	@NonNull
@@ -351,6 +359,56 @@ public class ConnectedApp implements Comparable<ConnectedApp> {
 	boolean updateMapWidget(AidlMapWidgetWrapper widget) {
 		if (widget != null && widgets.containsKey(widget.getId())) {
 			widgets.put(widget.getId(), widget);
+			app.getAidlApi().reloadMap();
+			return true;
+		}
+		return false;
+	}
+
+	boolean addWidgetGroup(AidlWidgetGroupWrapper group) {
+		if (group != null && !Algorithms.isEmpty(group.getId())) {
+			widgetGroups.put(group.getId(), group);
+			app.getAidlApi().reloadMap();
+			return true;
+		}
+		return false;
+	}
+
+	boolean updateWidgetGroup(AidlWidgetGroupWrapper group) {
+		if (group != null && widgetGroups.containsKey(group.getId())) {
+			widgetGroups.put(group.getId(), group);
+			app.getAidlApi().reloadMap();
+			return true;
+		}
+		return false;
+	}
+
+	boolean removeWidgetGroup(String groupId) {
+		if (!Algorithms.isEmpty(groupId)) {
+			widgetGroups.remove(groupId);
+			for (AidlMapWidgetWrapper widget : widgets.values()) {
+				if (groupId.equals(widget.getGroupId())) {
+					widget.setGroupId(null);
+				}
+			}
+			app.getAidlApi().reloadMap();
+			return true;
+		}
+		return false;
+	}
+
+	boolean removeWidgetGroupWithWidgets(String groupId) {
+		if (!Algorithms.isEmpty(groupId)) {
+			widgetGroups.remove(groupId);
+			List<String> idsToRemove = new ArrayList<>();
+			for (AidlMapWidgetWrapper widget : widgets.values()) {
+				if (groupId.equals(widget.getGroupId())) {
+					idsToRemove.add(widget.getId());
+				}
+			}
+			for (String widgetId : idsToRemove) {
+				removeMapWidget(widgetId);
+			}
 			app.getAidlApi().reloadMap();
 			return true;
 		}

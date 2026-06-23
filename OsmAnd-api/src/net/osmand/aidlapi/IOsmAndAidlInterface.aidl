@@ -34,6 +34,10 @@ import net.osmand.aidlapi.mapwidget.AMapWidget;
 import net.osmand.aidlapi.mapwidget.AddMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.RemoveMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.UpdateMapWidgetParams;
+import net.osmand.aidlapi.mapwidget.AWidgetGroup;
+import net.osmand.aidlapi.mapwidget.AddWidgetGroupParams;
+import net.osmand.aidlapi.mapwidget.UpdateWidgetGroupParams;
+import net.osmand.aidlapi.mapwidget.RemoveWidgetGroupParams;
 
 import net.osmand.aidlapi.maplayer.point.AMapPoint;
 import net.osmand.aidlapi.maplayer.point.AddMapPointParams;
@@ -939,4 +943,26 @@ interface IOsmAndAidlInterface {
     long registerForLogcatMessages(in ALogcatListenerParams params, IOsmAndAidlCallback callback);
 
     boolean setZoomLimits(in ZoomLimitsParams params);
+
+    /**
+     * Register a widget group. Widgets assigned to this group via
+     * AMapWidget.setGroupId(id) are shown together in the "Configure screen"
+     * Groups are transient and must be re-registered on each connection
+     */
+    boolean addWidgetGroup(in AddWidgetGroupParams params);
+
+    /**
+     * Update name/description/icons of a previously registered widget group
+     */
+    boolean updateWidgetGroup(in UpdateWidgetGroupParams params);
+
+    /**
+     * Remove a widget group. Its widgets are kept but become ungrouped
+     */
+    boolean removeWidgetGroup(in RemoveWidgetGroupParams params);
+
+    /**
+     * Remove a widget group together with all of its widgets
+     */
+    boolean removeWidgetGroupWithWidgets(in RemoveWidgetGroupParams params);
 }

@@ -17,6 +17,8 @@ public class AidlMapWidgetWrapper {
 	private final boolean rightPanelByDefault;
 	private final Intent intentOnClick;
 
+	private String groupId;
+
 	/**
 	 * Old API constructor
 	 */
@@ -31,6 +33,7 @@ public class AidlMapWidgetWrapper {
 		this.order = aMapWidget.getOrder();
 		this.rightPanelByDefault = true;
 		this.intentOnClick = aMapWidget.getIntentOnClick();
+		this.groupId = null;
 	}
 
 	/**
@@ -47,6 +50,7 @@ public class AidlMapWidgetWrapper {
 		this.order = aMapWidget.getOrder();
 		this.rightPanelByDefault = aMapWidget.isRightPanelByDefault();
 		this.intentOnClick = aMapWidget.getIntentOnClick();
+		this.groupId = aMapWidget.getGroupId();
 	}
 
 	public String getId() {
@@ -87,5 +91,13 @@ public class AidlMapWidgetWrapper {
 
 	public Intent getIntentOnClick() {
 		return intentOnClick;
+	}
+
+	public String getGroupId() {
+		return groupId;
+	}
+
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
 	}
 }

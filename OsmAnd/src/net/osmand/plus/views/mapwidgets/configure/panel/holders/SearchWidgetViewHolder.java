@@ -19,6 +19,7 @@ import net.osmand.plus.views.mapwidgets.MapWidgetInfo;
 import net.osmand.plus.views.mapwidgets.WidgetType;
 import net.osmand.plus.views.mapwidgets.configure.WidgetIconsHelper;
 import net.osmand.plus.views.mapwidgets.configure.panel.SearchWidgetListener;
+import net.osmand.plus.views.mapwidgets.configure.panel.SearchWidgetsFragment.ExternalGroupItem;
 import net.osmand.plus.views.mapwidgets.configure.panel.SearchWidgetsFragment.GroupItem;
 
 public class SearchWidgetViewHolder extends RecyclerView.ViewHolder {
@@ -64,6 +65,20 @@ public class SearchWidgetViewHolder extends RecyclerView.ViewHolder {
 
 		setupSelectableBackground(selectedAppMode, nightMode);
 		itemView.setOnClickListener(view -> listener.groupSelected(groupItem.group()));
+	}
+
+	public void bind(@NonNull ApplicationMode selectedAppMode, @NonNull SearchWidgetListener listener, ExternalGroupItem groupItem, boolean nightMode, boolean showDivider) {
+		title.setText(groupItem.getGroupName());
+		count.setText(String.valueOf(groupItem.count()));
+		AndroidUiHelper.updateVisibility(count, true);
+		AndroidUiHelper.updateVisibility(proIcon, false);
+		divider.setVisibility(showDivider ? View.VISIBLE : View.INVISIBLE);
+
+		int iconId = AndroidUtils.getDrawableId(app, groupItem.getIconName(nightMode));
+		icon.setImageResource(iconId != 0 ? iconId : R.drawable.ic_extension_dark);
+
+		setupSelectableBackground(selectedAppMode, nightMode);
+		itemView.setOnClickListener(view -> listener.externalGroupSelected(groupItem));
 	}
 
 	public void bind(@NonNull ApplicationMode selectedAppMode, @NonNull WidgetIconsHelper iconsHelper, @NonNull SearchWidgetListener listener, @NonNull MapWidgetInfo widgetInfo, boolean nightMode, boolean showDivider) {
