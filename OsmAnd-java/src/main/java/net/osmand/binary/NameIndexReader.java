@@ -52,10 +52,11 @@ public class NameIndexReader {
 	private StreetsIndexStat streetsStat;
 	private BoundariesIndexStat bndsStat;
 	
-	// cache collator
-	private String queryCachedStr;
-	private String queryAligned;
-	private Collator collator;
+	// Active query cache collator
+	String query;
+	String queryCachedStr;
+	String queryAligned;
+	Collator collator;
 
 	public NameIndexReader(AddressRegion p) {
 		this.poiRegion = null;
@@ -773,6 +774,10 @@ public class NameIndexReader {
 		}
 		obj.shift = currentShift;
 		obj.addr = from;
+	}
+	
+	public void setQuery(String query) {
+		
 	}
 	
 	public List<PrefixNameValue> getMatchedPrefixes(String query) {

@@ -48,14 +48,16 @@ public class SpatialSearchContext {
 		long readObjTime = 0;
 		
 		long stepSort = 0;
+		int maxCombinations = 0;
+		int tokenObjs;
 		
 		@Override
 		public String toString() {
 			return String.format(
-					"Search Stats %.1f ms - %.1f ms atoms (read %.1f, match %.1f), "
-					+ "%.1f ms compute (loadBld %.1f, read %.1f)",
-					time / 1e6, stepAtoms / 1e6, fileAtomsTime / 1e6, matchTime / 1e6,
-					stepCompute / 1e6, loadObjectsBld / 1e6, readObjTime / 1e6);
+					"Search Stats %.1f ms - %.1f ms %,d atoms (read %.1f, match %.1f), "
+					+ "%.1f ms compute %,d (loadBld %.1f, read %.1f)",
+					time / 1e6, stepAtoms / 1e6, tokenObjs,  fileAtomsTime / 1e6, matchTime / 1e6,
+					stepCompute / 1e6, maxCombinations, loadObjectsBld / 1e6, readObjTime / 1e6);
 		}
 
 		public void finish() {
@@ -222,7 +224,7 @@ public class SpatialSearchContext {
 					continue;
 				}
 				MapObject obj = null;
-				if (SpatialTextSearchSettings.READ_ADDR_OBJECTS || SpatialTextSearchSettings.ATTACH_BUILDINGS) {
+				if (SpatialTextSearchSettings.DEV_READ_ADDR_OBJECTS || SpatialTextSearchSettings.DEV_ATTACH_BUILDINGS) {
 					obj = readAddrObject(lid, pid, null);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, pid, obj, allTokens);
@@ -236,7 +238,7 @@ public class SpatialSearchContext {
 				long lid = makePoiId(indInd, BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()),
 						a.getPoiIndInBlock(0));
 				MapObject amenity = null;
-				if (SpatialTextSearchSettings.READ_POI_OBJECTS) {
+				if (SpatialTextSearchSettings.DEV_READ_POI_OBJECTS) {
 					amenity = readPoiObject(lid, null);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, null, a, lid, 0, amenity, allTokens);
@@ -419,10 +421,12 @@ public class SpatialSearchContext {
 			NameIndexAtomXY coords, List<SpatialSearchToken> allTokens) {
 		List<SpatialSearchToken> otherTokens = null;
 		boolean streetCity = false;
+		boolean numericNotMatch = false;
 		if (name.indexOf(' ') != -1) {
 			List<String> split = SearchAlgorithms.splitAndNormalize(name, false);
 			for (int k = 1; k < split.size(); k++) {
 				String otherName = split.get(k);
+				boolean numeric =SearchAlgorithms.isNumber2Letters(otherName);
 				if (otherName.equalsIgnoreCase(NameIndexReader.CITY_AS_STREET_COMMON)) {
 					streetCity = true;
 					continue;
@@ -440,6 +444,9 @@ public class SpatialSearchContext {
 					}
 				}
 				if (!matched) {
+					if (numeric) {
+						numericNotMatch = true;
+					}
 					other++;
 				}
 			}
@@ -453,7 +460,8 @@ public class SpatialSearchContext {
 			}
 		}
 		boolean street = type == SpatialSearchToken.STREET_TYPE;
-		if (street && SpatialTextSearchSettings.SEARCH_BUILDINGS) {
+		// numericNotMatch - require full street match to assign buildings 
+		if (!numericNotMatch && street && SpatialTextSearchSettings.SEARCH_BUILDINGS) {
 			for (SpatialSearchToken token : allTokens) {
 				// assign building to wordsor isNumber2Letters (number + 1 char)
 				if (t != token && (SearchAlgorithms.isNumber2Letters(token.word) || token.word.length() == 1)

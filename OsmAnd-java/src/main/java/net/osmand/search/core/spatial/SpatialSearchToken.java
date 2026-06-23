@@ -8,14 +8,15 @@ import com.google.protobuf.ByteString;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import net.osmand.CollatorStringMatcher;
 import net.osmand.CollatorStringMatcher.StringMatcherMode;
+import net.osmand.binary.Abbreviations;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
-import net.osmand.binary.NameIndexReader;
 import net.osmand.binary.ObfConstants;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.MapObject;
 import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
+import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
@@ -23,30 +24,50 @@ public class SpatialSearchToken {
 	public static final int BUILDING_TYPE = -2;
 	public static final int POI_TYPE = -1;
 	public static final int STREET_TYPE = CityBlocks.STREET_TYPE.index;
-	public static final String DOT_INCOMPLETE_STRING = ".";
+	public static final String DOT_INCOMPLETE_STRING = CollatorStringMatcher.INCOMPLETE_DOT + "";
 
 	int originalOrder = 0;
 	int sortedOrder = 0;
 	
+	boolean incomplete;
 	String originalWord;
 	String word;
+	String abbrevation;
+	
 	List<NameIndexAtom> atoms = new ArrayList<>();
 	TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
 	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
 	HashQuadTree<NameIndexAtom> quadTree = new HashQuadTree<>(16);
 
 	CollatorStringMatcher collatorEq;
+	CollatorStringMatcher collatorMatchEq;
+	CollatorStringMatcher abbrEq;
 
 	public SpatialSearchToken(String w, String original, int order) {
 		originalWord = original;
 		word = w;
-		this.originalOrder = order;
-		// . implemented already in collator w.endsWith(DOT_INCOMPLETE_STRING)
+		originalOrder = order;
+		// . already in collator w.endsWith(DOT_INCOMPLETE_STRING)
+		String noDot = w;
+		if (w.endsWith(DOT_INCOMPLETE_STRING)) {
+			incomplete = true;
+			noDot = w.substring(0, w.length() - 1);
+			collatorMatchEq = new CollatorStringMatcher(noDot, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+		}
 		collatorEq = new CollatorStringMatcher(w, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+		String abbr = Abbreviations.getAbbreviations().get(noDot);
+		if (abbr != null) {
+			abbrEq = new CollatorStringMatcher(SearchAlgorithms.normalizeToken(abbr),
+					StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+		}
 	}
 	
 	public CollatorStringMatcher getCollator() {
 		return collatorEq;
+	}
+	
+	public boolean isOnlyFullMatch() {
+		return incomplete && word.length() <= SpatialTextSearchSettings.MIN_CHARACTERS_INCOMPLETE + 1;
 	}
 
 	@Override
@@ -81,6 +102,12 @@ public class SpatialSearchToken {
 	}
 
 	boolean acceptName(String name) {
+		if (abbrEq != null && abbrEq.matches(name)) {
+			return true;
+		}
+		if (isOnlyFullMatch()) {
+			return collatorMatchEq.matches(name);
+		}
 		return collatorEq.matches(name);
 	}
 
@@ -145,8 +172,6 @@ public class SpatialSearchToken {
 				bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16 / 2, y16 / 2);
 				decodeBBox(addr.hasBbox() ? addr.getBbox() : null);
 			}
-			
-			
 		}
 
 		private void decodeBBox(ByteString bbox) {

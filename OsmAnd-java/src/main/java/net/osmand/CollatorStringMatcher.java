@@ -40,7 +40,7 @@ public class CollatorStringMatcher implements StringMatcher {
 	public CollatorStringMatcher(String part, StringMatcherMode mode) {
 		this.collator = OsmAndCollator.primaryCollator();
 		part = lowercaseAndAlignChars(part);
-		if (part.length() > 0 && part.charAt(part.length() - 1) == INCOMPLETE_DOT) {
+		if (part.length() > 0 && part.charAt(part.length() - 1) == INCOMPLETE_DOT && !onlyDots(part)) {
 			part = part.substring(0, part.length() - 1);
 			if (mode == StringMatcherMode.CHECK_EQUALS_FROM_SPACE) {
 				mode = StringMatcherMode.CHECK_STARTS_FROM_SPACE;
@@ -50,7 +50,15 @@ public class CollatorStringMatcher implements StringMatcher {
 		}
 		this.part = part;
 		this.mode = mode;
-		
+	}
+	
+	public boolean onlyDots(String part) {
+		for (int i = 0; i < part.length(); i++) {
+			if (part.charAt(i) != INCOMPLETE_DOT) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public Collator getCollator() {

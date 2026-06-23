@@ -15,31 +15,24 @@ import net.osmand.util.SearchAlgorithms;
 
 
 //////////// OTHER TASKS ///////
-// - TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania +
-// - TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
+// - TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania
 // - REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
 //    - 2-га Нова (2 Нова), Бульварно-Кудрявськаб NC-42 
+// - TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
 // - TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
 // - TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
 
-//////////// TESTING //////////
+//////////// IN PROGRESS //////////
+// TESTING 'New york s.' - 1 letter very slow
+// TODO Abbreviations Phase (street / st)
+// TODO Test/Review Match '2nd' and '2'
 
-// IN PROGRESS 
-// Building entrances refs ', 3' ("18/32, 2")
-// Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
-// TODO salt lake 2 Street <Salt Lake City>(-111651)
-
-
-// SLOW
-// TODO DISABLED Read common = true ->  Calle 20 188 Lima San Isidro (VERY SLOW) - 'New york The plaza'
-// TODO Sokak very slow (Sokak 23018. intersection)
+// TODO  Calle 20 188 Lima San Isidro  / Sokak - delay street intersection 
 // TODO! Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
-// FIXME 'New york s.' - 1 letter very slow
-
-// TODO Progress / cancel
+// TODO 'New york plaza' ('the') limit FILTER_MIN_WORDS_COUNT
+// TODO Issues Nova poshta Kharkiv
 
 // TO DO
-// FIXME Abbreviations Phase
 // FIXME POI Categories + top poi categories
 // FIXME Building interpolation - name / location
 // FIXME Street intersection match
@@ -47,8 +40,7 @@ import net.osmand.util.SearchAlgorithms;
 //       Combine regions.ocbf (boundary)
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
-// TODO Test/Review Match '2nd' and '2'
-// TODO Issues Nova poshta Kharkiv
+// TODO Progress / cancel
 
 // EXTRA FEATURES
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
@@ -61,12 +53,11 @@ import net.osmand.util.SearchAlgorithms;
 // TODO English postcodes
 
 // TEST IDEAS
+// TODO Filter results boundaries, <Salt Lake City>
 // TODO Not forget to include regions.ocbf on client
-// TODO finish index_words_dashboard.html
-// TODO Include high rating objects in world basemap (Eiffel Tour)
-// TODO Geocoding ("NC 42" == "NC-42") - Use new search ?
-// TODO ? review settings: read objects after some intersections (but not too early)
-//      - Results 5 tokens 1,949 (139 unique) - compact objects during combinations?
+// TODO Inspector stats index_words_dashboard.html
+// TODO New Geocoding ("NC 42" == "NC-42") - Use new search with bbox
+// TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique) 
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
 // TODO ? Store wikidata id for boundaries (regions.ocbf) & display them ? 
 
@@ -166,7 +157,9 @@ public class SpatialSearchTestAndDocs {
 		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // no results?
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
-		query = "Sokak 23018."; // Test calle 2
+		query = "Sokak 2"; // Test calle 2
+//		query = "2/1 21038 Sokak";
+		
 		
 //		pattern = "regions.ocbf" ;
 		
@@ -191,9 +184,20 @@ public class SpatialSearchTestAndDocs {
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
 		
-		pattern = "Australia";
-		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
+//		pattern = "Belarus_minsk";
+//		query = "Независим. 48, 1";
+		
+//		pattern = "Australia";
+//		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
+		
+		pattern = "Us_new-york";
+//		query = "New York The plaza";
+		query = "New York plaza";
+		query = "New York s.";
+//		query = "New York 4th av"; // '4th av', '4 ave', '4th avenue' 241843204 brooklyn 
+//		query = "4th ave"; // TODO '4 ave'   
+//		query = "blvd"; // TODO 'blvd', 'boulevard' - 248280132
 		
 //		pattern = "World_basemap_2";
 //		pattern2 = "Ukraine";
@@ -207,7 +211,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Basílica de Nuestra Señora del Pilar";
 //		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
 		
-//		pattern = "Peru_"; 
+//		pattern = "Peru_";
 //		query ="Calle 20 188 San Isidro Lima";
 //		query ="Lima Calle 20 San Isidro";
 //		query ="Calle 20 ";
@@ -228,7 +232,7 @@ public class SpatialSearchTestAndDocs {
 		SpatialSearchContext searchContext = new SpatialSearchContext(ls, null);
 		SpatialSearchResults rs = a.searchTest(query, searchContext);
 		SpatialSearchResult mainResult = rs.getFirstResult();
-		if (mainResult == null || (mainResult.matchedTokens() < rs.tokens.size() - 2)) {
+		if (mainResult != null && mainResult.matchedTokens() < rs.tokens.size() - 2) {
 			// another way to check to check to get mainResult - boundary object
 			City bbox = null;
 			for(MapObject o : mainResult.getObjects()) {

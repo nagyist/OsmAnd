@@ -14,6 +14,7 @@ public class Abbreviations {
     }
 
     private static final Map<String, String> abbreviations = new HashMap<>();
+    private static final Map<String, String[]> searchSynonyms = new HashMap<>();
 	private static final Set<String> conjunctions = new TreeSet<>();
 
     static {
@@ -49,9 +50,13 @@ public class Abbreviations {
         abbreviations.put("dr", "Drive");
         abbreviations.put("rd", "Road");
         abbreviations.put("ave", "Avenue");
-        abbreviations.put("st", "Street");
+        abbreviations.put("av", "Avenue");
+        abbreviations.put("st", "Street"); // could be saint
         abbreviations.put("hwy", "Highway");
         abbreviations.put("blvd", "Boulevard");
+        //
+		searchSynonyms.put("st", new String[] { "Saint" });
+		searchSynonyms.put("1", new String[] { "1st" }); // ...
     }
     
     public static String replace(String word) {

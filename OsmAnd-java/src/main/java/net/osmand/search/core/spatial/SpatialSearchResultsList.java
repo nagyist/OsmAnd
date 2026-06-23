@@ -24,6 +24,8 @@ import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
+import static net.osmand.search.core.spatial.SpatialSearchToken.BUILDING_TYPE;
+import static net.osmand.search.core.spatial.SpatialSearchToken.STREET_TYPE;
 
 public class SpatialSearchResultsList implements Comparable<SpatialSearchResultsList> {
 	final SpatialSearchToken[] tokens; // non modifieable!
@@ -248,12 +250,13 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					// exact
 					return b;
 				}
-				// 18-B == 18
 				if (cmp.size() == original.size() + 1) {
+					// case data only 18 present, 18-B searched
 					if (cmp.containsAll(original)) {
 						partial = b;
 					}
 				} else if (cmp.size() + 1 == original.size()) {
+					// case data only 18-B present, 18 searched 
 					if (original.containsAll(cmp)) {
 						partial = b;
 					}
@@ -399,15 +402,25 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		if (!intersect) {
 			return false;
 		}
+		// TODO 2/1 21038 Sokak
 		// 2. Don't allow intersect potential building with other object
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
-			if (parent.tokens[i].originalOrder == a.buildingInd && pa.id != a.id) {
+			if (pa.id == a.id) {
+				continue;
+			}
+			// pa and a using same tokens for street & house but different streets
+			if (parent.tokens[i].originalOrder == a.buildingInd) {
+				return false;
+			} else if (pa.buildingInd == token.originalOrder) {
 				return false;
 			}
-			if (pa.buildingInd == token.originalOrder && pa.id != a.id) {
+			// don't intersect building with other street
+			if (pa.buildingInd >= 0 && (a.type == BUILDING_TYPE || a.type == STREET_TYPE)) {
 				return false;
-			}
+			} else if (a.buildingInd >= 0 && (pa.type == BUILDING_TYPE || pa.type == STREET_TYPE)) {
+				return false;
+			} 
 		}
 		
 		// 3. Duplicate words		

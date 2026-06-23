@@ -61,8 +61,9 @@ public class SpatialTextSearch {
 		// different maps by osm id - needs to be tested performance mostly slows down
 		// ! Potential issue READ_ADDR_OBJECTS could deduplicate streets and 
 		//  building won't be found in case same street in cities
-		public static boolean READ_ADDR_OBJECTS = false;
-		public static boolean READ_POI_OBJECTS = false;
+		public static boolean DEV_READ_ADDR_OBJECTS = false;
+		public static boolean DEV_READ_POI_OBJECTS = false;
+		public static boolean DEV_ATTACH_BUILDINGS = false;
 
 		// no need to find 3 street intersection or 3 POI intersection
 		public static int LIMIT_ATOMIC_OBJECTS = 2;
@@ -84,8 +85,8 @@ public class SpatialTextSearch {
 		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {3, 10};
 //		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {};
 		
-		// temp
-		public static boolean ATTACH_BUILDINGS = false;
+		// only do incomplete search with 2+ chars
+		public static int MIN_CHARACTERS_INCOMPLETE = 2;
 		
 	}
 
@@ -186,6 +187,7 @@ public class SpatialTextSearch {
 			BitSet b = new BitSet();
 			b.set(ind++);
 			cache.put(b, new SpatialSearchResultsList(t, root));
+			ctx.stats.tokenObjs += t.atoms.size();
 		}
 
 		LinkedList<BitSet> goals = new LinkedList<>();
@@ -227,6 +229,7 @@ public class SpatialTextSearch {
 					eval.set(i);
 					if (!cache.containsKey(eval)) {
 						goalRes = new SpatialSearchResultsList(token, goalRes);
+						ctx.stats.maxCombinations = Math.max(ctx.stats.maxCombinations, goalRes.getCombinations()); 
 //						System.out.println("  EVALUATE STEP " + eval + " " + goalRes);
 						cache.put((BitSet) eval.clone(), goalRes);
 					} else {

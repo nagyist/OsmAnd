@@ -926,9 +926,9 @@ public class BinaryMapAddressReaderAdapter {
 		}
 	}
 	
-	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexReader pi, String query) throws IOException {
+	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexReader pi) throws IOException {
 		OsmandOdb.IndexedStringTable res = null;
-		TLongArrayList loffsets = query == null ? null : new TLongArrayList();
+		TLongArrayList loffsets = pi.query == null ? null : new TLongArrayList();
 		int ind = -1;
 		while (true) {
 			int t = codedIS.readTag();
@@ -937,11 +937,11 @@ public class BinaryMapAddressReaderAdapter {
 			case 0:
 				return res;
 			case OsmAndAddressNameIndexData.TABLE_FIELD_NUMBER :
-				pi.resetMatchedKeys(query);
+				pi.resetMatchedKeys(pi.query);
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
 				pi.setTablePointer(codedIS.getTotalBytesRead());
-				map.readNameIndexInspector(null, pi, query);
+				map.readNameIndexInspector(null, pi);
 				codedIS.popLimit(oldLimit);
 				break;
 			case OsmAndAddressNameIndexData.COMMONSTATS_FIELD_NUMBER:
