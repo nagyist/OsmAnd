@@ -142,14 +142,16 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				if (parent != null && parent.object != null) {
 					idObject = parent.object;
 				}
-				String rat = "";
+				String add = "";
 				if (atom.object instanceof Amenity a) {
 					if (a.getTravelEloNumber() > 0) {
-						rat += " elo " + a.getTravelEloNumber() + " " + a.getCityFromTagGroups("");
+						add += " elo " + a.getTravelEloNumber() + " " + a.getCityFromTagGroups("");
 					}
+				} else if (parent != null) {
+					add += " " + parent.object.getName();
 				}
 				return String.format("%s %s (%s) %.4f %.4f ", words, 
-						atom.typeStr() + " " + atom.object.getName() + rat, 
+						atom.typeStr() + " " + atom.object.getName() + add, 
 						"" + ObfConstants.getOsmObjectId(idObject) 
 								//+ " " + atom.id,
 						, atom.object.getLocation().getLatitude(), atom.object.getLocation().getLongitude());

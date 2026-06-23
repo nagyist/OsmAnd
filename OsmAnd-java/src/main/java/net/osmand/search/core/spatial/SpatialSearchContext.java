@@ -34,21 +34,28 @@ public class SpatialSearchContext {
 	final List<SpatialSearchFileCache> internalFile = new ArrayList<>();
 	final LatLon location; // could be null
 
+	List<SpatialSearchToken> tokens;
 	SpatialSearchStats stats = new SpatialSearchStats();
 
 	public static class SpatialSearchStats {
 		long time = System.nanoTime();
-		long readTokensTime = 0;
-		long readObjTime = 0;
-		long computeTime = 0;
+		long stepAtoms = 0;
+		long fileAtomsTime = 0;
 		long matchTime = 0;
-		long atoms = 0;
-
+		
+		long stepCompute = 0;
+		long loadObjectsBld = 0;
+		long readObjTime = 0;
+		
+		long stepSort = 0;
+		
 		@Override
 		public String toString() {
 			return String.format(
-					"Search Stats %.1f ms - read %.1f ms atoms (tokens %.1f ms, obj %.1f ms), match %.1f ms, comp %.1f ms",
-					time / 1e6, atoms / 1e6, readTokensTime / 1e6, readObjTime / 1e6, matchTime / 1e6, computeTime / 1e6);
+					"Search Stats %.1f ms - %.1f ms atoms (read %.1f, match %.1f), "
+					+ "%.1f ms compute (loadBld %.1f, read %.1f)",
+					time / 1e6, stepAtoms / 1e6, fileAtomsTime / 1e6, matchTime / 1e6,
+					stepCompute / 1e6, loadObjectsBld / 1e6, readObjTime / 1e6);
 		}
 
 		public void finish() {
@@ -87,6 +94,7 @@ public class SpatialSearchContext {
 
 	void readAtoms(List<SpatialSearchToken> tokens) throws IOException {
 		int indxInd = 0;
+		this.tokens = tokens;
 		for (int fileInd = 0; fileInd < files.size(); fileInd++) {
 			SpatialSearchFileCache iCache = internalFile.get(fileInd);
 			BinaryMapIndexReader b = files.get(fileInd);
@@ -159,10 +167,10 @@ public class SpatialSearchContext {
 			}
 			List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
 			if (matchedPrefixes == null) {
-				stats.readTokensTime -= System.nanoTime();
+				stats.fileAtomsTime -= System.nanoTime();
 				b.readFullNameIndex(indx, t.word);
 				matchedPrefixes = indx.getMatchedPrefixes(t.word);
-				stats.readTokensTime += System.nanoTime();
+				stats.fileAtomsTime += System.nanoTime();
 			}
 			for (PrefixNameValue prefix : matchedPrefixes) {
 				parseAtomSuffixes(t, indxInd, indx, prefix, tokens);
@@ -247,7 +255,9 @@ public class SpatialSearchContext {
 				break;
 			}
 		}
+		stats.readObjTime -= System.nanoTime();
 		files.get(c.fileInd).readAmenityBboxes(nameIndex.poiRegion, tiles);
+		stats.readObjTime += System.nanoTime();
 	}
 	
 	public int getFileInd(long id) {
@@ -445,7 +455,8 @@ public class SpatialSearchContext {
 		boolean street = type == SpatialSearchToken.STREET_TYPE;
 		if (street && SpatialTextSearchSettings.SEARCH_BUILDINGS) {
 			for (SpatialSearchToken token : allTokens) {
-				if (t != token && SearchAlgorithms.isNumber2Letters(token.word)
+				// assign building to wordsor isNumber2Letters (number + 1 char)
+				if (t != token && (SearchAlgorithms.isNumber2Letters(token.word) || token.word.length() == 1)
 						&& (otherTokens == null || !otherTokens.contains(token))) {
 					NameIndexAtom atomB = new NameIndexAtom(name, SpatialSearchToken.BUILDING_TYPE, lid, pid, obj,
 							streetCity, other, otherFound, coords);

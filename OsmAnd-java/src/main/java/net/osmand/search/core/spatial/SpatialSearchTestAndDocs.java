@@ -15,34 +15,28 @@ import net.osmand.util.SearchAlgorithms;
 
 
 //////////// OTHER TASKS ///////
-// Check file sizes: 
-// 1. FILE SIZE: REVIEW ADD_TOP_X_FREQ_WORDS (many common?)
-// 2. FILE SIZE: REVIEW added bbox31 size
-// 3. DATA: English postcodes
-// 4. TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania +
-// 5. TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
-// 5. REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
-//    - 2-га Нова (2 Нова), Бульварно-Кудрявськаб NC-42 (geocoding
-// 6. TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
-// 7. TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
-// 8. REVIEW - Find largest indexed tokens intersection: suspect 'Calle'x'Calle'.
-
+// - TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania +
+// - TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
+// - REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
+//    - 2-га Нова (2 Нова), Бульварно-Кудрявськаб NC-42 
+// - TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
+// - TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
 
 //////////// TESTING //////////
-// Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
-// Building entrances refs ', 3' ("18/32, 2")
-// World basemap ! Push up POI
-// Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ] 
-// Solution: assign min building osm id as a street id 
-// read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
-// Building inside City <Salt lake city> - <CITY> no intersect with any other street
 
 // IN PROGRESS 
+// Building entrances refs ', 3' ("18/32, 2")
+// Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
 // TODO salt lake 2 Street <Salt Lake City>(-111651)
-// TODO Sokak very slow (Sokak 23018. intersectino)
-// TODO DISABLED Read common = true ->  Calle 20 188 Lima San Isidro (VERY SLOW) - 'New york The plaza'
 
-// TODO Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
+
+// SLOW
+// TODO DISABLED Read common = true ->  Calle 20 188 Lima San Isidro (VERY SLOW) - 'New york The plaza'
+// TODO Sokak very slow (Sokak 23018. intersection)
+// TODO! Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
+// FIXME 'New york s.' - 1 letter very slow
+
+// TODO Progress / cancel
 
 // TO DO
 // FIXME Abbreviations Phase
@@ -53,6 +47,8 @@ import net.osmand.util.SearchAlgorithms;
 //       Combine regions.ocbf (boundary)
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
+// TODO Test/Review Match '2nd' and '2'
+// TODO Issues Nova poshta Kharkiv
 
 // EXTRA FEATURES
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
@@ -60,17 +56,13 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Search near key objects (subway station artificial bbox)
 // TODO Add flats: https://www.openstreetmap.org/node/5843642738
 // TODO Sugggestion-correction
-
-// ISSUES
-// FIXME 'New york s.' - 1 letter very slow
-// TODO Test/Review Match '2nd' and '2'
-// TODO DISABLED Read common = true -> ('centre', 'school') to find 'common word' in 'City' or suggest POI category -
-
-// TODO! Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
-// TODO Progress / cancel
+// TODO POI Categories translations / synonyms
+// TODO Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
+// TODO English postcodes
 
 // TEST IDEAS
-// TODO Not forget to include regions.ocbf on client 
+// TODO Not forget to include regions.ocbf on client
+// TODO finish index_words_dashboard.html
 // TODO Include high rating objects in world basemap (Eiffel Tour)
 // TODO Geocoding ("NC 42" == "NC-42") - Use new search ?
 // TODO ? review settings: read objects after some intersections (but not too early)
@@ -199,8 +191,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
 		
-//		pattern = "Australia";
-//		query = "Holmby road 18B";
+		pattern = "Australia";
+		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
 //		pattern = "World_basemap_2";
@@ -216,7 +208,6 @@ public class SpatialSearchTestAndDocs {
 //		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
 		
 //		pattern = "Peru_"; 
-		// TODO many duplicates very slow 200K
 //		query ="Calle 20 188 San Isidro Lima";
 //		query ="Lima Calle 20 San Isidro";
 //		query ="Calle 20 ";

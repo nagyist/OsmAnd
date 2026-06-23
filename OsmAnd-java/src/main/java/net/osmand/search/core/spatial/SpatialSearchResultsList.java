@@ -112,12 +112,23 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		loadObjects(ctx, SpatialSearchToken.STREET_TYPE, cache);
 	}
 	
+	public List<SpatialSearchToken> getMissingTokens(SpatialSearchContext ctx) {
+		List<SpatialSearchToken> lst = new ArrayList<>(ctx.tokens);
+		for (SpatialSearchToken s : tokens) {
+			lst.remove(s);
+		}
+		return lst;
+	}
+	
 	public void loadObjectsAndCalcBuildings(SpatialSearchContext ctx) throws IOException {
+		ctx.stats.loadObjectsBld -= System.nanoTime();
 		loadObjects(ctx);
+		
 		Map<String, Building> bldCheckCache = new HashMap<>();
 		for (int indx = 0; indx < getCombinations(); indx++) {
 			calcBuilding(indx, bldCheckCache);
 		}
+		ctx.stats.loadObjectsBld += System.nanoTime();
 	}
 	
 	private void calcBuilding(int indx, Map<String, Building> bldCheckCache) {

@@ -67,8 +67,9 @@ public class SpatialTextSearch {
 		// no need to find 3 street intersection or 3 POI intersection
 		public static int LIMIT_ATOMIC_OBJECTS = 2;
 
-		// Performance improvement assuming for rare words we don't read common atoms (school on street)
-		// Problem search: New york plaza, New York 45 Avenue
+		// Very good optimization but breaks some scenarios
+		// Performance improvement assuming for rare words we don't read common atoms
+		// Problem search: New york plaza, New York 45 Avenue, School 40 on Specific Street.  
 		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
 		public static boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
 
@@ -235,9 +236,7 @@ public class SpatialTextSearch {
 				}
 			}
 			if (goalRes.getCombinations() > 0) {
-				ctx.stats.atoms -= System.nanoTime();
 				goalRes.loadObjectsAndCalcBuildings(ctx);
-				ctx.stats.atoms += System.nanoTime();
 				List<SpatialSearchResult> res = goalRes.sortResults(ctx, SpatialTextSearchSettings.DEDUPLICATE_RES);
 				uniqueObjects += res.size();
 				fullResult.add(goalRes);
@@ -293,23 +292,25 @@ public class SpatialTextSearch {
 		res.tokens = splitWords(input);
 
 		// 2. read atoms
-		ctx.stats.atoms -= System.nanoTime();
+		ctx.stats.stepAtoms -= System.nanoTime();
 		ctx.readAtoms(res.tokens);
-		ctx.stats.atoms += System.nanoTime();
+		ctx.stats.stepAtoms += System.nanoTime();
 
 		// 3. sort tokens
 		sortTokens(res.tokens);
 
 		// 4. find combinations
-		ctx.stats.computeTime -= System.nanoTime();
+		ctx.stats.stepCompute -= System.nanoTime();
 //		res.combinations = findObjCombinationsSimpleIteration(res.tokens);
 		res.combinations = findLongestCombinations(ctx, res.tokens);
-		ctx.stats.computeTime += System.nanoTime();
+		ctx.stats.stepCompute += System.nanoTime();
 		// 5. sort combinations, load objects, objects and filter duplicate
 		res.mainResults = new ArrayList<>();
+		ctx.stats.stepSort -= System.nanoTime();
 		if (res.combinations.size() > 0) {
 			combineSortFilterResults(ctx, res);
 		}
+		ctx.stats.stepSort += System.nanoTime();
 		return res;
 	}
 
