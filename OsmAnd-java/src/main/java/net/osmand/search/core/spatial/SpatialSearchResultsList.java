@@ -74,7 +74,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					poiBboxes.put(indInd, new TLongHashSet());
 				}
 				poiBboxes.get(indInd).add(HashQuadTree.encodeTileId31(BinaryMapPoiReaderAdapter.EVAL_TAG_GROUP_ZOOM,
-						a.coords.x16 << 15, a.coords.x16 << 15));
+						a.coords.x16 << 15, a.coords.y16 << 15));
 			}
 			if (a.type == type || (type == -2 && a.type != SpatialSearchToken.POI_TYPE
 					&& a.type != SpatialSearchToken.STREET_TYPE)) {

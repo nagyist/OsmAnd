@@ -771,14 +771,14 @@ public class BinaryMapIndexReader {
 	public boolean readAmenityBboxes(PoiRegion pr, TLongHashSet tileIds) throws IOException {
 		poiAdapter.initCategories(pr);
 		tileIds = pr.checkMissingTagGroups(tileIds);
-		if(tileIds.size() == 0) {
+		if (tileIds.size() == 0) {
 			return false;
 		}
 		SearchRequest<Amenity> sr = new SearchRequest<Amenity>();
 		codedIS.seek(pr.filePointer);
 		long oldLim = codedIS.pushLimitLong((long) pr.length);
+		pr.updReadTagGroups(tileIds); // update before as tileIds is modified
 		poiAdapter.readPoiBboxes(pr, sr, tileIds);
-		pr.updReadTagGroups(tileIds);
 		codedIS.popLimit(oldLim);
 		
 		return true;

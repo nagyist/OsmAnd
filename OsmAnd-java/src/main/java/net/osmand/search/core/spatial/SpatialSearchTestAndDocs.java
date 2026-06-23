@@ -29,23 +29,26 @@ import net.osmand.util.SearchAlgorithms;
 
 
 //////////// TESTING //////////
-// Building find best approximation for - interpolation / partial match
 // Building units ('-') search 'Holmby 18 A', 'Holmby 18-A', 'Holmby 18A'
 // Building entrances refs ', 3' ("18/32, 2")
 // World basemap ! Push up POI
 // Negative street ids village STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ] 
 // Solution: assign min building osm id as a street id 
 // read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
+// Building inside City <Salt lake city> - <CITY> no intersect with any other street
 
 // IN PROGRESS 
+// TODO salt lake 2 Street <Salt Lake City>(-111651)
+// TODO Sokak very slow (Sokak 23018. intersectino)
+// TODO DISABLED Read common = true ->  Calle 20 188 Lima San Isidro (VERY SLOW) - 'New york The plaza'
+
 // TODO Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
-// FIXME Building inside City <Salt lake city> - <CITY> no intersect with any other street
-// FIXME Street intersection match
-// FIXME Abbreviations Phase
 
 // TO DO
+// FIXME Abbreviations Phase
 // FIXME POI Categories + top poi categories
 // FIXME Building interpolation - name / location
+// FIXME Street intersection match
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 //       Combine regions.ocbf (boundary)
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
@@ -62,7 +65,7 @@ import net.osmand.util.SearchAlgorithms;
 // FIXME 'New york s.' - 1 letter very slow
 // TODO Test/Review Match '2nd' and '2'
 // TODO DISABLED Read common = true -> ('centre', 'school') to find 'common word' in 'City' or suggest POI category -
-// TODO DISABLED Read common = true ->  Calle 20 188 Lima San Isidro (VERY SLOW) - 'New york The plaza'
+
 // TODO! Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
 // TODO Progress / cancel
 
@@ -146,10 +149,12 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
 		pattern = "Us_";
+//		pattern = "Map";
 		query = "Salt Lake City Pennsylvania Place 123 UT USA";
+		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
 //		query = "Salt Lake City Pennsylvania Street";
-//		query = "Salt Lake City";
+//		query = "West Valley City";
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 //		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
 //		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; 
@@ -166,16 +171,16 @@ public class SpatialSearchTestAndDocs {
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 		
-//		pattern = "Turkey_";
+		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // no results?
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
-//		query = "Sokak 23018."; // Test calle 2
+		query = "Sokak 23018."; // Test calle 2
 		
 //		pattern = "regions.ocbf" ;
 		
-		pattern = "Ukraine_kyiv-city_europe.obf";
+//		pattern = "Ukraine_kyiv-city_europe.obf";
 //		pattern = "Map";
-		query = "Kyiv Глушкова 1";
+//		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
 //		query = "Ukraine kyiv saks.";

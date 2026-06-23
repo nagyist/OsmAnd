@@ -483,6 +483,7 @@ public class BinaryMapPoiReaderAdapter {
 				long oldLimit = codedIS.pushLimitLong((long) length);
 				// here offsets are sorted by distance
 				offsets = readPoiNameIndex(matcher.getCollator(), query, req, region, coordsTagGroups);
+				coordsTagGroups = region.checkMissingTagGroups(coordsTagGroups);
 				codedIS.popLimit(oldLimit);
 				req.endSubSearchStats(subStart, BinaryMapIndexReaderStats.BinaryMapIndexReaderApiName.POI_BY_NAME,
 						BinaryMapIndexReaderStats.BinaryMapIndexReaderSubApiName.POI_NAME_INDEX, map.getFile().getName(), codedIS.getBytesCounter() - bytes);
@@ -490,10 +491,8 @@ public class BinaryMapPoiReaderAdapter {
 			case OsmandOdb.OsmAndPoiIndex.BOXES_FIELD_NUMBER:
 				length = readInt();
 				oldLimit = codedIS.pushLimitLong((long) length);
-				coordsTagGroups = region.checkMissingTagGroups(coordsTagGroups);
 				if (coordsTagGroups.size() > 0) {
-					region.updReadTagGroups(coordsTagGroups);
-					readBoxField(0, 0, 0, 0, 0, 0, 0, new TIntLongHashMap(), null, req, region, coordsTagGroups);
+					readBoxField(0, 0, 0, 0, 0, 0, 0, new TIntLongHashMap(), null, req, region, prepareTileIdsToCheckTagGroups(coordsTagGroups));
 				} else {
 					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
 				}
@@ -555,6 +554,9 @@ public class BinaryMapPoiReaderAdapter {
 				req.endSubSearchStats(subStart, BinaryMapIndexReaderStats.BinaryMapIndexReaderApiName.POI_BY_NAME,
 						BinaryMapIndexReaderStats.BinaryMapIndexReaderSubApiName.POI_NAME_OBJECTS, 
 						map.getFile().getName(), codedIS.getBytesCounter() - bytes, metrics);
+				if (coordsTagGroups.size() > 0) {
+					region.updReadTagGroups(coordsTagGroups);
+				}
 				return;
 			default:
 				skipUnknownField(t);
@@ -1173,6 +1175,8 @@ public class BinaryMapPoiReaderAdapter {
 					List<TagValuePair> list = region.getTagValues(tagGroupId);
 					if (list != null && list.size() > 0) {
 						am.addTagGroup(tagGroupId, list);
+					} else {
+						System.err.printf("Error tag group %d %s %d %d\n", tagGroupId, am.getName(), x, y);
 					}
 				}
 				codedIS.popLimit(old);
@@ -1276,8 +1280,14 @@ public class BinaryMapPoiReaderAdapter {
 						if (xyLT == xyRB) {
 							readSubBoxesTagGroup = tagGroupsToRead.contains(xyLT);
 						} else {
+							// we also added all parent tiles so we can check intersection quickly
+							while (xyLT != xyRB) {
+								xyLT >>= 2;
+								xyRB >>= 2;
+							}
+							readSubBoxesTagGroup = tagGroupsToRead.contains(xyLT);
 							// we could iterate smarter from xyLT -> xyRB (to check if at least 1 xy contains)
-							readSubBoxesTagGroup = true;
+//							readSubBoxesTagGroup = true;
 						}
 					}
 					// check intersection
@@ -1410,6 +1420,7 @@ public class BinaryMapPoiReaderAdapter {
 	}
 	
 	protected void readPoiBboxes(PoiRegion region, SearchRequest<Amenity> sr, TLongHashSet tileIds) throws IOException {
+		tileIds = prepareTileIdsToCheckTagGroups(tileIds);
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
@@ -1421,12 +1432,29 @@ public class BinaryMapPoiReaderAdapter {
 				long oldLimit = codedIS.pushLimitLong((long) length);
 				readBoxField(0, 0, 0, 0, 0, 0, 0, new TIntLongHashMap(), null, sr, region, tileIds);
 				codedIS.popLimit(oldLimit);
+				break;
+			case OsmandOdb.OsmAndPoiIndex.POIDATA_FIELD_NUMBER:
 				codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
-				return;
+				return ;
 			default:
 				skipUnknownField(t);
 				break;
 			}
 		}
+	}
+
+	private TLongHashSet prepareTileIdsToCheckTagGroups(TLongHashSet tileIds) {
+		if (tileIds != null && tileIds.size() > 0) {
+			TLongHashSet copy = new TLongHashSet(tileIds);
+			long[] ids = tileIds.toArray();
+			for (long i : ids) {
+				while (i > 0) {
+					i >>= 2;
+					copy.add(i);
+				}
+			}
+			return copy;
+		}
+		return tileIds;
 	}
 }
