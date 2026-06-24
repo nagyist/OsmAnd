@@ -4178,7 +4178,7 @@
     <string name="rendering_attr_showMtbScaleIMBATrails_name">显示山地自行车 IMBA 路径</string>
     <string name="rendering_attr_showMtbScaleIMBATrails_description">显示山地自行车专用路径。</string>
     <string name="connect_with_straight_line">用直线连接</string>
-    <string name="attach_roads_warning">只有已录制的轨迹可以附加到道路上。</string>
+    <string name="attach_roads_warning">只有已记录的轨迹可以附加到道路上。</string>
     <string name="without_profiles_changing">无需更改配置文件</string>
     <string name="shared_string_only_missing">仅缺失项</string>
     <string name="relative_bearing_widget_desc">显示您的前进方向与目标点之间的角度。</string>
