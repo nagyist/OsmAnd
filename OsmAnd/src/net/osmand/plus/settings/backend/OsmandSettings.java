@@ -21,7 +21,6 @@ import static net.osmand.plus.settings.backend.storages.IntermediatePointsStorag
 import static net.osmand.plus.settings.enums.ApproximationType.APPROX_GEO_CPP;
 import static net.osmand.plus.settings.enums.LocationSource.ANDROID_API;
 import static net.osmand.plus.settings.enums.LocationSource.GOOGLE_PLAY_SERVICES;
-import static net.osmand.plus.settings.enums.RoutingType.HH_CPP;
 import static net.osmand.plus.settings.enums.SpeedLimitWarningState.WHEN_EXCEEDED;
 import static net.osmand.plus.settings.enums.WidgetSize.MEDIUM;
 import static net.osmand.plus.settings.enums.WidgetSize.SMALL;
@@ -1674,7 +1673,6 @@ public class OsmandSettings {
 	public static boolean STOP_ON_MISSING_MAPS = false;
 	public final CommonPreference<RouteCalculationMethod> ROUTE_CALCULATION_METHOD = new EnumStringPreference<>(this,
 			"route_calculation_method", RouteCalculationMethod.AUTO, RouteCalculationMethod.values()).makeProfile().cache();
-	public final CommonPreference<RoutingType> ROUTING_TYPE = new EnumStringPreference<>(this, "routing_method", HH_CPP, RoutingType.values()).makeProfile().cache();
 	public final CommonPreference<ApproximationType> APPROXIMATION_TYPE = new EnumStringPreference<>(this, "approximation_method_r49_default", APPROX_GEO_CPP, ApproximationType.values()).makeProfile().cache();
 
 	public final CommonPreference<Boolean> ENABLE_TIME_CONDITIONAL_ROUTING = new BooleanPreference(this, "enable_time_conditional_routing", true).makeProfile();

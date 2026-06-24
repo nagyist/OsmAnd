@@ -3,9 +3,12 @@ package net.osmand.plus.settings.enums;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
 import net.osmand.plus.R;
+import net.osmand.plus.routing.RouteService;
+import net.osmand.plus.settings.backend.ApplicationMode;
 
 public enum RouteCalculationMethod {
 
@@ -41,5 +44,18 @@ public enum RouteCalculationMethod {
 	@NonNull
 	public String getDescription(@NonNull Context ctx) {
 		return ctx.getString(getDescriptionId());
+	}
+
+	public boolean isFastRoutingPossible(@Nullable ApplicationMode mode) {
+		return (this == AUTO || this == FAST_ONLY) && canProfileUseFastRouting(mode);
+	}
+
+	public boolean isFastRoutingOnly(@Nullable ApplicationMode mode) {
+		return this == FAST_ONLY && canProfileUseFastRouting(mode);
+	}
+
+	public boolean canProfileUseFastRouting(@Nullable ApplicationMode mode) {
+		return mode != null && mode.getRouteService() == RouteService.OSMAND &&
+				(ApplicationMode.CAR.isDerivedRoutingFrom(mode) || ApplicationMode.BICYCLE.isDerivedRoutingFrom(mode));
 	}
 }
