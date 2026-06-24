@@ -27,18 +27,18 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSetting
 // TESTING Abbreviations Phase (street / st, blvd)
 
 ////////// IN PROGRESS//////////
-// TODO Review TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
+// TODO Document TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
+// TODO REVIEW '2-m' matches by number too many '2-a', '2...
+// TODO Filter results boundaries, <Salt Lake City>
 
 // OPTIMIZE
 // TODO Calle 20 188 Lima San Isidro  / Sokak - delay street intersection 
 // TODO Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
-// TODO Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k),
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
+// TODO Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k),
 
 // TO DO
-// TODO Filter results boundaries, <Salt Lake City>
-// - TODO REVIEW '2-m' matches by number too many '2-a', '2...
 // FIXME POI Categories + top poi categories
 // FIXME Building interpolation - name / location
 // FIXME Street intersection match
@@ -46,23 +46,23 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSetting
 //       Combine regions.ocbf (boundary)
 // TODO Progress / cancel
 // TODO Not forget to include regions.ocbf on client
-
-// EXTRA FEATURES
-// TODO New Geocoding ("NC 42" == "NC-42") - Use new search with bbox
-// TODO Inspector stats index_words_dashboard.html
-// TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
-// TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
-// TODO Search near key objects (subway station artificial bbox)
-// TODO Add flats: https://www.openstreetmap.org/node/5843642738
-// TODO Sugggestion-correction
-// TODO POI Categories translations / synonyms
 // TODO Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
-// TODO English postcodes
+// TODO POI Categories translations / synonyms
+// TODO Inspector stats index_words_dashboard.html
 
 // TEST IDEAS
 // TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique) 
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
-// TODO ? Store wikidata id for boundaries (regions.ocbf) & display them ? 
+// TODO ? Store wikidata id for boundaries (regions.ocbf) & display them - place=county, place=state ? 
+
+// EXTRA FEATURES
+// TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
+// TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
+// TODO Search near key objects (subway station artificial bbox)
+// TODO New Geocoding for cases ("NC 42" == "NC-42") 
+// TODO Add flats: https://www.openstreetmap.org/node/5843642738
+// TODO Sugggestion-correction
+// TODO English postcodes
 
 public class SpatialSearchTestAndDocs {
 
@@ -218,12 +218,11 @@ public class SpatialSearchTestAndDocs {
 //		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
-		// 'M-2', 'M 2' (2 OK!), '2 M' (2 OK?),  '2-M', '2M' (0 OK, 2 (not indexed) M)), M2 (0 OK). 
-		// extra
+		// 'M 2' variations data: 'M-2', 'M 2' and '2 M' 
 		// POI М-2    (306998303): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M')
 		// POI '2 M' (3869587585): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M') - 2 is not indexed query 2M, 2-M
 		// m-n Topol 2(120393782): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M')
-		query = "M-2";  
+//		query = "M-2";  
 		
 //		pattern = "Belarus_minsk";
 //		query = "Независим. 48, 1";
@@ -232,10 +231,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-//		pattern = "Us_new-york";
+		pattern = "Us_new-york";
 //		query = "New York The plaza";
-//		query = "New York plaza";
-//		query = "New York str."; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
+		query = "New York plaza";
+//		query = "New York s."; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 //		query = "New York 4 avenue"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
 //		query = "4 ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132

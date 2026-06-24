@@ -38,18 +38,19 @@ public class SpatialSearchContext {
 	SpatialSearchStats stats = new SpatialSearchStats();
 
 	public static class SpatialSearchStats {
-		long time = System.nanoTime();
-		long stepAtoms = 0;
-		long fileAtomsTime = 0;
-		long matchTime = 0;
+		public long time = System.nanoTime();
+		public long stepAtoms = 0;
+		public long fileAtomsTime = 0;
+		public long matchTime = 0;
+		public int tokenObjs;
 		
-		long stepCompute = 0;
-		long loadObjectsBld = 0;
-		long readObjTime = 0;
+		public long stepCompute = 0;
+		public long loadObjectsBld = 0;
+		public long readObjTime = 0;
+		public int maxCombinations = 0;
 		
-		long stepSort = 0;
-		int maxCombinations = 0;
-		int tokenObjs;
+		public long stepSort = 0;
+		
 		
 		@Override
 		public String toString() {
@@ -72,6 +73,10 @@ public class SpatialSearchContext {
 	
 	public LatLon getLocation() {
 		return location;
+	}
+	
+	public SpatialSearchStats getStats() {
+		return stats;
 	}
 
 	public void initFiles(SpatialSearchGlobalCache cache) {
