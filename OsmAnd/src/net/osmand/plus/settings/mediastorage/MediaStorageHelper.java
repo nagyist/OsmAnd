@@ -222,7 +222,7 @@ public class MediaStorageHelper {
 	@Nullable
 	private MediaSource resolveInternalMediaSource(@NonNull String href, @NonNull String internalPath) {
 		File file = MediaProvider.resolveInternalMediaFile(app.getAppPath().getAbsolutePath(), internalPath);
-		if (file.exists() && MediaFileNameFormat.isGeneratedMediaFileName(file.getName())) {
+		if (file.exists() && MediaFileNameFormat.isManagedMediaFileName(file.getName())) {
 			return new FileMediaSource(this, href, file);
 		}
 		return null;
@@ -270,11 +270,11 @@ public class MediaStorageHelper {
 	}
 
 	private static boolean isGeneratedMediaName(@Nullable String name) {
-		return !Algorithms.isEmpty(name) && MediaFileNameFormat.isGeneratedMediaFileName(name);
+		return !Algorithms.isEmpty(name) && MediaFileNameFormat.isManagedMediaFileName(name);
 	}
 
 	private boolean isManagedMediaFile(@NonNull MediaStorageLocation location, @NonNull File file) {
-		if (!MediaFileNameFormat.isGeneratedMediaFileName(file.getName())) {
+		if (!MediaFileNameFormat.isManagedMediaFileName(file.getName())) {
 			return false;
 		}
 		if (location.getStorageType() == MAIN_STORAGE) {

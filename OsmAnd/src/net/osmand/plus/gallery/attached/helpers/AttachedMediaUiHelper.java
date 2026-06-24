@@ -153,8 +153,7 @@ public class AttachedMediaUiHelper {
 		MediaDirType dirType = getMediaDirType(type);
 		String extension = getMediaExtension(type);
 		MediaStorageLocation storageLocation = MediaStorageLocation.fromSettings(app);
-		String fileName = MediaFileNameFormat.createUniqueMediaFileName(latLon.getLatitude(), latLon.getLongitude(), extension,
-				name -> mediaStorageHelper.mediaFileExists(storageLocation, dirType, name));
+		String fileName = MediaFileNameFormat.createUniqueMediaFileName(extension, name -> mediaStorageHelper.mediaFileExists(storageLocation, dirType, name));
 		String mimeType = MediaStorageUtils.getMimeType(null, fileName, dirType);
 		MediaTarget mediaTarget = mediaStorageHelper.createTarget(storageLocation, dirType, fileName, mimeType);
 		if (mediaTarget == null || mediaTarget.exists()) {

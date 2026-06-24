@@ -143,8 +143,7 @@ class CollectMediaLinksTask extends AsyncTask<Void, Void, List<Link>> {
 	private Link copyMediaToOsmAndStorage(@NonNull PickedMedia media) {
 		String extension = getMediaExtension(media);
 		MediaDirType dirType = getMediaDirType(media, extension);
-		String fileName = MediaFileNameFormat.createUniqueMediaFileName(latLon.getLatitude(), latLon.getLongitude(),
-				extension, name -> mediaStorageHelper.mediaFileExists(storageLocation, dirType, name));
+		String fileName = MediaFileNameFormat.createUniqueMediaFileName(extension, name -> mediaStorageHelper.mediaFileExists(storageLocation, dirType, name));
 		String mimeType = MediaStorageUtils.getMimeType(media.mimeType(), fileName, dirType);
 		MediaTarget target = mediaStorageHelper.createTarget(storageLocation, dirType, fileName, mimeType);
 		if (target == null) {

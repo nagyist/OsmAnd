@@ -159,8 +159,8 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 	private final RecordingsFileHelper recordingsFileHelper;
 	private final AttachedMediaDataHelper attachedMediaDataHelper;
 
-	private double actionLat;
-	private double actionLon;
+	private double actionLat = Double.NaN;
+	private double actionLon = Double.NaN;
 	private int runAction = -1;
 	private List<RecordingsListener> recordingsListeners = new ArrayList<>();
 
@@ -638,6 +638,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 				File f = getOutputFile(lat, lon, MPEG4_EXTENSION);
 				cameraRecorder.configureVideoRecorder(mr, p, f, CameraRecorder.getDisplayRotation(mapActivity));
 				try {
+					setMediaRecorderLocation(mr, lat, lon);
 					if (!isAttachedMediaRecording() && recordingsFileHelper.AV_RECORDER_SPLIT.get()) {
 						cleanupRecordingSpace(p);
 					}
@@ -717,6 +718,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 
 				File file = getOutputFile(lat, lon, THREEGP_EXTENSION);
 				MediaRecorder recorder = audioRecorder.createRecorder(file);
+				setMediaRecorderLocation(recorder, lat, lon);
 				runMediaRecorder(activity, recorder, file);
 			} catch (Exception e) {
 				cancelPendingRecordingListeners();
@@ -850,6 +852,8 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 	}
 
 	public void takePhotoExternal(double lat, double lon, MapActivity mapActivity) {
+		actionLat = lat;
+		actionLon = lon;
 		File f = getOutputFile(lat, lon, IMG_EXTENSION);
 		lastTakingPhoto = f;
 		Intent takePictureIntent = mediaCaptureHelper.createPhotoCaptureIntent(mapActivity, f);
@@ -910,6 +914,7 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 			cameraRecorder.unlockCamera();
 			mr.setCamera(cameraRecorder.getCamera());
 			cameraRecorder.configureVideoRecorder(mr, profile, f, getRotation());
+			setMediaRecorderLocation(mr, latLon.getLatitude(), latLon.getLongitude());
 			mr.prepare();
 			mr.start();
 			mediaRec = mr;
@@ -1030,10 +1035,37 @@ public class AudioVideoNotesPlugin extends OsmandPlugin {
 		finishRecording();
 		CallbackWithObject<File> callback = attachedRecording != null ? attachedRecording.getResultCallback() : null;
 		if (callback != null && file != null && file.exists() && file.length() > 0) {
+			if (attachedRecording.getType() == AVActionType.REC_PHOTO) {
+				updateAttachedPhotoInformation(file);
+			}
 			callback.processResult(file);
 		} else if (callback != null) {
 			callback.processResult(null);
 		}
+	}
+
+	private void updateAttachedPhotoInformation(@NonNull File file) {
+		double lat = recordingMenu != null ? recordingMenu.lat : actionLat;
+		double lon = recordingMenu != null ? recordingMenu.lon : actionLon;
+		if (!isValidMediaLocation(lat, lon)) {
+			return;
+		}
+		Float heading = app.getLocationProvider().getHeading();
+		try {
+			new Recording(file).updatePhotoInformation(lat, lon, null, heading != null && heading != 0 ? heading : Double.NaN);
+		} catch (IOException e) {
+			log.error("Error updating EXIF information " + e.getMessage(), e);
+		}
+	}
+
+	private void setMediaRecorderLocation(@NonNull MediaRecorder recorder, double lat, double lon) {
+		if (isValidMediaLocation(lat, lon)) {
+			recorder.setLocation((float) lat, (float) lon);
+		}
+	}
+
+	private static boolean isValidMediaLocation(double lat, double lon) {
+		return lat >= -90.0 && lat <= 90.0 && lon >= -180.0 && lon <= 180.0;
 	}
 
 	private void cancelAttachedMediaRecording() {
