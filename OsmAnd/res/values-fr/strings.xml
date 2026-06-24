@@ -5974,7 +5974,7 @@
     <string name="astro_type_globular_cluster">Amas globulaire</string>
     <string name="astro_type_galaxy_cluster">Amas de galaxies</string>
     <string name="astro_type_constellation">Constellation</string>
-    <string name="no_objects_found">Aucun objet trouvé</string>
+    <string name="no_objects_found">Aucun élément trouvé</string>
     <string name="astro_go_to_map">Aller à la carte</string>
     <plurals name="astro_catalog_objects_count">
         <item quantity="one">%d objet</item>
@@ -5995,12 +5995,12 @@
     <string name="astro_explore_schedule">Prévisions</string>
     <string name="astro_explore_watch_now_subtitle">Afficher ce qu\'il y a dans le ciel ce soir</string>
     <string name="astro_explore_watch_now">Afficher maintenant</string>
-    <string name="astro_search_info_solar_system">Le système solaire est le système lié par la gravité du Soleil et des masses qui gravitent autour de lui, principalement ses huit planètes, dont la Terre fait partie.</string>
-    <string name="astro_search_info_constellations">Une constellation est une zone de la sphère céleste dans laquelle un groupe d\'étoiles visibles forme un motif ou un contour perceptible.</string>
-    <string name="astro_search_info_stars">Les étoiles sont des objets astronomiques lumineux constitués de plasma, maintenus ensemble par leur propre gravité.</string>
-    <string name="astro_search_info_nebulas">Une nébuleuse est un gigantesque nuage de poussière et de gaz dans l\'espace, souvent une région où naissent les étoiles.</string>
-    <string name="astro_search_info_star_clusters">Un amas stellaire est un groupe d\'étoiles liées par la gravité et formées à partir du même nuage moléculaire.</string>
-    <string name="astro_search_info_deep_sky">Les objets du ciel profond comprennent les galaxies, les nébuleuses, les amas d\'étoiles et d\'autres objets astronomiques lointains.</string>
+    <string name="astro_search_info_solar_system">Le système solaire est l\'ensemble, lié par la gravité, formé par le Soleil et les corps qui gravitent autour de lui, notamment ses huit planètes, dont la Terre fait partie.</string>
+    <string name="astro_search_info_constellations">Une constellation est une zone de la sphère céleste dans laquelle un groupe d\'étoiles visibles forme une figure ou un contour perceptible.</string>
+    <string name="astro_search_info_stars">Les étoiles sont des objets astronomiques lumineux constitués de plasma, maintenus par leur propre gravité.</string>
+    <string name="astro_search_info_nebulas">Une nébuleuse est un gigantesque nuage de poussière et de gaz dans l\'espace, qui constitue souvent un lieu de naissance des étoiles.</string>
+    <string name="astro_search_info_star_clusters">Un amas stellaire est un groupe d\'étoiles liées entre elles par la gravité et issues du même nuage moléculaire.</string>
+    <string name="astro_search_info_deep_sky">Les objets du ciel profond comprennent les galaxies, les nébuleuses, les amas d\'étoiles et d\'autres cibles astronomiques lointaines.</string>
     <string name="astro_my_data_no_favorites_title">Rien ici</string>
     <string name="astro_my_data_no_favorites_description">Vous pouvez ajouter des objets à vos favoris à partir de leur menu contextuel</string>
     <string name="astro_my_data_no_daily_paths_title">Aucun chemin quotidien</string>
@@ -6016,7 +6016,7 @@
     <string name="astro_sort_rises_soonest">Se lève le plus tôt</string>
     <string name="astro_sort_faintest_first">Le moins lumineux en premier</string>
     <string name="astro_sort_brightest_first">Le plus lumineux en premier</string>
-    <string name="astro_search_empty_description">Essayez de modifier les filtres ou l\'heure d\'observation.</string>
+    <string name="astro_search_empty_description">Essayez de modifier les filtres ou la durée d\'observation.</string>
     <string name="astro_search_input_hint">Saisir un texte</string>
     <string name="astro_explore_deep_sky_subtitle">Galaxie, amas de galaxies, trous noirs</string>
     <string name="obd_alt_battery_voltage_desc">Affiche le niveau de tension sur l\'adaptateur OBD</string>
@@ -6036,8 +6036,8 @@
     <string name="astro_next_day_suffix">⁺¹</string>
     <string name="release_5_3">• Prise en charge des bâtiments en 3D ajoutée\n\n • Affichage de la carte en vue sphérique\n\n • Module d\'extension d\'astronomie avec carte nocturne et base de données des étoiles\n\n • Nouveaux modes de couleur pour le compteur de vitesse : tolérance et excès de vitesse\n\n • Dispositions distinctes des widgets pour les modes paysage et portrait\n\n • Widgets d\'enregistrement de trajet : vitesse de déplacement et vitesse moyenne\n\n • Widget de tension de l\'adaptateur pour les données du véhicule\n\n • Données du véhicule dans l\'analyseur de parcours\n\n • Organisation automatique des parcours par année, longueur, activité et plus encore\n\n • Éditeur de palette pour la visualisation du terrain et des parcours\n\n • Algorithmes de recherche améliorés et interface utilisateur actualisée\n\n • Profils d\'altitude corrigés pour les itinéraires\n\n • Favoris : nouvelles options de tri et interface utilisateur actualisée\n\n • Partage de lien vers n\'importe quel point d\'intérêt\n\n • Aperçu des points de cheminement sans fermer la liste\n\n • Paramètre de largeur du vélo pour éviter les routes étroites\n\n • Descriptions des photos provenant de Wikimedia</string>
     <string name="shared_string_clear_filters">Effacer les filtres</string>
-    <string name="astro_sort_newest_first">Récents en premier</string>
-    <string name="astro_sort_oldest_first">Anciens en premier</string>
+    <string name="astro_sort_newest_first">Les plus récents en premier</string>
+    <string name="astro_sort_oldest_first">Les plus anciens en premier</string>
     <string name="compass_calibration_needed">Étalonnage de la boussole nécessaire</string>
     <string name="sensors_not_available_for_ar">Capteur indisponible pour l\'AR</string>
     <string name="ar_mode_enabled">Mode AR activé</string>
