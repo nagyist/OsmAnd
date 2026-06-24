@@ -1158,7 +1158,7 @@
     <string name="sort_by_name">Sorter efter navn</string>
     <string name="none_selected_gpx">Angiv først en GPX-fil med et langt tryk.</string>
     <string name="local_index_select_gpx_file">Vælg et spor</string>
-    <string name="no_index_file_to_download">Ingenting at hente, kontroller internetforbindelsen.</string>
+    <string name="no_index_file_to_download">Downloads ikke fundet. Kontroller din internetforbindelse.</string>
     <string name="rendering_attr_hideBuildings_name">Bygninger</string>
     <string name="rendering_attr_hideNonVehicleHighways_name">Gang- og cykelstier</string>
     <string name="rendering_attr_hideText_name">Tekst</string>
@@ -5259,7 +5259,7 @@
     <string name="use_3d_track_visualization">3D-visualisering</string>
     <string name="shared_string_changes">Ændringer</string>
     <string name="apply_only_to_new">Anvend kun på nye</string>
-    <string name="change_default_tracks_appearance_confirmation">Anvend ændringer på eksisterende spor i mappen eller kun på nye?</string>
+    <string name="change_default_tracks_appearance_confirmation">Skal ændringerne gælde for eksisterende spor i mappen eller kun for nye spor?</string>
     <string name="release_4_8">• Ny mulighed for terrænfarvning \"Højde\" \n \n • Brugerdefinerede farvepaletter til terræn, spor og ruter \n \n • 3D-variant til ikoner for placeringsposition \n \n • Hurtige handlinger kan nu tildeles til eksterne tastaturer \n \n • Vejret: Brugerflade-opdatering, tilføjet vindanimation \n \n • Forbedringer af 3D-spor: nye visualiserings- og farvelægningsmuligheder \n \n • Udvidet udvalg af turistruter på kortet \n \n • Tilføjet mulighed for app-tema for at følge korttilstand \n \n • Rettet sporstatistik, sortering og søgning \n \n • OSM-redigering: slettet metode til godkendelse af login/adgangskode \n \n • Skift til systemdelingsark fra Android 14</string>
     <string name="shared_string_scale">Skala</string>
     <string name="relief_3d_download_description">Yderligere kort er nødvendige for at se terræn på kortet.</string>
@@ -6144,8 +6144,8 @@
     <string name="astro_filter_visible_tonight">Synlig i aften</string>
     <string name="astro_filter_visible_now">Synlig nu</string>
     <string name="astro_filter_show_all">Vis alle</string>
-    <string name="astro_sort_sets_soonest">Går med snarest</string>
-    <string name="astro_sort_rises_soonest">Står op snarest</string>
+    <string name="astro_sort_sets_soonest">Går ned først</string>
+    <string name="astro_sort_rises_soonest">Står op først</string>
     <string name="astro_sort_faintest_first">Svageste først</string>
     <string name="astro_sort_brightest_first">Lysest først</string>
     <string name="astro_search_empty_description">Prøv at ændre filtrene eller observationstiden.</string>
