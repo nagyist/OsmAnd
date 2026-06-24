@@ -41,7 +41,7 @@ import net.osmand.util.SearchAlgorithms;
 
 public class SpatialTextSearch {
 
-	private static final int LIMIT_PRINT = 300;
+	private static final int LIMIT_PRINT = 1000;
 
 	public static class SpatialTextSearchSettings {
 

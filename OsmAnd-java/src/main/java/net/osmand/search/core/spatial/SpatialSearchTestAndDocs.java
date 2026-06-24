@@ -11,44 +11,45 @@ import net.osmand.data.MapObject;
 import net.osmand.map.OsmandRegions;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchResults;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
-import net.osmand.util.SearchAlgorithms;
 
 
-//////////// OTHER TASKS ///////
-// - TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania
-// - REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
-// - TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
-// - TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
-
-// - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25', 'школа 25', 'школа #25')
-// - Unit test: Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова)...
+//////////// UNIT TESTS ///////
+// - Unit test: duplicate words in query Pennsylvania Street in Pennsylvania, Find More
+// - Unit test: (<common_word> <almost_number>) -('№25', '25', '#25' - no search) -- OK ('школа', 'школа №25', 'школа 25', 'школа #25')
+// - Unit test: Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
 // - SLOWEST QUERY: 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k),
 //           OTHER: 'New York s. ' 0.5s (100k), 'Sokak 2' - 0.5s (500K), 'Lima Calle 2' - 0.5s (25K)
 
 //////////// TESTING //////////
+// REVIEW UI FILTER_MIN_WORDS_COUNT - 'New york plaza' ('the'), Issues Nova poshta Kharkiv 
 // TESTING 'New york s.' - 1 letter very slow
 // TESTING Match '2nd' and '2'!! (no 4 -> 48)
 // TESTING Abbreviations Phase (street / st, blvd)
 
-
 ////////// IN PROGRESS//////////
-// TODO Issues Nova poshta Kharkiv limit FILTER_MIN_WORDS_COUNT?
-// TODO 'New york plaza' ('the') limit FILTER_MIN_WORDS_COUNT
-// TODO Test NC-42
+// TODO Review TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
+
+// OPTIMIZE
 // TODO Calle 20 188 Lima San Isidro  / Sokak - delay street intersection 
 // TODO Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
+// TODO Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k),
+// TODO Ignore same embedded boundary city / county - deduplicate on the fly
+// TODO test: merge boundaries bbox - extend incomplete boundary same id...
 
 // TO DO
+// TODO Filter results boundaries, <Salt Lake City>
+// - TODO REVIEW '2-m' matches by number too many '2-a', '2...
 // FIXME POI Categories + top poi categories
 // FIXME Building interpolation - name / location
 // FIXME Street intersection match
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 //       Combine regions.ocbf (boundary)
-// TODO Ignore same embedded boundary city / county - deduplicate on the fly
-// TODO test: merge boundaries bbox - extend incomplete boundary same id...
 // TODO Progress / cancel
+// TODO Not forget to include regions.ocbf on client
 
 // EXTRA FEATURES
+// TODO New Geocoding ("NC 42" == "NC-42") - Use new search with bbox
+// TODO Inspector stats index_words_dashboard.html
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
 // TODO Search near key objects (subway station artificial bbox)
@@ -59,10 +60,6 @@ import net.osmand.util.SearchAlgorithms;
 // TODO English postcodes
 
 // TEST IDEAS
-// TODO Filter results boundaries, <Salt Lake City>
-// TODO Not forget to include regions.ocbf on client
-// TODO Inspector stats index_words_dashboard.html
-// TODO New Geocoding ("NC 42" == "NC-42") - Use new search with bbox
 // TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique) 
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
 // TODO ? Store wikidata id for boundaries (regions.ocbf) & display them ? 
@@ -70,6 +67,16 @@ import net.osmand.util.SearchAlgorithms;
 public class SpatialSearchTestAndDocs {
 
 	/**
+	 * Collator examples:
+	 * Equals / starts from space
+	 * TRUE - 's' in 'U.S. Information' (. is a space)
+	 * FALSE - 'us'  'U.S. Information' (no)
+	 * 
+	 * Tokenize:
+	 * 'NA-75' - ['NA-75']
+	 * 
+	 * 
+	 * 
 	 * Tokenizer {@link SearchAlgorithms#splitAndNormalize(String, boolean)}
 	 * 
 	 * Word: Characters or digits (emoji undefined status) 
@@ -123,6 +130,23 @@ public class SpatialSearchTestAndDocs {
 	 * 
 	 */
 
+	/**
+	 * Collator examples:
+	 * Equals / starts from space
+	 * TRUE - 's' in 'U.S. Information' (. is a space in collator)
+	 * FALSE - 'us'  'U.S. Information' (no)
+	 * TRUE - 'M-2' == 'M 2' (collator feature)
+	 * 
+	 * Tokenize:
+	 * 'NA-75' - ['NA-75'] (- in between numbers),'NA 75' ['NA', '75']
+	 * 'U.S. State' - ['U.S.', 'State'] (dot part of word)
+	 * Friedrich-Wilhelm-Weber-Straße -  [friedrich, wilhelm, weber, straße]
+	 * 
+	 * Matcher
+	 * 1. Exact matching always work
+	 * 2. 'NA-75' matches 'NA 75' and 'NA 75' matches 'NA-75' 
+	 * 
+	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 //		SpatialTextSearchSettings.DEDUPLICATE_RES = true;
 //		SpatialTextSearchSettings.SEARCH_BUILDINGS = false;
@@ -137,19 +161,24 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
-//		pattern = "Us_";
+		pattern = "Us_";
 //		pattern = "Map";
 //		query = "Salt Lake City Pennsylvania Place 123 UT USA";
 //		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
-//		query = "Salt Lake City Pennsylvania Street";
+		query = "Salt Lake City Pennsylvania Street";
 //		query = "West Valley City";
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 //		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
-//		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; 
+		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA";
+		query = "Pennsylvania Avenue Philadelphia PA USA"; 
 //		query = "Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA";
 //		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
-//		query ="Township";
+		
+		// Street ref "pa 75" (not stored), house "pa-75" (data)
+		query = "PA 75 27193"; // Data 'PA-75', 27193  4472676432
+		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), no - 'PA75' 
+		// data "PA 75" - see "M-2, 2 M" example
 
 //		pattern = "Liechtenstein_europe.obf";
 //		query = "Vaduz Lettstrasse";
@@ -189,6 +218,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
+		// 'M-2', 'M 2' (2 OK!), '2 M' (2 OK?),  '2-M', '2M' (0 OK, 2 (not indexed) M)), M2 (0 OK). 
+		// extra
+		// POI М-2    (306998303): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M')
+		// POI '2 M' (3869587585): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M') - 2 is not indexed query 2M, 2-M
+		// m-n Topol 2(120393782): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M')
+		query = "M-2";  
 		
 //		pattern = "Belarus_minsk";
 //		query = "Независим. 48, 1";

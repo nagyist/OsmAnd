@@ -139,7 +139,8 @@ public class SpatialSearchToken {
 	}
 
 	boolean acceptName(String name) {
-		if(mainNumber > 0) {
+//		System.out.printf("query '%s' matches '%s' %s\n", word, name, collatorMain.matches(name));
+		if (mainNumber > 0) {
 			if (mainNumber == Algorithms.extractFirstIntegerNumber(name)) {
 				return true;
 			}
@@ -151,7 +152,6 @@ public class SpatialSearchToken {
 				}
 			}
 		}
-//		System.out.printf("query '%s' matches '%s' %s\n", word, name, collatorMain.matches(name));
 		return collatorMain.matches(name);
 	}
 
