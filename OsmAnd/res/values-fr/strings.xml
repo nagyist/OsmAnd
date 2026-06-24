@@ -5119,7 +5119,7 @@
     <string name="use_3d_track_visualization">Visualisation 3D</string>
     <string name="shared_string_changes">Modifications</string>
     <string name="apply_only_to_new">S\'applique uniquement aux nouveaux</string>
-    <string name="change_default_tracks_appearance_confirmation">Appliquer les modifications aux pistes existantes dans le dossier ou uniquement aux nouvelles ?</string>
+    <string name="change_default_tracks_appearance_confirmation">Appliquer les modifications aux traces existantes dans le dossier ou uniquement aux nouvelles ?</string>
     <string name="gpx_approximation_java">Basé sur le routage (Java)</string>
     <string name="release_4_8">• Nouvelle option de colorisation du relief « Altitude » \n \n• Palettes de couleurs personnalisées pour le relief, les traces et les itinéraires \n \n• Variante 3D pour les icônes de position \n \n• Les actions rapides peuvent désormais être assignées à des claviers externes \n \n• Météo : rafraîchissement de l\'interface utilisateur, ajout d\'une animation du vent \n \n• Amélioration des traces 3D : nouvelles options de visualisation et de colorisation \n \n• Sélection élargie d\'itinéraires touristiques sur la carte \n \n• Ajout d\'une option de thème d\'application pour suivre le mode carte \n \n• Correction des statistiques des traces, du tri et de la recherche \n \n• Édition OSM : suppression de la méthode d\'authentification par login / mot de passe \n \n• Passage à l\'écran de partage du système à partir d\'Android 14</string>
     <string name="gpx_approximation_cpp">Basé sur le routage (C++)</string>
