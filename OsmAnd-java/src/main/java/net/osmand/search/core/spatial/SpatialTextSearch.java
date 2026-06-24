@@ -329,16 +329,21 @@ public class SpatialTextSearch {
 		if (res.mainResults.size() > 0) {
 			int[] limits = SpatialTextSearchSettings.FILTER_MIN_WORDS_COUNT.clone();
 			int sz = res.mainResults.get(0).getObjectsSize(), ind = 0, lind = 0;
+			int level = 0; 
 			for (SpatialSearchResult r : res.mainResults) {
-				if(sz != r.getObjectsSize()) {
-					if (lind < limits.length && limits[lind] <= ind) {
-						res.mainResults = res.mainResults.subList(0, ind);
-						break;
+				if (sz != r.getObjectsSize()) {
+					if (level == 0) {
+						if (lind < limits.length && ind >= limits[lind]) {
+							level++;
+						} else if (lind < limits.length - 1) {
+							lind++;
+						}
+					} else {
+						level++;
 					}
-					if (lind < limits.length - 1) {
-						lind++;
-					}
+					sz = r.getObjectsSize();
 				}
+				r.level = level;
 				ind++;
 			}
 		}
@@ -365,7 +370,12 @@ public class SpatialTextSearch {
 			System.out.println("Main: " + res.combinations.get(0));
 			int limit = LIMIT_PRINT;
 			int all = res.mainResults.size();
+			int level = 0;
 			for (SpatialSearchResult r : res.mainResults) {
+				if (r.level != level) {
+					level++;
+					System.out.println("### LEVEL " + level);
+				}
 				if (limit-- < 0) {
 					System.out.println(".............");
 					break;

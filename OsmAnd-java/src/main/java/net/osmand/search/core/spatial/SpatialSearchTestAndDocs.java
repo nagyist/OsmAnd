@@ -22,18 +22,21 @@ import net.osmand.util.SearchAlgorithms;
 
 // - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25', 'школа 25', 'школа #25')
 // - Unit test: Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова)...
-// - SLOWEST 'New York 4 av' - 8 sec, 1M
-//////////// IN PROGRESS //////////
+// - SLOWEST QUERY: 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k),
+//           OTHER: 'New York s. ' 0.5s (100k), 'Sokak 2' - 0.5s (500K), 'Lima Calle 2' - 0.5s (25K)
+
+//////////// TESTING //////////
 // TESTING 'New york s.' - 1 letter very slow
 // TESTING Match '2nd' and '2'!! (no 4 -> 48)
 // TESTING Abbreviations Phase (street / st, blvd)
 
+
+////////// IN PROGRESS//////////
+// TODO Issues Nova poshta Kharkiv limit FILTER_MIN_WORDS_COUNT?
+// TODO 'New york plaza' ('the') limit FILTER_MIN_WORDS_COUNT
 // TODO Test NC-42
 // TODO Calle 20 188 Lima San Isidro  / Sokak - delay street intersection 
 // TODO Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
-
-// TODO 'New york plaza' ('the') limit FILTER_MIN_WORDS_COUNT
-// TODO Issues Nova poshta Kharkiv limit FILTER_MIN_WORDS_COUNT?
 
 // TO DO
 // FIXME POI Categories + top poi categories
@@ -127,17 +130,17 @@ public class SpatialSearchTestAndDocs {
 		String pattern = "Germany_b";
 		String pattern2 = ".....";
 		String query = "Berlin hauptstrasse"; // slow
-		query = "Kelterstraße Kernen im Remstal";
-		query = "Germany Kelter. Kernen im Remstal";
+//		query = "Kelterstraße Kernen im Remstal";
+//		query = "Germany Kelter. Kernen im Remstal";
 
 		// Building time vs no building
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
-		pattern = "Us_";
+//		pattern = "Us_";
 //		pattern = "Map";
-		query = "Salt Lake City Pennsylvania Place 123 UT USA";
-		query = "Salt Lake City Elephant";
+//		query = "Salt Lake City Pennsylvania Place 123 UT USA";
+//		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
 //		query = "Salt Lake City Pennsylvania Street";
 //		query = "West Valley City";
@@ -174,7 +177,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Ukraine kyiv saks.";
 //		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 3 харків";
-		query = "Нова пошта харків";
+//		query = "Нова пошта харків";
 //		query = "2 га Нова вулиця"; // unit test '2га', '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
 //		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
 //		query = "саксаг. 63/28, 2";
@@ -197,7 +200,7 @@ public class SpatialSearchTestAndDocs {
 //		pattern = "Us_new-york";
 //		query = "New York The plaza";
 //		query = "New York plaza";
-//		query = "New York s."; // 500k
+//		query = "New York str."; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 //		query = "New York 4 avenue"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
 //		query = "4 ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132

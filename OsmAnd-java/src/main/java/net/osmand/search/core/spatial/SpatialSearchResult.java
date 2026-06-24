@@ -16,7 +16,8 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
 	final int parentInd;
 	final SpatialSearchResultsList parent;
-	final List<SpatialSearchResultRef> objs = new ArrayList<>(); 
+	final List<SpatialSearchResultRef> objs = new ArrayList<>();
+	int level; 
 	
 	SpatialSearchResult(SpatialSearchResultsList parentList, int parentInd) {
 		this.parentInd = parentInd;
@@ -83,6 +84,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			return objs.get(0).atom.object.getLocation();
 		}
 		return null;
+	}
+	
+	public int visibleLevel() {
+		return level;
 	}
 	
 	public long getIdDeduplication() {
