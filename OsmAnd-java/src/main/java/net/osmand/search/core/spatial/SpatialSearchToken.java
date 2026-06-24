@@ -2,6 +2,7 @@ package net.osmand.search.core.spatial;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.google.protobuf.ByteString;
 
@@ -35,6 +36,7 @@ public class SpatialSearchToken {
 	boolean incomplete;
 	String originalWord;
 	String word;
+	Set<String> bldWordSplit;
 	
 	List<NameIndexAtom> atoms = new ArrayList<>();
 	TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
@@ -48,6 +50,7 @@ public class SpatialSearchToken {
 	public SpatialSearchToken(String w, String original, int order) {
 		originalWord = original;
 		word = w;
+		bldWordSplit = SearchAlgorithms.getBuildingCompareSet(word);
 		originalOrder = order;
 		String noDot = w;
 		if (w.endsWith(DOT_INCOMPLETE_STRING)) {
@@ -57,9 +60,9 @@ public class SpatialSearchToken {
 		if (incomplete && word.length() <= SpatialTextSearchSettings.MIN_CHARACTERS_INCOMPLETE + 1) {
 			collatorMain = new CollatorStringMatcher(noDot, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
 		} else {
-			if (SearchAlgorithms.isNumber2Letters(noDot)) {
-				// 4 = 4th
-				// wrong case token '4' - matches '48'
+			if (SearchAlgorithms.letters(noDot) == 0) {
+				// pos case '4', '#4' query should match 4th, wrong case token '4' should not match '48th'
+				// we use number to compare if we use is isNumber2Letters to many weird results on '2B'
 				mainNumber = Algorithms.extractFirstIntegerNumber(noDot);
 			}
 			// . already in collator w.endsWith(DOT_INCOMPLETE_STRING)
@@ -73,6 +76,12 @@ public class SpatialSearchToken {
 				otherMatch[i] = new CollatorStringMatcher(other.get(i), StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
 			}
 		}
+	}
+	
+	
+
+	public Set<String> getWordSplitAsBuidingName() {
+		return bldWordSplit;
 	}
 	
 	public CollatorStringMatcher getCollator() {
@@ -95,6 +104,7 @@ public class SpatialSearchToken {
 			public boolean matchKey(String key) {
 				stats.matchTime -= System.nanoTime();
 				String alignedKey = CollatorStringMatcher.alignChars(key);
+				// could be empty after align so match = true! ("''" -> "")
 				boolean matched = matchAlignedKey(alignedKey);
 				if (!matched && mainNumber > 0) {
 					// 4th - key, "4" token

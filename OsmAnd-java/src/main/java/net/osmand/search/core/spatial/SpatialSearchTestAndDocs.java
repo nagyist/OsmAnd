@@ -11,6 +11,7 @@ import net.osmand.data.MapObject;
 import net.osmand.map.OsmandRegions;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchResults;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
+import net.osmand.util.SearchAlgorithms;
 
 
 //////////// UNIT TESTS ///////
@@ -25,13 +26,13 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSetting
 // TESTING 'New york s.' - 1 letter very slow
 // TESTING Match '2nd' and '2'!! (no 4 -> 48)
 // TESTING Abbreviations Phase (street / st, blvd)
+// REVIEW '2-m' matches by number too many '2-a', '2...
+// Document TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
 
 ////////// IN PROGRESS//////////
-// TODO Document TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
-// TODO REVIEW '2-m' matches by number too many '2-a', '2...
-// TODO Filter results boundaries, <Salt Lake City>
+// TODO остров.
 
-// OPTIMIZE
+// TODO Filter results boundaries, <Salt Lake City>
 // TODO Calle 20 188 Lima San Isidro  / Sokak - delay street intersection 
 // TODO Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
@@ -69,70 +70,6 @@ public class SpatialSearchTestAndDocs {
 	/**
 	 * Collator examples:
 	 * Equals / starts from space
-	 * TRUE - 's' in 'U.S. Information' (. is a space)
-	 * FALSE - 'us'  'U.S. Information' (no)
-	 * 
-	 * Tokenize:
-	 * 'NA-75' - ['NA-75']
-	 * 
-	 * 
-	 * 
-	 * Tokenizer {@link SearchAlgorithms#splitAndNormalize(String, boolean)}
-	 * 
-	 * Word: Characters or digits (emoji undefined status) 
-	 * Special symbols:
-	 * 
-	 * '.' - part of the word: 'st.', '2039.' (needs to be stored)
-	 * ''' - part of the word: 'Mcdonald's' ()
-	 * '-' - split not numbers, for numbers part of the word 
-	 * '/' - split for not numbers, for numbers part of the word 
-	 * Example: split used for user input '63/28' should keep as 1 word for building
-	 * Specialeeds to be stored but ignored in collator
-	 * 
-	 * Other symbols ignored:
-	 * '#', '№', ...
-	 * 
-	 * Tokenizer splits sentence on input and on search query.
-	 * So later 2 arrays of words are compared.
-	 * 
-	 * Unnecessary split of 'NC-42', '2-B' '63/28' (house number) causes 
-	 * unnecessary complication and computation.
-	 * 
-	 * It's important to not split what very likely will be combined.
-	 * For example 'NC-42' == 'NC42', '2-B' == '2B'.
-	 * 
-	 * However algorithm should support match and search for split words:
-	 * Data: '2-nd street ', Search 'Street 2', 'Street #2', Street 2-nd'
-	 * Data: 'NC 42', Search: 'NC-42', 'NC 42'.'
-	 *
-	 * Index indexes all words except Partial Numbers and some Common.
-	 * So index could have: 'NC-42', 'MC20', '2-nd' (2 letters)
-	 * But not stores: '63/28', '2B', 'B2', 
-	 * --------------------------------
-	 * Potential issue:
-	 * 1. '2nd street' is indexed as '2nd' and not 'street.
-	 * 	  Limitation: user *must* input 2nd as part of search.
-	 *    Input won't work: 'street 2' (commmon words street, 2).
-	 * 2. Data 'NC 42', ok indexed under 'NC'.
-	 *    Query: 'NC-42' will find 'NC' and should match 'NC 42'
-	 *    Other combinations needs to be checked.
-	 * --------------------------------
-	 * 
-	 * 1. 'NC-42', 'NC42', 'NC 42' - 1 token (not searched by number
-	 * 2. Number + suffix - searched by number
-	 * 	   2-nd, 35 bis [35-bis, 35bis] - Missaglia
-	 * 3. 'Friedrich Wilhelm Weber strasse' (Munster) - many tokens
-	 *     Friedrich-Wilhelm-Weber-Straße, Hemauerstraße
-	 *   - Autocorrect -  Weberstrasse -> Weber strasse
-	 * ..........
-	 * Matrix comparision - [Data #1 vs Input #2]...?
-	 * 
-	 * 
-	 */
-
-	/**
-	 * Collator examples:
-	 * Equals / starts from space
 	 * TRUE - 's' in 'U.S. Information' (. is a space in collator)
 	 * FALSE - 'us'  'U.S. Information' (no)
 	 * TRUE - 'M-2' == 'M 2' (collator feature)
@@ -146,11 +83,54 @@ public class SpatialSearchTestAndDocs {
 	 * 1. Exact matching always work
 	 * 2. 'NA-75' matches 'NA 75' and 'NA 75' matches 'NA-75' 
 	 * 
+	 * Tokenizer {@link SearchAlgorithms#splitAndNormalize(String, boolean)}
+	 * 
+	 * Word: Characters or digits (emoji undefined status)
+	 *  
+	 * **Special symbols**
+	 * '.' - part of the word: 'st.', '2039.' (needs to be stored inside)
+	 * ''' - part of the word: 'Mcdonald's' (ignored in collator - alignChars)
+	 * '-' - split not numbers, for numbers part of the word 
+	 * Example: split used for user input '63/28' should keep as 1 word for building
+	 * Special needs to be stored but ignored in collator
+	 * 
+	 * Other symbols are ignored:
+	 * '#', '№', '/' ...
+	 * 
+	 * 1. Unnecessary split of 'NC-42', '2-B' '63/28' (housenumber reverted) causes 
+	 * unnecessary complication and computation.
+	 * 
+	 * 2. No split causes '63/28' causes unnecessary indexing of refs like '123/1x/23y'
+	 *    and missing search for '12/NameOfThePlace'
+	 * 
+	 * It's important to not split what has different meaning on reordering!
+	 * However algorithm should support match and search for split words:
+	 * DATA: '2-nd street '. SEARCH: 'Street 2', 'Street #2', Street 2-nd'
+	 * DATA: 'NC 42', 'NC-42'. SEARCH: 'NC-42', 'NC 42
+	 * 
+	 * Index stores all single tokens except Partial Numbers and some Common.
+	 * So index could have: 'NC-42', 'MC20', '2-nd' (2 letters)
+	 * But not stores: '63/28', '2B', 'B2', 
+	 * --------------------------------
+	 * Spical cases:
+	 * 1. '2nd street' is indexed as '2nd' and not 'street.
+	 * 	  Limitation: user *must* input 2nd as part of search.
+	 *    For input '2' or '#2' (pure number): indexes read all matching prefixes like '2nd'...
+	 * 2. Data 'NC 42', ok indexed under 'NC'. (2 M)
+	 *    Query: 'NC-42' will find 'NC' prefix and will match collator "NC 42" atom.
+	 *    It always works with 2nd word number, if it's not number it will be 2 words.
+	 * 3. Data '2 M'. Indexed only by letter. So it's not searchable as '2M'
+	 * Potential issue:
+	 *    '35bis' == '35 bis' - however it's only for house numbers where different tokenizer is applied!
+	 * 4. Issue with space
+	 *    Friedrich-Wilhelm-Weber-Straße split same as 'Friedrich Wilhelm Weber Straße' - 4 tokens
+	 *    That's an issue for 'Weberstrasse' -> Weber strasse, Hemauerstraße -> Hemauer straße.
+	 *    Possible solution is to prepare 2 variation during indexing 
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 //		SpatialTextSearchSettings.DEDUPLICATE_RES = true;
 //		SpatialTextSearchSettings.SEARCH_BUILDINGS = false;
-		File folder = new File("/Users/victorshcherb/osmand/maps/");
+		File folder = new File(System.getProperty("maps.dir"));
 		String pattern = "Germany_b";
 		String pattern2 = ".....";
 		String query = "Berlin hauptstrasse"; // slow
@@ -208,7 +188,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Нова пошта 3 харків";
 //		query = "Нова пошта харків";
 //		query = "2 га Нова вулиця"; // unit test '2га', '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
-//		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
+		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
 //		query = "Яр. вал 29-г";
@@ -222,7 +202,9 @@ public class SpatialSearchTestAndDocs {
 		// POI М-2    (306998303): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M')
 		// POI '2 M' (3869587585): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M') - 2 is not indexed query 2M, 2-M
 		// m-n Topol 2(120393782): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M')
-//		query = "M-2";  
+		query = "M-2";
+		// '2XU', '2X.' 
+//		query = "360692"; // refs - 3г (not indexed, search by 3 3gh) 390094/5536x/4267x  
 		
 //		pattern = "Belarus_minsk";
 //		query = "Независим. 48, 1";
@@ -231,17 +213,24 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-		pattern = "Us_new-york";
+//		pattern = "Us_new-york";
 //		query = "New York The plaza";
-		query = "New York plaza";
+//		query = "New York plaza";
 //		query = "New York s."; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 //		query = "New York 4 avenue"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
 //		query = "4 ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		
+		pattern = "France_ile-de-france_eu";
+		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
+		query = "Rue Jean Poulmarch 17bis"; //  17bis OK, 17 OK, 17 BIS - OK 'Rue Jean Poulmarch 17;17 bis' 
+		query = "Dieu 8-bis"; // 'Rue Dieu 8 bis' , '8-bis', '8 bis' 
+
+		
 //		pattern = "World_basemap_2";
 //		pattern2 = "Ukraine";
-//		query = "о. Пасхи"; // o. -> остров
+//		query = "о. Пасхи"; // o. -> остров +
+//		query = "остров Пасхи"; // TODO o. -> остров ?
 //		query = "New york";
 //		query  = "Madeira"; // short_name	Madeira
 //		query  = "Everest";

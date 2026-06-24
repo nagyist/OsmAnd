@@ -200,7 +200,7 @@ public class SearchAlgorithms {
         int nextIndex = index + Character.charCount(character);
         int previousIndex = index > 0 ? value.offsetByCodePoints(index, -1) : -1;
         
-        boolean isHyphenNearNumber = (character == '-' || character == '/')
+        boolean isHyphenNearNumber = (character == '-')
                 && ((nextIndex < value.length() && Character.isDigit(value.codePointAt(nextIndex)))
                 || (previousIndex >= 0 && Character.isDigit(value.codePointAt(previousIndex))));
         // dot belongs to word same as '''
@@ -395,5 +395,41 @@ public class SearchAlgorithms {
 		}
 		return startsWithDigit && letters(name) < 2;
 	}	
+	
+	// Split '18B', '18/B', '18-B', '18 B' -> ['18', 'B']
+	public static Set<String> getBuildingCompareSet(String name) {
+		Set<String> resultSet = null;
+		StringBuilder currentToken = new StringBuilder();
+		int lastType = 0;
+		for (int i = 0; i < name.length(); i++) {
+			char ch = name.charAt(i);
+			int type = Character.isDigit(ch) ? 1 : (Character.isLetter(ch) ? 2 : 0);
+			boolean addToken = false;
+			if (type != lastType) {
+				addToken = true;
+			}
+			if (addToken && currentToken.length() > 0) {
+				if (resultSet == null) {
+					resultSet = new TreeSet<String>();
+				}
+				resultSet.add(currentToken.toString().toLowerCase());
+				currentToken.setLength(0); // Clear buffer
+			}
+			if (type > 0) {
+				currentToken.append(ch);
+			}
+			lastType = type;
+		}
+		if (currentToken.length() > 0) {
+			if (resultSet == null) {
+				return Collections.singleton(currentToken.toString().toLowerCase());
+			}
+			resultSet.add(currentToken.toString().toLowerCase());
+		}
+		if (resultSet == null) {
+			return Collections.singleton(name.toLowerCase());
+		}
+		return resultSet;
+	}
 }
 

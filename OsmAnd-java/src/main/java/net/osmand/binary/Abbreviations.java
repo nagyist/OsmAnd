@@ -1,6 +1,7 @@
 package net.osmand.binary;
 
 import net.osmand.search.core.SearchPhrase;
+import net.osmand.util.SearchAlgorithms;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,8 +15,10 @@ public class Abbreviations {
     }
 
     private static final Map<String, String> abbreviations = new HashMap<>();
-    // 2nd version search abbrevations
+    // 2nd version search abbrevations for spatial search
     private static final Map<String, String> searchAbbreviations = new HashMap<>();
+    // set of words to check for buidlings
+    private static final Map<String, String> buildingAbbreviations = new HashMap<>();
 	private static final Set<String> conjunctions = new TreeSet<>();
 
     static {
@@ -57,23 +60,45 @@ public class Abbreviations {
     }
     
     static {
-    	searchAbbreviations.put("e", "East");
-        searchAbbreviations.put("w", "West");
-        searchAbbreviations.put("s", "South");
-        searchAbbreviations.put("n", "North");
-        searchAbbreviations.put("sw", "Southwest");
-        searchAbbreviations.put("se", "Southeast");
-        searchAbbreviations.put("nw", "Northwest");
-        searchAbbreviations.put("ne", "Northeast");
-        searchAbbreviations.put("ln", "Lane");
-        searchAbbreviations.put("dr", "Drive");
-        searchAbbreviations.put("rd", "Road");
-        searchAbbreviations.put("ave", "Avenue");
+    	searchAbbreviations.putAll(abbreviations);
         searchAbbreviations.put("av", "Avenue"); // extra
         searchAbbreviations.put("st", "Street Saint"); // 2 values could be saint
-        searchAbbreviations.put("hwy", "Highway");
-        searchAbbreviations.put("blvd", "Boulevard");
+        searchAbbreviations.put("о", "Остров"); 
     }
+    
+    static {
+    	// french
+    	buildingAbbreviations.put("bis", "Bis");
+    	buildingAbbreviations.put("ter", "Ter");
+    	buildingAbbreviations.put("quater", "Quater");
+    	// american
+    	buildingAbbreviations.put("bldg", "Building");
+    	buildingAbbreviations.put("ste", "Suite");
+    	buildingAbbreviations.put("unt", "Unit");
+    	buildingAbbreviations.put("apt", "Apartment");
+    	buildingAbbreviations.put("fl", "Floor");
+    	buildingAbbreviations.put("flr", "Floor");
+    	buildingAbbreviations.put("bsmt", "Basement");
+    }
+    
+	public static boolean likelyPartOfBuilding(String word, Set<String> wordSplit) {
+		boolean bldNum = (SearchAlgorithms.isNumber2Letters(word) || word.length() == 1
+				|| buildingAbbreviations.containsKey(word));
+		if (bldNum) {
+			return true;
+		}
+		if (wordSplit != null) {
+			// recursion for 2bis
+			for (String w : wordSplit) {
+				boolean likely = likelyPartOfBuilding(w, null);
+				if (!likely) {
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
+	}
     
     public static String replace(String word) {
         String value = abbreviations.get(word.toLowerCase());

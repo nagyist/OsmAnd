@@ -77,16 +77,10 @@ public class NameIndexReader {
 		protected boolean matchAlignedKey(String alignedKey) {
 			// 1. simple match
 			boolean match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedKey, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
-			// 2. match 2-xx (key) -> 2 (query) - another solution, NC-42 (key) -> NC (query)
-			if (!match) {
-				int hyphen = -1;
-				while ((hyphen = alignedKey.indexOf('-', hyphen + 1)) != -1) {
-					match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedKey.substring(0, hyphen),
-							StringMatcherMode.CHECK_ONLY_STARTS_WITH);
-					if (match) {
-						break;
-					}
-				}
+			// 2. match 2-xx (key) -> 2 (query) - another solution number, NC-42 (key) -> NC (query) or 'NC 42' 2 tokens  
+			if (!match && alignedKey.indexOf('-') != -1) {
+				// check equals substring query
+				match = CollatorStringMatcher.cmatches(collator, alignedKey, queryAligned, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
 			}
 //			match = query.startsWith(key);
 			// 3. incomplete query match

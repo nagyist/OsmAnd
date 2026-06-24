@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -24,6 +23,8 @@ import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
+import net.osmand.util.SearchAlgorithms;
+
 import static net.osmand.search.core.spatial.SpatialSearchToken.BUILDING_TYPE;
 import static net.osmand.search.core.spatial.SpatialSearchToken.STREET_TYPE;
 
@@ -200,46 +201,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 	}
 	
-	// Split '18B', '18/B', '18-B', '18 B' -> ['18', 'B']
-	public static Set<String> getBuildingCompareSet(String name) {
-		Set<String> resultSet = null;
-		StringBuilder currentToken = new StringBuilder();
-		int lastType = 0;
-		for (int i = 0; i < name.length(); i++) {
-			char ch = name.charAt(i);
-			int type = Character.isDigit(ch) ? 1 : (Character.isLetter(ch) ? 2 : 0);
-			boolean addToken = false;
-			if (type != lastType) {
-				addToken = true;
-			}
-			if (addToken && currentToken.length() > 0) {
-				if (resultSet == null) {
-					resultSet = new TreeSet<String>();
-				}
-				resultSet.add(currentToken.toString().toLowerCase());
-				currentToken.setLength(0); // Clear buffer
-			}
-			if (type > 0) {
-				currentToken.append(ch);
-			}
-			lastType = type;
-		}
-		if (currentToken.length() > 0) {
-			if (resultSet == null) {
-				return Collections.singleton(currentToken.toString().toLowerCase());
-			}
-			resultSet.add(currentToken.toString().toLowerCase());
-		}
-		if (resultSet == null) {
-			return Collections.singleton(name.toLowerCase());
-		}
-		return resultSet;
-	}
+	
 	
 	private Building checkBuilding(Street street, String bld) {
 		Building interpolation = null;
 		Building partial = null;
-		Set<String> original = getBuildingCompareSet(bld);
+		Set<String> original = SearchAlgorithms.getBuildingCompareSet(bld);
 		for (Building b : street.getBuildings()) {
 			if (b.isInterpolation()) {
 				// interpolation only over 1 set
@@ -247,7 +214,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					interpolation = b;
 				}
 			} else {
-				Set<String> cmp = getBuildingCompareSet(b.getName());
+				Set<String> cmp = SearchAlgorithms.getBuildingCompareSet(b.getName());
+//				System.out.println(street + " " + original + " ?= " + cmp);
 				if (cmp.equals(original)) {
 					// exact
 					return b;
