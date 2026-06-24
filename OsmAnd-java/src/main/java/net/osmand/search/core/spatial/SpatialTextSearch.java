@@ -63,7 +63,6 @@ public class SpatialTextSearch {
 		//  building won't be found in case same street in cities
 		public static boolean DEV_READ_ADDR_OBJECTS = false;
 		public static boolean DEV_READ_POI_OBJECTS = false;
-		public static boolean DEV_ATTACH_BUILDINGS = false;
 
 		// no need to find 3 street intersection or 3 POI intersection
 		public static int LIMIT_ATOMIC_OBJECTS = 2;

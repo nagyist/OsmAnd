@@ -14,7 +14,8 @@ public class Abbreviations {
     }
 
     private static final Map<String, String> abbreviations = new HashMap<>();
-    private static final Map<String, String[]> searchSynonyms = new HashMap<>();
+    // 2nd version search abbrevations
+    private static final Map<String, String> searchAbbreviations = new HashMap<>();
 	private static final Set<String> conjunctions = new TreeSet<>();
 
     static {
@@ -49,14 +50,29 @@ public class Abbreviations {
         abbreviations.put("ln", "Lane");
         abbreviations.put("dr", "Drive");
         abbreviations.put("rd", "Road");
-        abbreviations.put("ave", "Avenue");
         abbreviations.put("av", "Avenue");
-        abbreviations.put("st", "Street"); // could be saint
+        abbreviations.put("st", "Street"); // 2 values could be saint
         abbreviations.put("hwy", "Highway");
         abbreviations.put("blvd", "Boulevard");
-        //
-		searchSynonyms.put("st", new String[] { "Saint" });
-		searchSynonyms.put("1", new String[] { "1st" }); // ...
+    }
+    
+    static {
+    	searchAbbreviations.put("e", "East");
+        searchAbbreviations.put("w", "West");
+        searchAbbreviations.put("s", "South");
+        searchAbbreviations.put("n", "North");
+        searchAbbreviations.put("sw", "Southwest");
+        searchAbbreviations.put("se", "Southeast");
+        searchAbbreviations.put("nw", "Northwest");
+        searchAbbreviations.put("ne", "Northeast");
+        searchAbbreviations.put("ln", "Lane");
+        searchAbbreviations.put("dr", "Drive");
+        searchAbbreviations.put("rd", "Road");
+        searchAbbreviations.put("ave", "Avenue");
+        searchAbbreviations.put("av", "Avenue"); // extra
+        searchAbbreviations.put("st", "Street Saint"); // 2 values could be saint
+        searchAbbreviations.put("hwy", "Highway");
+        searchAbbreviations.put("blvd", "Boulevard");
     }
     
     public static String replace(String word) {
@@ -66,6 +82,10 @@ public class Abbreviations {
     
     public static Map<String, String> getAbbreviations() {
 		return abbreviations;
+	}
+    
+    public static Map<String, String> getSearchabbreviations() {
+		return searchAbbreviations;
 	}
 
     public static String replaceAll(String phrase) {

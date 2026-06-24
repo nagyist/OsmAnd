@@ -71,6 +71,7 @@ import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiSubType;
 import net.osmand.binary.BinaryMapRouteReaderAdapter.RouteRegion;
 import net.osmand.binary.BinaryMapRouteReaderAdapter.RouteSubregion;
 import net.osmand.binary.BinaryMapTransportReaderAdapter.TransportIndex;
+import net.osmand.binary.NameIndexReader.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.MapDataBlock;
 import net.osmand.binary.OsmandOdb.OsmAndMapIndex.MapDataBox;
 import net.osmand.binary.OsmandOdb.OsmAndMapIndex.MapEncodingRule;
@@ -1517,13 +1518,14 @@ public class BinaryMapIndexReader {
 		return req.getSearchResults();
 	}
 	
-	public NameIndexReader readFullNameIndex(NameIndexReader res, String prefix) throws IOException {
-		codedIS.seek(res.poiRegion != null ? res.poiRegion.filePointer : res.addressRegion.filePointer);
-		long old = codedIS.pushLimitLong(res.poiRegion != null ? res.poiRegion.length : res.addressRegion.length);
-		if (res.poiRegion != null) {
-			poiAdapter.readNameIndex(prefix, res);
+	public List<PrefixNameValue> readFullNameIndex(NameIndexReader reader) throws IOException {
+		codedIS.seek(reader.poiRegion != null ? reader.poiRegion.filePointer : reader.addressRegion.filePointer);
+		long old = codedIS.pushLimitLong(reader.poiRegion != null ? reader.poiRegion.length : reader.addressRegion.length);
+		List<PrefixNameValue> res;
+		if (reader.poiRegion != null) {
+			res = poiAdapter.readNameIndex(reader);
 		} else {
-			addressAdapter.readNameIndex(prefix, res);
+			res = addressAdapter.readNameIndex(reader);
 		}
 		codedIS.popLimit(old);
 		return res;
@@ -2744,7 +2746,7 @@ public class BinaryMapIndexReader {
 		return result;
 	}
 	
-	void readNameIndexInspector(String prefix, NameIndexReader inspector, String query) throws InvalidProtocolBufferException, IOException {
+	void readNameIndexInspector(String prefix, NameIndexReader inspector) throws InvalidProtocolBufferException, IOException {
 		String key = null;
 		boolean match = true;
 		while (true) {
@@ -2758,19 +2760,19 @@ public class BinaryMapIndexReader {
 				if (prefix != null) {
 					key = prefix + key;
 				}
-				match = inspector.matchKey(key, query);
+				match = inspector.matchKey(key);
 				break;
 			case OsmandOdb.IndexedStringTable.VAL_FIELD_NUMBER :
 				int val = (int) readInt(); // FIXME for 64 bit support
 				if (match) {
-					inspector.putKey(key, val, prefix, query);
+					inspector.putKey(key, val, prefix);
 				}
 				break;
 			case OsmandOdb.IndexedStringTable.SUBTABLES_FIELD_NUMBER :
 				long len = codedIS.readRawVarint32();
 				long oldLim = codedIS.pushLimitLong((long) len);
 				if (match) {
-					readNameIndexInspector(key, inspector, query);
+					readNameIndexInspector(key, inspector);
 				} else {
 					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
 				}

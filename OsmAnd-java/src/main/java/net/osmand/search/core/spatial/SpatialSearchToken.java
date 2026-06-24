@@ -10,13 +10,16 @@ import net.osmand.CollatorStringMatcher;
 import net.osmand.CollatorStringMatcher.StringMatcherMode;
 import net.osmand.binary.Abbreviations;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
+import net.osmand.binary.NameIndexReader.NameIndexReaderMatcher;
 import net.osmand.binary.ObfConstants;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.MapObject;
 import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
+import net.osmand.search.core.spatial.SpatialSearchContext.SpatialSearchStats;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
+import net.osmand.util.Algorithms;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
@@ -32,38 +35,48 @@ public class SpatialSearchToken {
 	boolean incomplete;
 	String originalWord;
 	String word;
-	String abbrevation;
 	
 	List<NameIndexAtom> atoms = new ArrayList<>();
 	TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
 	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
 	HashQuadTree<NameIndexAtom> quadTree = new HashQuadTree<>(16);
 
-	CollatorStringMatcher collatorEq;
-	CollatorStringMatcher collatorMatchEq;
-	CollatorStringMatcher abbrEq;
+	CollatorStringMatcher collatorMain;
+	int mainNumber = -1;
+	CollatorStringMatcher[] otherMatch;
 
 	public SpatialSearchToken(String w, String original, int order) {
 		originalWord = original;
 		word = w;
 		originalOrder = order;
-		// . already in collator w.endsWith(DOT_INCOMPLETE_STRING)
 		String noDot = w;
 		if (w.endsWith(DOT_INCOMPLETE_STRING)) {
 			incomplete = true;
 			noDot = w.substring(0, w.length() - 1);
-			collatorMatchEq = new CollatorStringMatcher(noDot, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
 		}
-		collatorEq = new CollatorStringMatcher(w, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
-		String abbr = Abbreviations.getAbbreviations().get(noDot);
+		if (incomplete && word.length() <= SpatialTextSearchSettings.MIN_CHARACTERS_INCOMPLETE + 1) {
+			collatorMain = new CollatorStringMatcher(noDot, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+		} else {
+			if (SearchAlgorithms.isNumber2Letters(noDot)) {
+				// 4 = 4th
+				// wrong case token '4' - matches '48'
+				mainNumber = Algorithms.extractFirstIntegerNumber(noDot);
+			}
+			// . already in collator w.endsWith(DOT_INCOMPLETE_STRING)
+			collatorMain = new CollatorStringMatcher(w, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+		}
+		String abbr = Abbreviations.getSearchabbreviations().get(noDot);
 		if (abbr != null) {
-			abbrEq = new CollatorStringMatcher(SearchAlgorithms.normalizeToken(abbr),
-					StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+			List<String> other = SearchAlgorithms.splitAndNormalize(abbr, true);
+			otherMatch = new CollatorStringMatcher[other.size()];
+			for(int i = 0; i < other.size(); i++) {
+				otherMatch[i] = new CollatorStringMatcher(other.get(i), StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+			}
 		}
 	}
 	
 	public CollatorStringMatcher getCollator() {
-		return collatorEq;
+		return collatorMain;
 	}
 	
 	public boolean isOnlyFullMatch() {
@@ -73,6 +86,30 @@ public class SpatialSearchToken {
 	@Override
 	public String toString() {
 		return String.format("%d. %s - %d atoms", sortedOrder, originalWord, atoms.size());
+	}
+	
+	NameIndexReaderMatcher getPrefixMatcher(SpatialSearchStats stats) {
+		return new NameIndexReaderMatcher(word) {
+			
+			@Override
+			public boolean matchKey(String key) {
+				stats.matchTime -= System.nanoTime();
+				String alignedKey = CollatorStringMatcher.alignChars(key);
+				boolean matched = matchAlignedKey(alignedKey);
+				if (!matched && mainNumber > 0) {
+					// 4th - key, "4" token
+					matched = Algorithms.extractFirstIntegerNumber(key) == mainNumber;
+				}
+				if (!matched && otherMatch != null) {
+					for (CollatorStringMatcher o : otherMatch) {
+						matched |= CollatorStringMatcher.cmatches(collator, o.getPart(), alignedKey,
+								StringMatcherMode.CHECK_ONLY_STARTS_WITH);
+					}
+				}
+				stats.matchTime += System.nanoTime();
+				return matched;
+			}
+		};
 	}
 
 	void addAtom(NameIndexAtom atom) {
@@ -102,13 +139,20 @@ public class SpatialSearchToken {
 	}
 
 	boolean acceptName(String name) {
-		if (abbrEq != null && abbrEq.matches(name)) {
-			return true;
+		if(mainNumber > 0) {
+			if (mainNumber == Algorithms.extractFirstIntegerNumber(name)) {
+				return true;
+			}
 		}
-		if (isOnlyFullMatch()) {
-			return collatorMatchEq.matches(name);
+		if (otherMatch != null) {
+			for (CollatorStringMatcher o : otherMatch) {
+				if (o.matches(name)) {
+					return true;
+				}
+			}
 		}
-		return collatorEq.matches(name);
+//		System.out.printf("query '%s' matches '%s' %s\n", word, name, collatorMain.matches(name));
+		return collatorMain.matches(name);
 	}
 
 	public static class NameIndexAtomXY {

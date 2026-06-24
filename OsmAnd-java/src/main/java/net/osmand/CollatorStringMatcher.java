@@ -69,6 +69,10 @@ public class CollatorStringMatcher implements StringMatcher {
 		return mode;
 	}
 	
+	public String getPart() {
+		return part;
+	}
+	
 	@Override
 	public boolean matches(String name) {
 		return cmatches(collator, name, part, false, true, mode);

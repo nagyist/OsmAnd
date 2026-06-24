@@ -33,6 +33,7 @@ import net.osmand.Location;
 import net.osmand.PlatformUtil;
 import net.osmand.binary.BinaryMapIndexReader.SearchRequest;
 import net.osmand.binary.BinaryMapIndexReader.TagValuePair;
+import net.osmand.binary.NameIndexReader.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.CommonIndexedStats;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.data.Amenity;
@@ -379,9 +380,9 @@ public class BinaryMapPoiReaderAdapter {
 	}
 	
 	
-	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexReader pi, String query) throws IOException {
-		OsmandOdb.IndexedStringTable res = null;
-		TLongArrayList loffsets = query == null ? null : new TLongArrayList();
+	protected List<PrefixNameValue> readNameIndexInternal(NameIndexReader pi) throws IOException {
+		List<PrefixNameValue> res = null;
+		TLongArrayList loffsets = pi.readAll() ? null : new TLongArrayList();
 		int ind = -1;
 		while (true) {
 			int t = codedIS.readTag();
@@ -390,11 +391,10 @@ public class BinaryMapPoiReaderAdapter {
 			case 0:
 				return res;
 			case OsmandOdb.OsmAndPoiNameIndex.TABLE_FIELD_NUMBER :
-				pi.resetMatchedKeys(query);
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
 				pi.setTablePointer(codedIS.getTotalBytesRead());
-				map.readNameIndexInspector(null, pi, query);
+				map.readNameIndexInspector(null, pi);
 				codedIS.popLimit(oldLimit);
 				break;
 				
@@ -412,7 +412,7 @@ public class BinaryMapPoiReaderAdapter {
 			case OsmandOdb.OsmAndPoiNameIndex.DATA_FIELD_NUMBER :
 				long shift = codedIS.getTotalBytesRead();
 				if (ind == -1 && loffsets != null) {
-					pi.getAtomsToLoad(loffsets, query);
+					res = pi.getAtomsToLoad(loffsets);
 					loffsets.sort();
 					ind = 0;
 				}
@@ -428,7 +428,10 @@ public class BinaryMapPoiReaderAdapter {
 				}
 				int len = codedIS.readRawVarint32();
 				oldLimit = codedIS.pushLimitLong((long) len);
-				pi.addData(OsmAndPoiNameIndexData.parseFrom(codedIS), shift);
+				PrefixNameValue prefix = pi.addData(OsmAndPoiNameIndexData.parseFrom(codedIS), shift);
+				if (res != null) {
+					res.add(prefix);
+				}
 				codedIS.popLimit(oldLimit);
 				break;
 
@@ -439,17 +442,18 @@ public class BinaryMapPoiReaderAdapter {
 		}
 	}
 
-	protected NameIndexReader readNameIndex(String prefix, NameIndexReader nameIndexReader) throws IOException {
+	protected List<PrefixNameValue> readNameIndex(NameIndexReader nameIndexReader) throws IOException {
+		List<PrefixNameValue> res = null;
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
 			switch (tag) {
 			case 0:
-				return nameIndexReader;
+				return res;
 			case OsmandOdb.OsmAndPoiIndex.NAMEINDEX_FIELD_NUMBER:
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
-				readNameIndexInternal(nameIndexReader, prefix);
+				res = readNameIndexInternal(nameIndexReader);
 				codedIS.popLimit(oldLimit);
 				break;
 			default:

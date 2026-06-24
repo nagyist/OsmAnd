@@ -126,9 +126,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		ctx.stats.loadObjectsBld -= System.nanoTime();
 		loadObjects(ctx);
 		
-		Map<String, Building> bldCheckCache = new HashMap<>();
-		for (int indx = 0; indx < getCombinations(); indx++) {
-			calcBuilding(indx, bldCheckCache);
+		if (SpatialTextSearchSettings.SEARCH_BUILDINGS) {
+			Map<String, Building> bldCheckCache = new HashMap<>();
+			for (int indx = 0; indx < getCombinations(); indx++) {
+				calcBuilding(indx, bldCheckCache);
+			}
 		}
 		ctx.stats.loadObjectsBld += System.nanoTime();
 	}

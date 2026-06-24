@@ -17,20 +17,23 @@ import net.osmand.util.SearchAlgorithms;
 //////////// OTHER TASKS ///////
 // - TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania
 // - REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
-//    - 2-га Нова (2 Нова), Бульварно-Кудрявськаб NC-42 
 // - TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
 // - TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
-// - TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25',  'школа 25')
 
+// - Unit test (<common_word> <almost_number>) -('№25'??, '25', '#25'?) -- +('школа', 'школа №25', 'школа 25', 'школа #25')
+// - Unit test: Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова)...
+// - SLOWEST 'New York 4 av' - 8 sec, 1M
 //////////// IN PROGRESS //////////
 // TESTING 'New york s.' - 1 letter very slow
-// TODO Abbreviations Phase (street / st)
-// TODO Test/Review Match '2nd' and '2'
+// TESTING Match '2nd' and '2'!! (no 4 -> 48)
+// TESTING Abbreviations Phase (street / st, blvd)
 
-// TODO  Calle 20 188 Lima San Isidro  / Sokak - delay street intersection 
-// TODO! Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
+// TODO Test NC-42
+// TODO Calle 20 188 Lima San Isidro  / Sokak - delay street intersection 
+// TODO Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
+
 // TODO 'New york plaza' ('the') limit FILTER_MIN_WORDS_COUNT
-// TODO Issues Nova poshta Kharkiv
+// TODO Issues Nova poshta Kharkiv limit FILTER_MIN_WORDS_COUNT?
 
 // TO DO
 // FIXME POI Categories + top poi categories
@@ -154,16 +157,16 @@ public class SpatialSearchTestAndDocs {
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 		
-		pattern = "Turkey_";
+//		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // no results?
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
-		query = "Sokak 2"; // Test calle 2
+//		query = "Sokak 2"; // Test calle 2
 //		query = "2/1 21038 Sokak";
 		
 		
 //		pattern = "regions.ocbf" ;
 		
-//		pattern = "Ukraine_kyiv-city_europe.obf";
+		pattern = "Ukraine_";
 //		pattern = "Map";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
@@ -171,8 +174,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Ukraine kyiv saks.";
 //		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 3 харків";
-//		query = "2-га Нова вулиця"; // unit test
-//		query = "2 Нова вулиця"; // unit test
+		query = "Нова пошта харків";
+//		query = "2 га Нова вулиця"; // unit test '2га', '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
 //		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
@@ -191,13 +194,13 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-		pattern = "Us_new-york";
+//		pattern = "Us_new-york";
 //		query = "New York The plaza";
-		query = "New York plaza";
-		query = "New York s.";
-//		query = "New York 4th av"; // '4th av', '4 ave', '4th avenue' 241843204 brooklyn 
-//		query = "4th ave"; // TODO '4 ave'   
-//		query = "blvd"; // TODO 'blvd', 'boulevard' - 248280132
+//		query = "New York plaza";
+//		query = "New York s."; // 500k
+//		query = "New York 4 avenue"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
+//		query = "4 ave"; //  unit '4 ave'   
+//		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		
 //		pattern = "World_basemap_2";
 //		pattern2 = "Ukraine";
@@ -207,7 +210,7 @@ public class SpatialSearchTestAndDocs {
 //		query  = "Everest";
 //		query  = "Rio de Janeiro";
 
-		//		pattern = "Spain_aragon_europe_";
+//		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";
 //		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
 		

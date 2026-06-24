@@ -170,8 +170,8 @@ public class SpatialSearchContext {
 			List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
 			if (matchedPrefixes == null) {
 				stats.fileAtomsTime -= System.nanoTime();
-				b.readFullNameIndex(indx, t.word);
-				matchedPrefixes = indx.getMatchedPrefixes(t.word);
+				matchedPrefixes = b.readFullNameIndex(indx.setQuery(t.word, t.getPrefixMatcher(stats)));
+//				matchedPrefixes = indx.getMatchedPrefixes(t.word);
 				stats.fileAtomsTime += System.nanoTime();
 			}
 			for (PrefixNameValue prefix : matchedPrefixes) {
@@ -224,7 +224,7 @@ public class SpatialSearchContext {
 					continue;
 				}
 				MapObject obj = null;
-				if (SpatialTextSearchSettings.DEV_READ_ADDR_OBJECTS || SpatialTextSearchSettings.DEV_ATTACH_BUILDINGS) {
+				if (SpatialTextSearchSettings.DEV_READ_ADDR_OBJECTS) {
 					obj = readAddrObject(lid, pid, null);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, pid, obj, allTokens);

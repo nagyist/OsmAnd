@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import gnu.trove.iterator.TLongIterator;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
@@ -38,7 +39,7 @@ public class NameIndexReader {
 	
 	// cache for queries 
 	private Map<String, TLongHashSet> matchedKeys = new HashMap<String, TLongHashSet>();
-	
+	// cache for prefixes
 	private Map<Long, PrefixNameValue> indexByRef = new HashMap<>();
 	private long tablePointer;
 	
@@ -52,11 +53,72 @@ public class NameIndexReader {
 	private StreetsIndexStat streetsStat;
 	private BoundariesIndexStat bndsStat;
 	
-	// Active query cache collator
-	String query;
-	String queryCachedStr;
-	String queryAligned;
-	Collator collator;
+	NameIndexReaderQuery query = null; // read all
+	
+	public static class NameIndexReaderMatcher {
+
+		protected String queryAligned;
+		protected String queryIncomplete;
+		protected Collator collator;
+		
+		public NameIndexReaderMatcher(String query) {
+			queryAligned = CollatorStringMatcher.alignChars(query);
+			collator = OsmAndCollator.primaryCollator();
+			if (query.endsWith(CollatorStringMatcher.INCOMPLETE_DOT + "")) {
+				queryIncomplete = query.substring(0, query.length() - 1);
+			}
+		}
+		
+		public boolean matchKey(String key) {
+			String alignedKey = CollatorStringMatcher.alignChars(key);
+			return matchAlignedKey(alignedKey);
+		}
+
+		protected boolean matchAlignedKey(String alignedKey) {
+			// 1. simple match
+			boolean match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedKey, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
+			// 2. match 2-xx (key) -> 2 (query) - another solution, NC-42 (key) -> NC (query)
+			if (!match) {
+				int hyphen = -1;
+				while ((hyphen = alignedKey.indexOf('-', hyphen + 1)) != -1) {
+					match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedKey.substring(0, hyphen),
+							StringMatcherMode.CHECK_ONLY_STARTS_WITH);
+					if (match) {
+						break;
+					}
+				}
+			}
+//			match = query.startsWith(key);
+			// 3. incomplete query match
+			if (!match && queryIncomplete != null) {
+				match = CollatorStringMatcher.cmatches(collator, queryIncomplete, alignedKey, StringMatcherMode.CHECK_ONLY_STARTS_WITH) ||
+						CollatorStringMatcher.cmatches(collator, alignedKey, queryIncomplete, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
+//				match = key.startsWith(pr) || pr.startsWith(key);
+			}
+			return match;
+		}
+	}
+	
+	// Active query 
+	static class NameIndexReaderQuery {
+		String query;
+		TLongHashSet matchedKeys = new TLongHashSet();
+		NameIndexReaderMatcher matcher;
+		
+		public NameIndexReaderQuery(String query, NameIndexReaderMatcher matcher) {
+			this.query = query;
+			this.matcher = matcher;
+		}
+		
+		public void addMatchedKey(long shift) {
+			matchedKeys.add(shift);
+		}
+
+		public boolean matchKey(String key) {
+			return matcher.matchKey(key);
+		}
+	}
+	
 
 	public NameIndexReader(AddressRegion p) {
 		this.poiRegion = null;
@@ -68,6 +130,10 @@ public class NameIndexReader {
 		this.addressRegion = null;
 	}
 
+	public boolean readAll() {
+		return query == null;
+	}
+	
 	public void setTablePointer(long totalBytesRead) {
 		this.tablePointer = totalBytesRead;
 	}
@@ -419,8 +485,6 @@ public class NameIndexReader {
 				return key + " <NOT SET>";
 			}
 		}
-		
-		
 
 		private List<ValueFreq> collectAddrFrequencies(String prefix, 
 				SuffixesStat suffStats, StreetsIndexStat streetsStat, int f) {
@@ -642,40 +706,17 @@ public class NameIndexReader {
 		}
 	}
 	
-	public boolean matchKey(String key, String query) {
+	public boolean matchKey(String key) {
 		if (query == null) {
 			return true;
 		}
-		if (query != queryCachedStr) {
-			queryAligned = CollatorStringMatcher.alignChars(query);
-			collator = OsmAndCollator.primaryCollator();
-		}
-		String alignedKey = CollatorStringMatcher.alignChars(key);
-		boolean match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedKey, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
-		if (!match) {
-			int hyphen = -1;
-			while ((hyphen = alignedKey.indexOf('-', hyphen + 1)) != -1) {
-				match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedKey.substring(0, hyphen),
-						StringMatcherMode.CHECK_ONLY_STARTS_WITH);
-				if (match) {
-					break;
-				}
-			}
-		}
-//		match = query.startsWith(key);
-		if (!match && query.endsWith(".")) {
-			String queryStar = query.substring(0, query.length() - 1);
-			match = CollatorStringMatcher.cmatches(collator, queryStar, alignedKey, StringMatcherMode.CHECK_ONLY_STARTS_WITH) ||
-					CollatorStringMatcher.cmatches(collator, alignedKey, queryStar, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
-//			match = key.startsWith(pr) || pr.startsWith(key);
-		}
-		return match;
+		return query.matchKey(key);
 	}
 	
-	public void putKey(String key, int val, String prefix, String query) {
+	public void putKey(String key, int val, String prefix) {
 		long shift = tablePointer + val;
 		if (query != null) {
-			matchedKeys.get(query).add(shift);
+			query.addMatchedKey(shift);
 		}
 		if (!indexByRef.containsKey(shift)) {
 			PrefixNameValue nameValue = new PrefixNameValue();
@@ -743,19 +784,22 @@ public class NameIndexReader {
 		return indexByRef.toString();
 	}
 
-	public void addData(OsmAndPoiNameIndexData from, long currentShift) {
+	public PrefixNameValue addData(OsmAndPoiNameIndexData from, long currentShift) {
 		PrefixNameValue obj = indexByRef.get(currentShift);
 		if (obj.poi != null) {
 			throw new IllegalStateException(obj.toString());
 		}
 		obj.shift = currentShift;
 		obj.poi = from;
+		return obj;
 	}
 	
 	
-	public List<PrefixNameValue> getAtomsToLoad(TLongArrayList loffsets, String query) {
+	public List<PrefixNameValue> getAtomsToLoad(TLongArrayList loffsets) {
 		List<PrefixNameValue> r = new ArrayList<>();
-		for (long l : matchedKeys.get(query).toArray()) {
+		TLongIterator it = query.matchedKeys.iterator();
+		while(it.hasNext()) {
+			long l = it.next();
 			PrefixNameValue pv = indexByRef.get(l);
 			if (pv.addr == null && pv.poi == null) {
 				loffsets.add(l);
@@ -767,17 +811,24 @@ public class NameIndexReader {
 	}
 
 
-	public void addData(AddressNameIndexData from, long currentShift) {
+	public PrefixNameValue addData(AddressNameIndexData from, long currentShift) {
 		PrefixNameValue obj = indexByRef.get(currentShift);
 		if (obj.addr != null) {
 			throw new IllegalStateException(obj.toString());
 		}
 		obj.shift = currentShift;
 		obj.addr = from;
+		return obj;
 	}
 	
-	public void setQuery(String query) {
-		
+	public NameIndexReader setQuery(String qr) {
+		return setQuery(qr, new NameIndexReaderMatcher(qr));
+	}
+	
+	public NameIndexReader setQuery(String qr, NameIndexReaderMatcher matcher) {
+		this.query = new NameIndexReaderQuery(qr, matcher);
+		this.matchedKeys.put(qr, this.query.matchedKeys);
+		return this;
 	}
 	
 	public List<PrefixNameValue> getMatchedPrefixes(String query) {

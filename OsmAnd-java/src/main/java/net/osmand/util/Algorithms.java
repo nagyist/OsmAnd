@@ -682,7 +682,8 @@ public class Algorithms {
 		for (int k = 0; k < s.length(); k++) {
 			if (isDigit(s.charAt(k))) {
 				i = i * 10 + (s.charAt(k) - '0');
-			} else {
+			} else if (Character.isLetter(s.charAt(k)) || i > 0) {
+				// allow '#3'- > 3 parsed
 				break;
 			}
 		}
