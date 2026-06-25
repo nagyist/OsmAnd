@@ -50,6 +50,8 @@ public class SpatialTextSearch {
 		public boolean SEARCH_BUILDINGS = true;
 		public boolean SEARCH_STREET_INTERSECTIONS = true;
 		public boolean SEARCH_POI_INTERSECTIONS = true;
+		// no intersection recorded but streets are nearby
+		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
 		
 		// max prefixes for each name reader
 		public int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
@@ -86,6 +88,9 @@ public class SpatialTextSearch {
 		
 		// only do incomplete search with 2+ chars
 		public int MIN_CHARACTERS_INCOMPLETE = 2;
+		
+		public int MIN_ELO_RATING = 1400; // see SearchResult.MIN_ELO_RATING
+//		public int MAX_ELO_RATING = 4300; // not used now
 		
 	}
 

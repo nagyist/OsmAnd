@@ -17,7 +17,9 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.binary.BinaryMapPoiReaderAdapter;
+import net.osmand.data.Amenity;
 import net.osmand.data.Building;
+import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
@@ -30,6 +32,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	final SpatialSearchToken[] tokens; // non modifiable!
 	final int tCount;
 	
+	int MIN_ELO_RATING = Amenity.DEFAULT_ELO;
 
 	// NameIndexAtom[][] -- should be double array to store list of combinations
 	List<NameIndexAtom> linearResults = new ArrayList<>();
@@ -55,8 +58,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		tCount = tokens.length;
+		if (settings != null) {
+			MIN_ELO_RATING = settings.MIN_ELO_RATING;
+		}
 		if (parent != null) {
-			calculateIntersection(settings, token, parent);
+			calculateMainIntersection(settings, token, parent);
 		}
 	}
 	
@@ -131,12 +137,70 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				calcBuilding(indx, bldCheckCache);
 			}
 		}
-		// TODO
-		for (int indx = 0; indx < getCombinations(); indx++) {
-//			calcBuilding(indx);
+		if (ctx.settings.SEARCH_STREET_INTERSECTIONS) {
+			for (int indx = 0; indx < getCombinations(); indx++) {
+				calcStreetIntersections(ctx, indx);
+			}
 		}
 		
 		ctx.stats.loadObjectsBld += System.nanoTime();
+	}
+	
+	private void calcStreetIntersections(SpatialSearchContext ctx, int indx) {
+		NameIndexAtom first = null;
+		NameIndexAtom second = null;
+		for (int i = 0; i < tCount; i++) {
+			NameIndexAtom atom = linearResults.get(indx * tCount + i);
+			if (atom.object instanceof Street) {
+				if (first == null || first.object.getId().equals(atom.object.getId())) {
+					first = atom;
+				} else {
+					second = atom;
+					break;
+				}
+			}
+		}
+		if (first != null && second != null) {
+			LatLon insLoc = null; 
+			if (insLoc == null) {
+				for (Street ins : ((Street) first.object).getIntersectedStreets()) {
+					if (ins.getName().equals(second.object.getName())) {
+						insLoc = ins.getLocation();
+//						System.out.printf("INTERSECTION x1 %.4f, %.4f %s (%s) x %s\n", insLoc.getLatitude(),
+//								insLoc.getLongitude(), second.toString(), ins.getName(), first.toString());
+						break;
+					}
+				}
+			}
+			if (insLoc == null) {
+				for (Street ins : ((Street) second.object).getIntersectedStreets()) {
+					if (ins.getName().equals(first.object.getName())) {
+						insLoc = ins.getLocation();
+//						System.out.printf("INTERSECTION x2 %.4f, %.4f %s (%s) x %s\n", ins.getLocation().getLatitude(),
+//								ins.getLocation().getLongitude(), first.toString(), ins.getName(), second.toString());
+						break;
+					}
+				}
+			}
+			if (insLoc == null && ctx.settings.ALLOW_VIRTUAL_STREET_INTER) {
+				LatLon l1 = first.object.getLocation();
+				LatLon l2 = second.object.getLocation();
+				insLoc = new LatLon(l1.getLatitude() / 2 + l2.getLatitude() / 2, l1.getLongitude() / 2 + l2.getLongitude() / 2);
+// 				System.out.printf("INTERSECTION NO %.4f %.4f %s x %s\n", insLoc.getLatitude(),
+//						insLoc.getLongitude(), first.toString(), second.toString());
+			}
+			if (insLoc != null) {
+				for (int i = 0; i < tCount; i++) {
+					NameIndexAtom atom = linearResults.get(indx * tCount + i);
+					if (atom.object != null && (first.object.getId().equals(atom.object.getId())
+							|| second.object.getId().equals(atom.object.getId()))) {
+						atom.coords.result = insLoc;
+					}
+				}
+			} else {
+				skipResults.put(indx, true);
+			}
+		}
 	}
 	
 	private void calcBuilding(int indx, Map<String, Building> bldCheckCache) {
@@ -195,6 +259,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 							bld.object = bldObj;
 							bld.name = bldObj.getName();
 							if (bldObj.isInterpolation()) {
+								bld.coords.result = bldObj.getLocation(bldObj.interpolation(bldName));
 								bld.name = bldName;
 							}
 						}
@@ -298,7 +363,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return finalResult;
 	}
 	
-	private void calculateIntersection(SpatialTextSearchSettings settings, SpatialSearchToken token, SpatialSearchResultsList parent) {
+	private void calculateMainIntersection(SpatialTextSearchSettings settings, SpatialSearchToken token, SpatialSearchResultsList parent) {
 		if (parent.getTokenCount() == 0) {
 			addResult(settings, null, 0, token, token.atoms);
 		} else if (parent.getCombinations() > 0) {

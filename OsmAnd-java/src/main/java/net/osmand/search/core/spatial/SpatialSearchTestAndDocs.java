@@ -42,7 +42,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Calle 20 188 Lima San Isidro  / Sokak - delay street intersection
 
 // FIXME POI Categories + top poi categories
-// FIXME Building interpolation - name / location
+// FIXME Building interpolation, intersections - name / location
 // TODO Filter results boundaries, <Salt Lake City>
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
@@ -174,19 +174,18 @@ public class SpatialSearchTestAndDocs {
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 		
-		pattern = "Turkey_";
+//		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // no results?
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
 		// ALL - Search Stats 1569.2 ms - 554.0 ms 59,656 atoms (read 318.8, match 134.1), 985.8 ms compute 693,139 (loadBld 396.2, read 149.5)
         // NO INTER - Search Stats 871.5 ms - 546.4 ms 59,656 atoms (read 313.7, match 135.6), 299.9 ms compute 4,735 (loadBld 54.1, read 37.2)
-		 query = "Sokak 2"; 
-		
+//		 query = "Sokak 2"; 
 //		query = "2/1 21038 Sokak"; // 1380369156
 		
 		
 //		pattern = "regions.ocbf" ;
 		
-//		pattern = "Ukraine_";
+		pattern = "Ukraine_";
 //		pattern = "Map";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
@@ -196,10 +195,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "Нова пошта 3 харків";
 //		query = "Нова пошта харків";
 //		query = "2 га Нова вулиця"; // unit test '2га', '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
-//		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
+//		query = "саксаг. 63 28"; // 129-Б, 129б 63/28, 63, 63-28  +'саксаг. 63 28'
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
-//		query = "саксаг. Володимирська";
+		query = "саксаг. Володимирська"; // intersection
 //		query = "Яр. вал 29-г";
 //		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true

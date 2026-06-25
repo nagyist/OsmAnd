@@ -80,8 +80,8 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 	
 	public LatLon getLatLon() {
-		if (objs.size() > 0 && objs.get(0).atom.object != null) {
-			return objs.get(0).atom.object.getLocation();
+		if (objs.size() > 0) {
+			return objs.get(0).atom.getResultLocation();
 		}
 		return null;
 	}
@@ -131,11 +131,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			} else if(atom.type == CityBlocks.BOUNDARY_TYPE.index) {
 				return 5;
 			}
+			// all cities, villages, hamlets
 			return 3;
 		}
 		
-
-
 		@Override
 		public String toString() {
 			List<String> words = new ArrayList<String>();
@@ -149,17 +148,16 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				}
 				String add = "";
 				if (atom.object instanceof Amenity a) {
-					if (a.getTravelEloNumber() > 900) {
+					if (a.getTravelEloNumber() > Amenity.DEFAULT_ELO) {
 						add += " elo " + a.getTravelEloNumber() + " " + a.getCityFromTagGroups("");
 					}
 				} else if (parent != null) {
 					add += " " + parent.object.getName();
 				}
-				return String.format("%s %s (%s) %.4f %.4f ", words, 
-						atom.typeStr() + " " + atom.object.getName() + add, 
-						"" + ObfConstants.getOsmObjectId(idObject) 
-								//+ " " + atom.id,
-						, atom.object.getLocation().getLatitude(), atom.object.getLocation().getLongitude());
+				LatLon resLoc = atom.getResultLocation();
+				return String.format("%s %s (%s) %.4f %.4f ", words, atom.typeStr() + " " + atom.object.getName() + add,
+						"" + ObfConstants.getOsmObjectId(idObject), 
+						resLoc.getLatitude(), resLoc.getLongitude());
 			}
 			return atom.simpleName(words.toString()); 
 		}
@@ -194,7 +192,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 	
 	public int getRating() {
-		int rating = 1400; // MIN Rating to make higher
+		int rating = parent.MIN_ELO_RATING; // MIN Rating to make higher
 		for (SpatialSearchResultRef r : objs) {
 			if (r.atom.object instanceof Amenity a) {
 				rating = Math.max(rating, a.getTravelEloNumber());

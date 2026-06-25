@@ -15,6 +15,7 @@ import net.osmand.binary.NameIndexReader.NameIndexReaderMatcher;
 import net.osmand.binary.ObfConstants;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
+import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
@@ -175,6 +176,9 @@ public class SpatialSearchToken {
 		long bboxTileId; // encodes zoom, tileX, tileY
 		int bboxTileZoom;
 		int x16, y16;
+		
+		 // in case attached object is not precise: building interpolation, street intersection
+		public LatLon result;  
 
 		public NameIndexAtomXY(AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b) {
 			if (a != null) {
@@ -299,6 +303,10 @@ public class SpatialSearchToken {
 			return type == STREET_TYPE || type == BUILDING_TYPE;
 		}
 		
+		public boolean isStreet() {
+			return type == STREET_TYPE ;
+		}
+		
 		public boolean atomicObject() {
 			return type == STREET_TYPE || type == POI_TYPE || type == BUILDING_TYPE;
 		}
@@ -319,11 +327,24 @@ public class SpatialSearchToken {
 			return String.format("%s %s %d (%.4f, %.4f)", typeStr(), name, (id % 0xffff),
 					MapUtils.get31LatitudeY(coords.y16 << 15), MapUtils.get31LongitudeX(coords.x16 << 15));
 		}
+		
+		public LatLon getResultLocation() {
+			if (coords.result != null) {
+				return coords.result;
+			}
+			if (object != null) {
+				return object.getLocation();
+			}
+			return new LatLon(MapUtils.get31LatitudeY(coords.y16 << 15), MapUtils.get31LongitudeX(coords.x16 << 15));
+		}
+
 
 		@Override
 		public final String toString() {
 			return object != null ? object.toString() : simpleName(name);
 		}
+
+
 
 	};
 
