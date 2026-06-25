@@ -97,6 +97,17 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 		QuickSearchListAdapter adapter = getListAdapter();
 		if (adapter != null) {
 			adapter.setExploreHistoryCard(true);
+			adapter.setSelectionListener(new QuickSearchListAdapter.OnSelectionListener() {
+				@Override
+				public void onUpdateSelectionMode(List<QuickSearchListItem> selectedItems) {
+					getDialogFragment().updateSelectionMode(selectedItems);
+				}
+
+				@Override
+				public void reloadData() {
+					getDialogFragment().reloadHistory();
+				}
+			});
 		}
 		if (savedInstanceState != null) {
 			historyCollapsed = savedInstanceState.getBoolean(HISTORY_COLLAPSED_KEY, false);
@@ -116,17 +127,6 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 				}
 			}
 			return true;
-		});
-		getListAdapter().setSelectionListener(new QuickSearchListAdapter.OnSelectionListener() {
-			@Override
-			public void onUpdateSelectionMode(List<QuickSearchListItem> selectedItems) {
-				getDialogFragment().updateSelectionMode(selectedItems);
-			}
-
-			@Override
-			public void reloadData() {
-				getDialogFragment().reloadHistory();
-			}
 		});
 	}
 

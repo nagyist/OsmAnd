@@ -602,6 +602,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	public InsetTargetsCollection getInsetTargets() {
 		InsetTargetsCollection targetsCollection = super.getInsetTargets();
 		targetsCollection.replace(InsetTarget.createScrollable(R.id.list));
+		targetsCollection.add(InsetTarget.createHorizontalLandscape(R.id.chips_toolbar).build());
 		return targetsCollection;
 	}
 
