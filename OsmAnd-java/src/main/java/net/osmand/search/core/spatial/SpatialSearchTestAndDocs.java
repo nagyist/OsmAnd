@@ -7,6 +7,7 @@ import java.util.List;
 
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.data.City;
+import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.map.OsmandRegions;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchResults;
@@ -130,6 +131,7 @@ public class SpatialSearchTestAndDocs {
 //		SpatialTextSearchSettings.DEDUPLICATE_RES = true;
 //		SpatialTextSearchSettings.SEARCH_BUILDINGS = false;
 		File folder = new File(System.getProperty("maps.dir"));
+		LatLon location = null;
 		String pattern = "Germany_b";
 		String pattern2 = ".....";
 		String query = "Berlin hauptstrasse"; // slow
@@ -140,23 +142,23 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
-		pattern = "Us_";
+//		pattern = "Us_";
 //		pattern = "Map";
 //		query = "Salt Lake City Pennsylvania Place 123 UT USA";
 //		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
-		query = "Salt Lake City Pennsylvania Street";
+//		query = "Salt Lake City Pennsylvania Street";
 //		query = "West Valley City";
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 //		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
-		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA";
-		query = "Pennsylvania Avenue Philadelphia PA USA"; 
+//		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA";
+//		query = "Pennsylvania Avenue Philadelphia PA USA"; 
 //		query = "Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA";
 //		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
-		query = "PA 75 27193"; // Data 'PA-75', 27193  4472676432
-		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), no - 'PA75' 
+//		query = "PA 75 27193"; // Data 'PA-75', 27193  4472676432
+//		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), no - 'PA75' 
 		// data "PA 75" - see "M-2, 2 M" example
 
 //		pattern = "Liechtenstein_europe.obf";
@@ -219,12 +221,15 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby Melbourne 18B";
 		
 		pattern = "Us_new-york";
+		location = new LatLon(40.64946, -74.00682);
 //		query = "New York The plaza";
 //		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
+		
 		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
 //		query = "4 ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
+		
 		
 //		pattern = "France_ile-de-france_eu";
 //		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
@@ -269,15 +274,15 @@ public class SpatialSearchTestAndDocs {
 		if (mainResult != null && mainResult.matchedTokens() < rs.tokens.size() - 2) {
 			// another way to check to check to get mainResult - boundary object
 			City bbox = null;
-			for(MapObject o : mainResult.getObjects()) {
-				if(o instanceof City c && c.getBbox31() != null) {
+			for (MapObject o : mainResult.getObjects()) {
+				if (o instanceof City c && c.getBbox31() != null) {
 					// check that city is not inside maps searched
 					bbox = c;
 					break;
 				}
 			}
 			if (bbox != null) {
-				System.out.println("Search other region - " + bbox);
+				System.out.println("Suggest search other region - " + bbox);
 			}
 		}
 		SpatialTextSearchSettings settings = new SpatialTextSearchSettings();

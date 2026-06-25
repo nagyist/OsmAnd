@@ -2,7 +2,6 @@ package net.osmand.search.core.spatial;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -97,6 +96,8 @@ public class SpatialSearchContext {
 		LatLon northWest = MapUtils.rhumbDestinationPoint(l.getLatitude(), l.getLongitude(), radiusMeters, 315);
 		LatLon southEast = MapUtils.rhumbDestinationPoint(l.getLatitude(), l.getLongitude(), radiusMeters, 135);
 		int[] bbox31 = new int[4];
+//		System.out.printf("Bbox limit: %.4f %.4f - %.4f %.4f\n", northWest.getLatitude(), northWest.getLongitude(),
+//				southEast.getLatitude(), southEast.getLongitude());
 //		int xleft = bbox31[0], xright = bbox31[2];
 //		int ytop = bbox31[1], ybottom = bbox31[3];
 		bbox31[1]= MapUtils.get31TileNumberY(northWest.getLatitude());
@@ -494,7 +495,8 @@ public class SpatialSearchContext {
 			}
 		}
 		int otherFound = otherTokens == null ? 0 : otherTokens.size();
-		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, streetCity, other, otherFound, coords);
+		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, streetCity, other, otherFound, coords,
+				coords.intersects(limitLocationBbox));
 		t.addAtom(atom);
 		if (otherTokens != null) {
 			for (SpatialSearchToken token : otherTokens) {
@@ -509,8 +511,7 @@ public class SpatialSearchContext {
 				if (t != token && Abbreviations.likelyPartOfBuilding(token.word, token.getWordSplitAsBuidingName())
 						&& (otherTokens == null || !otherTokens.contains(token))) {
 					NameIndexAtom atomB = new NameIndexAtom(name, SpatialSearchToken.BUILDING_TYPE, lid, pid, obj,
-							streetCity, other, otherFound, coords);
-					atomB.buildingInd = t.originalOrder;
+							streetCity, other, otherFound, coords, coords.intersects(limitLocationBbox), t.originalOrder);
 					token.addAtom(atomB);
 				}
 			}

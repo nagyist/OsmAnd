@@ -42,8 +42,8 @@ public class SpatialSearchToken {
 	
 	List<NameIndexAtom> atoms = new ArrayList<>();
 	TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
-	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
 	HashQuadTree<NameIndexAtom> quadTree = new HashQuadTree<>(16);
+	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
 
 	CollatorStringMatcher collatorMain;
 	int mainNumber = -1;
@@ -217,10 +217,11 @@ public class SpatialSearchToken {
 				return xleft <= x && x <= xright && ytop <= y && y <= ybottom;
 			} else {
 				// if exists [xleft, ytop, xright, ybottom]
-				return this.bbox31[0] <= bbox31[2] && this.bbox31[2] >= bbox31[0] && this.bbox31[1] <= bbox31[3]
-						&& this.bbox31[3] >= bbox31[1];
+				return this.bbox31[0] <= abbox31[2] && this.bbox31[2] >= abbox31[0] && this.bbox31[1] <= abbox31[3]
+						&& this.bbox31[3] >= abbox31[1];
 			}
 		}
+		
 		public String tileIdString() {
 			return this.bboxTileZoom + " "
 					+ MapUtils.deinterleaveX(bboxTileId) + " "
@@ -268,6 +269,7 @@ public class SpatialSearchToken {
 
 	}
 
+	
 	public static class NameIndexAtom {
 		// SHOULD BE NOT MODIFIABLE AS WE INTERSECT OBJECTS atom x atom
 		final String name;
@@ -280,11 +282,17 @@ public class SpatialSearchToken {
 		final boolean cityAsStreet;
 		final int otherFoundCnt;
 		final NameIndexAtomXY coords; 
-		int buildingInd = -1; // added before intersection
+		final int buildingInd; // added before intersection
+		final boolean nearbyRadius;
 
 
-		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, 
-				boolean cityAsStreet, int otherWordsCnt, int otherFooundCnt, NameIndexAtomXY coords) {
+		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, boolean cityAsStreet, int otherWordsCnt,
+				int otherFooundCnt, NameIndexAtomXY coords, boolean nearbyRadius) {
+			this(name, type, id, pid, obj, cityAsStreet, otherWordsCnt, otherFooundCnt, coords, nearbyRadius, -1);
+		}
+
+		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, boolean cityAsStreet, int otherWordsCnt,
+				int otherFooundCnt, NameIndexAtomXY coords, boolean nearbyRadius, int buildingInd) {
 			this.name = name;
 			this.id = id;
 			this.parentid = pid;
@@ -294,6 +302,8 @@ public class SpatialSearchToken {
 			this.otherWordsCnt = otherWordsCnt;
 			this.otherFoundCnt = otherFooundCnt;
 			this.coords = coords;
+			this.nearbyRadius = nearbyRadius;
+			this.buildingInd = buildingInd;
 		}
 		
 		

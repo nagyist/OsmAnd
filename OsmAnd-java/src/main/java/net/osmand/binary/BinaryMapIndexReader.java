@@ -325,11 +325,20 @@ public class BinaryMapIndexReader {
 
 	private void calculateCenterPointForRegions() {
 		for (AddressRegion reg : addressIndexes) {
-			for (MapIndex map : mapIndexes) {
-				if (Algorithms.objectEquals(reg.name, map.name)) {
-					if (map.getRoots().size() > 0) {
-						reg.calculatedCenter = map.getCenterLatLon();
-						break;
+			for (HHRouteRegion h : hhIndexes) {
+				if (h.top != null) { // name null Algorithms.objectEquals(reg.name, h.name)
+					QuadRect qr = h.top.getLatLonBox();
+					reg.calculatedCenter = new LatLon(qr.centerY(), qr.centerX());
+					break;
+				}
+			}
+			if (reg.calculatedCenter == null) {
+				for (MapIndex map : mapIndexes) {
+					if (Algorithms.objectEquals(reg.name, map.name)) {
+						if (map.getRoots().size() > 0) {
+							reg.calculatedCenter = map.getCenterLatLon();
+							break;
+						}
 					}
 				}
 			}
@@ -2164,13 +2173,13 @@ public class BinaryMapIndexReader {
 		
 
 		public LatLon getCenterLatLon() {
-			if(roots.size() == 0) {
+			if (roots.size() == 0) {
 				return null;
 			}
 			MapRoot mapRoot = roots.get(roots.size() - 1);
 			double cy = (MapUtils.get31LatitudeY(mapRoot.getBottom()) + MapUtils.get31LatitudeY(mapRoot.getTop())) / 2;
 			double cx = (MapUtils.get31LongitudeX(mapRoot.getLeft()) + MapUtils.get31LongitudeX(mapRoot.getRight())) / 2;
-			return  new LatLon(cy, cx);
+			return new LatLon(cy, cx);
 		}
 
 		public List<MapRoot> getRoots() {
