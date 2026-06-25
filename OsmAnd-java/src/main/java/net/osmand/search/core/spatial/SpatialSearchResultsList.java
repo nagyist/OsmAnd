@@ -182,7 +182,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					}
 				}
 			}
-			if (insLoc == null && ctx.settings.ALLOW_VIRTUAL_STREET_INTER) {
+			if (insLoc == null && ctx.settings.ALLOW_VIRTUAL_STREET_INTERSECTIONS) {
 				LatLon l1 = first.object.getLocation();
 				LatLon l2 = second.object.getLocation();
 				insLoc = new LatLon(l1.getLatitude() / 2 + l2.getLatitude() / 2, l1.getLongitude() / 2 + l2.getLongitude() / 2);
