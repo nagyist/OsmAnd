@@ -1,0 +1,780 @@
+diff --git a/OsmAnd-java/build.gradle b/OsmAnd-java/build.gradle
+index af0eab92937..ae7697d8948 100644
+--- a/OsmAnd-java/build.gradle
++++ b/OsmAnd-java/build.gradle
+@@ -51,7 +51,6 @@ tasks.register('collectTestPhrasesResources', Copy) {
+ }
+ 
+ tasks.register('collectTestResources', Copy) {
+-	delete fileTree("src/test/resources/search")
+ 	into "src/test/resources/"
+ 	from("../../resources/test-resources") {
+ 		include "*"
+diff --git a/OsmAnd/res/values-de/strings.xml b/OsmAnd/res/values-de/strings.xml
+index 0fdb35d3bb0..644a46dccb7 100644
+--- a/OsmAnd/res/values-de/strings.xml
++++ b/OsmAnd/res/values-de/strings.xml
+@@ -5679,6 +5679,14 @@
+     <string name="ais_cpa_settings_description">Diese Werte bestimmen, wie AIS-Objekte angezeigt werden, wenn Sie sich der Position des Schiffs nähern.</string>
+     <string name="ais_cpa_warning_time">Warnzeit vor dem Punkt der größten Annäherung (CPA)</string>
+     <string name="ais_cpa_warning_distance">Warnabstand für den Punkt der größten Annäherung (CPA)</string>
++    <string name="ais_own_object">Einstellung zur Anzeige des eigenen AIS Objektes</string>
++    <string name="ais_own_object_description">Wenn das eigene Schiff einen AIS Transmitter besitzt, wird das empfangene Signal zusammen mit den anderen Schiffen empfangen. Die Anzeige des eigenen AIS Objektes kann hier definiert werden.</string>
++    <string name="ais_own_mmsi">Eigene MMSI (Maritime Mobile Service Identity)</string>
++    <string name="ais_own_mmsi_description">Eingabe der MMSI (9 stelliger numerischer Wert) für das eigene AIS Objekt.</string>
++    <string name="ais_display_own_position">Anzeige des eigenen AIS-Objektes erlauben.</string>
++    <string name="ais_display_own_position_description">Üblicherweise zeigt OsmAnd die eigene Position an. Wenn das eigene Schiff einen AIS-Sender besitzt, wird zusätzlich die empfangene Postion durch das Plugin angezeigt. Um Verwirrung zu vermeiden, kann diese Anzeige unterdrückt werden.</string>
++    <string name="ais_receive_in_background">Empfang von AIS-Daten wenn OsmAnd im Hintergrund läuft.</string>
++    <string name="ais_receive_in_background_description">Wenn aktiv, dann werden weiterhin AIS-Daen empfangen, auch wenn OsmAnd im Hintergrund läuft, andernfalls wird der Daten-Empfang unterbrochen.</string>
+     <string name="map_grid">Kartenraster</string>
+     <string name="show_grids">Gitternetz anzeigen</string>
+     <string name="show_grids_description">Anzeige eines Gitternetzes über der Karte erlauben</string>
+diff --git a/OsmAnd/res/values/strings.xml b/OsmAnd/res/values/strings.xml
+index 234ca76a9d1..fa3be70639a 100644
+--- a/OsmAnd/res/values/strings.xml
++++ b/OsmAnd/res/values/strings.xml
+@@ -496,6 +496,14 @@
+     <string name="ais_cpa_warning_time_description">If the TCPA (Time to Closest Point of Approach) with another vessel falls below the defined threshold, the vessel is highlighted in red.</string>
+     <string name="ais_cpa_warning_distance">Warning distance for the Closes Point of Approach (CPA)</string>
+     <string name="ais_cpa_warning_distance_description">Vessels are highlighted in red if the CPA (Closest Point of Approach) is below the defined threshold and the TCPA (Time to CPA) falls within the warning time set in the \'Warning time to reach the CPA\' setting.</string>
++    <string name="ais_own_object">settings for display of own AIS object</string>
++    <string name="ais_own_object_description">If the own vessel has an AIS transmitter then the signal will be received together with other AIS vessel\'s signals. Special handling of the own AIS signal is defined here.</string>
++    <string name="ais_own_mmsi">Own MMSI (Maritime Mobile Service Identity)</string>
++    <string name="ais_own_mmsi_description">Identify the MMSI (9 digit numerical value) of own AIS object.</string>
++    <string name="ais_display_own_position">Define whether the own AIS object shall be displayed.</string>
++    <string name="ais_display_own_position_description">Usually the own position is shown by OsmAnd. The additional display of the own AIS object may be confusing and can be disabled here.</string>
++    <string name="ais_receive_in_background">Receive AIS data even if OsmAnd is paused.</string>
++    <string name="ais_receive_in_background_description">If enabled, the AIS message listener stays running if OsmAnd is paused or in background. If disabled, no messages are received if OsmAnd is in background.</string>
+     <string name="plugin_ais_tracker_name">AIS vessel tracker</string>
+     <string name="plugin_ais_tracker_description">Displays AIS positions and information about nearby vessels. AIS data is received over the network from an external AIS receiver.</string>
+     <string name="plugin_ais_tracker_disclaimer">DISCLAIMER\n\nThis plugin is a hobby project and is not intended for use in critical applications. It does not guarantee reliability or accuracy. Do not rely on this software for navigation, safety of life, or any other essential operations.</string>
+diff --git a/OsmAnd/res/xml/ais_settings.xml b/OsmAnd/res/xml/ais_settings.xml
+index 80da67108c3..749466e51ad 100644
+--- a/OsmAnd/res/xml/ais_settings.xml
++++ b/OsmAnd/res/xml/ais_settings.xml
+@@ -33,6 +33,12 @@
+         android:title="@string/ais_port_nmea_local"
+         tools:summary="@string/ais_port_nmea_local_description" />
+ 
++    <net.osmand.plus.settings.preferences.ListPreferenceEx
++        android:key="ais_receive_in_background"
++        android:layout="@layout/preference_with_descr"
++        android:title="@string/ais_receive_in_background"
++        tools:summary="@string/ais_receive_in_background_description" />
++
+     <PreferenceCategory
+         android:key="ais_object_lost_timeouts"
+         android:layout="@layout/preference_category_with_descr"
+@@ -68,4 +74,21 @@
+         android:title="@string/ais_cpa_warning_distance"
+         tools:summary="@string/ais_cpa_warning_distance_description" />
+ 
++    <PreferenceCategory
++        android:key="ais_own_object"
++        android:layout="@layout/preference_category_with_descr"
++        android:title="@string/ais_own_object" />
++
++    <net.osmand.plus.settings.preferences.EditTextPreferenceEx
++        android:key="ais_own_mmsi"
++        android:layout="@layout/preference_with_descr"
++        android:title="@string/ais_own_mmsi"
++        tools:summary="@string/ais_own_mmsi_description" />
++
++    <net.osmand.plus.settings.preferences.ListPreferenceEx
++        android:key="ais_display_own_position"
++        android:layout="@layout/preference_with_descr"
++        android:title="@string/ais_display_own_position"
++        tools:summary="@string/ais_display_own_position_description" />
++
+ </PreferenceScreen>
+\ No newline at end of file
+diff --git a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisObject.java b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisObject.java
+index 8124624e5c7..3026b159897 100644
+--- a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisObject.java
++++ b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisObject.java
+@@ -85,6 +85,7 @@ public class AisObject {
+     private SortedSet<Integer> msgTypes = null;
+     private AisObjType objectClass;
+     private Cpa cpa;
++    public static final float SPEED_CONSIDERED_IN_REST = 0.4f; // in knots: vessels up to this speed are considered as "in rest"
+ 
+     /* timestamp of last AIS message received for the current instance: */
+     private long lastUpdate = 0;
+@@ -225,11 +226,20 @@ private void initObjectClass() {
+             case 22: // WIG, Hazardous category B
+             case 23: // WIG, Hazardous category C
+             case 24: // WIG, Hazardous category D
++            case 25: // WIG, Reserved for future use
++            case 26: // WIG, Reserved for future use
++            case 27: // WIG, Reserved for future use
++            case 28: // WIG, Reserved for future use
++            case 29: // WIG, Reserved for future use
+             case 40: // High Speed Craft (HSC)
+             case 41: // HSC, Hazardous category A
+             case 42: // HSC, Hazardous category B
+             case 43: // HSC, Hazardous category C
+             case 44: // HSC, Hazardous category D
++            case 45: // HSC, Reserved for future use
++            case 46: // HSC, Reserved for future use
++            case 47: // HSC, Reserved for future use
++            case 48: // HSC, Reserved for future use
+             case 49: // HSC, No additional information
+                 this.objectClass = AIS_VESSEL_FAST;
+                 break;
+@@ -269,6 +279,10 @@ private void initObjectClass() {
+             case 62: // Passenger, Hazardous category B
+             case 63: // Passenger, Hazardous category C
+             case 64: // Passenger, Hazardous category D
++            case 65: // Passenger, Reserved for future use
++            case 66: // Passenger, Reserved for future use
++            case 67: // Passenger, Reserved for future use
++            case 68: // Passenger, Reserved for future use
+             case 69: // Passenger, No additional information
+                 this.objectClass = AIS_VESSEL_PASSENGER;
+                 break;
+@@ -278,12 +292,20 @@ private void initObjectClass() {
+             case 72: // Cargo, Hazardous category B
+             case 73: // Cargo, Hazardous category C
+             case 74: // Cargo, Hazardous category D
++            case 75: // Cargo, Reserved for future use
++            case 76: // Cargo, Reserved for future use
++            case 77: // Cargo, Reserved for future use
++            case 78: // Cargo, Reserved for future use
+             case 79: // Cargo, No additional information
+             case 80: // Tanker, all ships of this type
+             case 81: // Tanker, Hazardous category A
+             case 82: // Tanker, Hazardous category B
+             case 83: // Tanker, Hazardous category C
+             case 84: // Tanker, Hazardous category D
++            case 85: // Tanker, Reserved for future use
++            case 86: // Tanker, Reserved for future use
++            case 87: // Tanker, Reserved for future use
++            case 88: // Tanker, Reserved for future use
+             case 89: // Tanker, No additional information
+                 this.objectClass = AIS_VESSEL_FREIGHT;
+                 break;
+@@ -293,6 +315,10 @@ private void initObjectClass() {
+             case 92: // Other Type, Hazardous category B
+             case 93: // Other Type, Hazardous category C
+             case 94: // Other Type, Hazardous category D
++            case 95: // Other Type, Reserved for future use
++            case 96: // Other Type, Reserved for future use
++            case 97: // Other Type, Reserved for future use
++            case 98: // Other Type, Reserved for future use
+             case 99: // Other Type, no additional information
+             default:
+                 this.objectClass = AIS_VESSEL_OTHER;
+@@ -579,11 +605,16 @@ public Cpa getCpa() {
+     public String getShipTypeString() {
+ 		return switch (this.ais_shipType) {
+ 			case INVALID_SHIP_TYPE -> "unknown"; // not initialized
+-			case 20 -> "Wing in ground (WIG)";
++            case 20 -> "Wing in ground (WIG)";
+ 			case 21 -> "WIG, Hazardous category A";
+ 			case 22 -> "WIG, Hazardous category B";
+ 			case 23 -> "WIG, Hazardous category C";
+ 			case 24 -> "WIG, Hazardous category D";
++            case 25 -> "Wing in ground (WIG)";
++            case 26 -> "Wing in ground (WIG)";
++            case 27 -> "Wing in ground (WIG)";
++            case 28 -> "Wing in ground (WIG)";
++            case 29 -> "Wing in ground (WIG)";
+ 			case 30 -> "Fishing";
+ 			case 31 -> "Towing";
+ 			case 32 -> "Towing";
+@@ -597,7 +628,11 @@ public String getShipTypeString() {
+ 			case 42 -> "HSC, Hazardous category B";
+ 			case 43 -> "HSC, Hazardous category C";
+ 			case 44 -> "HSC, Hazardous category D";
+-			case 49 -> "High Speed Craft (HSC)"; // HSC, No additional information
++            case 45 -> "High Speed Craft (HSC)"; // HSC, Reserved for future use
++            case 46 -> "High Speed Craft (HSC)"; // HSC, Reserved for future use
++            case 47 -> "High Speed Craft (HSC)"; // HSC, Reserved for future use
++            case 48 -> "High Speed Craft (HSC)"; // HSC, Reserved for future use
++			case 49 -> "High Speed Craft (HSC)"; // HSC, Reserved for future use
+ 			case 50 -> "Pilot Vessel";
+ 			case 51 -> "Search and Rescue vessel";
+ 			case 52 -> "Tug";
+@@ -613,24 +648,40 @@ public String getShipTypeString() {
+ 			case 62 -> "Passenger, Hazardous category B";
+ 			case 63 -> "Passenger, Hazardous category C";
+ 			case 64 -> "Passenger, Hazardous category D";
++            case 65 -> "Passenger/Cruise/Ferry"; // Passenger, reserved for future use
++            case 66 -> "Passenger/Cruise/Ferry"; // Passenger, reserved for future use
++            case 67 -> "Passenger/Cruise/Ferry"; // Passenger, reserved for future use
++            case 68 -> "Passenger/Cruise/Ferry"; // Passenger, reserved for future use
+ 			case 69 -> "Passenger/Cruise/Ferry"; // Passenger, No additional information
+ 			case 70 -> "Cargo"; // Cargo, all ships of this type
+ 			case 71 -> "Cargo, Hazardous category A";
+ 			case 72 -> "Cargo, Hazardous category B";
+ 			case 73 -> "Cargo, Hazardous category C";
+ 			case 74 -> "Cargo, Hazardous category D";
++            case 75 -> "Cargo"; // Cargo, reserved for future use
++            case 76 -> "Cargo"; // Cargo, reserved for future use
++            case 77 -> "Cargo"; // Cargo, reserved for future use
++            case 78 -> "Cargo"; // Cargo, reserved for future use
+ 			case 79 -> "Cargo"; // Cargo, No additional information
+ 			case 80 -> "Tanker"; // Tanker, all ships of this type
+ 			case 81 -> "Tanker, Hazardous category A";
+ 			case 82 -> "Tanker, Hazardous category B";
+ 			case 83 -> "Tanker, Hazardous category C";
+ 			case 84 -> "Tanker, Hazardous category D";
++            case 85 -> "Tanker"; // Tanker, reserved for future use
++            case 86 -> "Tanker"; // Tanker, reserved for future use
++            case 87 -> "Tanker"; // Tanker, reserved for future use
++            case 88 -> "Tanker"; // Tanker, reserved for future use
+ 			case 89 -> "Tanker"; // Tanker, No additional information
+ 			case 90 -> "Other Type"; // Other Type, all ships of this type
+ 			case 91 -> "Other Type, Hazardous category A";
+ 			case 92 -> "Other Type, Hazardous category B";
+ 			case 93 -> "Other Type, Hazardous category C";
+ 			case 94 -> "Other Type, Hazardous category D";
++            case 95 -> "Other Type"; // Other Type, reserved for future use
++            case 96 -> "Other Type"; // Other Type, reserved for future use
++            case 97 -> "Other Type"; // Other Type, reserved for future use
++            case 98 -> "Other Type"; // Other Type, reserved for future use
+ 			case 99 -> "Other Type"; // Other Type, no additional information
+ 			default -> Integer.toString(ais_shipType);
+ 		};
+@@ -751,9 +802,9 @@ public boolean isMovable() {
+         };
+     }
+ 
+-    /* return true if a vessel is moored etc. */
++    /* return true if a vessel is moored etc. and needs to be drawn as a circle */
+     public boolean isVesselAtRest() {
+-        switch (objectClass) {
++        switch (this.objectClass) {
+             case AIS_VESSEL:
+             case AIS_VESSEL_SPORT:
+             case AIS_VESSEL_FAST:
+@@ -763,16 +814,18 @@ public boolean isVesselAtRest() {
+             case AIS_VESSEL_AUTHORITIES:
+             case AIS_VESSEL_SAR:
+             case AIS_VESSEL_OTHER:
+-                switch (ais_navStatus) {
++                switch (this.ais_navStatus) {
++                    case 1: // at anchor
+                     case 5: // moored
+                         /* sometimes the ais_navStatus is wrong and contradicts other data... */
+-                        return (ais_cog == INVALID_COG) || (ais_sog < 0.2d);
++                        return (ais_cog == INVALID_COG) || (ais_sog < SPEED_CONSIDERED_IN_REST);
+                     default:
+-						return (msgTypes.contains(18) || msgTypes.contains(24)
+-								|| msgTypes.contains(1) || msgTypes.contains(3))
+-                                && (ais_cog == INVALID_COG /* maybe remove this condition */)
+-								&& (ais_sog < 0.2d);
+-				}
++                        if (msgTypes.contains(18) || msgTypes.contains(24)
++                                ||  msgTypes.contains(1)  || msgTypes.contains(3)) {
++                            return (ais_sog < SPEED_CONSIDERED_IN_REST);
++                        }
++                        return false;
++                }
+             default:
+                 return false;
+         }
+@@ -782,7 +835,7 @@ public boolean getSignalLostState() {
+         return (isLost(plugin.getVesselLostTimeoutInMinutes()) && isMovable() && !isVesselAtRest());
+     }
+ 
+-    float getVesselRotation() {
++    public float getVesselRotation() {
+         float rotation = 0;
+         if (this.ais_cog != INVALID_COG) {
+             rotation = (float) this.ais_cog;
+diff --git a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisObjectDrawable.java b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisObjectDrawable.java
+index 11b2342ac14..7ecc3cff8e3 100644
+--- a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisObjectDrawable.java
++++ b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisObjectDrawable.java
+@@ -49,6 +49,8 @@ public class AisObjectDrawable {
+ 	private MapMarker lostMarker;
+ 	private VectorLine directionLine;
+ 
++	private static AisObjectDrawable ownObject = null; // object representing own AIS transmitter (if present)
++
+ 	public AisObjectDrawable(@NonNull AisObject ais) {
+ 		this.ais = ais;
+ 		this.imagesCache = ais.getPlugin().getAisImagesCache();
+@@ -64,7 +66,7 @@ private void invalidateBitmap() {
+ 	}
+ 
+ 	public void set(@NonNull AisObject ais) {
+-		this.ais.set(ais);
++		// this.ais.set(ais);
+ 
+ 		this.invalidateBitmap();
+ 		this.bitmapColor = 0;
+@@ -119,16 +121,16 @@ private float getMovement() {
+ 			if (ais.isMovable()) {
+ 				if (this.ais.getSog() <  2.0d) { return 0.0f; }
+ 				if (this.ais.getSog() <  5.0d) { return 1.0f; }
+-				if (this.ais.getSog() < 10.0d) { return 3.0f; }
+-				if (this.ais.getSog() < 25.0d) { return 6.0f; }
+-				return 8.0f;
++				if (this.ais.getSog() < 10.0d) { return 2.0f; }
++				if (this.ais.getSog() < 25.0d) { return 3.0f; }
++				return 5.0f;
+ 			}
+ 		}
+ 		return 0.0f;
+ 	}
+ 
+ 	private boolean needRotation() {
+-		return (((ais.getCog() != INVALID_COG) && (this.ais.getCog() != 0)) ||
++		return (((ais.getCog() != INVALID_COG) && (ais.getCog() != 0)) ||
+ 				((ais.getHeading() != INVALID_HEADING) && (ais.getHeading() != 0))) && ais.isMovable();
+ 	}
+ 
+@@ -146,7 +148,8 @@ private boolean checkCpaWarning() {
+ 		Location ownPosition = getPlugin().getOwnPosition();
+ 		int cpaWarningTime = getPlugin().getCpaWarningTime();
+ 		float cpaWarningDistance = getPlugin().getCpaWarningDistance();
+-		if (ais.isMovable() && (ais.getObjectClass() != AIS_AIRPLANE) && (cpaWarningTime > 0) && (ais.getSog() > 0.0d)) {
++		if (ais.isMovable() && (ais.getObjectClass() != AIS_AIRPLANE) && (cpaWarningTime > 0) &&
++                (ais.getSog() > AisObject.SPEED_CONSIDERED_IN_REST)) {
+ 			Cpa cpa = ais.getCpa();
+ 			if (checkForCpaTimeout() && (ownPosition != null)) {
+ 				Location aisPosition = ais.getCurrentLocation();
+@@ -191,7 +194,9 @@ private void setBitmap() {
+ 	}
+ 
+ 	private void setColor(boolean vesselAtRest) {
+-		if (ais.isLost(getPlugin().getVesselLostTimeoutInMinutes()) && !vesselAtRest) {
++		if (isOwn()) {
++			this.bitmapColor = Color.BLACK; // show own AIS object in black
++		} else if (ais.isLost(getPlugin().getVesselLostTimeoutInMinutes()) && !vesselAtRest) {
+ 			if (ais.isMovable()) {
+ 				this.bitmapColor = 0; // default icon
+ 			}
+@@ -207,7 +212,7 @@ private void updateBitmap(@NonNull Paint paint) {
+ 			if (!this.bitmapValid) {
+ 				setBitmap();
+ 			}
+-			if (checkCpaWarning()) {
++			if ((!isOwn()) && checkCpaWarning()) {
+ 				activateCpaWarning();
+ 			} else {
+ 				deactivateCpaWarning();
+@@ -230,32 +235,88 @@ private void drawCircle(float locationX, float locationY,
+ 		canvas.drawCircle(locationX, locationY, 18.0f, localPaint);
+ 	}
+ 
++	private void drawShape(float locationX, float locationY, @NonNull RotatedTileBox tileBox,
++						   @NonNull Paint paint, @NonNull Canvas canvas) {
++		// draw the shape of the vessel based on the received dimension data,
++		// for vessel dimension encoding see ITU-R M.1371-5 (http://www.itu.int/rec/R-REC-M/e)
++		float a, b, c, d, e;
++		if ((tileBox.getZoom() >= AisTrackerLayer.START_ZOOM_SHOW_SHAPE) &&
++				(ais.getDimensionToBow() + ais.getDimensionToStern() > 0) &&
++				(ais.getDimensionToPort() + ais.getDimensionToStarboard() > 0) &&
++				(!ais.isLost(getPlugin().getVesselLostTimeoutInMinutes()))) {
++			double pixDensity = tileBox.getPixDensity();
++			if ((ais.getDimensionToBow() == 0) && (ais.getDimensionToPort() == 0)) {
++				a = (float)(ais.getDimensionToStern() * pixDensity * 0.5f);
++				b = a;
++				c = (float)(ais.getDimensionToStarboard() * pixDensity * 0.5f);
++				d = c;
++			} else {
++				a = (float)(ais.getDimensionToBow() * pixDensity);
++				b = (float)(ais.getDimensionToStern() * pixDensity);
++				c = (float)(ais.getDimensionToPort() * pixDensity);
++				d = (float)(ais.getDimensionToStarboard() * pixDensity);
++			}
++			e = 0.5f * (c + d);
++			canvas.drawLine((float) locationX - c, (float) locationY + b,
++					(float) locationX - c, (float) locationY - a + e, paint);
++			canvas.drawLine((float) locationX - c, (float) locationY - a + e,
++					(float) locationX - c + e, (float) locationY - a, paint);
++			canvas.drawLine((float) locationX - c + e, (float) locationY - a,
++					(float) locationX + d, (float) locationY - a + e, paint);
++			canvas.drawLine((float) locationX + d, (float) locationY - a + e,
++					(float) locationX + d, (float) locationY + b, paint);
++			canvas.drawLine((float) locationX + d, (float) locationY + b,
++					(float) locationX - c, (float) locationY + b, paint);
++		}
++	}
++
+ 	public void draw(@NonNull Paint paint, @NonNull Canvas canvas, @NonNull RotatedTileBox tileBox) {
+ 		updateBitmap(paint);
+ 		LatLon position = ais.getPosition();
++		int heading = ais.getHeading();
+ 		if (this.bitmap != null && position != null) {
+ 			canvas.save();
+ 			canvas.rotate(tileBox.getRotate(), (float)tileBox.getCenterPixelX(), (float)tileBox.getCenterPixelY());
+-			float speedFactor = getMovement();
+ 			int locationX = tileBox.getPixXFromLonNoRot(position.getLongitude());
+ 			int locationY = tileBox.getPixYFromLatNoRot(position.getLatitude());
+-			float fx =  locationX - this.bitmap.getWidth() / 2.0f;
+-			float fy =  locationY - this.bitmap.getHeight() / 2.0f;
+-			boolean vesselAtRest = ais.isVesselAtRest();
+-			if (!vesselAtRest && this.needRotation()) {
+-				float rotation = ais.getVesselRotation();
+-				canvas.rotate(rotation, locationX, locationY);
+-			}
+-			if (vesselAtRest) {
++			if (ais.isVesselAtRest()) {
+ 				drawCircle(locationX, locationY, paint, canvas);
++				if (heading != INVALID_HEADING) {
++					if (heading != 0) {
++						canvas.rotate(heading, locationX, locationY);
++					}
++					drawShape(locationX, locationY, tileBox, paint, canvas);
++				}
+ 			} else {
++				boolean needRotation = this.needRotation();
++				float rotation = 0.0f;
++				float speedFactor = getMovement();
++				float fx =  locationX - this.bitmap.getWidth() / 2.0f;
++				float fy =  locationY - this.bitmap.getHeight() / 2.0f;
++				if (needRotation) {
++					// the idea of the directions of the bitmap, vessel shape etc. is:
++					// - draw the bitmap and the direction line in direction of the course (ais_cog) of the vessel
++					//  - if no course is available, use heading (ais_heading) instead
++					//  - if heading is also not available, fallback to "no rotation" (northwards)
++					// - the direction of the shape of the vessel may differ:
++					//  - if heading is given and differs from course, then use heading as direction of the shape
++					//  - in this case the direction of the bitmap (with direction line) differs from the shape direction
++					rotation = ais.getVesselRotation();
++					canvas.rotate(rotation, locationX, locationY);
++				}
+ 				canvas.drawBitmap(this.bitmap, Math.round(fx), Math.round(fy), paint);
+-			}
+-			if ((speedFactor > 0) && (!ais.isLost(getPlugin().getVesselLostTimeoutInMinutes())) && !vesselAtRest) {
+-				float lineLength = (float)this.bitmap.getHeight() * speedFactor;
+-				float lineStartY = locationY - this.bitmap.getHeight() / 4.0f;
+-				float lineEndY = lineStartY - lineLength;
+-				canvas.drawLine((float) locationX, lineStartY, (float) locationX, lineEndY, paint);
++				if ((tileBox.getZoom() >= AisTrackerLayer.START_ZOOM_SHOW_DIRECTION) && (speedFactor > 0.0f) &&
++						(!ais.isLost(getPlugin().getVesselLostTimeoutInMinutes()))) {
++					float lineLength = (float)this.bitmap.getHeight() * speedFactor;
++					float lineStartY = locationY - this.bitmap.getHeight() / 4.0f;
++					float lineEndY = lineStartY - lineLength;
++					canvas.drawLine((float) locationX, lineStartY, (float) locationX, lineEndY, paint);
++				}
++				if ((needRotation) && (heading != INVALID_HEADING) &&
++						(heading != 0) && (heading != rotation)) {
++					canvas.rotate(heading - rotation, locationX, locationY);
++				}
++				drawShape(locationX, locationY, tileBox, paint, canvas);
+ 			}
+ 			canvas.restore();
+ 		}
+@@ -385,4 +446,11 @@ public void clearAisRenderData(@NonNull MapMarkersCollection markersCollection,
+ 		lostMarker = null;
+ 		directionLine = null;
+ 	}
++
++	private boolean isOwn() { return (ownObject == this); }
++
++	public static void setOwnObject(AisObjectDrawable obj) { ownObject = obj; }
++
++	@Nullable
++	public static AisObjectDrawable getOwnObject() { return ownObject; }
+ }
+diff --git a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerHelper.java b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerHelper.java
+index bd9abd11d7c..13cb87cad68 100644
+--- a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerHelper.java
++++ b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerHelper.java
+@@ -191,7 +191,7 @@ private static Pair<Double, Double> getCrossingTimes(@NonNull Location x, @NonNu
+         double divisor = vVX.x * vVY.y - vVX.y * vVY.x;
+         if ((Math.abs(divisor) < 1.0E-10f) || (lonCorrection < 1.0E-10f)) {
+             // avoid div by 0 or invalid lonCorrection
+-            Log.d("AisTrackerHelper", "getCollisionTimes(): Division by 0: divisor->"
++            Log.d("AisTrackerHelper", "getCrossingTimes(): Division by 0: divisor->"
+                     + divisor + ", lonCorrection->" + lonCorrection);
+             return null;
+         }
+diff --git a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerLayer.java b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerLayer.java
+index 95eef90b44b..6179df3c950 100644
+--- a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerLayer.java
++++ b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerLayer.java
+@@ -12,6 +12,7 @@
+ import android.graphics.Color;
+ import android.graphics.Paint;
+ import android.graphics.PointF;
++import android.util.Log;
+ 
+ import androidx.annotation.NonNull;
+ 
+@@ -41,6 +42,8 @@
+ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvider, AisObjectListener {
+ 
+ 	public static final int START_ZOOM = 6;
++	public static final int START_ZOOM_SHOW_SHAPE = 16;
++	public static final int START_ZOOM_SHOW_DIRECTION = 10;
+ 
+ 	private final AisTrackerPlugin plugin = PluginsHelper.requirePlugin(AisTrackerPlugin.class);
+ 	private final Paint bitmapPaint = new Paint();
+@@ -86,12 +89,27 @@ public void cleanupResources() {
+ 
+ 	@Override
+ 	public void onAisObjectReceived(@NonNull AisObject ais) {
+-		AisObjectDrawable drawable = objectDrawables.get(ais.getMmsi());
++		int mmsi = ais.getMmsi();
++		boolean showOwnObject = plugin.AIS_DISPLAY_OWN_POSITION.get();
++		boolean own = (mmsi == plugin.AIS_OWN_MMSI.get());
++		AisObjectDrawable drawable = objectDrawables.get(mmsi);
+ 		if (drawable == null) {
++			if ((own) && (!showOwnObject)) {
++				AisObjectDrawable.setOwnObject(null);
++				return; // exclude own AIS object from list
++			}
+ 			drawable = new AisObjectDrawable(ais);
+ 			objectDrawables.put(ais.getMmsi(), drawable);
+ 		} else {
+-			drawable.set(ais);
++			if ((own) && (!showOwnObject)) {
++				this.onAisObjectRemoved(ais);
++				return;
++			} else {
++				drawable.set(ais);
++			}
++		}
++		if (own) {
++			AisObjectDrawable.setOwnObject(drawable);
+ 		}
+ 		if (getMapRenderer() != null && !drawable.hasAisRenderData() && aisRestImage != null
+ 				&& markersCollection != null && vectorLinesCollection != null) {
+@@ -102,6 +120,9 @@ public void onAisObjectReceived(@NonNull AisObject ais) {
+ 
+ 	@Override
+ 	public void onAisObjectRemoved(@NonNull AisObject ais) {
++		if (ais.getMmsi() == plugin.AIS_OWN_MMSI.get()) {
++			AisObjectDrawable.setOwnObject(null);
++		}
+ 		if (getMapRenderer() != null && markersCollection != null && vectorLinesCollection != null) {
+ 			AisObjectDrawable drawable = objectDrawables.get(ais.getMmsi());
+ 			if (drawable != null) {
+diff --git a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerPlugin.java b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerPlugin.java
+index f1c07e1bf53..902d6b912b3 100644
+--- a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerPlugin.java
++++ b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerPlugin.java
+@@ -57,6 +57,9 @@ public class AisTrackerPlugin extends OsmandPlugin {
+ 	public static final String AIS_SHIP_LOST_TIMEOUT_ID = "ais_ship_lost_timeout"; // see xml/ais_settings.xml
+ 	public static final String AIS_CPA_WARNING_TIME_ID = "ais_cpa_warning_time"; // see xml/ais_settings.xml
+ 	public static final String AIS_CPA_WARNING_DISTANCE_ID = "ais_cpa_warning_distance"; // see xml/ais_settings.xml
++	public static final String AIS_OWN_MMSI_ID = "ais_own_mmsi"; // see xml/ais_settings.xml
++    public static final String AIS_DISPLAY_OWN_POSITION_ID = "ais_display_own_position"; // see xml/ais_settings.xml
++    public static final String AIS_RECEIVE_IN_BACKGROUND_ID = "ais_receive_in_background"; // see xml/ais_settings.xml
+ 	public final CommonPreference<Integer> AIS_NMEA_PROTOCOL;
+ 	public static final int AIS_NMEA_PROTOCOL_UDP = 0;
+ 	public static final int AIS_NMEA_PROTOCOL_TCP = 1;
+@@ -76,13 +79,19 @@ public class AisTrackerPlugin extends OsmandPlugin {
+ 	public static final Integer AIS_CPA_DEFAULT_WARNING_TIME = 0;
+ 	public final CommonPreference<Float> AIS_CPA_WARNING_DISTANCE; // in miles
+ 	public static final Float AIS_CPA_WARNING_DEFAULT_DISTANCE = 1.0f;
++	public final CommonPreference<Integer> AIS_OWN_MMSI;
++	public static final Integer AIS_DEFAULT_OWN_MMSI = 0;
++	public final CommonPreference<Boolean> AIS_DISPLAY_OWN_POSITION;
++	public static final Boolean AIS_DISPLAY_OWN_POSITION_DEFAULT = false;
++    public final CommonPreference<Boolean> AIS_RECEIVE_IN_BACKGROUND;
++    public static final Boolean AIS_RECEIVE_IN_BACKGROUND_DEFAULT = true;
+ 
+ 	/* timestamp of last AIS message received for all instances: */
+ 	private long lastMessageReceived = 0;
+ 	private Location fakeOwnPosition = null; // used for test purposes to fake own position
+ 
+-	private final StateChangedListener<String> addrPrefListener = change -> restartNetworkListener(true);
+-	private final StateChangedListener<Integer> protocolPortPrefListener = change -> restartNetworkListener(true);
++	private final StateChangedListener<String> addrPrefListener = change -> restartNetworkListener();
++	private final StateChangedListener<Integer> protocolPortPrefListener = change -> restartNetworkListener();
+ 
+ 	public class AisDataManager implements AisDataListener {
+ 
+@@ -197,6 +206,9 @@ public AisTrackerPlugin(@NonNull OsmandApplication app) {
+ 		AIS_SHIP_LOST_TIMEOUT = registerIntPreference(AIS_SHIP_LOST_TIMEOUT_ID, AIS_SHIP_LOST_DEFAULT_TIMEOUT);
+ 		AIS_CPA_WARNING_TIME = registerIntPreference(AIS_CPA_WARNING_TIME_ID, AIS_CPA_DEFAULT_WARNING_TIME);
+ 		AIS_CPA_WARNING_DISTANCE = registerFloatPreference(AIS_CPA_WARNING_DISTANCE_ID, AIS_CPA_WARNING_DEFAULT_DISTANCE);
++		AIS_OWN_MMSI = registerIntPreference(AIS_OWN_MMSI_ID, AIS_DEFAULT_OWN_MMSI);
++		AIS_DISPLAY_OWN_POSITION = registerBooleanPreference(AIS_DISPLAY_OWN_POSITION_ID, AIS_DISPLAY_OWN_POSITION_DEFAULT);
++        AIS_RECEIVE_IN_BACKGROUND = registerBooleanPreference(AIS_RECEIVE_IN_BACKGROUND_ID, AIS_RECEIVE_IN_BACKGROUND_DEFAULT);
+ 		AIS_NMEA_IP_ADDRESS.addListener(addrPrefListener);
+ 		AIS_NMEA_PROTOCOL.addListener(protocolPortPrefListener);
+ 		AIS_NMEA_TCP_PORT.addListener(protocolPortPrefListener);
+@@ -315,7 +327,9 @@ public void mapActivityResume(@NonNull MapActivity activity) {
+ 
+ 	@Override
+ 	public void mapActivityPause(@NonNull MapActivity activity) {
+-		stopAisListener();
++        if (!AIS_RECEIVE_IN_BACKGROUND.get()) {
++            stopAisListener();
++        }
+ 	}
+ 
+ 	@Override
+@@ -323,7 +337,7 @@ public void updateLayers(@NonNull Context context, @Nullable MapActivity mapActi
+ 		OsmandMapTileView mapView = app.getOsmandMap().getMapView();
+ 		if (isActive()) {
+ 			if (layer == null) {
+-				Log.d("AisTrackerPlugin", "call registerLayers()");
++				Log.d("AisTrackerPlugin", "call updateLayers()");
+ 				registerLayers(context, mapActivity);
+ 			}
+ 			if (!mapView.getLayers().contains(layer)) {
+@@ -410,8 +424,8 @@ private boolean restartStalledTcpConnection() {
+ 		if (aisListener != null) {
+ 			if (aisListener.checkTcpSocket()) {
+ 				if (((System.currentTimeMillis() - getAndUpdateLastMessageReceived()) / 1000) > 20) {
+-					Log.d("AisTrackerLayer", "checkTcpConnection(): restart TCP socket");
+-					restartNetworkListener(false);
++					Log.d("AisTrackerLayer", "restartStalledTcpConnection(): restart TCP socket");
++					restartNetworkListener();
+ 					return true;
+ 				}
+ 			}
+@@ -419,11 +433,8 @@ private boolean restartStalledTcpConnection() {
+ 		return false;
+ 	}
+ 
+-	public void restartNetworkListener(boolean clearData) {
++	public void restartNetworkListener() {
+ 		stopAisListener();
+-		if (clearData) {
+-			aisDataManager.cleanupResources();
+-		}
+ 		startAisNetworkListener();
+ 	}
+ 
+diff --git a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerSettingsFragment.java b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerSettingsFragment.java
+index b1f10ff3c7c..8a83bba2dee 100644
+--- a/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerSettingsFragment.java
++++ b/OsmAnd/src/net/osmand/plus/plugins/aistracker/AisTrackerSettingsFragment.java
+@@ -31,13 +31,16 @@ public class AisTrackerSettingsFragment extends BaseSettingsFragment {
+ 	protected void setupPreferences() {
+ 		int currentProtocol = setupProtocol();
+ 		boolean cpaWarningEnabled = setupCpaWarningTime();
++		int ownMmsi = setupOwnMmsi();
+ 
+ 		setupIpAddress(currentProtocol);
+ 		setupTcpPort(currentProtocol);
+ 		setupUdpPort(currentProtocol);
++        setupReceiveInBackground();
+ 		setupObjectLostTimeout();
+ 		setupShipLostTimeout();
+ 		setupCpaWarningDistance(cpaWarningEnabled);
++		setupDisplayOwnPosition(ownMmsi);
+ 	}
+ 
+ 	private int setupProtocol() {
+@@ -165,6 +168,44 @@ private void setupCpaWarningDistance(boolean enabled) {
+ 		}
+ 	}
+ 
++	private int setupOwnMmsi() {
++		EditTextPreferenceEx aisOwnMmsi = findPreference(plugin.AIS_OWN_MMSI.getId());
++		if (aisOwnMmsi != null) {
++			int currentValue = plugin.AIS_OWN_MMSI.get();
++			aisOwnMmsi.setDescription(R.string.ais_own_mmsi_description);
++			aisOwnMmsi.setSummary(String.valueOf(currentValue));
++			return currentValue;
++		}
++		return 0;
++	}
++
++	private void setupDisplayOwnPosition(int ownMmsi) {
++		Boolean[] entryValues = { true, false };
++		String[] entries = new String[entryValues.length];
++		entries[0] = getString(R.string.shared_string_yes);
++		entries[1] = getString(R.string.shared_string_no);
++		ListPreferenceEx aisDisplayOwnPosition = findPreference(plugin.AIS_DISPLAY_OWN_POSITION.getId());
++		if (aisDisplayOwnPosition != null) {
++			aisDisplayOwnPosition.setEntries(entries);
++			aisDisplayOwnPosition.setEntryValues(entryValues);
++			aisDisplayOwnPosition.setDescription(R.string.ais_display_own_position_description);
++			aisDisplayOwnPosition.setEnabled(ownMmsi != 0);
++		}
++	}
++
++    private void setupReceiveInBackground() {
++        Boolean[] entryValues = { true, false };
++        String[] entries = new String[entryValues.length];
++        entries[0] = getString(R.string.shared_string_yes);
++        entries[1] = getString(R.string.shared_string_no);
++        ListPreferenceEx aisReceiveInBackground = findPreference(plugin.AIS_RECEIVE_IN_BACKGROUND.getId());
++        if (aisReceiveInBackground != null) {
++            aisReceiveInBackground.setEntries(entries);
++            aisReceiveInBackground.setEntryValues(entryValues);
++            aisReceiveInBackground.setDescription(R.string.ais_receive_in_background_description);
++        }
++    }
++
+ 	@Override
+ 	public boolean onPreferenceChange(Preference preference, Object newValue) {
+ 		if (preference.getKey().equals(AisTrackerPlugin.AIS_NMEA_IP_ADDRESS_ID)) {
+@@ -178,6 +219,12 @@ public boolean onPreferenceChange(Preference preference, Object newValue) {
+ 				showAlertDialog("Only numerical values accepted in range 0..65535.");
+ 				return false;
+ 			}
++		} else if (preference.getKey().equals(AisTrackerPlugin.AIS_OWN_MMSI_ID)) {
++			if (!isValidMmsi(newValue.toString())) {
++				showAlertDialog("Only numerical values are accepted (9 digits).");
++				return false;
++			}
++			AisObjectDrawable.setOwnObject(null);
+ 		}
+ 		return super.onPreferenceChange(preference, newValue);
+ 	}
+@@ -207,6 +254,19 @@ private static boolean isValidPortNumber(@Nullable String value) {
+ 		return (i >= 0) && (i <= 65535);
+ 	}
+ 
++	private static boolean isValidMmsi(@Nullable String value) {
++		int i;
++		if (value == null) {
++			return false;
++		}
++		try {
++			i = Integer.parseInt(value);
++		} catch (NumberFormatException e) {
++			return false;
++		}
++		return (i >= 0) && (i <= 999999999);
++	}
++
+ 	private void showAlertDialog(@NonNull String message) {
+ 		Context themedContext = UiUtilities.getThemedContext(getActivity(), isNightMode());
+ 		AlertDialog.Builder wrongFormatDialog = new AlertDialog.Builder(themedContext);
+diff --git a/gradle.properties b/gradle.properties
+index 6f3bf3d5d5d..e39911c6063 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -1,29 +1,20 @@
+-## Project-wide Gradle settings.
+-#
+-# For more details on how to configure your build environment visit
++## For more details on how to configure your build environment visit
+ # http://www.gradle.org/docs/current/userguide/build_environment.html
+ #
+ # Specifies the JVM arguments used for the daemon process.
+ # The setting is particularly useful for tweaking memory settings.
+-# Default value: -Xmx10248m -XX:MaxPermSize=256m
++# Default value: -Xmx1024m -XX:MaxPermSize=256m
+ # org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+ #
+ # When configured, Gradle will run in incubating parallel mode.
+-# This option should only be used with decoupled projects. More details, visit
+-# http://www.gradle.org/docs/current/userguide/multi_project_builds.html#sec:decoupled_projects
++# This option should only be used with decoupled projects. For more details, visit
++# https://developer.android.com/r/tools/gradle-multi-project-decoupled-projects
+ # org.gradle.parallel=true
+-#Fri Apr 08 18:47:31 EEST 2016
+-# android.useDeprecatedNdk=true
+-
+-# for enableD8=true min sdk must be > 22
+-# UPDATE: temporairly commented since gradle plugin updated to 3.1.3 and claims INSTALL_FAILED_DEXOPT is fixed
+-# UPDATE 2: D8 causes problems on arm64 devices with Android 6.0 (API 23)
+-# UPDATE 3: Turn on D8 to recover builds with new gradle 6.5 and pluigin 4.1.1
+-#android.enableD8=false
++#Wed Nov 19 23:57:13 CET 2025
++android.defaults.buildfeatures.buildconfig=true
+ android.enableJetifier=true
+-android.useAndroidX=true
+ android.enableR8.fullMode=false
+-android.defaults.buildfeatures.buildconfig=true
+-android.nonTransitiveRClass=false
+ android.nonFinalResIds=false
+-#org.gradle.configuration-cache=true
++android.nonTransitiveRClass=false
++android.useAndroidX=true
++org.gradle.jvmargs=-Xmx2048M -Dkotlin.daemon.jvm.options\="-Xmx2048M"

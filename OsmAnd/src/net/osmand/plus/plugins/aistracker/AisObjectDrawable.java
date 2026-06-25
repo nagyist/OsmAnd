@@ -35,6 +35,7 @@ import net.osmand.shared.aistracker.AisLatLon;
 import net.osmand.shared.aistracker.AisLocation;
 import net.osmand.shared.aistracker.AisObjType;
 import net.osmand.shared.aistracker.AisObject;
+import net.osmand.shared.aistracker.AisObjectConstants;
 import net.osmand.shared.aistracker.AisTrackerMath;
 import net.osmand.util.MapUtils;
 
@@ -53,6 +54,8 @@ public class AisObjectDrawable {
 	private MapMarker restMarker;
 	private MapMarker lostMarker;
 	private VectorLine directionLine;
+
+	private static AisObjectDrawable ownObject = null; // object representing own AIS transmitter (if present)
 
 	public AisObjectDrawable(@NonNull AisTrackerPlugin plugin, @NonNull AisObject ais) {
 		this.plugin = plugin;
@@ -125,16 +128,16 @@ public class AisObjectDrawable {
 			if (ais.isMovable()) {
 				if (this.ais.getSog() <  2.0d) { return 0.0f; }
 				if (this.ais.getSog() <  5.0d) { return 1.0f; }
-				if (this.ais.getSog() < 10.0d) { return 3.0f; }
-				if (this.ais.getSog() < 25.0d) { return 6.0f; }
-				return 8.0f;
+				if (this.ais.getSog() < 10.0d) { return 2.0f; }
+				if (this.ais.getSog() < 25.0d) { return 3.0f; }
+				return 5.0f;
 			}
 		}
 		return 0.0f;
 	}
 
 	private boolean needRotation() {
-		return (((ais.getCog() != INVALID_COG) && (this.ais.getCog() != 0)) ||
+		return (((ais.getCog() != INVALID_COG) && (ais.getCog() != 0)) ||
 				((ais.getHeading() != INVALID_HEADING) && (ais.getHeading() != 0))) && ais.isMovable();
 	}
 
@@ -152,7 +155,8 @@ public class AisObjectDrawable {
 		Location ownPosition = getPlugin().getOwnPosition();
 		int cpaWarningTime = getPlugin().getCpaWarningTime();
 		float cpaWarningDistance = getPlugin().getCpaWarningDistance();
-		if (ais.isMovable() && (ais.getObjectClass() != AIS_AIRPLANE) && (cpaWarningTime > 0) && (ais.getSog() > 0.0d)) {
+		if (ais.isMovable() && (ais.getObjectClass() != AIS_AIRPLANE) && (cpaWarningTime > 0) &&
+                (ais.getSog() > AisObjectConstants.SPEED_CONSIDERED_IN_REST)) {
 			AisCpa cpa = ais.getCpa();
 			if (checkForCpaTimeout() && (ownPosition != null)) {
 				AisLocation aisPosition = ais.getExtrapolatedLocation(System.currentTimeMillis());
@@ -197,7 +201,9 @@ public class AisObjectDrawable {
 	}
 
 	private void setColor(boolean vesselAtRest) {
-		if (ais.isLost(getPlugin().getVesselLostTimeoutInMinutes()) && !vesselAtRest) {
+		if (isOwn()) {
+			this.bitmapColor = Color.BLACK; // show own AIS object in black
+		} else if (ais.isLost(getPlugin().getVesselLostTimeoutInMinutes()) && !vesselAtRest) {
 			if (ais.isMovable()) {
 				this.bitmapColor = 0; // default icon
 			}
@@ -213,7 +219,7 @@ public class AisObjectDrawable {
 			if (!this.bitmapValid) {
 				setBitmap();
 			}
-			if (checkCpaWarning()) {
+			if ((!isOwn()) && checkCpaWarning()) {
 				activateCpaWarning();
 			} else {
 				deactivateCpaWarning();
@@ -236,32 +242,83 @@ public class AisObjectDrawable {
 		canvas.drawCircle(locationX, locationY, 18.0f, localPaint);
 	}
 
+	private void drawShape(float locationX, float locationY, @NonNull RotatedTileBox tileBox,
+						   @NonNull Paint paint, @NonNull Canvas canvas) {
+		// draw the shape of the vessel based on the received dimension data,
+		// for vessel dimension encoding see ITU-R M.1371-5 (http://www.itu.int/rec/R-REC-M/e)
+		float a, b, c, d, e;
+		if ((tileBox.getZoom() >= AisTrackerLayer.START_ZOOM_SHOW_SHAPE) &&
+				(ais.getDimensionToBow() + ais.getDimensionToStern() > 0) &&
+				(ais.getDimensionToPort() + ais.getDimensionToStarboard() > 0) &&
+				(!ais.isLost(getPlugin().getVesselLostTimeoutInMinutes()))) {
+			double pixDensity = tileBox.getPixDensity();
+			if ((ais.getDimensionToBow() == 0) && (ais.getDimensionToPort() == 0)) {
+				a = (float)(ais.getDimensionToStern() * pixDensity * 0.5f);
+				b = a;
+				c = (float)(ais.getDimensionToStarboard() * pixDensity * 0.5f);
+				d = c;
+			} else {
+				a = (float)(ais.getDimensionToBow() * pixDensity);
+				b = (float)(ais.getDimensionToStern() * pixDensity);
+				c = (float)(ais.getDimensionToPort() * pixDensity);
+				d = (float)(ais.getDimensionToStarboard() * pixDensity);
+			}
+			e = 0.5f * (c + d);
+			canvas.drawLine(locationX - c, locationY + b, locationX - c, locationY - a + e, paint);
+			canvas.drawLine(locationX - c, locationY - a + e, locationX - c + e, locationY - a, paint);
+			canvas.drawLine(locationX - c + e, locationY - a, locationX + d, locationY - a + e, paint);
+			canvas.drawLine(locationX + d, locationY - a + e, locationX + d, locationY + b, paint);
+			canvas.drawLine(locationX + d, locationY + b, locationX - c, locationY + b, paint);
+		}
+	}
+
 	public void draw(@NonNull Paint paint, @NonNull Canvas canvas, @NonNull RotatedTileBox tileBox) {
 		updateBitmap(paint);
 		AisLatLon position = ais.getPosition();
+		int heading = ais.getHeading();
 		if (this.bitmap != null && position != null) {
 			canvas.save();
 			canvas.rotate(tileBox.getRotate(), (float)tileBox.getCenterPixelX(), (float)tileBox.getCenterPixelY());
-			float speedFactor = getMovement();
 			int locationX = tileBox.getPixXFromLonNoRot(position.getLongitude());
 			int locationY = tileBox.getPixYFromLatNoRot(position.getLatitude());
-			float fx =  locationX - this.bitmap.getWidth() / 2.0f;
-			float fy =  locationY - this.bitmap.getHeight() / 2.0f;
-			boolean vesselAtRest = ais.isVesselAtRest();
-			if (!vesselAtRest && this.needRotation()) {
-				float rotation = ais.getVesselRotation();
-				canvas.rotate(rotation, locationX, locationY);
-			}
-			if (vesselAtRest) {
+			if (ais.isVesselAtRest()) {
 				drawCircle(locationX, locationY, paint, canvas);
+				if (heading != INVALID_HEADING) {
+					if (heading != 0) {
+						canvas.rotate(heading, locationX, locationY);
+					}
+					drawShape(locationX, locationY, tileBox, paint, canvas);
+				}
 			} else {
+				boolean needRotation = this.needRotation();
+				float rotation = 0.0f;
+				float speedFactor = getMovement();
+				float fx =  locationX - this.bitmap.getWidth() / 2.0f;
+				float fy =  locationY - this.bitmap.getHeight() / 2.0f;
+				if (needRotation) {
+					// the idea of the directions of the bitmap, vessel shape etc. is:
+					// - draw the bitmap and the direction line in direction of the course (ais_cog) of the vessel
+					//  - if no course is available, use heading (ais_heading) instead
+					//  - if heading is also not available, fallback to "no rotation" (northwards)
+					// - the direction of the shape of the vessel may differ:
+					//  - if heading is given and differs from course, then use heading as direction of the shape
+					//  - in this case the direction of the bitmap (with direction line) differs from the shape direction
+					rotation = ais.getVesselRotation();
+					canvas.rotate(rotation, locationX, locationY);
+				}
 				canvas.drawBitmap(this.bitmap, Math.round(fx), Math.round(fy), paint);
-			}
-			if ((speedFactor > 0) && (!ais.isLost(getPlugin().getVesselLostTimeoutInMinutes())) && !vesselAtRest) {
-				float lineLength = (float)this.bitmap.getHeight() * speedFactor;
-				float lineStartY = locationY - this.bitmap.getHeight() / 4.0f;
-				float lineEndY = lineStartY - lineLength;
-				canvas.drawLine((float) locationX, lineStartY, (float) locationX, lineEndY, paint);
+				if ((tileBox.getZoom() >= AisTrackerLayer.START_ZOOM_SHOW_DIRECTION) && (speedFactor > 0.0f) &&
+						(!ais.isLost(getPlugin().getVesselLostTimeoutInMinutes()))) {
+					float lineLength = (float)this.bitmap.getHeight() * speedFactor;
+					float lineStartY = locationY - this.bitmap.getHeight() / 4.0f;
+					float lineEndY = lineStartY - lineLength;
+					canvas.drawLine((float) locationX, lineStartY, (float) locationX, lineEndY, paint);
+				}
+				if ((needRotation) && (heading != INVALID_HEADING) &&
+						(heading != 0) && (heading != rotation)) {
+					canvas.rotate(heading - rotation, locationX, locationY);
+				}
+				drawShape(locationX, locationY, tileBox, paint, canvas);
 			}
 			canvas.restore();
 		}
@@ -391,4 +448,11 @@ public class AisObjectDrawable {
 		lostMarker = null;
 		directionLine = null;
 	}
+
+	private boolean isOwn() { return (ownObject == this); }
+
+	public static void setOwnObject(AisObjectDrawable obj) { ownObject = obj; }
+
+	@Nullable
+	public static AisObjectDrawable getOwnObject() { return ownObject; }
 }
