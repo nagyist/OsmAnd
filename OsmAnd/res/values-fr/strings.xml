@@ -5611,9 +5611,9 @@
     <string name="labels_position">Position des libellés</string>
     <string name="shared_string_edges">Bords</string>
     <string name="grid_color">Couleur de la grille</string>
-    <string name="route_part_of">Extrait de</string>
+    <string name="route_part_of">Fait partie de</string>
     <string name="route_members">Membres</string>
-    <string name="multipoligon_related">En rapport</string>
+    <string name="multipoligon_related">Lié</string>
     <string name="cant_load_map_styles">Impossible de charger les styles de carte.</string>
     <string name="add_to_navigation">Ajouter au guidage</string>
     <string name="msg_favorites_skipped_as_existing">Les points favoris (%1$d) ont été ignorés car ils existaient déjà.</string>
