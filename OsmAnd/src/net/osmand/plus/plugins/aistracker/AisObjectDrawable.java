@@ -57,7 +57,7 @@ public class AisObjectDrawable {
 	private VectorLine directionLine;
 	private VectorLine shapeLine;
 
-	private static AisObjectDrawable ownObject = null; // object representing own AIS transmitter (if present)
+	private boolean ownObject; // object representing own AIS transmitter (if present)
 
 	public AisObjectDrawable(@NonNull AisTrackerPlugin plugin, @NonNull AisObject ais) {
 		this.plugin = plugin;
@@ -75,10 +75,20 @@ public class AisObjectDrawable {
 	}
 
 	public void set(@NonNull AisObject ais) {
-		this.ais.set(ais);
+		if (this.ais != ais) {
+			this.ais.set(ais);
+		}
 
 		this.invalidateBitmap();
 		this.bitmapColor = 0;
+	}
+
+	public void setOwnObject(boolean ownObject) {
+		if (this.ownObject != ownObject) {
+			this.ownObject = ownObject;
+			this.invalidateBitmap();
+			this.bitmapColor = 0;
+		}
 	}
 
 	private void activateCpaWarning() {
@@ -516,10 +526,7 @@ public class AisObjectDrawable {
 		shapeLine = null;
 	}
 
-	private boolean isOwn() { return (ownObject == this); }
-
-	public static void setOwnObject(AisObjectDrawable obj) { ownObject = obj; }
-
-	@Nullable
-	public static AisObjectDrawable getOwnObject() { return ownObject; }
+	private boolean isOwn() {
+		return ownObject;
+	}
 }

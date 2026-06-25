@@ -88,7 +88,6 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			aisRestImage = null;
 		}
 		objectDrawables.clear();
-		AisObjectDrawable.setOwnObject(null);
 	}
 
 	@Override
@@ -98,21 +97,19 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 		AisObjectDrawable drawable = objectDrawables.get(mmsi);
 		if (drawable == null) {
 			if (isOwnObjectHidden(ais)) {
-				AisObjectDrawable.setOwnObject(null);
 				return; // exclude own AIS object from list
 			}
 			drawable = new AisObjectDrawable(plugin, ais);
+			drawable.setOwnObject(own);
 			objectDrawables.put(ais.getMmsi(), drawable);
 		} else {
 			if (isOwnObjectHidden(ais)) {
 				this.onAisObjectRemoved(ais);
 				return;
 			} else {
+				drawable.setOwnObject(own);
 				drawable.set(ais);
 			}
-		}
-		if (own) {
-			AisObjectDrawable.setOwnObject(drawable);
 		}
 		if (getMapRenderer() != null && !drawable.hasAisRenderData() && aisRestImage != null
 				&& markersCollection != null && vectorLinesCollection != null) {
@@ -123,9 +120,6 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 
 	@Override
 	public void onAisObjectRemoved(@NonNull AisObject ais) {
-		if (ais.getMmsi() == plugin.AIS_OWN_MMSI.get()) {
-			AisObjectDrawable.setOwnObject(null);
-		}
 		if (getMapRenderer() != null && markersCollection != null && vectorLinesCollection != null) {
 			AisObjectDrawable drawable = objectDrawables.get(ais.getMmsi());
 			if (drawable != null) {
@@ -141,6 +135,22 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 
 	private boolean isOwnObjectHidden(@NonNull AisObject ais) {
 		return isOwnObject(ais) && !plugin.AIS_DISPLAY_OWN_POSITION.get();
+	}
+
+	public void refreshOwnObjectVisibility() {
+		for (AisObject ais : plugin.getAisObjects()) {
+			AisObjectDrawable drawable = objectDrawables.get(ais.getMmsi());
+			if (isOwnObjectHidden(ais)) {
+				if (drawable != null) {
+					onAisObjectRemoved(ais);
+				}
+			} else if (drawable != null) {
+				drawable.setOwnObject(isOwnObject(ais));
+				drawable.updateAisRenderData(getTileView(), bitmapPaint);
+			} else if (isOwnObject(ais)) {
+				onAisObjectReceived(ais);
+			}
+		}
 	}
 
 	public boolean isLocationVisible(RotatedTileBox tileBox, double lat, double lon) {
@@ -186,10 +196,8 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 						continue;
 					}
 					AisObjectDrawable drawable = new AisObjectDrawable(plugin, ais);
+					drawable.setOwnObject(isOwnObject(ais));
 					objectDrawables.put(ais.getMmsi(), drawable);
-					if (isOwnObject(ais)) {
-						AisObjectDrawable.setOwnObject(drawable);
-					}
 					drawable.createAisRenderData(getBaseOrder(), bitmapPaint,
 							markersCollection, vectorLinesCollection, aisRestImage);
 					drawable.updateAisRenderData(getTileView(), bitmapPaint);

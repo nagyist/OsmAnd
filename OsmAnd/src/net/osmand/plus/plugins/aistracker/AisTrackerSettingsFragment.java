@@ -208,6 +208,7 @@ public class AisTrackerSettingsFragment extends BaseSettingsFragment {
 
 	@Override
 	public boolean onPreferenceChange(Preference preference, Object newValue) {
+		boolean refreshOwnObjectVisibility = false;
 		if (preference.getKey().equals(AisTrackerPlugin.AIS_NMEA_IP_ADDRESS_ID)) {
 			if (!isValidIpV4Address(newValue.toString())) {
 				showAlertDialog("Only IPv4 address accepted (\"a.b.c.d\", where a,b,c,d in range 0..255).");
@@ -224,9 +225,22 @@ public class AisTrackerSettingsFragment extends BaseSettingsFragment {
 				showAlertDialog("Only numerical values are accepted (9 digits).");
 				return false;
 			}
-			AisObjectDrawable.setOwnObject(null);
+			refreshOwnObjectVisibility = true;
+		} else if (preference.getKey().equals(AisTrackerPlugin.AIS_DISPLAY_OWN_POSITION_ID)) {
+			refreshOwnObjectVisibility = true;
 		}
-		return super.onPreferenceChange(preference, newValue);
+		boolean changed = super.onPreferenceChange(preference, newValue);
+		if (changed && refreshOwnObjectVisibility) {
+			app.runInUIThread(this::updateOwnObjectVisibility);
+		}
+		return changed;
+	}
+
+	private void updateOwnObjectVisibility() {
+		AisTrackerLayer layer = plugin.getLayer();
+		if (layer != null) {
+			layer.refreshOwnObjectVisibility();
+		}
 	}
 
 	private static boolean isValidIpV4Address(@Nullable String value) {

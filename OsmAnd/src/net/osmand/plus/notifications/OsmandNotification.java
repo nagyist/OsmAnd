@@ -33,6 +33,7 @@ public abstract class OsmandNotification {
 	public static final int DOWNLOAD_NOTIFICATION_SERVICE_ID = 8;
 	public static final int CAR_APP_NOTIFICATION_SERVICE_ID = 9;
 	public static final int FALLBACK_NOTIFICATION_SERVICE_ID = 10;
+	public static final int AIS_NOTIFICATION_SERVICE_ID = 11;
 	public static final int TOP_NOTIFICATION_SERVICE_ID = 100;
 
 	public static final int WEAR_NAVIGATION_NOTIFICATION_SERVICE_ID = 1005;
@@ -40,6 +41,7 @@ public abstract class OsmandNotification {
 	public static final int WEAR_DOWNLOAD_NOTIFICATION_SERVICE_ID = 1008;
 	public static final int WEAR_CAR_APP_NOTIFICATION_SERVICE_ID = 1009;
 	public static final int WEAR_FALLBACK_NOTIFICATION_SERVICE_ID = 1010;
+	public static final int WEAR_AIS_NOTIFICATION_SERVICE_ID = 1011;
 
 	protected OsmandApplication app;
 	protected boolean ongoing = true;
@@ -61,6 +63,7 @@ public abstract class OsmandNotification {
 		FALLBACK,
 		DOWNLOAD,
 		CAR_APP,
+		AIS,
 	}
 
 	public OsmandNotification(OsmandApplication app, String groupName) {

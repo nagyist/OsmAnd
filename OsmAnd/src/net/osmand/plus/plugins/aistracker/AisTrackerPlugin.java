@@ -3,6 +3,8 @@ package net.osmand.plus.plugins.aistracker;
 import net.osmand.plus.render.RendererRegistry;
 import net.osmand.shared.aistracker.AisObject;
 
+import static net.osmand.plus.NavigationService.USED_BY_AIS;
+import static net.osmand.plus.notifications.OsmandNotification.NotificationType.AIS;
 import static net.osmand.plus.settings.fragments.SettingsScreenType.AIS_SETTINGS;
 
 import android.content.Context;
@@ -15,6 +17,7 @@ import androidx.annotation.Nullable;
 import net.osmand.Location;
 import net.osmand.PlatformUtil;
 import net.osmand.StateChangedListener;
+import net.osmand.plus.NavigationService;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
@@ -24,6 +27,7 @@ import net.osmand.shared.aistracker.AisDataListener;
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.preferences.CommonPreference;
 import net.osmand.plus.settings.fragments.SettingsScreenType;
+import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.views.OsmandMapTileView;
 
 import java.io.File;
@@ -95,6 +99,16 @@ public class AisTrackerPlugin extends OsmandPlugin {
 
 	private final StateChangedListener<String> addrPrefListener = change -> restartNetworkListener();
 	private final StateChangedListener<Integer> protocolPortPrefListener = change -> restartNetworkListener();
+	private final StateChangedListener<Boolean> receiveInBackgroundPrefListener = enabled -> {
+		if (enabled) {
+			updateAisBackgroundService();
+		} else {
+			stopAisBackgroundService();
+			if (!settings.MAP_ACTIVITY_ENABLED) {
+				stopAisListener();
+			}
+		}
+	};
 
 	public class AisDataManager implements AisDataListener {
 
@@ -216,11 +230,18 @@ public class AisTrackerPlugin extends OsmandPlugin {
 		AIS_NMEA_PROTOCOL.addListener(protocolPortPrefListener);
 		AIS_NMEA_TCP_PORT.addListener(protocolPortPrefListener);
 		AIS_NMEA_UDP_PORT.addListener(protocolPortPrefListener);
+		AIS_RECEIVE_IN_BACKGROUND.addListener(receiveInBackgroundPrefListener);
 	}
 
 	@Override
 	public boolean isMarketPlugin() {
 		return true;
+	}
+
+	@Override
+	public void disable(@NonNull OsmandApplication app) {
+		stopAisListener();
+		super.disable(app);
 	}
 
 	@Override
@@ -326,13 +347,20 @@ public class AisTrackerPlugin extends OsmandPlugin {
 				startAisNetworkListener();
 			}
 		}
+		updateAisBackgroundService();
+		if (AIS_RECEIVE_IN_BACKGROUND.get()) {
+			AndroidUtils.requestNotificationPermissionIfNeeded(activity);
+		}
 	}
 
 	@Override
 	public void mapActivityPause(@NonNull MapActivity activity) {
-        if (!AIS_RECEIVE_IN_BACKGROUND.get()) {
-            stopAisListener();
-        }
+		if (!AIS_RECEIVE_IN_BACKGROUND.get()) {
+			stopAisListener();
+		} else {
+			updateAisBackgroundService();
+			app.runInUIThread(this::stopAisListenerIfBackgroundServiceFailed, 1500);
+		}
 	}
 
 	@Override
@@ -395,6 +423,7 @@ public class AisTrackerPlugin extends OsmandPlugin {
 		aisDataManager.cleanupResources();
 		aisListener = new AisMessageSimulationListener(aisDataManager, file, SIMULATED_LATENCY_TIME_MS);
 		aisDataManager.startUpdates();
+		updateAisBackgroundService();
 	}
 
 	private void startAisNetworkListener() {
@@ -408,6 +437,7 @@ public class AisTrackerPlugin extends OsmandPlugin {
 			aisListener = new AisMessageListener(aisDataManager, AIS_NMEA_IP_ADDRESS.get(), AIS_NMEA_TCP_PORT.get());
 			aisDataManager.startUpdates();
 		}
+		updateAisBackgroundService();
 	}
 
 	private void stopAisListener() {
@@ -416,6 +446,35 @@ public class AisTrackerPlugin extends OsmandPlugin {
 			aisListener = null;
 		}
 		aisDataManager.stopUpdates();
+		stopAisBackgroundService();
+	}
+
+	private void updateAisBackgroundService() {
+		if (isActive() && AIS_RECEIVE_IN_BACKGROUND.get() && aisListener != null) {
+			app.startNavigationService(USED_BY_AIS);
+			app.getNotificationHelper().refreshNotification(AIS);
+		} else {
+			stopAisBackgroundService();
+		}
+	}
+
+	private void stopAisBackgroundService() {
+		NavigationService navigationService = app.getNavigationService();
+		if (navigationService != null && navigationService.isUsedBy(USED_BY_AIS)) {
+			navigationService.stopIfNeeded(app, USED_BY_AIS);
+		}
+	}
+
+	private void stopAisListenerIfBackgroundServiceFailed() {
+		if (!settings.MAP_ACTIVITY_ENABLED && AIS_RECEIVE_IN_BACKGROUND.get()
+				&& aisListener != null && !isAisBackgroundServiceRunning()) {
+			stopAisListener();
+		}
+	}
+
+	private boolean isAisBackgroundServiceRunning() {
+		NavigationService navigationService = app.getNavigationService();
+		return navigationService != null && navigationService.isUsedBy(USED_BY_AIS);
 	}
 
 	/* this method restarts the TCP listeners after a "resume" event (the smartphone resumed
