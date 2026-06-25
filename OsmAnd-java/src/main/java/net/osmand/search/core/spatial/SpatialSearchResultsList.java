@@ -41,6 +41,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	HashQuadTree<Integer> quadTree = new HashQuadTree<>(16);
 
 	TIntObjectHashMap<Boolean> skipResults = new TIntObjectHashMap<>();
+	Map<Integer, LatLon> preciseLocations = new HashMap<Integer, LatLon>();
 	List<SpatialSearchResult> finalResult = null;
 	
 	public SpatialSearchResultsList() {
@@ -190,13 +191,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 //						insLoc.getLongitude(), first.toString(), second.toString());
 			}
 			if (insLoc != null) {
-				for (int i = 0; i < tCount; i++) {
-					NameIndexAtom atom = linearResults.get(indx * tCount + i);
-					if (atom.object != null && (first.object.getId().equals(atom.object.getId())
-							|| second.object.getId().equals(atom.object.getId()))) {
-						atom.coords.result = insLoc;
-					}
-				}
+				preciseLocations.put(indx, insLoc);
 			} else {
 				skipResults.put(indx, true);
 			}
@@ -253,16 +248,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					skipResults.put(indx, true);
 					break;
 				} else {
-					for (int i = 0; i < tCount; i++) {
-						NameIndexAtom bld = linearResults.get(indx * tCount + i);
-						if (bld.buildingInd >= 0 && str.id == bld.id) {
-							bld.object = bldObj;
-							bld.name = bldObj.getName();
-							if (bldObj.isInterpolation()) {
-								bld.coords.result = bldObj.getLocation(bldObj.interpolation(bldName));
-								bld.name = bldName;
-							}
-						}
+					if (bldObj.isInterpolation()) {
+						preciseLocations.put(indx, bldObj.getLocation(bldObj.interpolation(bldName)));
 					}
 				}
 			}
@@ -339,7 +326,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		finalResult = new ArrayList<>(tileIds.size());
 		for (int i = 0; i < tileIds.size(); i++) {
 			if (!skipResults.containsKey(i)) {
-				finalResult.add(new SpatialSearchResult(this, i));
+				finalResult.add(new SpatialSearchResult(this, i, preciseLocations.get(i)));
 			}
 		}		
 		finalResult = sortResults(ctx, finalResult, deduplicate);

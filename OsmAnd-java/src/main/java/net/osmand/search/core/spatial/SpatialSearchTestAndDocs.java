@@ -33,23 +33,21 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING Match '2nd' and '2'!! (no 4 -> 48)
 // Document TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
 // bis matching
+// !!! Building interpolation, intersections - name / location
+// !!! Street intersection match
 
 ////////// IN PROGRESS//////////
-
-// FIXME Street intersection match
 // TODO Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
 // TODO Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k),
 // TODO Calle 20 188 Lima San Isidro  / Sokak - delay street intersection
 
 // FIXME POI Categories + top poi categories
-// FIXME Building interpolation, intersections - name / location
+// FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
+//       Combine regions.ocbf (boundary)
+// TO DO
 // TODO Filter results boundaries, <Salt Lake City>
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
-
-// TO DO
-// FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
-//       Combine regions.ocbf (boundary)
 // TODO Progress / cancel
 // TODO Not forget to include regions.ocbf on client
 // TODO Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
@@ -198,7 +196,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "саксаг. 63 28"; // 129-Б, 129б 63/28, 63, 63-28  +'саксаг. 63 28'
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
-		query = "саксаг. Володимирська"; // intersection
+		
+//		query = "саксаг. Володимирська"; // intersection
+		query = "саксаг. тарас."; // intersection
+		query = "54-та Садова вулиця 8"; // interpolation
 //		query = "Яр. вал 29-г";
 //		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true

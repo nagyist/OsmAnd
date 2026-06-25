@@ -172,14 +172,12 @@ public class SpatialSearchToken {
 	}
 
 	public static class NameIndexAtomXY {
+		// SHOULD BE NOT MODIFIABLE AS WE INTERSECT OBJECTS atom x atom
 		int[] bbox31; // if exists [xleft, yleft, xright, yright]
 		long bboxTileId; // encodes zoom, tileX, tileY
 		int bboxTileZoom;
 		int x16, y16;
 		
-		 // in case attached object is not precise: building interpolation, street intersection
-		public LatLon result;  
-
 		public NameIndexAtomXY(AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b) {
 			if (a != null) {
 				init(a);
@@ -267,18 +265,18 @@ public class SpatialSearchToken {
 	}
 
 	public static class NameIndexAtom {
-		String name;
+		// SHOULD BE NOT MODIFIABLE AS WE INTERSECT OBJECTS atom x atom
+		final String name;
 
 		final int type; //
 		final long id; // used to read object
 		final long parentid; // used to read object
-		MapObject object;
-		int otherWordsCnt;
+		MapObject object; // same for all
+		int otherWordsCnt; // added before intersection
 		final boolean cityAsStreet;
 		final int otherFoundCnt;
-		final NameIndexAtomXY coords;
-		int buildingInd = -1;
-
+		final NameIndexAtomXY coords; 
+		int buildingInd = -1; // added before intersection
 
 
 		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, 
@@ -329,9 +327,6 @@ public class SpatialSearchToken {
 		}
 		
 		public LatLon getResultLocation() {
-			if (coords.result != null) {
-				return coords.result;
-			}
 			if (object != null) {
 				return object.getLocation();
 			}

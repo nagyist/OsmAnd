@@ -9,6 +9,7 @@ import net.osmand.binary.ObfConstants;
 import net.osmand.data.Amenity;
 import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
+import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.util.MapUtils;
 
@@ -17,11 +18,13 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	final int parentInd;
 	final SpatialSearchResultsList parent;
 	final List<SpatialSearchResultRef> objs = new ArrayList<>();
-	int level; 
+	int level;
+	LatLon preciseLatlon; 
 	
-	SpatialSearchResult(SpatialSearchResultsList parentList, int parentInd) {
+	SpatialSearchResult(SpatialSearchResultsList parentList, int parentInd, LatLon preciseLatlon) {
 		this.parentInd = parentInd;
 		this.parent = parentList;
+		this.preciseLatlon = preciseLatlon;
 		
 		for (int i = 0; i < parent.tCount; i++) {
 			NameIndexAtom atom = parent.linearResults.get(parentInd * parentList.tCount + i);
@@ -80,6 +83,9 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 	
 	public LatLon getLatLon() {
+		if (preciseLatlon != null) {
+			return preciseLatlon;
+		}
 		if (objs.size() > 0) {
 			return objs.get(0).atom.getResultLocation();
 		}
@@ -96,6 +102,13 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			if (first.parent != null && first.parent.object != null) {
 				return ObfConstants.getOsmObjectId(first.parent.object);
 			}
+			// street intersection (!) or possibly building
+			if (preciseLatlon != null) {
+				int y31 = MapUtils.get31TileNumberY(preciseLatlon.getLatitude());
+				int x31 = MapUtils.get31TileNumberX(preciseLatlon.getLongitude());
+				long id = HashQuadTree.encodeTileId31(19, x31, y31);
+				return id;
+			}
 			if (first.atom.object != null) {
 				return ObfConstants.getOsmObjectId(first.atom.object);
 			}
@@ -106,6 +119,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
 	@Override
 	public String toString() {
+		if(preciseLatlon != null) {
+			return String.format("%.4f, %.4f %s", preciseLatlon.getLatitude(), preciseLatlon.getLongitude(),
+					objs.toString());
+		}
 		return objs.toString();
 	}
 	
