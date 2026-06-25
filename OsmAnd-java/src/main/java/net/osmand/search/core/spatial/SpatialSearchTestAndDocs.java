@@ -29,22 +29,17 @@ import net.osmand.util.SearchAlgorithms;
 
 //////////// TESTING //////////
 // REVIEW UI FILTER_MIN_WORDS_COUNT - 'New york plaza' ('the'), Issues Nova poshta Kharkiv 
-// TESTING 'New york s.' - 1 letter very slow
-// TESTING Match '2nd' and '2'!! (no 4 -> 48)
 // Document TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
 // bis matching
-// !!! Building interpolation, intersections - name / location
-// !!! Street intersection match
+// !!! Building interpolation, Street intersection match
 
 ////////// IN PROGRESS//////////
-// TODO Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
-// TODO Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k),
-// TODO Calle 20 188 Lima San Isidro  / Sokak - delay street intersection
-
+// FIXME Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k)
 // FIXME POI Categories + top poi categories
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 //       Combine regions.ocbf (boundary)
 // TO DO
+// TODO Sokak 2 order
 // TODO Filter results boundaries, <Salt Lake City>
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
@@ -53,11 +48,12 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
 // TODO POI Categories translations / synonyms
 // TODO Inspector stats index_words_dashboard.html
+// TODO Test memory on Android device for slowest query
 
 // TEST IDEAS
+// TODO ? Store wikidata id for boundaries (regions.ocbf) & display them - place=county, place=state ? 
 // TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique) 
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
-// TODO ? Store wikidata id for boundaries (regions.ocbf) & display them - place=county, place=state ? 
 
 // EXTRA FEATURES
 // TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
@@ -173,7 +169,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Farm";
 		
 //		pattern = "Turkey_";
-//		query = "Sokak 23018. Balikesir"; // no results?
+//		query = "Sokak 23018. Balikesir"; // OK
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
 		// ALL - Search Stats 1569.2 ms - 554.0 ms 59,656 atoms (read 318.8, match 134.1), 985.8 ms compute 693,139 (loadBld 396.2, read 149.5)
         // NO INTER - Search Stats 871.5 ms - 546.4 ms 59,656 atoms (read 313.7, match 135.6), 299.9 ms compute 4,735 (loadBld 54.1, read 37.2)
@@ -198,8 +194,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "саксаг. 63/28 подъезд 2";
 		
 //		query = "саксаг. Володимирська"; // intersection
-		query = "саксаг. тарас."; // intersection
-		query = "54-та Садова вулиця 8"; // interpolation
+//		query = "саксаг. тарас."; // intersection
+//		query = "54-та Садова вулиця 8"; // interpolation
 //		query = "Яр. вал 29-г";
 //		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
@@ -222,11 +218,11 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-//		pattern = "Us_new-york";
+		pattern = "Us_new-york";
 //		query = "New York The plaza";
 //		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
-//		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
+		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
 //		query = "4 ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		
@@ -250,7 +246,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
 		
 //		pattern = "Peru_";
-//		query ="Calle 20 188 San Isidro Lima";
+//		query ="Calle 20 188 San Isidro Lima"; // 1430799557
 //		query ="Lima Calle 20 San Isidro";
 //		query ="Calle 20 ";
 

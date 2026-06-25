@@ -73,7 +73,6 @@ public class SpatialSearchToken {
 		}
 		String abbr = Abbreviations.getSearchabbreviations().get(noDot);
 		if (abbr != null) {
-			System.out.println(abbr);
 			List<String> other = SearchAlgorithms.splitAndNormalize(abbr, true);
 			otherMatch = new CollatorStringMatcher[other.size()];
 			for(int i = 0; i < other.size(); i++) {
@@ -199,25 +198,29 @@ public class SpatialSearchToken {
 					z2--;
 				}
 				return tid1 == tid2;
-			} else if (bbox31 == null && a.bbox31 != null) {
+			} else if (a.bbox31 == null) {
 				return a.intersects(this);
-			} else if (bbox31 != null && a.bbox31 == null) {
-				int xleft = this.bbox31[0] >> (31 - a.bboxTileZoom);
-				int xright = this.bbox31[2] >> (31 - a.bboxTileZoom);
-				int ytop = this.bbox31[1] >> (31 - a.bboxTileZoom);
-				int ybottom = this.bbox31[3] >> (31 - a.bboxTileZoom);
-				long x = MapUtils.deinterleaveX(a.bboxTileId);
-				long y = MapUtils.deinterleaveY(a.bboxTileId);
-				return xleft <= x && x <= xright && ytop <= y && y <= ybottom;
 			} else {
-				// if exists [xleft, ytop, xright, ybottom]
-				return this.bbox31[0] <= a.bbox31[2] && this.bbox31[2] >= a.bbox31[0] 
-						&& this.bbox31[1] <= a.bbox31[3] && this.bbox31[3] >= a.bbox31[1];
-				
+				return intersects(a.bbox31);
 			}
 		}
 		
-
+		public boolean intersects(int[] abbox31) {
+			// if exists [xleft, ytop, xright, ybottom]
+			if (this.bbox31 == null) {
+				int xleft = abbox31[0] >> (31 - this.bboxTileZoom);
+				int xright = abbox31[2] >> (31 - this.bboxTileZoom);
+				int ytop = abbox31[1] >> (31 - this.bboxTileZoom);
+				int ybottom = abbox31[3] >> (31 - this.bboxTileZoom);
+				long x = MapUtils.deinterleaveX(this.bboxTileId);
+				long y = MapUtils.deinterleaveY(this.bboxTileId);
+				return xleft <= x && x <= xright && ytop <= y && y <= ybottom;
+			} else {
+				// if exists [xleft, ytop, xright, ybottom]
+				return this.bbox31[0] <= bbox31[2] && this.bbox31[2] >= bbox31[0] && this.bbox31[1] <= bbox31[3]
+						&& this.bbox31[3] >= bbox31[1];
+			}
+		}
 		public String tileIdString() {
 			return this.bboxTileZoom + " "
 					+ MapUtils.deinterleaveX(bboxTileId) + " "
@@ -262,6 +265,7 @@ public class SpatialSearchToken {
 			bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16, y16);
 			decodeBBox(poi.hasBbox() ? poi.getBbox() : null);
 		}
+
 	}
 
 	public static class NameIndexAtom {

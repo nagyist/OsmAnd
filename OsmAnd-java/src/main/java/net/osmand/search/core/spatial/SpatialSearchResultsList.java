@@ -48,7 +48,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		this(null, null, null);
 	}
 
-	public SpatialSearchResultsList(SpatialTextSearchSettings settings, SpatialSearchToken token, SpatialSearchResultsList parent) {
+	public SpatialSearchResultsList(SpatialSearchContext ctx, SpatialSearchToken token, SpatialSearchResultsList parent) {
 		if (token == null) {
 			tokens = new SpatialSearchToken[0];
 		} else {
@@ -59,11 +59,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		tCount = tokens.length;
-		if (settings != null) {
-			MIN_ELO_RATING = settings.MIN_ELO_RATING;
-		}
 		if (parent != null) {
-			calculateMainIntersection(settings, token, parent);
+			MIN_ELO_RATING = ctx.settings.MIN_ELO_RATING;
+			calculateMainIntersection(ctx, token, parent);
 		}
 	}
 	
@@ -138,7 +136,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				calcBuilding(indx, bldCheckCache);
 			}
 		}
-		if (ctx.settings.SEARCH_STREET_INTERSECTIONS) {
+		if (ctx.settings.SEARCH_STREET_INTERSECTIONS ) {
 			for (int indx = 0; indx < getCombinations(); indx++) {
 				calcStreetIntersections(ctx, indx);
 			}
@@ -309,6 +307,19 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	public SpatialSearchToken getFirstToken() {
 		return tokens.length == 0 ? null : tokens[0];
 	}
+	
+	public NameIndexAtom smallestAtom(int ind) {
+		int z = 0;
+		NameIndexAtom smallest = null;
+		for (int i = 0; i < tCount; i++) {
+			NameIndexAtom ni = linearResults.get(ind * tCount + 0);
+			if(z <= ni.coords.bboxTileZoom) {
+				z = ni.coords.bboxTileZoom;
+				smallest = ni;
+			}
+		}
+		return smallest;
+	}
 
 	public int getCombinations() {
 		return tileIds.size();
@@ -350,27 +361,43 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return finalResult;
 	}
 	
-	private void calculateMainIntersection(SpatialTextSearchSettings settings, SpatialSearchToken token, SpatialSearchResultsList parent) {
+	private void calculateMainIntersection(SpatialSearchContext ctx, SpatialSearchToken token, SpatialSearchResultsList parent) {
 		if (parent.getTokenCount() == 0) {
-			addResult(settings, null, 0, token, token.atoms);
+			addResult(ctx, -1, null, 0, token, token.atoms);
 		} else if (parent.getCombinations() > 0) {
+			int[] approximate = new int[1];
+			for (int i = 0; i < parent.tileIds.size(); i++) {
+				long tileId = parent.tileIds.get(i);
+				int zoom = parent.tileZooms.get(i);
+				token.quadTree.forEachMatch(zoom, tileId, t -> {
+					approximate[0]++;
+				});
+			}
 			// 1. iterate parent objects and find all objects from <parent>
 			//    that are fully inside object <token> or have same the same tile 
 			for (int i = 0; i < parent.tileIds.size(); i++) {
 				long tileId = parent.tileIds.get(i);
 				int zoom = parent.tileZooms.get(i);
 				final int indx = i;
+				if (approximate[0] > ctx.settings.OPTIM_LIMIT_INTERSECTIONS
+						&& !parent.smallestAtom(i).coords.intersects(ctx.limitLocationBbox)) {
+					continue;
+				}
 				token.quadTree.forEachMatch(zoom, tileId, t -> {
-					addResult(settings, parent, indx, token, t);
+					addResult(ctx, approximate[0], parent, indx, token, t);
 				});
 			}
 			// 2. reverse search quad tree from <token> and find objects
 			//    that are fully inside any object <parent> and not the same the same tile!
 			final SpatialSearchResultsList p = parent;
 			for (final NameIndexAtom a : token.atoms) {
+				if (approximate[0] > ctx.settings.OPTIM_LIMIT_INTERSECTIONS
+						&& !a.coords.intersects(ctx.limitLocationBbox)) {
+					continue;
+				}
 				parent.quadTree.forEachMatchHigherZoom(a.coords.bboxTileZoom, a.coords.bboxTileId, indxs -> {
 					for (int indx : indxs) {
-						addResult(settings, p, indx, token, a);
+						addResult(ctx, approximate[0], p, indx, token, a);
 					}
 				});
 			}
@@ -378,9 +405,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 
 
-	void addResult(SpatialTextSearchSettings settings, SpatialSearchResultsList parent, int indx, SpatialSearchToken token, List<NameIndexAtom> atoms) {
+	void addResult(SpatialSearchContext ctx, int approximateRes, 
+			SpatialSearchResultsList parent, int indx, SpatialSearchToken token, List<NameIndexAtom> atoms) {
 		for (NameIndexAtom a : atoms) {
-			addResult(settings, parent, indx, token, a);
+			addResult(ctx, approximateRes, parent, indx, token, a);
 		}
 	}
 
@@ -392,8 +420,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return sum;
 	}
 
-	boolean addResult(SpatialTextSearchSettings settings, SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
-		boolean acceptIntersection = acceptIntersection(settings, parent, pindx, token, a);
+	boolean addResult(SpatialSearchContext ctx, int approximateRes,
+			SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
+		boolean acceptIntersection = acceptIntersection(ctx, approximateRes, parent, pindx, token, a);
 		if (!acceptIntersection) {
 			return false;
 		}
@@ -413,7 +442,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return true;
 	}
 
-	private boolean acceptIntersection(SpatialTextSearchSettings settings, SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
+	private boolean acceptIntersection(SpatialSearchContext ctx, int approximateRes, 
+			SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
+		SpatialTextSearchSettings settings = ctx.settings;
 		// 1. Precise intersection
 		// no cache for parent now needed
 		boolean intersect = true;
@@ -428,6 +459,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			return false;
 		}
 		// 2. Don't allow intersect potential building with other object
+		boolean noStreetIntersect = !settings.SEARCH_STREET_INTERSECTIONS  
+				|| (approximateRes > settings.OPTIM_LIMIT_POI_OR_STREET_INTERSECTIONS);
+		boolean noPoiIntersect = !settings.SEARCH_POI_INTERSECTIONS 
+				|| (approximateRes > settings.OPTIM_LIMIT_POI_OR_STREET_INTERSECTIONS);
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 			if (pa.id == a.id) {
@@ -440,12 +475,15 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 //				return false;
 //			}
 			// don't intersect building with other street
-			if ((pa.buildingInd >= 0 || !settings.SEARCH_STREET_INTERSECTIONS) && a.streetBuilding()) {
+			if ((pa.buildingInd >= 0) && a.streetBuilding()) {
 				return false;
-			} else if ((a.buildingInd >= 0 || !settings.SEARCH_STREET_INTERSECTIONS) && pa.streetBuilding()) {
+			} else if ((a.buildingInd >= 0) && pa.streetBuilding()) {
 				return false;
 			}
-			if (!settings.SEARCH_POI_INTERSECTIONS && a.type == SpatialSearchToken.POI_TYPE && pa.type == a.type) {
+			if (pa.streetBuilding() && a.streetBuilding() && noStreetIntersect) {
+				return false;
+			}
+			if (noPoiIntersect && a.type == SpatialSearchToken.POI_TYPE && pa.type == a.type) {
 				// could be different for poi with bbox 
 				return false;
 			}

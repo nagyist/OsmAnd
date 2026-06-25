@@ -2,6 +2,7 @@ package net.osmand.search.core.spatial;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,7 @@ import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtomXY;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchFileCache;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchGlobalCache;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
+import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 public class SpatialSearchContext {
@@ -34,6 +36,7 @@ public class SpatialSearchContext {
 	final List<BinaryMapIndexReader> files;
 	final List<SpatialSearchFileCache> internalFile = new ArrayList<>();
 	final LatLon location; // could be null
+	final int[] limitLocationBbox;
 
 	List<SpatialSearchToken> tokens;
 	SpatialSearchStats stats = new SpatialSearchStats();
@@ -72,10 +75,35 @@ public class SpatialSearchContext {
 		this.files = files;
 		this.location = location;
 		this.settings = new SpatialTextSearchSettings();
+		limitLocationBbox = calculateBbox(settings.OPTIM_LIMIT_RADIUS, getLimitLocationFromFiles(files, location));
 	}
 	
-	public LatLon getLocation() {
-		return location;
+	private LatLon getLimitLocationFromFiles(List<BinaryMapIndexReader> files, LatLon limitLocation) {
+		if (limitLocation == null) {
+			for (BinaryMapIndexReader f : files) {
+				limitLocation = f.getRegionCenter();
+				if (limitLocation != null) {
+					break;
+				}
+			}
+			if (limitLocation == null) {
+				limitLocation = new LatLon(0, 0);
+			}
+		}
+		return limitLocation;
+	}
+	
+	public static int[] calculateBbox(int radiusMeters, LatLon l) {
+		LatLon northWest = MapUtils.rhumbDestinationPoint(l.getLatitude(), l.getLongitude(), radiusMeters, 315);
+		LatLon southEast = MapUtils.rhumbDestinationPoint(l.getLatitude(), l.getLongitude(), radiusMeters, 135);
+		int[] bbox31 = new int[4];
+//		int xleft = bbox31[0], xright = bbox31[2];
+//		int ytop = bbox31[1], ybottom = bbox31[3];
+		bbox31[1]= MapUtils.get31TileNumberY(northWest.getLatitude());
+		bbox31[0] = MapUtils.get31TileNumberX(northWest.getLongitude());
+		bbox31[3]= MapUtils.get31TileNumberY(southEast.getLatitude());
+		bbox31[2] = MapUtils.get31TileNumberX(southEast.getLongitude());
+		return bbox31;
 	}
 	
 	public SpatialSearchStats getStats() {

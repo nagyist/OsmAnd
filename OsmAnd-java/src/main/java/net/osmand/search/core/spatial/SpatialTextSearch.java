@@ -53,6 +53,12 @@ public class SpatialTextSearch {
 		// no intersection recorded but streets are nearby
 		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
 		
+		// once estimated intersections > limit we stop looking for these results (speed up)
+		public int OPTIM_LIMIT_POI_OR_STREET_INTERSECTIONS = 5000;
+		
+		public int OPTIM_LIMIT_RADIUS = 15_000; // 15 km
+		public int OPTIM_LIMIT_INTERSECTIONS = 10_000; // 10K
+		
 		// max prefixes for each name reader
 		public int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
 
@@ -190,7 +196,7 @@ public class SpatialTextSearch {
 		for (SpatialSearchToken t : tokens) {
 			BitSet b = new BitSet();
 			b.set(ind++);
-			cache.put(b, new SpatialSearchResultsList(ctx.settings, t, root));
+			cache.put(b, new SpatialSearchResultsList(ctx, t, root));
 			ctx.stats.tokenObjs += t.atoms.size();
 		}
 
@@ -232,7 +238,7 @@ public class SpatialTextSearch {
 					SpatialSearchToken token = tokens.get(i);
 					eval.set(i);
 					if (!cache.containsKey(eval)) {
-						goalRes = new SpatialSearchResultsList(ctx.settings, token, goalRes);
+						goalRes = new SpatialSearchResultsList(ctx, token, goalRes);
 						ctx.stats.maxCombinations = Math.max(ctx.stats.maxCombinations, goalRes.getCombinations()); 
 //						System.out.println("  EVALUATE STEP " + eval + " " + goalRes);
 						cache.put((BitSet) eval.clone(), goalRes);
@@ -280,7 +286,7 @@ public class SpatialTextSearch {
 //			for (SpatialSearchToken token : tokens) {
 				SpatialSearchToken token = tokens.get(k);
 				if (parent.getTokenCount() == 0 || token.sortedOrder < parent.getFirstToken().sortedOrder) {
-					SpatialSearchResultsList next = new SpatialSearchResultsList(ctx.settings, token, parent);
+					SpatialSearchResultsList next = new SpatialSearchResultsList(ctx, token, parent);
 //					next.calculateIntersection(token, parent);
 //					System.out.printf("ITERATION Token [%s] + {%s} = {%s}\n", token, parent, next);
 					candidates.push(next);
