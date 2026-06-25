@@ -26,6 +26,7 @@ import net.osmand.core.jni.SwigUtilities;
 import net.osmand.core.jni.VectorLine;
 import net.osmand.core.jni.VectorLineBuilder;
 import net.osmand.core.jni.VectorLinesCollection;
+import net.osmand.data.LatLon;
 import net.osmand.data.RotatedTileBox;
 import net.osmand.plus.R;
 import net.osmand.plus.utils.NativeUtilities;
@@ -54,6 +55,7 @@ public class AisObjectDrawable {
 	private MapMarker restMarker;
 	private MapMarker lostMarker;
 	private VectorLine directionLine;
+	private VectorLine shapeLine;
 
 	private static AisObjectDrawable ownObject = null; // object representing own AIS transmitter (if present)
 
@@ -272,6 +274,50 @@ public class AisObjectDrawable {
 		}
 	}
 
+	private boolean shouldDrawShape(int zoom) {
+		return zoom >= AisTrackerLayer.START_ZOOM_SHOW_SHAPE
+				&& (ais.getDimensionToBow() + ais.getDimensionToStern() > 0)
+				&& (ais.getDimensionToPort() + ais.getDimensionToStarboard() > 0)
+				&& !ais.isLost(getPlugin().getVesselLostTimeoutInMinutes());
+	}
+
+	@NonNull
+	private QVectorPointI getShapePoints(@NonNull AisLatLon position) {
+		double bow = ais.getDimensionToBow();
+		double stern = ais.getDimensionToStern();
+		double port = ais.getDimensionToPort();
+		double starboard = ais.getDimensionToStarboard();
+		if (bow == 0 && port == 0) {
+			bow = stern * 0.5d;
+			stern = bow;
+			port = starboard * 0.5d;
+			starboard = port;
+		}
+
+		double halfWidth = 0.5d * (port + starboard);
+		double heading = ais.getHeading() != INVALID_HEADING ? ais.getHeading() : ais.getVesselRotation();
+
+		QVectorPointI points = new QVectorPointI();
+		addShapePoint(points, position, heading, port, -stern);
+		addShapePoint(points, position, heading, port, bow - halfWidth);
+		addShapePoint(points, position, heading, port - halfWidth, bow);
+		addShapePoint(points, position, heading, -starboard, bow - halfWidth);
+		addShapePoint(points, position, heading, -starboard, -stern);
+		addShapePoint(points, position, heading, port, -stern);
+		return points;
+	}
+
+	private void addShapePoint(@NonNull QVectorPointI points, @NonNull AisLatLon position,
+							   double heading, double portMeters, double forwardMeters) {
+		LatLon forwardPoint = MapUtils.rhumbDestinationPoint(
+				position.getLatitude(), position.getLongitude(), forwardMeters, heading);
+		LatLon point = MapUtils.rhumbDestinationPoint(forwardPoint, portMeters, heading - 90.0d);
+		points.add(new PointI(
+				MapUtils.get31TileNumberX(point.getLongitude()),
+				MapUtils.get31TileNumberY(point.getLatitude())
+		));
+	}
+
 	public void draw(@NonNull Paint paint, @NonNull Canvas canvas, @NonNull RotatedTileBox tileBox) {
 		updateBitmap(paint);
 		AisLatLon position = ais.getPosition();
@@ -360,10 +406,18 @@ public class AisObjectDrawable {
 		lineBuilder.setPoints(new QVectorPointI(2));
 		lineBuilder.setLineWidth(6);
 		directionLine = lineBuilder.buildAndAddToCollection(vectorLinesCollection);
+
+		lineBuilder.setLineId(Integer.MIN_VALUE + ais.getMmsi());
+		lineBuilder.setBaseOrder(baseOrder + 5);
+		lineBuilder.setFillColor(NativeUtilities.createFColorARGB(Color.DKGRAY));
+		lineBuilder.setPoints(new QVectorPointI(2));
+		lineBuilder.setLineWidth(4);
+		shapeLine = lineBuilder.buildAndAddToCollection(vectorLinesCollection);
 	}
 
 	public boolean hasAisRenderData() {
-		return activeMarker != null && restMarker != null && lostMarker != null && directionLine != null;
+		return activeMarker != null && restMarker != null && lostMarker != null
+				&& directionLine != null && shapeLine != null;
 	}
 
 	public void updateAisRenderData(@Nullable OsmandMapTileView mapView, @NonNull Paint paint) {
@@ -380,18 +434,22 @@ public class AisObjectDrawable {
 			restMarker.setIsHidden(true);
 			lostMarker.setIsHidden(true);
 			directionLine.setIsHidden(true);
+			shapeLine.setIsHidden(true);
 			return;
 		}
 
 		boolean vesselAtRest = ais.isVesselAtRest();
 		float speedFactor = getMovement();
 		boolean lostTimeout = ais.isLost(getPlugin().getVesselLostTimeoutInMinutes()) && !vesselAtRest;
-		boolean drawDirectionLine = (speedFactor > 0) && (!lostTimeout) && !vesselAtRest;
+		boolean drawDirectionLine = currentZoom >= AisTrackerLayer.START_ZOOM_SHOW_DIRECTION
+				&& speedFactor > 0 && !lostTimeout && !vesselAtRest;
+		boolean drawShape = shouldDrawShape(currentZoom) && (!vesselAtRest || ais.getHeading() != INVALID_HEADING);
 
 		activeMarker.setIsHidden(vesselAtRest || lostTimeout);
 		restMarker.setIsHidden(!vesselAtRest);
 		lostMarker.setIsHidden(!lostTimeout);
-		directionLine.setIsHidden(drawDirectionLine);
+		directionLine.setIsHidden(true);
+		shapeLine.setIsHidden(true);
 
 		float rotation = (ais.getVesselRotation() + 180f) % 360f;
 		if (!vesselAtRest && needRotation()) {
@@ -434,6 +492,13 @@ public class AisObjectDrawable {
 
 			directionLine.setPoints(points);
 			directionLine.setIsHidden(!drawDirectionLine);
+
+			if (drawShape) {
+				shapeLine.setFillColor(NativeUtilities.createFColorARGB(
+						bitmapColor == 0 ? Color.DKGRAY : bitmapColor));
+				shapeLine.setPoints(getShapePoints(position));
+				shapeLine.setIsHidden(false);
+			}
 		}
 	}
 
@@ -443,10 +508,12 @@ public class AisObjectDrawable {
 		markersCollection.removeMarker(restMarker);
 		markersCollection.removeMarker(lostMarker);
 		vectorLinesCollection.removeLine(directionLine);
+		vectorLinesCollection.removeLine(shapeLine);
 		activeMarker = null;
 		restMarker = null;
 		lostMarker = null;
 		directionLine = null;
+		shapeLine = null;
 	}
 
 	private boolean isOwn() { return (ownObject == this); }

@@ -88,23 +88,23 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			aisRestImage = null;
 		}
 		objectDrawables.clear();
+		AisObjectDrawable.setOwnObject(null);
 	}
 
 	@Override
 	public void onAisObjectReceived(@NonNull AisObject ais) {
 		int mmsi = ais.getMmsi();
-		boolean showOwnObject = plugin.AIS_DISPLAY_OWN_POSITION.get();
-		boolean own = (mmsi == plugin.AIS_OWN_MMSI.get());
+		boolean own = isOwnObject(ais);
 		AisObjectDrawable drawable = objectDrawables.get(mmsi);
 		if (drawable == null) {
-			if ((own) && (!showOwnObject)) {
+			if (isOwnObjectHidden(ais)) {
 				AisObjectDrawable.setOwnObject(null);
 				return; // exclude own AIS object from list
 			}
 			drawable = new AisObjectDrawable(plugin, ais);
 			objectDrawables.put(ais.getMmsi(), drawable);
 		} else {
-			if ((own) && (!showOwnObject)) {
+			if (isOwnObjectHidden(ais)) {
 				this.onAisObjectRemoved(ais);
 				return;
 			} else {
@@ -133,6 +133,14 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			}
 		}
 		objectDrawables.remove(ais.getMmsi());
+	}
+
+	private boolean isOwnObject(@NonNull AisObject ais) {
+		return ais.getMmsi() == plugin.AIS_OWN_MMSI.get();
+	}
+
+	private boolean isOwnObjectHidden(@NonNull AisObject ais) {
+		return isOwnObject(ais) && !plugin.AIS_DISPLAY_OWN_POSITION.get();
 	}
 
 	public boolean isLocationVisible(RotatedTileBox tileBox, double lat, double lon) {
@@ -174,8 +182,14 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 				mapRenderer.addSymbolsProvider(vectorLinesCollection);
 
 				for (AisObject ais : plugin.getAisObjects()) {
+					if (isOwnObjectHidden(ais)) {
+						continue;
+					}
 					AisObjectDrawable drawable = new AisObjectDrawable(plugin, ais);
 					objectDrawables.put(ais.getMmsi(), drawable);
+					if (isOwnObject(ais)) {
+						AisObjectDrawable.setOwnObject(drawable);
+					}
 					drawable.createAisRenderData(getBaseOrder(), bitmapPaint,
 							markersCollection, vectorLinesCollection, aisRestImage);
 					drawable.updateAisRenderData(getTileView(), bitmapPaint);

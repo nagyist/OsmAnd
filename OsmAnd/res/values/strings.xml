@@ -12,7 +12,7 @@
 	Thx - Hardy
 -->
 	<!--  AisTrackerSettings  -->
-	<string name="ais_own_object">settings for display of own AIS object</string>
+	<string name="ais_own_object">Settings for display of own AIS object</string>
 	<string name="ais_own_object_description">If the own vessel has an AIS transmitter then the signal will be received together with other AIS vessel\'s signals. Special handling of the own AIS signal is defined here.</string>
 	<string name="ais_own_mmsi">Own MMSI (Maritime Mobile Service Identity)</string>
 	<string name="ais_own_mmsi_description">Identify the MMSI (9 digit numerical value) of own AIS object.</string>
