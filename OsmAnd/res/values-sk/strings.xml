@@ -6215,4 +6215,10 @@
     <string name="gallery_sort_oldest_first">Najstarší dátum nahor</string>
     <string name="gallery_sort_duration_long_short">Najdlhšie trvanie nahor</string>
     <string name="gallery_sort_duration_short_long">Najkratšie trvanie nahor</string>
+    <string name="tracks_backup_promo_button">Získať OsmAnd Pro</string>
+    <string name="tracks_backup_promo_description">Synchronizujte svoje stopy na viacerých zariadeniach a webe pomocou OsmAnd Pro.</string>
+    <string name="tracks_backup_promo_title">Zálohujte a synchronizujte svoje stopy</string>
+    <string name="free_download_limit_reached">Bol dosiahnutý limit sťahovania zdarma</string>
+    <string name="free_download_limit_reached_description">Odomknite neobmedzené sťahovania máp a aktualizácií</string>
+    <string name="get_unlimited_downloads">Získať neobmedzené sťahovania</string>
 </resources>
