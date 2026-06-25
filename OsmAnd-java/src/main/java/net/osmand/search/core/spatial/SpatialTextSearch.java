@@ -45,47 +45,47 @@ public class SpatialTextSearch {
 
 	public static class SpatialTextSearchSettings {
 
-		public static boolean SEARCH_ADDR = true;
-		
-		public static boolean SEARCH_POI = true;
-		
-		public static boolean SEARCH_BUILDINGS = true;
+		public boolean SEARCH_ADDR = true;
+		public boolean SEARCH_POI = true;
+		public boolean SEARCH_BUILDINGS = true;
+		public boolean SEARCH_STREET_INTERSECTIONS = true;
+		public boolean SEARCH_POI_INTERSECTIONS = true;
 		
 		// max prefixes for each name reader
-		public static int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
+		public int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
 
 		// Deduplicate results in the end by checking osm id of the first object in combination
-		public static boolean DEDUPLICATE_RES = true;
+		public boolean DEDUPLICATE_RES = true;
 
 		// READ OBJECTS before intersection to reduce number of duplicates from
 		// different maps by osm id - needs to be tested performance mostly slows down
 		// ! Potential issue READ_ADDR_OBJECTS could deduplicate streets and 
 		//  building won't be found in case same street in cities
-		public static boolean DEV_READ_ADDR_OBJECTS = false;
-		public static boolean DEV_READ_POI_OBJECTS = false;
+		public boolean DEV_READ_ADDR_OBJECTS = false;
+		public boolean DEV_READ_POI_OBJECTS = false;
 
 		// no need to find 3 street intersection or 3 POI intersection
-		public static int LIMIT_ATOMIC_OBJECTS = 2;
+		public int LIMIT_ATOMIC_OBJECTS = 2;
 
 		// Very good optimization but breaks some scenarios
 		// Performance improvement assuming for rare words we don't read common atoms
 		// Problem search: New york plaza, New York 45 Avenue, School 40 on Specific Street.  
-		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
-		public static boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
+		public boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
+		public boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
 
 		// Limit evaluation intersection for unique objects
-		public static int LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS = 1000;
+		public int LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS = 1000;
 		// if there are >= 10 results matching 5 words, 4 words match won't be considered
-		public static int LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS = 1; // could be 3
+		public int LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS = 1; // could be 3
 		// don't go level-2 if there are on level matching results
-		public static int LIMIT_GOAL_LEVEL_2 = 1;
+		public int LIMIT_GOAL_LEVEL_2 = 1;
 		
 		// Filter within same matched words but different number of objects [3 matched tokens - 1 single object]
-		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {3, 10};
-//		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {};
+		public int[] FILTER_MIN_WORDS_COUNT = new int[] {3, 10};
+//		public int[] FILTER_MIN_WORDS_COUNT = new int[] {};
 		
 		// only do incomplete search with 2+ chars
-		public static int MIN_CHARACTERS_INCOMPLETE = 2;
+		public int MIN_CHARACTERS_INCOMPLETE = 2;
 		
 	}
 
@@ -185,7 +185,7 @@ public class SpatialTextSearch {
 		for (SpatialSearchToken t : tokens) {
 			BitSet b = new BitSet();
 			b.set(ind++);
-			cache.put(b, new SpatialSearchResultsList(t, root));
+			cache.put(b, new SpatialSearchResultsList(ctx.settings, t, root));
 			ctx.stats.tokenObjs += t.atoms.size();
 		}
 
@@ -203,7 +203,7 @@ public class SpatialTextSearch {
 			}
 			// stop on level - 2
 			if (maxDepth == 0) {
-				if (uniqueObjects >= SpatialTextSearchSettings.LIMIT_GOAL_LEVEL_2) {
+				if (uniqueObjects >= ctx.settings.LIMIT_GOAL_LEVEL_2) {
 					maxDepth = depth;
 				}
 			} else if (goal.length() <= maxDepth - 2) {
@@ -211,8 +211,8 @@ public class SpatialTextSearch {
 			}
 			// stop with condition on level - 1
 			if (goal.length() < depth) {
-				if (SpatialTextSearchSettings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS > 0
-						&& uniqueObjects >= SpatialTextSearchSettings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS) {
+				if (ctx.settings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS > 0
+						&& uniqueObjects >= ctx.settings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS) {
 					break;
 				}
 				depth = goal.length();
@@ -227,7 +227,7 @@ public class SpatialTextSearch {
 					SpatialSearchToken token = tokens.get(i);
 					eval.set(i);
 					if (!cache.containsKey(eval)) {
-						goalRes = new SpatialSearchResultsList(token, goalRes);
+						goalRes = new SpatialSearchResultsList(ctx.settings, token, goalRes);
 						ctx.stats.maxCombinations = Math.max(ctx.stats.maxCombinations, goalRes.getCombinations()); 
 //						System.out.println("  EVALUATE STEP " + eval + " " + goalRes);
 						cache.put((BitSet) eval.clone(), goalRes);
@@ -239,11 +239,11 @@ public class SpatialTextSearch {
 			}
 			if (goalRes.getCombinations() > 0) {
 				goalRes.loadObjectsAndCalcBuildings(ctx);
-				List<SpatialSearchResult> res = goalRes.sortResults(ctx, SpatialTextSearchSettings.DEDUPLICATE_RES);
+				List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
 				uniqueObjects += res.size();
 				fullResult.add(goalRes);
-				if (SpatialTextSearchSettings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0
-						&& uniqueObjects >= SpatialTextSearchSettings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS) {
+				if (ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0
+						&& uniqueObjects >= ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS) {
 					break;
 				}
 			}
@@ -260,7 +260,7 @@ public class SpatialTextSearch {
 		return fullResult;
 	}
 
-	List<SpatialSearchResultsList> findObjCombinationsSimpleIteration(List<SpatialSearchToken> tokens) {
+	List<SpatialSearchResultsList> findObjCombinationsSimpleIteration(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
 		LinkedList<SpatialSearchResultsList> candidates = new LinkedList<>();
 		candidates.add(new SpatialSearchResultsList());
 		List<SpatialSearchResultsList> result = new ArrayList<>();
@@ -275,7 +275,7 @@ public class SpatialTextSearch {
 //			for (SpatialSearchToken token : tokens) {
 				SpatialSearchToken token = tokens.get(k);
 				if (parent.getTokenCount() == 0 || token.sortedOrder < parent.getFirstToken().sortedOrder) {
-					SpatialSearchResultsList next = new SpatialSearchResultsList(token, parent);
+					SpatialSearchResultsList next = new SpatialSearchResultsList(ctx.settings, token, parent);
 //					next.calculateIntersection(token, parent);
 //					System.out.printf("ITERATION Token [%s] + {%s} = {%s}\n", token, parent, next);
 					candidates.push(next);
@@ -291,7 +291,7 @@ public class SpatialTextSearch {
 		ctx.initFiles(cache);
 		res.input = input;
 		// 1. prepare tokens
-		res.tokens = splitWords(input);
+		res.tokens = splitWords(ctx, input);
 
 		// 2. read atoms
 		ctx.stats.stepAtoms -= System.nanoTime();
@@ -321,13 +321,13 @@ public class SpatialTextSearch {
 		for (SpatialSearchResultsList m : res.combinations) {
 			List<SpatialSearchResult> lst = m.getFinalResult();
 			if (lst == null) {
-				lst = m.sortResults(ctx, SpatialTextSearchSettings.DEDUPLICATE_RES);
+				lst = m.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
 			}
 			res.mainResults.addAll(lst);
 		}
-		res.mainResults = main.sortResults(ctx, res.mainResults, SpatialTextSearchSettings.DEDUPLICATE_RES);
+		res.mainResults = main.sortResults(ctx, res.mainResults, ctx.settings.DEDUPLICATE_RES);
 		if (res.mainResults.size() > 0) {
-			int[] limits = SpatialTextSearchSettings.FILTER_MIN_WORDS_COUNT.clone();
+			int[] limits = ctx.settings.FILTER_MIN_WORDS_COUNT.clone();
 			int sz = res.mainResults.get(0).getObjectsSize(), ind = 0, lind = 0;
 			int level = 0; 
 			for (SpatialSearchResult r : res.mainResults) {
@@ -349,14 +349,14 @@ public class SpatialTextSearch {
 		}
 	}
 
-	public List<SpatialSearchToken> splitWords(String input) {
+	public List<SpatialSearchToken> splitWords(SpatialSearchContext ctx, String input) {
 		List<String> owords = new ArrayList<String>();
 		// split by hyphen as we supposed to index them separately
 		List<String> words = SearchAlgorithms.splitAndNormalize(input, owords, false);
 		List<SpatialSearchToken> tokens = new ArrayList<>();
 		for (int order = 0; order < words.size(); order++) {
 			String w = words.get(order);
-			SpatialSearchToken token = new SpatialSearchToken(w, owords.get(order), order);
+			SpatialSearchToken token = new SpatialSearchToken(ctx.settings.MIN_CHARACTERS_INCOMPLETE, w, owords.get(order), order);
 			tokens.add(token);
 		}
 		return tokens;
@@ -437,7 +437,7 @@ public class SpatialTextSearch {
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 		SpatialTextSearch a = new SpatialTextSearch();
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls, null);
+		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, null);
 		a.searchTest(query, searchContext);
 	}
 

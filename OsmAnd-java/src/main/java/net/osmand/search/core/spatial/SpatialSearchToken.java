@@ -19,7 +19,6 @@ import net.osmand.data.MapObject;
 import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchContext.SpatialSearchStats;
-import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.Algorithms;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
@@ -30,6 +29,8 @@ public class SpatialSearchToken {
 	public static final int STREET_TYPE = CityBlocks.STREET_TYPE.index;
 	public static final String DOT_INCOMPLETE_STRING = CollatorStringMatcher.INCOMPLETE_DOT + "";
 
+	int MIN_CHAR_INCOMPLETE;
+	
 	int originalOrder = 0;
 	int sortedOrder = 0;
 	
@@ -47,7 +48,8 @@ public class SpatialSearchToken {
 	int mainNumber = -1;
 	CollatorStringMatcher[] otherMatch;
 
-	public SpatialSearchToken(String w, String original, int order) {
+	public SpatialSearchToken(int MIN_CHAR_INCOMPLETE, String w, String original, int order) {
+		this.MIN_CHAR_INCOMPLETE = MIN_CHAR_INCOMPLETE;
 		originalWord = original;
 		word = w;
 		bldWordSplit = SearchAlgorithms.getBuildingCompareSet(word);
@@ -57,7 +59,7 @@ public class SpatialSearchToken {
 			incomplete = true;
 			noDot = w.substring(0, w.length() - 1);
 		}
-		if (incomplete && word.length() <= SpatialTextSearchSettings.MIN_CHARACTERS_INCOMPLETE + 1) {
+		if (incomplete && word.length() <= MIN_CHAR_INCOMPLETE + 1) {
 			collatorMain = new CollatorStringMatcher(noDot, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
 		} else {
 			if (SearchAlgorithms.letters(noDot) == 0) {
@@ -70,6 +72,7 @@ public class SpatialSearchToken {
 		}
 		String abbr = Abbreviations.getSearchabbreviations().get(noDot);
 		if (abbr != null) {
+			System.out.println(abbr);
 			List<String> other = SearchAlgorithms.splitAndNormalize(abbr, true);
 			otherMatch = new CollatorStringMatcher[other.size()];
 			for(int i = 0; i < other.size(); i++) {
@@ -89,7 +92,7 @@ public class SpatialSearchToken {
 	}
 	
 	public boolean isOnlyFullMatch() {
-		return incomplete && word.length() <= SpatialTextSearchSettings.MIN_CHARACTERS_INCOMPLETE + 1;
+		return incomplete && word.length() <= MIN_CHAR_INCOMPLETE + 1;
 	}
 
 	@Override
@@ -114,6 +117,8 @@ public class SpatialSearchToken {
 					for (CollatorStringMatcher o : otherMatch) {
 						matched |= CollatorStringMatcher.cmatches(collator, o.getPart(), alignedKey,
 								StringMatcherMode.CHECK_ONLY_STARTS_WITH);
+						// o.matches(alignedKey) could be needed for matching data with non-processed abbrevations
+//						System.out.println(alignedKey + " ??? " + matched + " " + o.getPart());
 					}
 				}
 				stats.matchTime += System.nanoTime();
@@ -289,7 +294,11 @@ public class SpatialSearchToken {
 		public boolean isCityStreetName() {
 			return cityAsStreet;
 		}
-
+		
+		public boolean streetBuilding() {
+			return type == STREET_TYPE || type == BUILDING_TYPE;
+		}
+		
 		public boolean atomicObject() {
 			return type == STREET_TYPE || type == POI_TYPE || type == BUILDING_TYPE;
 		}

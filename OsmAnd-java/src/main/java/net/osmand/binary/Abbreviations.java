@@ -63,7 +63,8 @@ public class Abbreviations {
     	searchAbbreviations.putAll(abbreviations);
         searchAbbreviations.put("av", "Avenue"); // extra
         searchAbbreviations.put("st", "Street Saint"); // 2 values could be saint
-        searchAbbreviations.put("о", "Остров"); 
+        searchAbbreviations.put("о", "Остров");
+        searchAbbreviations.put("остров", "о.");
     }
     
     static {

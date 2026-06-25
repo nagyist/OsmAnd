@@ -25,11 +25,9 @@ import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.SearchAlgorithms;
 
-import static net.osmand.search.core.spatial.SpatialSearchToken.BUILDING_TYPE;
-import static net.osmand.search.core.spatial.SpatialSearchToken.STREET_TYPE;
 
 public class SpatialSearchResultsList implements Comparable<SpatialSearchResultsList> {
-	final SpatialSearchToken[] tokens; // non modifieable!
+	final SpatialSearchToken[] tokens; // non modifiable!
 	final int tCount;
 	
 
@@ -43,10 +41,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	List<SpatialSearchResult> finalResult = null;
 	
 	public SpatialSearchResultsList() {
-		this(null, null);
+		this(null, null, null);
 	}
 
-	public SpatialSearchResultsList(SpatialSearchToken token, SpatialSearchResultsList parent) {
+	public SpatialSearchResultsList(SpatialTextSearchSettings settings, SpatialSearchToken token, SpatialSearchResultsList parent) {
 		if (token == null) {
 			tokens = new SpatialSearchToken[0];
 		} else {
@@ -58,7 +56,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		tCount = tokens.length;
 		if (parent != null) {
-			calculateIntersection(token, parent);
+			calculateIntersection(settings, token, parent);
 		}
 	}
 	
@@ -127,12 +125,17 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		ctx.stats.loadObjectsBld -= System.nanoTime();
 		loadObjects(ctx);
 		
-		if (SpatialTextSearchSettings.SEARCH_BUILDINGS) {
+		if (ctx.settings.SEARCH_BUILDINGS) {
 			Map<String, Building> bldCheckCache = new HashMap<>();
 			for (int indx = 0; indx < getCombinations(); indx++) {
 				calcBuilding(indx, bldCheckCache);
 			}
 		}
+		// TODO
+		for (int indx = 0; indx < getCombinations(); indx++) {
+//			calcBuilding(indx);
+		}
+		
 		ctx.stats.loadObjectsBld += System.nanoTime();
 	}
 	
@@ -295,9 +298,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return finalResult;
 	}
 	
-	private void calculateIntersection(SpatialSearchToken token, SpatialSearchResultsList parent) {
+	private void calculateIntersection(SpatialTextSearchSettings settings, SpatialSearchToken token, SpatialSearchResultsList parent) {
 		if (parent.getTokenCount() == 0) {
-			addResult(null, 0, token, token.atoms);
+			addResult(settings, null, 0, token, token.atoms);
 		} else if (parent.getCombinations() > 0) {
 			// 1. iterate parent objects and find all objects from <parent>
 			//    that are fully inside object <token> or have same the same tile 
@@ -306,7 +309,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				int zoom = parent.tileZooms.get(i);
 				final int indx = i;
 				token.quadTree.forEachMatch(zoom, tileId, t -> {
-					addResult(parent, indx, token, t);
+					addResult(settings, parent, indx, token, t);
 				});
 			}
 			// 2. reverse search quad tree from <token> and find objects
@@ -315,7 +318,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			for (final NameIndexAtom a : token.atoms) {
 				parent.quadTree.forEachMatchHigherZoom(a.coords.bboxTileZoom, a.coords.bboxTileId, indxs -> {
 					for (int indx : indxs) {
-						addResult(p, indx, token, a);
+						addResult(settings, p, indx, token, a);
 					}
 				});
 			}
@@ -323,9 +326,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 
 
-	void addResult(SpatialSearchResultsList parent, int indx, SpatialSearchToken token, List<NameIndexAtom> atoms) {
+	void addResult(SpatialTextSearchSettings settings, SpatialSearchResultsList parent, int indx, SpatialSearchToken token, List<NameIndexAtom> atoms) {
 		for (NameIndexAtom a : atoms) {
-			addResult(parent, indx, token, a);
+			addResult(settings, parent, indx, token, a);
 		}
 	}
 
@@ -337,8 +340,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return sum;
 	}
 
-	boolean addResult(SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
-		boolean acceptIntersection = acceptIntersection(parent, pindx, token, a);
+	boolean addResult(SpatialTextSearchSettings settings, SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
+		boolean acceptIntersection = acceptIntersection(settings, parent, pindx, token, a);
 		if (!acceptIntersection) {
 			return false;
 		}
@@ -358,7 +361,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return true;
 	}
 
-	private boolean acceptIntersection(SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
+	private boolean acceptIntersection(SpatialTextSearchSettings settings, SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
 		// 1. Precise intersection
 		// no cache for parent now needed
 		boolean intersect = true;
@@ -372,25 +375,28 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		if (!intersect) {
 			return false;
 		}
-		// TODO 2/1 21038 Sokak
 		// 2. Don't allow intersect potential building with other object
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 			if (pa.id == a.id) {
 				continue;
 			}
-			// pa and a using same tokens for street & house but different streets
-			if (parent.tokens[i].originalOrder == a.buildingInd) {
+			// pa and a using same tokens for street & house but different streets - same as below
+//			if (parent.tokens[i].originalOrder == a.buildingInd) {
+//				return false;
+//			} else if (pa.buildingInd == token.originalOrder) {
+//				return false;
+//			}
+			// don't intersect building with other street
+			if ((pa.buildingInd >= 0 || !settings.SEARCH_STREET_INTERSECTIONS) && a.streetBuilding()) {
 				return false;
-			} else if (pa.buildingInd == token.originalOrder) {
+			} else if ((a.buildingInd >= 0 || !settings.SEARCH_STREET_INTERSECTIONS) && pa.streetBuilding()) {
 				return false;
 			}
-			// don't intersect building with other street
-			if (pa.buildingInd >= 0 && (a.type == BUILDING_TYPE || a.type == STREET_TYPE)) {
+			if (!settings.SEARCH_POI_INTERSECTIONS && a.type == SpatialSearchToken.POI_TYPE && pa.type == a.type) {
+				// could be different for poi with bbox 
 				return false;
-			} else if (a.buildingInd >= 0 && (pa.type == BUILDING_TYPE || pa.type == STREET_TYPE)) {
-				return false;
-			} 
+			}
 		}
 		
 		// 3. Duplicate words		
@@ -415,7 +421,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		//    Building + Street (counts as 2 objects) - no (Building + Street 1 + Street 2)
 		if (a.atomicObject()) {
 			// check limit atomic objects to add
-			List<Long> objects = new ArrayList<Long>(SpatialTextSearchSettings.LIMIT_ATOMIC_OBJECTS);
+			List<Long> objects = new ArrayList<Long>(settings.LIMIT_ATOMIC_OBJECTS);
 			objects.add(a.id);
 			for (int i = 0; parent != null && i < parent.tCount; i++) {
 				NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
@@ -432,7 +438,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 						return false;
 					}
 				}
-				if (objects.size() > SpatialTextSearchSettings.LIMIT_ATOMIC_OBJECTS) {
+				if (objects.size() > settings.LIMIT_ATOMIC_OBJECTS) {
 					return false;
 				}
 			}

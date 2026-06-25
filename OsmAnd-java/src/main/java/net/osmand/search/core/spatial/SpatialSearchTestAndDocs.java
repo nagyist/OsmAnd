@@ -18,31 +18,36 @@ import net.osmand.util.SearchAlgorithms;
 // - Unit test: duplicate words in query Pennsylvania Street in Pennsylvania, Find More
 // - Unit test: (<common_word> <almost_number>) -('№25', '25', '#25' - no search) -- OK ('школа', 'школа №25', 'школа 25', 'школа #25')
 // - Unit test: Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
-// - SLOWEST QUERY: 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k),
-//           OTHER: 'New York s. ' 0.5s (100k), 'Sokak 2' - 0.5s (500K), 'Lima Calle 2' - 0.5s (25K)
+
+//////////// SLOWEST /////////
+// - QUERY: 'New York 4 av' - 7.5s (2M), 'New York st' - 2s (700k),
+//   OTHER: 'New York s. ' 0.5s (100k), 'Sokak 2' - 0.5s (500K), 'Lima Calle 2' - 0.5s (25K)
+// ANALYSIS:   0. york - 1897 atoms, 1. new - 2159 atoms, 2. 4 - 5776 atoms, 3. av - 8067 atoms
+// ALL Stats 9525.7 ms - 54.6 ms 17,899 atoms (read 0.0, match 30.7), 9168.0 ms compute 2,357,716 (loadBld 924.3, read 335.8)
+// NO STREET 1737.2 ms - 264.1 ms 17,899 atoms (read 162.5, match 84.2), 1445.2 ms compute 95,842 (loadBld 177.3, read 95.8)
+// NO INTERS 1108.2 ms - 257.5 ms 17,899 atoms (read 148.5, match 93.6), 824.5 ms compute 22,690 (loadBld 92.4, read 74.0)
 
 //////////// TESTING //////////
 // REVIEW UI FILTER_MIN_WORDS_COUNT - 'New york plaza' ('the'), Issues Nova poshta Kharkiv 
 // TESTING 'New york s.' - 1 letter very slow
 // TESTING Match '2nd' and '2'!! (no 4 -> 48)
-// TESTING Abbreviations Phase (street / st, blvd)
-// REVIEW '2-m' matches by number too many '2-a', '2...
 // Document TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
+// bis matching
 
 ////////// IN PROGRESS//////////
-// TODO остров.
 
-// TODO Filter results boundaries, <Salt Lake City>
-// TODO Calle 20 188 Lima San Isidro  / Sokak - delay street intersection 
+// FIXME Street intersection match
 // TODO Introduce limit if intersections grow too fast > 5K (Calle x Calle) limit by distance (TEST)
-// TODO Ignore same embedded boundary city / county - deduplicate on the fly
-// TODO test: merge boundaries bbox - extend incomplete boundary same id...
 // TODO Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k),
+// TODO Calle 20 188 Lima San Isidro  / Sokak - delay street intersection
 
-// TO DO
 // FIXME POI Categories + top poi categories
 // FIXME Building interpolation - name / location
-// FIXME Street intersection match
+// TODO Filter results boundaries, <Salt Lake City>
+// TODO Ignore same embedded boundary city / county - deduplicate on the fly
+// TODO test: merge boundaries bbox - extend incomplete boundary same id...
+
+// TO DO
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 //       Combine regions.ocbf (boundary)
 // TODO Progress / cancel
@@ -169,16 +174,19 @@ public class SpatialSearchTestAndDocs {
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 		
-//		pattern = "Turkey_";
+		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // no results?
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
-//		query = "Sokak 2"; // Test calle 2
-//		query = "2/1 21038 Sokak";
+		// ALL - Search Stats 1569.2 ms - 554.0 ms 59,656 atoms (read 318.8, match 134.1), 985.8 ms compute 693,139 (loadBld 396.2, read 149.5)
+        // NO INTER - Search Stats 871.5 ms - 546.4 ms 59,656 atoms (read 313.7, match 135.6), 299.9 ms compute 4,735 (loadBld 54.1, read 37.2)
+		 query = "Sokak 2"; 
+		
+//		query = "2/1 21038 Sokak"; // 1380369156
 		
 		
 //		pattern = "regions.ocbf" ;
 		
-		pattern = "Ukraine_";
+//		pattern = "Ukraine_";
 //		pattern = "Map";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
@@ -188,9 +196,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "Нова пошта 3 харків";
 //		query = "Нова пошта харків";
 //		query = "2 га Нова вулиця"; // unit test '2га', '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
-		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
+//		query = "саксаг. 63/28"; // 129-Б, 63/28??, 63-28+ // -саксаг. 63 28
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
+//		query = "саксаг. Володимирська";
 //		query = "Яр. вал 29-г";
 //		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
@@ -202,7 +211,7 @@ public class SpatialSearchTestAndDocs {
 		// POI М-2    (306998303): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M')
 		// POI '2 M' (3869587585): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M') - 2 is not indexed query 2M, 2-M
 		// m-n Topol 2(120393782): + ('M-2', 'M 2', '2 M')  - ('2M', 'M2', '2-M')
-		query = "M-2";
+//		query = "2-M";
 		// '2XU', '2X.' 
 //		query = "360692"; // refs - 3г (not indexed, search by 3 3gh) 390094/5536x/4267x  
 		
@@ -216,21 +225,21 @@ public class SpatialSearchTestAndDocs {
 //		pattern = "Us_new-york";
 //		query = "New York The plaza";
 //		query = "New York plaza";
-//		query = "New York s."; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
-//		query = "New York 4 avenue"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
+//		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
+//		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
 //		query = "4 ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		
-		pattern = "France_ile-de-france_eu";
-		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
-		query = "Rue Jean Poulmarch 17bis"; //  17bis OK, 17 OK, 17 BIS - OK 'Rue Jean Poulmarch 17;17 bis' 
-		query = "Dieu 8-bis"; // 'Rue Dieu 8 bis' , '8-bis', '8 bis' 
+//		pattern = "France_ile-de-france_eu";
+//		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
+//		query = "Rue Jean Poulmarch 17bis"; //  17bis OK, 17 OK, 17 BIS - OK 'Rue Jean Poulmarch 17;17 bis' 
+//		query = "Dieu 8-bis"; // 'Rue Dieu 8 bis' , '8-bis', '8 bis' 
 
 		
 //		pattern = "World_basemap_2";
 //		pattern2 = "Ukraine";
-//		query = "о. Пасхи"; // o. -> остров +
-//		query = "остров Пасхи"; // TODO o. -> остров ?
+//		query = "о. Пасхи"; // o
+//		query = "остров Пасхи"; // o. -> остров - not supported data need to be updated
 //		query = "New york";
 //		query  = "Madeira"; // short_name	Madeira
 //		query  = "Everest";
@@ -258,7 +267,7 @@ public class SpatialSearchTestAndDocs {
 		SpatialTextSearch a = new SpatialTextSearch();
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls, null);
+		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, null);
 		SpatialSearchResults rs = a.searchTest(query, searchContext);
 		SpatialSearchResult mainResult = rs.getFirstResult();
 		if (mainResult != null && mainResult.matchedTokens() < rs.tokens.size() - 2) {
@@ -275,9 +284,9 @@ public class SpatialSearchTestAndDocs {
 				System.out.println("Search other region - " + bbox);
 			}
 		}
-		
-		searchContext = new SpatialSearchContext(ls, null);
-		SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS = true;
+		SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
+		settings.ALWAYS_READ_COMMON_WORDS_ATOMS = true;
+		searchContext = new SpatialSearchContext(settings, ls, null);
 		a.searchTest(query, searchContext);
 	}
 }

@@ -37,6 +37,7 @@ public class SpatialSearchContext {
 
 	List<SpatialSearchToken> tokens;
 	SpatialSearchStats stats = new SpatialSearchStats();
+	SpatialTextSearchSettings settings;
 
 	public static class SpatialSearchStats {
 		public long time = System.nanoTime();
@@ -67,9 +68,10 @@ public class SpatialSearchContext {
 		}
 	}
 
-	public SpatialSearchContext(List<BinaryMapIndexReader> files, LatLon location) {
+	public SpatialSearchContext(SpatialTextSearchSettings settings, List<BinaryMapIndexReader> files, LatLon location) {
 		this.files = files;
 		this.location = location;
+		this.settings = new SpatialTextSearchSettings();
 	}
 	
 	public LatLon getLocation() {
@@ -95,7 +97,7 @@ public class SpatialSearchContext {
 			indexInd += fc.indexReaders.size();
 			fileInd++;
 			for (NameIndexReader r : fc.indexReaders) {
-				r.gcPrefixes(SpatialTextSearchSettings.AUTO_CLEAR_PREFIX_CACHE_LIMIT);
+				r.gcPrefixes(settings.AUTO_CLEAR_PREFIX_CACHE_LIMIT);
 			}
 		}
 	}
@@ -131,17 +133,17 @@ public class SpatialSearchContext {
 				if (freqWord == null) {
 					// special case token "2" could match "2-nd" atom
 					// rare word
-					if (!SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
+					if (!settings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
 						readCommonTokens = false;
 					}
-					if (!SpatialTextSearchSettings.ALWAYS_READ_FREQ_WORDS_ATOMS) {
+					if (!settings.ALWAYS_READ_FREQ_WORDS_ATOMS) {
 						readFreqTokens = false;
 					}
 				} else {
 					int nonIndexed = (int) (freqWord.freq - freqWord.extra);
 					if (nonIndexed == 0) {
 						// frequent word is ok to specialize
-						if (!SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
+						if (!settings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
 							readCommonTokens = false;
 						}
 					}
@@ -219,7 +221,7 @@ public class SpatialSearchContext {
 				: prefix.poi.getSuffixesCommonDictionaryList()) {
 			commonSuffixes.add(indx.getCommonIndexed(i));
 		}
-		if (addr && SpatialTextSearchSettings.SEARCH_ADDR) {
+		if (addr && settings.SEARCH_ADDR) {
 			for (AddressNameIndexDataAtom a : prefix.addr.getAtomList()) {
 				long lid = makeAddrId(indInd, prefix.shift - a.getShiftToIndex(0));
 				long pid = 0;
@@ -230,12 +232,12 @@ public class SpatialSearchContext {
 					continue;
 				}
 				MapObject obj = null;
-				if (SpatialTextSearchSettings.DEV_READ_ADDR_OBJECTS) {
+				if (settings.DEV_READ_ADDR_OBJECTS) {
 					obj = readAddrObject(lid, pid, null);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, pid, obj, allTokens);
 			}
-		} else if (!addr && SpatialTextSearchSettings.SEARCH_POI) {
+		} else if (!addr && settings.SEARCH_POI) {
 			for (OsmAndPoiNameIndexDataAtom a : prefix.poi.getAtomsList()) {
 				if (a.getPoiIndInBlockCount() == 0) {
 					// intermediate version ignore
@@ -244,7 +246,7 @@ public class SpatialSearchContext {
 				long lid = makePoiId(indInd, BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()),
 						a.getPoiIndInBlock(0));
 				MapObject amenity = null;
-				if (SpatialTextSearchSettings.DEV_READ_POI_OBJECTS) {
+				if (settings.DEV_READ_POI_OBJECTS) {
 					amenity = readPoiObject(lid, null);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, null, a, lid, 0, amenity, allTokens);
@@ -473,7 +475,7 @@ public class SpatialSearchContext {
 		}
 		boolean street = type == SpatialSearchToken.STREET_TYPE;
 		// numericNotMatch - require full street match to assign buildings 
-		if (!numericNotMatch && street && SpatialTextSearchSettings.SEARCH_BUILDINGS) {
+		if (!numericNotMatch && street && settings.SEARCH_BUILDINGS) {
 			for (SpatialSearchToken token : allTokens) {
 				// assign building to wordsor isNumber2Letters (number + 1 char) + possible buildings
 				if (t != token && Abbreviations.likelyPartOfBuilding(token.word, token.getWordSplitAsBuidingName())
