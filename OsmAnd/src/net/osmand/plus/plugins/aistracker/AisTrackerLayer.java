@@ -48,6 +48,8 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 	public static final int START_ZOOM_SHOW_SHAPE = 16;
 	public static final int START_ZOOM_SHOW_DIRECTION = 10;
 
+	private static final long AIS_NATIVE_RENDER_REFRESH_INTERVAL_MS = 1000L;
+
 	private final AisTrackerPlugin plugin = PluginsHelper.requirePlugin(AisTrackerPlugin.class);
 	private final Paint bitmapPaint = new Paint();
 	private final Map<Integer, AisObjectDrawable> objectDrawables = new ConcurrentHashMap<>();
@@ -57,6 +59,8 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 	private Bitmap aisRestBitmap;
 	private SingleSkImage aisRestImage;
 	private float textScale = 1f;
+	private int lastNativeRenderZoom = -1;
+	private long lastNativeRenderRefreshTimeMs;
 
 	public AisTrackerLayer(@NonNull Context context) {
 		super(context);
@@ -88,6 +92,8 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			aisRestImage = null;
 		}
 		objectDrawables.clear();
+		lastNativeRenderZoom = -1;
+		lastNativeRenderRefreshTimeMs = 0;
 	}
 
 	@Override
@@ -202,17 +208,9 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 							markersCollection, vectorLinesCollection, aisRestImage);
 					drawable.updateAisRenderData(getTileView(), bitmapPaint);
 				}
-			} else {
-				for (AisObject ais : aisObjects) {
-					// Calling updateAisRenderData in onPrepareBufferImage is overhead
-					// but it is needed to update directional line points
-					// also there is no zoom animation for directional line depending on zoom
-					// TODO: SUPPORT THIS IN ENGINE
-					AisObjectDrawable drawable = objectDrawables.get(ais.getMmsi());
-					if (drawable != null) {
-						drawable.updateAisRenderData(getTileView(), bitmapPaint);
-					}
-				}
+				updateNativeRenderRefreshState();
+			} else if (shouldRefreshNativeRenderData()) {
+				refreshNativeRenderData(aisObjects);
 			}
 			mapActivityInvalidated = false;
 			mapRendererChanged = false;
@@ -224,6 +222,32 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 				}
 			}
 		}
+	}
+
+	private boolean shouldRefreshNativeRenderData() {
+		OsmandMapTileView tileView = getTileView();
+		if (getMapRenderer() == null || tileView == null || objectDrawables.isEmpty()) {
+			return false;
+		}
+		long now = System.currentTimeMillis();
+		return tileView.getZoom() != lastNativeRenderZoom
+				|| now - lastNativeRenderRefreshTimeMs >= AIS_NATIVE_RENDER_REFRESH_INTERVAL_MS;
+	}
+
+	private void refreshNativeRenderData(@NonNull List<AisObject> aisObjects) {
+		for (AisObject ais : aisObjects) {
+			AisObjectDrawable drawable = objectDrawables.get(ais.getMmsi());
+			if (drawable != null) {
+				drawable.updateAisRenderData(getTileView(), bitmapPaint);
+			}
+		}
+		updateNativeRenderRefreshState();
+	}
+
+	private void updateNativeRenderRefreshState() {
+		OsmandMapTileView tileView = getTileView();
+		lastNativeRenderZoom = tileView != null ? tileView.getZoom() : -1;
+		lastNativeRenderRefreshTimeMs = System.currentTimeMillis();
 	}
 
 	@Override
