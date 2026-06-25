@@ -5136,9 +5136,7 @@
     <string name="battery_optimization_banner_content">Android optimizacija baterije može uzrokovati netačnosti u snimljenim putanjama.</string>
     <string name="dont_ask_anymore">Ne pitati više</string>
     <string name="battery_optimization_settings">Podešavanje optimizacija baterije</string>
-    <string name="battery_optimization_desc">Optimizacija baterije može uzrokovati praznine i netačnosti u snimljenim putanjama.
-\n
-\nAko imaš problem, možeš pokušati promeniti potrošnju baterije na \'Neograničeno\'.</string>
+    <string name="battery_optimization_desc">Optimizacija baterije može uzrokovati praznine i netačnosti u snimljenim putanjama.\n \nAko imaš problem, možeš pokušati promeniti potrošnju baterije na \'Neograničeno\'.</string>
     <string name="battery_optimization">Optimizacija baterije</string>
     <string name="max_sensor_speed">Brzina senzora, maksimalna</string>
     <string name="max_sensor_bycicle_power">Snaga bicikla, maksimalna</string>
@@ -5212,8 +5210,8 @@
     <string name="fix_north_up">Fiksirati mapu prema severu</string>
     <string name="change_default_appearance_confirmation">Promeni podrazumevani izgled za %1$s?</string>
     <string name="use_3d_track_visualization">3D vizuelizacija</string>
-    <string name="apply_only_to_new">Primenjivati samo na nove</string>
-    <string name="change_default_tracks_appearance_confirmation">Primeniti promene na postojeće trase na mapi ili samo na nove?</string>
+    <string name="apply_only_to_new">Primeni samo na nove</string>
+    <string name="change_default_tracks_appearance_confirmation">Primeniti izmene na postojeće putanje u folderu ili samo na nove?</string>
     <string name="shared_string_changes">Promene</string>
     <string name="release_4_8">• Nova opcija bojenja terena \"Visina\"\n\n • Prilagođene palete boja za teren, staze i rute\n\n • 3D varijanta za ikone položaja lokacije\n\n • Brze radnje se sada mogu dodeliti spoljnim tastaturama\n\n • Vreme: Osvežavanje korisničkog interfejsa, dodata animacija vetra\n\n • Poboljšanja 3D staza: nove opcije vizuelizacije i kolorizacije\n\n • Proširen izbor turističkih ruta na mapi\n\n • Dodata opcija teme aplikacije za praćenje režima mape\n\n • Popravljena statistika staza, sortiranje i pretraga\n\n • OSM uređivanje: izbrisani način autorizacije prijave/lozinke\n\n • Prelazak na sistem deljenja lista počevši od Android 14</string>
     <string name="vertical_exaggeration">Vertikalno uvećanje</string>
@@ -5905,7 +5903,7 @@
     <string name="astro_name_uranus">Uran</string>
     <string name="astro_name_neptune">Neptun</string>
     <string name="astro_name_pluto">Pluton</string>
-    <string name="astronomy_plugin_description">Zvezdane mape, 3D zvezdana mapa</string>
+    <string name="astronomy_plugin_description">Zvezdane karte, 3D zvezdana mapa</string>
     <string name="azimuthal_grid">Azimutalna mreža</string>
     <string name="equatorial_grid">Ekvatorijalna mreža</string>
     <string name="ecliptic_line">Ekliptička linija</string>
@@ -5915,15 +5913,15 @@
     <string name="astro_constellations">Sazvežđa</string>
     <string name="astro_stars">Zvezde</string>
     <string name="astro_galaxies">Galaksije</string>
-    <string name="astro_nebulae">Magline</string>
-    <string name="astro_open_clusters">Otvoreni Klasteri</string>
-    <string name="astro_globular_clusters">Globularni Klasteri</string>
-    <string name="astro_galaxy_clusters">Galaktički Klasteri</string>
+    <string name="astro_nebulae">Maglina</string>
+    <string name="astro_open_clusters">Otvoreni klasteri</string>
+    <string name="astro_globular_clusters">Globularna jata</string>
+    <string name="astro_galaxy_clusters">Galaksijska jata</string>
     <string name="astro_black_holes">Crne rupe</string>
     <string name="visible_layers_and_objects">Vidljivi Slojevi i Objekti</string>
     <string name="shared_string_azimuth">Azimut</string>
     <string name="shared_string_magnitude">Magnituda</string>
-    <string name="astro_rise">Izlazak</string>
+    <string name="astro_rise">Uspon</string>
     <string name="astro_set">Skup</string>
     <string name="gpx_too_many_points_visible_warning">Velika količina vidljivih GPX tragova dovodi do velike potrošnje memorije</string>
     <string name="sort_highest_first">Prvo najviši</string>
@@ -5960,7 +5958,7 @@
     <string name="equator_line">Ekvatorska linija</string>
     <string name="backup_deleted_all_data">Izbrisani podaci.</string>
     <string name="backup_deleting_all_data">Brisanje podataka…</string>
-    <string name="astro_rendering">Iscrtavanje</string>
+    <string name="astro_rendering">Renderovanje</string>
     <string name="astro_configure_view">Konfiguriši prikaz</string>
     <string name="astro_visible_objects">Vidljivi objekti</string>
     <string name="red_filter">Crveni filter</string>
@@ -6036,9 +6034,9 @@
     <string name="astro_today_visibility">Vidljivost danas</string>
     <string name="astronomy_schedule">Raspored</string>
     <string name="astro_catalogs">Katalozi</string>
-    <string name="astro_path">Staza</string>
+    <string name="astro_path">Putanja</string>
     <string name="astro_direction">Smer</string>
-    <string name="astro_locate">Pronađi</string>
+    <string name="astro_locate">Locirati</string>
     <string name="astro_type_earth">Zemlja</string>
     <string name="astro_type_star">Zvezda</string>
     <string name="astro_type_galaxy">Galaksija</string>
@@ -6048,8 +6046,8 @@
     <string name="astro_type_satellite">Satelit</string>
     <string name="astro_type_nebula">Maglina</string>
     <string name="astro_type_open_cluster">Otvoreni klaster</string>
-    <string name="astro_type_globular_cluster">Kuglasti klaster</string>
-    <string name="astro_type_galaxy_cluster">Galaksijski klaster</string>
+    <string name="astro_type_globular_cluster">Kuglasto jato</string>
+    <string name="astro_type_galaxy_cluster">Galaksijsko jato</string>
     <string name="astro_type_constellation">Sazvežđe</string>
     <string name="no_objects_found">Nije pronađen nijedan objekat</string>
     <string name="astro_search_info_solar_system">Sunčev sistem je gravitaciono vezan sistem Sunca i masa koje kruže oko njega, a najznačajnije njegovih osam planeta, od kojih je Zemlja jedna.</string>
@@ -6112,7 +6110,7 @@
     <string name="astro_sort_oldest_first">Najstarije prvo</string>
     <string name="astro_expand_your_universe_title">Proširite svoj univerzum</string>
     <string name="astro_expand_your_universe_description">Pristupite proširenoj bazi podataka kataloga dubokog neba, člancima Vikipedije i AR režimu van mreže.</string>
-    <string name="astro_offline_knowledge_base_title">База знања ван мреже</string>
+    <string name="astro_offline_knowledge_base_title">Baza znanja van mreže</string>
     <string name="astro_offline_knowledge_base_description">Preuzmite proširenu bazu podataka da biste pristupili člancima Vikipedije i katalozima dubokog neba van mreže.</string>
     <string name="astro_schedule_next_day_note">⁺¹ Sledećeg dana.</string>
     <string name="astro_visibility_show_today">Prikaži vidljivost danas</string>
