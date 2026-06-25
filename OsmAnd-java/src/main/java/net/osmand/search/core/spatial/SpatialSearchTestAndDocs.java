@@ -220,12 +220,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-		pattern = "Us_new-york";
-		location = new LatLon(40.64946, -74.00682);
+		pattern = "Us_new-"; // new-york, new-jersey
+//		location = new LatLon(40.64946, -74.00682);
+		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
 //		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
-		
 		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
 //		query = "4 ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
@@ -268,7 +268,7 @@ public class SpatialSearchTestAndDocs {
 		SpatialTextSearch a = new SpatialTextSearch();
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 
-		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, null);
+		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, location);
 		SpatialSearchResults rs = a.searchTest(query, searchContext);
 		SpatialSearchResult mainResult = rs.getFirstResult();
 		if (mainResult != null && mainResult.matchedTokens() < rs.tokens.size() - 2) {
@@ -287,7 +287,7 @@ public class SpatialSearchTestAndDocs {
 		}
 		SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
 		settings.ALWAYS_READ_COMMON_WORDS_ATOMS = true;
-		searchContext = new SpatialSearchContext(settings, ls, null);
+		searchContext = new SpatialSearchContext(settings, ls, location);
 		a.searchTest(query, searchContext);
 	}
 }

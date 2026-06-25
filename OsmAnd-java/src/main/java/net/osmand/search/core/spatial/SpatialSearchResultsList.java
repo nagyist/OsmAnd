@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiConsumer;
 import java.util.Set;
 
 import gnu.trove.list.array.TIntArrayList;
@@ -308,14 +309,13 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return tokens.length == 0 ? null : tokens[0];
 	}
 	
-	public boolean nearbyResult(int ind) {
+	public int nearbyResult(int ind) {
+		int min = 100;
 		for (int i = 0; i < tCount; i++) {
 			NameIndexAtom ni = linearResults.get(ind * tCount + i);
-			if (!ni.nearbyRadius) {
-				return false;
-			}
+			min = Math.min(ni.nearbyRadius, min);
 		}
-		return true;
+		return min;
 	}
 
 	public int getCombinations() {
@@ -358,55 +358,72 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return finalResult;
 	}
 	
+	
+	
+	private void iterateIntersection(SpatialSearchResultsList parent, SpatialSearchToken token, 
+			BiConsumer<Integer, NameIndexAtom> consumer) {
+		// 1. iterate parent objects and find all objects from <parent>
+		//    that are fully inside object <token> or have same the same tile
+		for (int i = 0; i < parent.tileIds.size(); i++) {
+			long tileId = parent.tileIds.get(i);
+			int zoom = parent.tileZooms.get(i);
+			final int indx = i;
+			token.quadTree.forEachMatch(zoom, tileId, atoms -> {
+				for (NameIndexAtom a : atoms) {
+					consumer.accept(indx, a);
+				}
+			});
+		}
+		// 2. reverse search quad tree from <token> and find objects
+		//    that are fully inside any object <parent> and not the same the same tile!
+		for (final NameIndexAtom a : token.atoms) {
+			parent.quadTree.forEachMatchHigherZoom(a.coords.bboxTileZoom, a.coords.bboxTileId, indxs -> {
+				for (int indx : indxs) {
+					consumer.accept(indx, a);
+				}
+			});
+		}
+	}
+ 	
 	private void calculateMainIntersection(SpatialSearchContext ctx, SpatialSearchToken token, SpatialSearchResultsList parent) {
 		if (parent.getTokenCount() == 0) {
 			for (NameIndexAtom atom : token.atoms) {
-				addResult(ctx, -1, null, 0, token, atom);
+				addResult(null, 0, atom);
 			}
 		} else if (parent.getCombinations() > 0) {
-			int[] approximate = new int[1];
-			for (int i = 0; i < parent.tileIds.size(); i++) {
-				long tileId = parent.tileIds.get(i);
-				int zoom = parent.tileZooms.get(i);
-				token.quadTree.forEachMatch(zoom, tileId, t -> {
-					approximate[0]++;
-				});
-			}
-			boolean limitByRadius = approximate[0] > ctx.settings.OPTIM_LIMIT_INTERSECTIONS;
-			// 1. iterate parent objects and find all objects from <parent>
-			//    that are fully inside object <token> or have same the same tile 
-			for (int i = 0; i < parent.tileIds.size(); i++) {
-				long tileId = parent.tileIds.get(i);
-				int zoom = parent.tileZooms.get(i);
-				final int indx = i;
-				if (limitByRadius && !parent.nearbyResult(i)) {
-					continue;
-				}
-				token.quadTree.forEachMatch(zoom, tileId, atoms -> {
-					for (NameIndexAtom atom : atoms) {
-						if (limitByRadius && !atom.nearbyRadius) {
-							continue;
-						}
-						addResult(ctx, approximate[0], parent, indx, token, atom);
+			long[] countApproximate = new long[2];
+			long nt = System.nanoTime();
+			iterateIntersection(parent, token, (indx, a) -> { countApproximate[1]++; });
+			int limitByRadius = ctx.limitLocationBboxes.length;
+			countApproximate[0] = countApproximate[1];
+			while (limitByRadius > 0 && countApproximate[0] > ctx.settings.OPTIM_LIMIT_INTERSECTIONS) {
+				countApproximate[0] = 0;
+				final int lmtNearby = limitByRadius;
+				iterateIntersection(parent, token, (indx, atom) -> {
+					if (atom.nearbyRadius > lmtNearby || parent.nearbyResult(indx) > lmtNearby) {
+						return;
 					}
+					countApproximate[0]++;
 				});
+				limitByRadius--;
 			}
-			// 2. reverse search quad tree from <token> and find objects
-			//    that are fully inside any object <parent> and not the same the same tile!
-			final SpatialSearchResultsList parentFinal = parent;
-			for (final NameIndexAtom a : token.atoms) {
-				if (limitByRadius && !a.nearbyRadius) {
-					continue;
+			System.out.printf("Approximate /\\: %,d -> %,d (%d) - %.1f ms %s (%,d) + '%s'\n", countApproximate[1],
+					countApproximate[0], limitByRadius, (System.nanoTime() - nt) / 1e6, token.word, token.atoms.size(),
+					parent.toString());
+
+			final int lmtNearby = limitByRadius;
+			iterateIntersection(parent, token, (indx, atom) -> {
+				if (atom.nearbyRadius > lmtNearby || parent.nearbyResult(indx) > lmtNearby) {
+					return;
 				}
-				parent.quadTree.forEachMatchHigherZoom(a.coords.bboxTileZoom, a.coords.bboxTileId, indxs -> {
-					for (int indx : indxs) {
-						if (limitByRadius && !parentFinal.nearbyResult(indx)) {
-							continue;
-						}
-						addResult(ctx, approximate[0], parentFinal, indx, token, a);
-					}
-				});
-			}
+				boolean acceptIntersection = acceptIntersection(ctx, countApproximate[0], parent, indx, token, atom);
+				if (!acceptIntersection) {
+					return;
+				}
+				addResult(parent, indx, atom);
+			});
+			System.out.printf("Actual /\\: %,d res - %.1f ms %s (%,d) + '%s'\n", getCombinations(), (System.nanoTime() - nt) / 1e6,
+					token.word, token.atoms.size(),  parent.toString());
 		}		
 	}
 
@@ -419,12 +436,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return sum;
 	}
 
-	boolean addResult(SpatialSearchContext ctx, int approximateRes,
-			SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
-		boolean acceptIntersection = acceptIntersection(ctx, approximateRes, parent, pindx, token, a);
-		if (!acceptIntersection) {
-			return false;
-		}
+	boolean addResult(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
 		finalResult = null;
 		int pzoom = parent == null ? 0 : parent.tileZooms.get(pindx);
 		int zoom = Math.max(pzoom, a.coords.bboxTileZoom);
@@ -441,7 +453,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return true;
 	}
 
-	private boolean acceptIntersection(SpatialSearchContext ctx, int approximateRes, 
+	private boolean acceptIntersection(SpatialSearchContext ctx, long approximateRes, 
 			SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
 		SpatialTextSearchSettings settings = ctx.settings;
 		// 1. Precise intersection

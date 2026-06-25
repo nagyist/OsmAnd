@@ -35,7 +35,7 @@ public class SpatialSearchContext {
 	final List<BinaryMapIndexReader> files;
 	final List<SpatialSearchFileCache> internalFile = new ArrayList<>();
 	final LatLon location; // could be null
-	final int[] limitLocationBbox;
+	final int[][] limitLocationBboxes;
 
 	List<SpatialSearchToken> tokens;
 	SpatialSearchStats stats = new SpatialSearchStats();
@@ -74,7 +74,11 @@ public class SpatialSearchContext {
 		this.files = files;
 		this.location = location;
 		this.settings = new SpatialTextSearchSettings();
-		limitLocationBbox = calculateBbox(settings.OPTIM_LIMIT_RADIUS, getLimitLocationFromFiles(files, location));
+		limitLocationBboxes = new int[settings.OPTIM_LIMIT_RADIUS.length][];
+		LatLon loc = getLimitLocationFromFiles(files, location);
+		for (int k = 0; k < limitLocationBboxes.length; k++) {
+			limitLocationBboxes[k] = calculateBbox(settings.OPTIM_LIMIT_RADIUS[k], loc);
+		}
 	}
 	
 	private LatLon getLimitLocationFromFiles(List<BinaryMapIndexReader> files, LatLon limitLocation) {
@@ -495,8 +499,14 @@ public class SpatialSearchContext {
 			}
 		}
 		int otherFound = otherTokens == null ? 0 : otherTokens.size();
+		int nearByType = 0;
+		for (; nearByType < limitLocationBboxes.length; nearByType++) {
+			if (coords.intersects(limitLocationBboxes[nearByType])) {
+				break;
+			}
+		}
 		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, streetCity, other, otherFound, coords,
-				coords.intersects(limitLocationBbox));
+				nearByType);
 		t.addAtom(atom);
 		if (otherTokens != null) {
 			for (SpatialSearchToken token : otherTokens) {
@@ -511,7 +521,7 @@ public class SpatialSearchContext {
 				if (t != token && Abbreviations.likelyPartOfBuilding(token.word, token.getWordSplitAsBuidingName())
 						&& (otherTokens == null || !otherTokens.contains(token))) {
 					NameIndexAtom atomB = new NameIndexAtom(name, SpatialSearchToken.BUILDING_TYPE, lid, pid, obj,
-							streetCity, other, otherFound, coords, coords.intersects(limitLocationBbox), t.originalOrder);
+							streetCity, other, otherFound, coords, nearByType, t.originalOrder);
 					token.addAtom(atomB);
 				}
 			}

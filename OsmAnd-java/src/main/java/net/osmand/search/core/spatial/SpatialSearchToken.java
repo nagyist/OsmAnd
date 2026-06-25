@@ -283,16 +283,16 @@ public class SpatialSearchToken {
 		final int otherFoundCnt;
 		final NameIndexAtomXY coords; 
 		final int buildingInd; // added before intersection
-		final boolean nearbyRadius;
+		final int nearbyRadius;
 
 
 		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, boolean cityAsStreet, int otherWordsCnt,
-				int otherFooundCnt, NameIndexAtomXY coords, boolean nearbyRadius) {
+				int otherFooundCnt, NameIndexAtomXY coords, int nearbyRadius) {
 			this(name, type, id, pid, obj, cityAsStreet, otherWordsCnt, otherFooundCnt, coords, nearbyRadius, -1);
 		}
 
 		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, boolean cityAsStreet, int otherWordsCnt,
-				int otherFooundCnt, NameIndexAtomXY coords, boolean nearbyRadius, int buildingInd) {
+				int otherFooundCnt, NameIndexAtomXY coords, int nearbyRadius, int buildingInd) {
 			this.name = name;
 			this.id = id;
 			this.parentid = pid;

@@ -56,7 +56,7 @@ public class SpatialTextSearch {
 		// once estimated intersections > limit we stop looking for these results (speed up)
 		public int OPTIM_LIMIT_POI_OR_STREET_INTERSECTIONS = 5000;
 		
-		public int OPTIM_LIMIT_RADIUS = 30_000; // 30 km
+		public int[] OPTIM_LIMIT_RADIUS = new int[] {15_000, 50_000}; // 10 km
 		public int OPTIM_LIMIT_INTERSECTIONS = 100_000; // 100K
 		
 		// max prefixes for each name reader
