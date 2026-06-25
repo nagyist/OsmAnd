@@ -19,6 +19,7 @@ import net.osmand.CollatorStringMatcher;
 import net.osmand.StringMatcher;
 import net.osmand.binary.BinaryMapIndexReader.SearchRequest;
 import net.osmand.binary.BinaryMapIndexReaderStats.PoiReadMetricSet;
+import net.osmand.binary.NameIndexReader.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.CommonIndexedStats;
 import net.osmand.binary.OsmandOdb.OsmAndAddressIndex.CitiesIndex;
@@ -745,7 +746,8 @@ public class BinaryMapAddressReaderAdapter {
 						suffixMask = queryToken.new SuffixMask(matchedPrefix);
 					}
 					int stag = 0;
-					do {
+					boolean emptySuffixes = false;
+					loopAtoms: do {
 						int st = codedIS.readTag();
 						stag = WireFormat.getTagFieldNumber(st);
 						if (stag == AddressNameIndexData.SUFFIXESDICTIONARY_FIELD_NUMBER) {
@@ -753,13 +755,22 @@ public class BinaryMapAddressReaderAdapter {
 								suffixDictionary = new ArrayList<>();
 							}
 							String encodedSuffix = codedIS.readString();
-							if (SearchAlgorithms.EMPTY_SUFFIX_DICTIONARY_SENTINEL.equals(encodedSuffix)) {
+							if (SearchAlgorithms.OLD_EMPTY_SUFFIX_DICTIONARY_SENTINEL.equals(encodedSuffix)) {
+								emptySuffixes = true;
 								continue;
 							}
+							
 							String previousSuffix = suffixDictionary.isEmpty() ? null : suffixDictionary.get(suffixDictionary.size() - 1);
 							String decodedSuffix = SearchAlgorithms.nameIndexDecodeDictionarySuffix(previousSuffix, encodedSuffix);
 							suffixDictionary.add(decodedSuffix);
 						} else if (stag == AddressNameIndexData.ATOM_FIELD_NUMBER) {
+							if (emptySuffixes || (suffixDictionary  != null && suffixDictionary.size() == 1
+									&& suffixDictionary.get(0).equals(SearchAlgorithms.EMPTY_SUFFIX_DICTIONARY_SENTINEL))) {
+								if (matchedPrefix != null && queryToken != null && !queryToken.matchFullPrefix(matchedPrefix.key())) {
+									codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+									break loopAtoms;
+								}
+							}
 							if (!suffixDictionaryInitialized && suffixMask != null) {
 								suffixMask.setDictionary(suffixDictionary);
 								suffixDictionaryInitialized = true;
@@ -896,17 +907,18 @@ public class BinaryMapAddressReaderAdapter {
 
 	}
 	
-	protected NameIndexReader readNameIndex(String prefix, NameIndexReader nameIndex) throws IOException {
+	protected List<PrefixNameValue> readNameIndex(NameIndexReader nameIndex) throws IOException {
+		List<PrefixNameValue> res = null;
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
 			switch (tag) {
 			case 0:
-				return nameIndex;
+				return res;
 			case OsmandOdb.OsmAndAddressIndex.NAMEINDEX_FIELD_NUMBER:
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
-				readNameIndexInternal(nameIndex, prefix);
+				res = readNameIndexInternal(nameIndex);
 				codedIS.popLimit(oldLimit);
 				break;
 			default:
@@ -916,9 +928,9 @@ public class BinaryMapAddressReaderAdapter {
 		}
 	}
 	
-	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexReader pi, String prefix) throws IOException {
-		OsmandOdb.IndexedStringTable res = null;
-		TLongArrayList loffsets = prefix == null ? null : new TLongArrayList();
+	protected List<PrefixNameValue> readNameIndexInternal(NameIndexReader pi) throws IOException {
+		List<PrefixNameValue> res = null;
+		TLongArrayList loffsets = pi.readAll() ? null : new TLongArrayList();
 		int ind = -1;
 		while (true) {
 			int t = codedIS.readTag();
@@ -930,20 +942,24 @@ public class BinaryMapAddressReaderAdapter {
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
 				pi.setTablePointer(codedIS.getTotalBytesRead());
-				map.readNameIndexInspector(null, pi, prefix);
+				map.readNameIndexInspector(null, pi);
 				codedIS.popLimit(oldLimit);
 				break;
 			case OsmAndAddressNameIndexData.COMMONSTATS_FIELD_NUMBER:
 				length = codedIS.readRawVarint32();
 				oldLimit = codedIS.pushLimitLong(length);
-				CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
-				pi.setCommonIndexed(stat);
+				if (pi.getCommonStats() != null) {
+					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+				} else {
+					CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
+					pi.setCommonIndexed(stat);
+				}
 				codedIS.popLimit(oldLimit);
 				break;
 			case OsmAndAddressNameIndexData.ATOM_FIELD_NUMBER :
 				long shift = codedIS.getTotalBytesRead();
 				if (ind == -1 && loffsets != null) {
-					loffsets.addAll(pi.getIndexByRef().keySet());
+					res = pi.getAtomsToLoad(loffsets);
 					loffsets.sort();
 					ind = 0;
 				}
@@ -959,7 +975,10 @@ public class BinaryMapAddressReaderAdapter {
 				}
 				int len = codedIS.readRawVarint32();
 				oldLimit = codedIS.pushLimitLong((long) len);
-				pi.addData(AddressNameIndexData.parseFrom(codedIS), shift);
+				PrefixNameValue prefix = pi.addData(AddressNameIndexData.parseFrom(codedIS), shift);
+				if (res != null) {
+					res.add(prefix);
+				}
 				codedIS.popLimit(oldLimit);
 				break;
 

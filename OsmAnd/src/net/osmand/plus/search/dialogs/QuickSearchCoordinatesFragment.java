@@ -691,7 +691,7 @@ public class QuickSearchCoordinatesFragment extends BaseFullScreenDialogFragment
 				EditText eastingEdit = view.findViewById(R.id.eastingEditText);
 				EditText zoneEdit = view.findViewById(R.id.zoneEditText);
 				if (latLon != null) {
-					UTMPoint pnt = new UTMPoint(new LatLonPoint(latLon.getLatitude(), latLon.getLongitude()));
+					ZonedUTMPoint pnt = new ZonedUTMPoint(new LatLonPoint(latLon.getLatitude(), latLon.getLongitude()));
 					zoneEdit.setText(pnt.zone_number + "" + pnt.zone_letter);
 					northingEdit.setText(((long) pnt.northing) + "");
 					eastingEdit.setText(((long) pnt.easting) + "");

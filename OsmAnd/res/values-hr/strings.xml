@@ -482,7 +482,7 @@
     <string name="gpx_option_reverse_route">Okreni smjer GPX</string>
     <string name="installing_new_resources">Raspakiravam nove podatke…</string>
     <string name="shared_string_no_thanks">Ne, hvala</string>
-    <string name="favorite_home_category">Doma</string>
+    <string name="favorite_home_category">Dom</string>
     <string name="favorite_friends_category">Prijatelji</string>
     <string name="favorite_places_category">Mjesta</string>
     <string name="shared_string_name">Ime</string>
@@ -500,7 +500,7 @@
     <string name="target_point">Ciljna točka %1$s</string>
     <string name="intermediate_point">Međuodredište %1$s</string>
     <string name="context_menu_item_last_intermediate_point">Dodaj kao zadnje međuodredište</string>
-    <string name="context_menu_item_first_intermediate_point">Dodaj prvu međutočku</string>
+    <string name="context_menu_item_first_intermediate_point">Dodaj kao prvo međuodredište</string>
     <string name="add_as_last_destination_point">Dodaj kao zadnje međuodredište</string>
     <string name="add_as_first_destination_point">Dodaj kao prvo međuodredište</string>
     <string name="shared_string_target_points">Ciljevi</string>
@@ -1897,4 +1897,27 @@
     <string name="routing_attr_motor_type_diesel_name">Dizel</string>
     <string name="obd_fuel_type_diesel">Dizel</string>
     <string name="routing_attr_motor_type_petrol_name">Benzin</string>
+    <string name="map_markers_item">Oznake na karti</string>
+    <string name="markers_remove_dialog_msg">Izbrisati oznaku na karti \'%s\'?</string>
+    <string name="edit_map_marker">Uredi oznaku</string>
+    <string name="map_markers">Oznake na karti</string>
+    <string name="appearance_on_the_map">Izgled na karti</string>
+    <string name="travel_card_download_descr">Preuzmite Wikivoyageove turističke vodiče da biste mogli pregledavati članke o mjestima diljem svijeta bez internetske veze.</string>
+    <string name="welcome_to_open_beta_description">Vodiči se trenutno temelje na Wikivoyageu. Sve mogućnosti dostupne su besplatno za vrijeme beta testiranja.</string>
+    <string name="download_maps_travel">Turistički vodiči</string>
+    <string name="shared_string_navigation">Navigacija</string>
+    <string name="add_home">Dodaj dom</string>
+    <string name="home_button">Dom</string>
+    <string name="shared_string_sound">Zvuk</string>
+    <string name="show_along_the_route">Prikaži uz rutu</string>
+    <string name="routing_attr_prefer_unpaved_name">Preferiraj neasfaltirane ceste</string>
+    <string name="routing_attr_prefer_unpaved_description">Preferiraj neasfaltirane ceste.</string>
+    <string name="routing_attr_driving_style_prefer_unpaved_name">Preferiraj neasfaltirane ceste</string>
+    <string name="routing_attr_allow_private_name">Dozvoli privatne puteve</string>
+    <string name="routing_attr_short_way_name">Ekonomična ruta</string>
+    <string name="temporary_conditional_routing">Poštuj privremena ograničenja</string>
+    <string name="follow_track">Prati stazu</string>
+    <string name="choose_track_file_to_follow">Odaberi datoteku staze za pratiti</string>
+    <string name="customize_route_line">Prilagodi liniju rute</string>
+    <string name="simulate_navigation">Simuliraj navigaciju</string>
 </resources>

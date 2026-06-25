@@ -13,6 +13,7 @@ import net.osmand.util.MapUtils;
  * It doesn't support search for containing objects for performance reasons.
  * In order to find all objects inside large polygon, reverse - HashQuadTree could be used
  * as it requires full scanning of objects and another index
+ * 
  */
 public class HashQuadTree<T> {
 	private static final int MAX_ZOOM = 20;
@@ -55,6 +56,14 @@ public class HashQuadTree<T> {
 			}
 			tileId >>= 2;
 		}
+	}
+	
+	public static long encodeTileId31(int z, int x31, int y31) {
+		if (z > MAX_ZOOM) {
+			throw new UnsupportedOperationException();
+		}
+		long il = (MapUtils.interleaveBits(x31 >> (31 - z), y31 >> (31 - z)));
+		return il;
 	}
 
 	public static long encodeTileId(int z, int x, int y) {

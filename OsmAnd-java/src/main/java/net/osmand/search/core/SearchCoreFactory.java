@@ -623,7 +623,7 @@ public class SearchCoreFactory {
 				}
 				Iterator<BinaryMapIndexReader> offlineIterator = phrase.getRadiusOfflineIndexes(minRadius, maxRadius, SearchPhraseDataType.ADDRESS);
 				String wordToSearch = phrase.getUnknownWordToSearch();
-				List<String> wordToSearchSplit = splitAndNormalize(wordToSearch);
+				List<String> wordToSearchSplit = splitAndNormalize(wordToSearch, true);
 				if (wordToSearchSplit.size() > 1) {
 					wordToSearch = phrase.selectMainUnknownWordToSearch(new ArrayList<>(wordToSearchSplit));
 				}
@@ -1788,6 +1788,7 @@ public class SearchCoreFactory {
 				NameStringMatcher buildingMatch = phrase.getUnknownWordToSearchBuildingNameMatcher();
 				NameStringMatcher startMatch = new NameStringMatcher(lw, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
 				int number = Algorithms.extractFirstIntegerNumber(lw);
+				
 				if (phrase.isSearchTypeAllowed(ObjectType.HOUSE)) {
 					for (Building b : s.getBuildings()) {
 						SearchResult res = new SearchResult(phrase);

@@ -6025,4 +6025,24 @@
     <string name="astro_designations">Designaciones</string>
     <string name="obd_simulation_device">Simulación de dispositivo</string>
     <string name="astronomy_map">Mapa astronómico</string>
+    <string name="navigate_point_format_maidenhead">Virginidad</string>
+    <string name="maidenhead_format_descr">Sistema de localización de Maidenhead (Localizador QTH).</string>
+    <string name="auto_copy_media_to_osmand_storage">Copia automática de archivos multimedia al almacenamiento de OsmAnd</string>
+    <string name="choose_from_gallery">Elegí de la galería</string>
+    <string name="choose_from_files">Selecciona entre archivos</string>
+    <string name="shared_string_media">Medios de comunicación</string>
+    <string name="no_media">Ningún medio</string>
+    <string name="no_media_descr">Podes añadir fotos, vídeos o notas de audio desde tu cámara o biblioteca.</string>
+    <string name="navigate_point_east_coordinate">Coordenada Este</string>
+    <string name="navigate_point_north_coordinate">Coordenada Norte</string>
+    <string name="drag_to_reorder_content_description">Arrastra para reordenar</string>
+    <string name="coordinate_format_add_title">Agregar formato</string>
+    <string name="coordinate_format_add_empty_body">Busca en una base de datos de más de 5000 códigos EPSG locales y nacionales por país, nombre o ID.</string>
+    <string name="coordinate_format_add_empty_title">¿Buscas un formato específico?</string>
+    <string name="coordinate_format_add_search_hint">Buscar código EPSG o nombre de formato</string>
+    <string name="coordinate_format_cancel_changes_message">¿Descartar los cambios en los formatos de coordenadas?</string>
+    <string name="coordinate_format_cancel_changes_title">Cambios no guardados</string>
+    <string name="coordinate_format_description">Formatos preferidos para un acceso rápido desde el menú contextual y la búsqueda.</string>
+    <string name="coordinate_format_discard_changes">Descartar cambios</string>
+    <string name="coordinate_format_last_item_warning">Se requiere al menos un formato de coordenadas.</string>
 </resources>

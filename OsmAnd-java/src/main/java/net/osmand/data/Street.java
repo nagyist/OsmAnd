@@ -34,7 +34,7 @@ public class Street extends MapObject {
 		}
 		return intersectedStreets;
 	}
-
+	
 	public void addIntersectedStreet(Street s) {
 		if (intersectedStreets == null) {
 			intersectedStreets = new ArrayList<Street>();

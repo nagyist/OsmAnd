@@ -88,6 +88,13 @@
 		android:summaryOn="@string/shared_string_enabled"
 		android:title="@string/show_free_version_banner" />
 
+	<net.osmand.plus.settings.preferences.SwitchPreferenceEx
+		android:key="should_show_discount_bottom_sheet"
+		android:layout="@layout/preference_with_descr_dialog_and_switch"
+		android:summaryOff="@string/shared_string_disabled"
+		android:summaryOn="@string/shared_string_enabled"
+		android:title="@string/show_discount_bottom_sheet" />
+
 	<Preference
 		android:key="test_voice_commands"
 		android:layout="@layout/preference_with_descr"

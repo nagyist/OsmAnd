@@ -704,10 +704,11 @@ public class MenuBuilder {
 		String title = primaryRow != null
 				? primaryRow.getText()
 				: PointDescription.getLocationName(mapActivity, latitude, longitude, true);
-		boolean collapsable = coordinateRows.size() > 1;
+		List<FormattedCoordinate> collapsableRows = PointDescription.getCollapsedLocationData(mapActivity, latitude, longitude, coordinateRows);
+		boolean collapsable = !collapsableRows.isEmpty();
 		buildRow(view, new BuildRowAttrs.Builder().setText(title).setIconId(R.drawable.ic_action_get_my_location)
 				.setTextPrefix(getCoordinatesRowPrefix(primaryRow)).setClipboardText(title).setCollapsable(collapsable)
-				.setCollapsableView(getLocationCollapsableView(coordinateRows))
+				.setCollapsableView(getLocationCollapsableView(collapsableRows))
 				.setTextLinesLimit(1).build());
 	}
 
@@ -1137,43 +1138,9 @@ public class MenuBuilder {
 		menuRowBuilder.copyToClipboard(text, ctx);
 	}
 
-	protected CollapsableView getLocationCollapsableView(Map<Integer, String> locationData) {
+	protected CollapsableView getLocationCollapsableView(@NonNull List<FormattedCoordinate> coordinateRows) {
 		LinearLayout llv = buildCollapsableContentView(mapActivity, true, true);
-		for (Map.Entry<Integer, String> line : locationData.entrySet()) {
-			TextViewEx button = buildButtonInCollapsableView(mapActivity, false, false);
-			SpannableStringBuilder ssb = new SpannableStringBuilder();
-			if (line.getKey() == OsmAndFormatter.UTM_FORMAT) {
-				ssb.append("UTM: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			} else if (line.getKey() == OsmAndFormatter.MGRS_FORMAT) {
-				ssb.append("MGRS: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			} else if (line.getKey() == OsmAndFormatter.OLC_FORMAT) {
-				ssb.append("OLC: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			} else if (line.getKey() == OsmAndFormatter.SWISS_GRID_FORMAT) {
-				ssb.append("CH1903: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 7, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			} else if (line.getKey() == OsmAndFormatter.SWISS_GRID_PLUS_FORMAT) {
-				ssb.append("CH1903+: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			} else if (line.getKey() == OsmAndFormatter.MAIDENHEAD_FORMAT) {
-				ssb.append("Maidenhead: ");
-				ssb.setSpan(new ForegroundColorSpan(getColor(R.color.text_color_secondary_light)), 0, 12, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-			}
-			ssb.append(line.getValue());
-			button.setText(ssb);
-			button.setOnClickListener(v -> copyToClipboard(line.getValue(), mapActivity));
-			llv.addView(button);
-		}
-		return new CollapsableView(llv, this, true);
-
-	}
-
-	protected CollapsableView getLocationCollapsableView(List<FormattedCoordinate> coordinateRows) {
-		LinearLayout llv = buildCollapsableContentView(mapActivity, true, true);
-		for (int i = 1; i < coordinateRows.size(); i++) {
-			FormattedCoordinate coordinate = coordinateRows.get(i);
+		for (FormattedCoordinate coordinate : coordinateRows) {
 			TextViewEx button = buildButtonInCollapsableView(mapActivity, false, false);
 			SpannableStringBuilder ssb = new SpannableStringBuilder();
 			appendCoordinateFormatPrefix(ssb, coordinate);

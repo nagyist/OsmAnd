@@ -11,7 +11,6 @@ import com.google.protobuf.CodedInputStream;
 import gnu.trove.list.array.TIntArrayList;
 import net.osmand.binary.Abbreviations;
 import net.osmand.binary.CommonWords;
-import net.osmand.search.core.SearchPhrase;
 
 /**
  * Basic algorithms that are used in Search
@@ -46,18 +45,17 @@ public class SearchAlgorithms {
         return new CodePointPrefixMatch(leftOffset, rightOffset, commonPrefixCodePointLength);
     }
 
-    
     private static List<String> split(String name) {
         int prev = -1;
-        Set<String> namesToAdd = new LinkedHashSet<>();
-
+        List<String> namesToAdd = new ArrayList<String>();
         for (int i = 0; i <= name.length(); ) {
             boolean tokenCharacter = false;
             int currentCodePointCharCount = 1;
             if (i != name.length()) {
                 int codePoint = name.codePointAt(i);
                 currentCodePointCharCount = Character.charCount(codePoint);
-                tokenCharacter = isTokenCharacter(name, i, prev != -1) || codePoint == '\'';
+                tokenCharacter = isTokenCharacter(name, i, prev != -1) 
+                		|| codePoint == '\'' || codePoint == '.'; // dr.luth
             }
             if (!tokenCharacter) {
                 if (prev != -1) {
@@ -72,64 +70,53 @@ public class SearchAlgorithms {
             }
             i += currentCodePointCharCount;
         }
-        return new ArrayList<>(namesToAdd);
+        return namesToAdd;
     }
     
-    
-	public static List<String> splitAndNormalizeSearchQuery(String query, List<String> original) {
+    /**
+     * Produces unique normalized tokens from the query, plus Arabic-normalized variants when applicable.
+     */
+	public static List<String> splitAndNormalize(String query, boolean unique) {
+		return splitAndNormalize(query, null, unique);
+	}
+	
+	public static List<String> splitAndNormalize(String query, List<String> original, boolean unique) {
 		String normalizedQuery = canonicalizePunctuation(query);
-		List<String> o = SearchPhrase.splitWords(normalizedQuery, new ArrayList<String>(), SearchPhrase.ALLDELIMITERS);
-		List<String> queryTokens = new ArrayList<String>();
-		for (String token : o) {
+		List<String> queryTokens = new ArrayList<>();
+		for (String token : split(normalizedQuery)) {
 			String normalizedToken = normalizeToken(token);
 			if (!normalizedToken.isEmpty()) {
 				queryTokens.add(normalizedToken);
-				original.add(token);
+				if (original != null) {
+					original.add(token);
+				}
 			}
 		}
 		if (ArabicNormalizer.isSpecialArabic(normalizedQuery)) {
 			String arabic = ArabicNormalizer.normalize(normalizedQuery);
 			if (arabic != null && !arabic.equals(normalizedQuery)) {
 				queryTokens.clear();
-				original.clear();
-				for (String token : SearchPhrase.splitWords(arabic, new ArrayList<String>(), SearchPhrase.ALLDELIMITERS)) {
+				if (original != null) {
+					original.clear();
+				}
+				for (String token : split(arabic)) {
 					String normalizedToken = normalizeToken(token);
 					if (!normalizedToken.isEmpty()) {
 						queryTokens.add(normalizedToken);
-						original.add(token);
+						if (original != null) {
+							original.add(token);
+						}
 					}
 				}
 			}
 		}
+		if (unique) {
+			Set<String> st = new LinkedHashSet<String>(queryTokens);
+			queryTokens.clear();
+			queryTokens.addAll(st);
+		}
 		return queryTokens;
 	}
-    
-
-    /**
-     * Produces unique normalized tokens from the query, plus Arabic-normalized variants when applicable.
-     */
-    public static List<String> splitAndNormalize(String query) {
-        String normalizedQuery = canonicalizePunctuation(query);
-        Set<String> queryTokens = new LinkedHashSet<>();
-        for (String token : split(normalizedQuery)) {
-            String normalizedToken = normalizeToken(token);
-            if (!normalizedToken.isEmpty()) {
-                queryTokens.add(normalizedToken);
-            }
-        }
-        if (ArabicNormalizer.isSpecialArabic(normalizedQuery)) {
-            String arabic = ArabicNormalizer.normalize(normalizedQuery);
-            if (arabic != null && !arabic.equals(normalizedQuery)) {
-                for (String token : split(arabic)) {
-                    String normalizedToken = normalizeToken(token);
-                    if (!normalizedToken.isEmpty()) {
-                        queryTokens.add(normalizedToken);
-                    }
-                }
-            }
-        }
-        return new ArrayList<>(queryTokens);
-    }
     
     public static String normalizeToken(String token) {
         if (token == null) {
@@ -209,12 +196,16 @@ public class SearchAlgorithms {
         int character = value.codePointAt(index);
         if (Character.isLetter(character) || Character.isDigit(character)) {
             return true;
-        }
+        }        
         int nextIndex = index + Character.charCount(character);
         int previousIndex = index > 0 ? value.offsetByCodePoints(index, -1) : -1;
-        boolean isHyphenNearNumber = character == '-'
+        
+        boolean isHyphenNearNumber = (character == '-')
                 && ((nextIndex < value.length() && Character.isDigit(value.codePointAt(nextIndex)))
                 || (previousIndex >= 0 && Character.isDigit(value.codePointAt(previousIndex))));
+        // dot belongs to word same as '''
+//        boolean lastSymbolDot = character == '.' 
+//				&& previousIndex >= 0 && Character.isLetter(value.codePointAt(previousIndex));
         if (isHyphenNearNumber) {
             return true;
         }
@@ -257,7 +248,9 @@ public class SearchAlgorithms {
     }
 
     private static final int MARKER_LCP_LENGTH = SUFFIX_DICT_MARKER_MAX - SUFFIX_DICT_MARKER_BASE;
-    public static final String EMPTY_SUFFIX_DICTIONARY_SENTINEL = "\uE100";
+    // compatible with default writer split "" 
+    public static final String EMPTY_SUFFIX_DICTIONARY_SENTINEL = "";
+    public static final String OLD_EMPTY_SUFFIX_DICTIONARY_SENTINEL = "\uE100";
     
 
     private static boolean startsWithSuffixMarker(String value) {
@@ -376,6 +369,67 @@ public class SearchAlgorithms {
 		return dBbox;
 	}
 	
+	public static int letters(String s) {
+		int count = 0;
+		for (int i = 0; i < s.length(); i++) {
+			if (!Character.isDigit(s.charAt(i)) && Character.isLetter(s.charAt(i))) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	public static boolean isNumber2Letters(String name) {
+		if(name == null || name.length() == 0) {
+			return false;
+		}
+		// it used to be inconcinstent check for Character.isDigit(name.charAt(0)) - '#3'
+		boolean startsWithDigit = false;
+		for (int i = 0; i < name.length(); i++) {
+			if (Character.isDigit(name.charAt(i))) {
+				startsWithDigit = true;
+				break;
+			} else if (Character.isLetter(name.charAt(i))) {
+				break;
+			}
+		}
+		return startsWithDigit && letters(name) < 2;
+	}	
 	
+	// Split '18B', '18/B', '18-B', '18 B' -> ['18', 'B']
+	public static Set<String> getBuildingCompareSet(String name) {
+		Set<String> resultSet = null;
+		StringBuilder currentToken = new StringBuilder();
+		int lastType = 0;
+		for (int i = 0; i < name.length(); i++) {
+			char ch = name.charAt(i);
+			int type = Character.isDigit(ch) ? 1 : (Character.isLetter(ch) ? 2 : 0);
+			boolean addToken = false;
+			if (type != lastType) {
+				addToken = true;
+			}
+			if (addToken && currentToken.length() > 0) {
+				if (resultSet == null) {
+					resultSet = new TreeSet<String>();
+				}
+				resultSet.add(currentToken.toString().toLowerCase());
+				currentToken.setLength(0); // Clear buffer
+			}
+			if (type > 0) {
+				currentToken.append(ch);
+			}
+			lastType = type;
+		}
+		if (currentToken.length() > 0) {
+			if (resultSet == null) {
+				return Collections.singleton(currentToken.toString().toLowerCase());
+			}
+			resultSet.add(currentToken.toString().toLowerCase());
+		}
+		if (resultSet == null) {
+			return Collections.singleton(name.toLowerCase());
+		}
+		return resultSet;
+	}
 }
 
