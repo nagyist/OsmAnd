@@ -22,18 +22,7 @@ public class HistoryEntry {
 	private long lastAccessedTime;
 	private int[] intervals = new int[0];
 	private double[] intervalValues = new double[0];
-	private ObjectType objectType;
-	private CityType cityType;
-	private String displayName;
-	private String poiCategoryKey;
-	private String poiSubtypeKey;
-	private String typeName;
-	private String address;
-	private String relatedObjectName;
-	private String openingHours;
-	private String alternateName;
-	private String photoUrl;
-	private Long osmId;
+	private HistoryItemMetadata metadata = new HistoryItemMetadata();
 
 
 	public HistoryEntry(double lat, double lon, @NonNull PointDescription name,
@@ -177,160 +166,110 @@ public class HistoryEntry {
 	}
 
 	public void copyMetadataFrom(@NonNull HistoryEntry entry) {
-		objectType = entry.objectType;
-		cityType = entry.cityType;
-		displayName = entry.displayName;
-		poiCategoryKey = entry.poiCategoryKey;
-		poiSubtypeKey = entry.poiSubtypeKey;
-		typeName = entry.typeName;
-		address = entry.address;
-		relatedObjectName = entry.relatedObjectName;
-		openingHours = entry.openingHours;
-		alternateName = entry.alternateName;
-		photoUrl = entry.photoUrl;
-		osmId = entry.osmId;
+		metadata = entry.metadata;
 	}
 
 	public void fillMissingMetadataFrom(@NonNull HistoryEntry entry) {
-		if (objectType == null) {
-			objectType = entry.objectType;
-		}
-		if (cityType == null) {
-			cityType = entry.cityType;
-		}
-		if (Algorithms.isEmpty(displayName)) {
-			displayName = entry.displayName;
-		}
-		if (Algorithms.isEmpty(poiCategoryKey)) {
-			poiCategoryKey = entry.poiCategoryKey;
-		}
-		if (Algorithms.isEmpty(poiSubtypeKey)) {
-			poiSubtypeKey = entry.poiSubtypeKey;
-		}
-		if (Algorithms.isEmpty(typeName)) {
-			typeName = entry.typeName;
-		}
-		if (Algorithms.isEmpty(address)) {
-			address = entry.address;
-		}
-		if (Algorithms.isEmpty(relatedObjectName)) {
-			relatedObjectName = entry.relatedObjectName;
-		}
-		if (Algorithms.isEmpty(openingHours)) {
-			openingHours = entry.openingHours;
-		}
-		if (Algorithms.isEmpty(alternateName)) {
-			alternateName = entry.alternateName;
-		}
-		if (Algorithms.isEmpty(photoUrl)) {
-			photoUrl = entry.photoUrl;
-		}
-		if (osmId == null) {
-			osmId = entry.osmId;
-		}
+		metadata = metadata.fillMissingFrom(entry.metadata);
 	}
 
 	public boolean hasMetadata() {
-		return objectType != null || cityType != null || !Algorithms.isEmpty(displayName) || !Algorithms.isEmpty(typeName)
-				|| !Algorithms.isEmpty(address) || !Algorithms.isEmpty(relatedObjectName)
-				|| !Algorithms.isEmpty(openingHours)
-				|| !Algorithms.isEmpty(alternateName) || !Algorithms.isEmpty(photoUrl)
-				|| osmId != null || !Algorithms.isEmpty(poiCategoryKey) || !Algorithms.isEmpty(poiSubtypeKey);
+		return metadata.hasMetadata();
 	}
 
 	public ObjectType getObjectType() {
-		return objectType;
+		return metadata.getObjectType();
 	}
 
 	public void setObjectType(ObjectType objectType) {
-		this.objectType = objectType;
+		metadata = metadata.withObjectType(objectType);
 	}
 
 	public CityType getCityType() {
-		return cityType;
+		return metadata.getCityType();
 	}
 
 	public void setCityType(CityType cityType) {
-		this.cityType = cityType;
+		metadata = metadata.withCityType(cityType);
 	}
 
 	public String getDisplayName() {
-		return displayName;
+		return metadata.getDisplayName();
 	}
 
 	public void setDisplayName(String displayName) {
-		this.displayName = displayName;
+		metadata = metadata.withDisplayName(displayName);
 	}
 
 	public String getPoiCategoryKey() {
-		return poiCategoryKey;
+		return metadata.getPoiCategoryKey();
 	}
 
 	public void setPoiCategoryKey(String poiCategoryKey) {
-		this.poiCategoryKey = poiCategoryKey;
+		metadata = metadata.withPoiCategoryKey(poiCategoryKey);
 	}
 
 	public String getPoiSubtypeKey() {
-		return poiSubtypeKey;
+		return metadata.getPoiSubtypeKey();
 	}
 
 	public void setPoiSubtypeKey(String poiSubtypeKey) {
-		this.poiSubtypeKey = poiSubtypeKey;
+		metadata = metadata.withPoiSubtypeKey(poiSubtypeKey);
 	}
 
 	public String getTypeName() {
-		return typeName;
+		return metadata.getTypeName();
 	}
 
 	public void setTypeName(String typeName) {
-		this.typeName = typeName;
+		metadata = metadata.withTypeName(typeName);
 	}
 
 	public String getAddress() {
-		return address;
+		return metadata.getAddress();
 	}
 
 	public void setAddress(String address) {
-		this.address = address;
+		metadata = metadata.withAddress(address);
 	}
 
 	public String getRelatedObjectName() {
-		return relatedObjectName;
+		return metadata.getRelatedObjectName();
 	}
 
 	public void setRelatedObjectName(String relatedObjectName) {
-		this.relatedObjectName = relatedObjectName;
+		metadata = metadata.withRelatedObjectName(relatedObjectName);
 	}
 
 	public String getOpeningHours() {
-		return openingHours;
+		return metadata.getOpeningHours();
 	}
 
 	public void setOpeningHours(String openingHours) {
-		this.openingHours = openingHours;
+		metadata = metadata.withOpeningHours(openingHours);
 	}
 
 	public String getAlternateName() {
-		return alternateName;
+		return metadata.getAlternateName();
 	}
 
 	public void setAlternateName(String alternateName) {
-		this.alternateName = alternateName;
+		metadata = metadata.withAlternateName(alternateName);
 	}
 
 	public String getPhotoUrl() {
-		return photoUrl;
+		return metadata.getPhotoUrl();
 	}
 
 	public void setPhotoUrl(String photoUrl) {
-		this.photoUrl = photoUrl;
+		metadata = metadata.withPhotoUrl(photoUrl);
 	}
 
 	public Long getOsmId() {
-		return osmId;
+		return metadata.getOsmId();
 	}
 
 	public void setOsmId(Long osmId) {
-		this.osmId = osmId;
+		metadata = metadata.withOsmId(osmId);
 	}
 }
