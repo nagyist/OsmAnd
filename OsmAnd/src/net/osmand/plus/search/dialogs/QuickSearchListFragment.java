@@ -344,7 +344,7 @@ public abstract class QuickSearchListFragment extends BaseNestedListFragment {
 		}
 	}
 
-	public void updateLocation(Float heading) {
+	public void updateLocation(@Nullable Float heading) {
 		if (listAdapter != null && !touching && !scrolling) {
 			dialogFragment.getAccessibilityAssistant().lockEvents();
 			listAdapter.notifyDataSetChanged();
@@ -353,10 +353,13 @@ public abstract class QuickSearchListFragment extends BaseNestedListFragment {
 			if (selected != null) {
 				try {
 					int position = getListView().getPositionForView(selected);
-					if ((position != AdapterView.INVALID_POSITION) && (position >= getListView().getHeaderViewsCount())) {
-						dialogFragment.getNavigationInfo().updateTargetDirection(
-								listAdapter.getItem(position - getListView().getHeaderViewsCount()).getSearchResult().location,
-								heading.floatValue());
+					if ((position != AdapterView.INVALID_POSITION) && (position >= getListView().getHeaderViewsCount()) && heading != null) {
+						QuickSearchListItem item = listAdapter.getItem(position - getListView().getHeaderViewsCount());
+						if (item != null) {
+							dialogFragment.getNavigationInfo().updateTargetDirection(
+									item.getSearchResult().location,
+									heading);
+						}
 					}
 				} catch (Exception ignored) {
 				}

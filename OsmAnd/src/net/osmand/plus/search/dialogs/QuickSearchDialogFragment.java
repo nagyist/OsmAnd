@@ -961,10 +961,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		updateAdvancedCoordinatesCard();
 	}
 
-	void refreshFilterChipState() {
-		updateToolbarButton();
-	}
-
 	private void updateTopFilterChips() {
 		if (searchUICore == null || searchUICore.getPhrase() == null || topFiltersChipScroll == null || topFiltersChipContainer == null) {
 			return;
@@ -2779,7 +2775,8 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 				|| Math.abs(MapUtils.degreesDiff(a.getBearing(), b.getBearing())) > MIN_COMPASS_DEGREES_TO_UPDATE_CONTENT;
 	}
 
-	private void updateContent(Float heading) {
+	public void updateContent(@Nullable Float heading) {
+		updateToolbarButton();
 		if (!paused && !cancelPrev) {
 			if (mainSearchFragment != null && searchView.getVisibility() == View.VISIBLE) {
 				mainSearchFragment.updateLocation(heading);

@@ -343,7 +343,7 @@ public class QuickSearchPoiFilterFragment extends BaseFullScreenDialogFragment {
 		super.onDismiss(dialog);
 		QuickSearchDialogFragment fragment = (QuickSearchDialogFragment) getParentFragment();
 		if (fragment != null) {
-			fragment.refreshFilterChipState();
+			fragment.updateContent(null);
 		}
 	}
 
