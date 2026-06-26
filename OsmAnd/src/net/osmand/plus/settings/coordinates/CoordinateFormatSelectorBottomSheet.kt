@@ -129,7 +129,7 @@ class CoordinateFormatSelectorBottomSheet : BaseMaterialModalBottomSheetDialogFr
 		recentContainer.removeAllViews()
 		AndroidUiHelper.updateVisibility(recentContainer, recentFormats.isNotEmpty())
 		if (recentFormats.isNotEmpty()) {
-			recentContainer.addView(createHeader(recentContainer, R.string.coordinate_format_recent))
+			recentContainer.addView(createHeader(recentContainer, R.string.shared_string_recent))
 		}
 		recentFormats.forEachIndexed { index, format ->
 			recentContainer.addView(
