@@ -2124,16 +2124,17 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 				List<QuickSearchListItem> rows = new ArrayList<>();
 				boolean historyEnabled = settings.SEARCH_HISTORY.get() || settings.NAVIGATION_HISTORY.get();
 				if (historyEnabled && !historySearchFragment.isHistoryCollapsed()) {
-					SearchResultCollection res = searchUICore.shallowSearch(SearchHistoryAPI.class, "", null, false, false);
-					if (res != null) {
-						int count = 0;
-						for (SearchResult sr : res.getCurrentSearchResults()) {
-							if (count >= EXPLORE_HISTORY_CARD_ITEMS_LIMIT) {
-								break;
-							}
-							rows.add(new QuickSearchListItem(app, sr));
-							count++;
+					List<HistoryEntry> entries = app.getSearchHistoryHelper().getVisibleHistoryEntries(null, false, true);
+					entries.sort((first, second) -> Long.compare(second.getLastAccessTime(), first.getLastAccessTime()));
+					SearchPhrase phrase = SearchPhrase.emptyPhrase(searchUICore.getSearchSettings());
+					int count = 0;
+					for (HistoryEntry entry : entries) {
+						if (count >= EXPLORE_HISTORY_CARD_ITEMS_LIMIT) {
+							break;
 						}
+						SearchResult result = SearchHistoryAPI.createSearchResult(app, entry, phrase);
+						rows.add(new QuickSearchListItem(app, result));
+						count++;
 					}
 					rows.add(new QuickSearchButtonListItem(app, R.drawable.ic_action_history,
 							getString(R.string.shared_string_view_all), v -> {

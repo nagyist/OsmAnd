@@ -150,8 +150,10 @@ public class SearchHistoryHelper {
 			PointDescription description = entry.getName();
 
 			boolean exists = isPointDescriptionExists(description);
+			boolean visibleSource = !onlyEnabledSources
+					|| (!isMissingGpxFile(description, exists) && isHistoryEnabled(entry.getSource()));
 			if ((includeDeleted || exists)
-					&& (!onlyEnabledSources || isHistoryEnabled(entry.getSource()))
+					&& visibleSource
 					&& (source == null || entry.getSource() == source)) {
 				if (!onlyPoints || (!description.isPoiType() && !description.isCustomPoiFilter())) {
 					entries.add(entry);
@@ -166,6 +168,10 @@ public class SearchHistoryHelper {
 			case SEARCH -> app.getSettings().SEARCH_HISTORY.get();
 			case NAVIGATION -> app.getSettings().NAVIGATION_HISTORY.get();
 		};
+	}
+
+	private boolean isMissingGpxFile(@NonNull PointDescription description, boolean exists) {
+		return description.isGpxFile() && !exists;
 	}
 
 	private boolean isPointDescriptionExists(@NonNull PointDescription description) {
@@ -188,6 +194,10 @@ public class SearchHistoryHelper {
 
 		SearchPhrase phrase = SearchPhrase.emptyPhrase();
 		for (HistoryEntry entry : getHistoryEntries(source, onlyPoints, includeDeleted)) {
+			PointDescription description = entry.getName();
+			if (isMissingGpxFile(description, isPointDescriptionExists(description))) {
+				continue;
+			}
 			SearchResult result = SearchHistoryAPI.createSearchResult(app, entry, phrase);
 			searchResults.add(result);
 		}
