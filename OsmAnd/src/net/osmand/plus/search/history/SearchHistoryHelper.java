@@ -1,5 +1,6 @@
 package net.osmand.plus.search.history;
 
+import static net.osmand.plus.settings.enums.HistorySource.NAVIGATION;
 import static net.osmand.plus.settings.enums.HistorySource.SEARCH;
 import static net.osmand.search.core.SearchCoreFactory.SEARCH_AMENITY_TYPE_PRIORITY;
 
@@ -146,11 +147,16 @@ public class SearchHistoryHelper {
 			checkLoadedEntries();
 		}
 		List<HistoryEntry> entries = new ArrayList<>();
+		boolean searchHistoryEnabled = app.getSettings().SEARCH_HISTORY.get();
+		boolean navigationHistoryEnabled = app.getSettings().NAVIGATION_HISTORY.get();
+
 		for (HistoryEntry entry : loadedEntries) {
 			PointDescription description = entry.getName();
 			boolean exists = isPointDescriptionExists(description);
+			boolean historyEnabled = entry.getSource() == SEARCH && searchHistoryEnabled
+					|| entry.getSource() == NAVIGATION && navigationHistoryEnabled;
 			if ((includeDeleted || exists)
-					&& (!onlyEnabledSources || isHistoryEnabled(entry.getSource()))
+					&& (!onlyEnabledSources || historyEnabled)
 					&& (source == null || entry.getSource() == source)) {
 				if (!onlyPoints || (!description.isPoiType() && !description.isCustomPoiFilter())) {
 					entries.add(entry);
@@ -453,22 +459,26 @@ public class SearchHistoryHelper {
 			object = historyObject.getObject();
 		}
 		if (object instanceof Amenity amenity) {
-			String lang = app.getSettings().MAP_PREFERRED_LOCALE.get();
-			boolean transliterate = app.getSettings().MAP_TRANSLITERATE_NAMES.get();
-			entry.setObjectType(ObjectType.POI);
-			String displayName = Amenity.getPoiStringWithoutType(amenity, lang, transliterate);
-			if (!Algorithms.isEmpty(displayName)) {
-				entry.setDisplayName(displayName);
-			}
-			entry.setTypeName(amenity.getType() != null ? amenity.getSubTypeStr() : amenity.getSubType());
-			if (amenity.getType() != null) {
-				entry.setPoiCategoryKey(amenity.getType().getKeyName());
-			}
-			entry.setPoiSubtypeKey(amenity.getSubType());
-			entry.setOpeningHours(amenity.getOpeningHours());
-			entry.setPhotoUrl(amenity.getWikiIconUrl());
-			entry.setOsmId(amenity.getOsmId());
+			applyAmenityMetadata(entry, amenity);
 		}
+	}
+
+	private void applyAmenityMetadata(@NonNull HistoryEntry entry, Amenity amenity) {
+		String lang = app.getSettings().MAP_PREFERRED_LOCALE.get();
+		boolean transliterate = app.getSettings().MAP_TRANSLITERATE_NAMES.get();
+		entry.setObjectType(ObjectType.POI);
+		String displayName = Amenity.getPoiStringWithoutType(amenity, lang, transliterate);
+		if (!Algorithms.isEmpty(displayName)) {
+			entry.setDisplayName(displayName);
+		}
+		entry.setTypeName(amenity.getType() != null ? amenity.getSubTypeStr() : amenity.getSubType());
+		if (amenity.getType() != null) {
+			entry.setPoiCategoryKey(amenity.getType().getKeyName());
+		}
+		entry.setPoiSubtypeKey(amenity.getSubType());
+		entry.setOpeningHours(amenity.getOpeningHours());
+		entry.setPhotoUrl(amenity.getWikiIconUrl());
+		entry.setOsmId(amenity.getOsmId());
 	}
 
 	private void applySearchResultMetadata(@NonNull HistoryEntry entry, @NonNull SearchResult searchResult) {
