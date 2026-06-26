@@ -191,6 +191,45 @@ public class HistoryEntry {
 		osmId = entry.osmId;
 	}
 
+	public void fillMissingMetadataFrom(@NonNull HistoryEntry entry) {
+		if (objectType == null) {
+			objectType = entry.objectType;
+		}
+		if (cityType == null) {
+			cityType = entry.cityType;
+		}
+		if (Algorithms.isEmpty(displayName)) {
+			displayName = entry.displayName;
+		}
+		if (Algorithms.isEmpty(poiCategoryKey)) {
+			poiCategoryKey = entry.poiCategoryKey;
+		}
+		if (Algorithms.isEmpty(poiSubtypeKey)) {
+			poiSubtypeKey = entry.poiSubtypeKey;
+		}
+		if (Algorithms.isEmpty(typeName)) {
+			typeName = entry.typeName;
+		}
+		if (Algorithms.isEmpty(address)) {
+			address = entry.address;
+		}
+		if (Algorithms.isEmpty(relatedObjectName)) {
+			relatedObjectName = entry.relatedObjectName;
+		}
+		if (Algorithms.isEmpty(openingHours)) {
+			openingHours = entry.openingHours;
+		}
+		if (Algorithms.isEmpty(alternateName)) {
+			alternateName = entry.alternateName;
+		}
+		if (Algorithms.isEmpty(photoUrl)) {
+			photoUrl = entry.photoUrl;
+		}
+		if (osmId == null) {
+			osmId = entry.osmId;
+		}
+	}
+
 	public boolean hasMetadata() {
 		return objectType != null || cityType != null || !Algorithms.isEmpty(displayName) || !Algorithms.isEmpty(typeName)
 				|| !Algorithms.isEmpty(address) || !Algorithms.isEmpty(relatedObjectName)

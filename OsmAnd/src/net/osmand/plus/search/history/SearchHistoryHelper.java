@@ -312,6 +312,7 @@ public class SearchHistoryHelper {
 				HistoryEntry existingModel = map.get(key);
 				if (existingModel != null) {
 					if (model.hasMetadata()) {
+						model.fillMissingMetadataFrom(existingModel);
 						existingModel.copyMetadataFrom(model);
 					}
 					existingModel.markAsAccessed(System.currentTimeMillis());
@@ -436,6 +437,10 @@ public class SearchHistoryHelper {
 
 	private void applyObjectMetadata(@NonNull HistoryEntry entry, @NonNull PointDescription name,
 			@Nullable Object object) {
+		if (object instanceof HistoryEntry historyEntry) {
+			entry.copyMetadataFrom(historyEntry);
+			return;
+		}
 		entry.setDisplayName(name.getSimpleName(app, false));
 		if (!Algorithms.isEmpty(name.getTypeName())) {
 			entry.setTypeName(name.getTypeName());
