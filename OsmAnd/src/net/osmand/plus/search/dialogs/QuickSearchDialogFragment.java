@@ -2130,7 +2130,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 				List<QuickSearchListItem> rows = new ArrayList<>();
 				boolean historyEnabled = settings.SEARCH_HISTORY.get() || settings.NAVIGATION_HISTORY.get();
 				if (historyEnabled && !historySearchFragment.isHistoryCollapsed()) {
-					List<HistoryEntry> entries = app.getSearchHistoryHelper().getVisibleHistoryEntries(null, false, true);
+					List<HistoryEntry> entries = app.getSearchHistoryHelper().getVisibleHistoryEntries(null, false, false);
 					entries.sort((first, second) -> Long.compare(second.getLastAccessTime(), first.getLastAccessTime()));
 					SearchPhrase phrase = SearchPhrase.emptyPhrase(searchUICore.getSearchSettings());
 					int count = 0;
