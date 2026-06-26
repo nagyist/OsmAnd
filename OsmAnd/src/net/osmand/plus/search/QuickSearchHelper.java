@@ -477,9 +477,6 @@ public class QuickSearchHelper implements ResourceListener {
 
 		@NonNull
 		public static SearchResult createSearchResult(OsmandApplication app, HistoryEntry entry, SearchPhrase phrase) {
-			if (phrase.getSettings() == null) {
-				phrase = SearchPhrase.emptyPhrase(app.getSearchUICore().getCore().getSearchSettings());
-			}
 			SearchResult result = new HistorySearchResult(phrase, entry);
 
 			PointDescription description = entry.getName();
