@@ -1098,7 +1098,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private View createTopFilterChip(@NonNull PoiUIFilter filter) {
 		boolean resultCategoryFilterChip = topFilterChipsForResultCategories;
 		LinearLayout chip = new LinearLayout(requireContext());
-		chip.setGravity(Gravity.CENTER_VERTICAL);
+		chip.setGravity(Gravity.CENTER);
 		chip.setOrientation(LinearLayout.HORIZONTAL);
 		chip.setBackgroundResource(R.drawable.bg_search_toolbar_chip);
 		chip.setClickable(true);
@@ -1118,6 +1118,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		title.setTextSize(14);
 		title.setSingleLine(true);
 		title.setEllipsize(TextUtils.TruncateAt.END);
+		title.setGravity(Gravity.CENTER);
 		chip.addView(title, new LinearLayout.LayoutParams(
 				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
