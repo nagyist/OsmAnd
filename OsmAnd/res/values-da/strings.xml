@@ -5752,7 +5752,7 @@
     <string name="labels_position">Etiketters position</string>
     <string name="customize_grid_color">Tilpas gitterfarve</string>
     <string name="route_members">Medlemmer</string>
-    <string name="multipoligon_related">Beslægtet</string>
+    <string name="multipoligon_related">Relateret</string>
     <string name="route_part_of">Del af</string>
     <string name="cant_load_map_styles">Kan ikke indlæse kortstile.</string>
     <string name="add_to_navigation">Tilføj til navigation</string>
