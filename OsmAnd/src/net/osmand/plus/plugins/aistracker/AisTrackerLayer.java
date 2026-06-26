@@ -48,7 +48,7 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 	public static final int START_ZOOM_SHOW_SHAPE = 16;
 	public static final int START_ZOOM_SHOW_DIRECTION = 10;
 
-	private static final long AIS_NATIVE_RENDER_REFRESH_INTERVAL_MS = 1000L;
+	private static final long AIS_RENDER_REFRESH_INTERVAL_MS = 1000L;
 
 	private final AisTrackerPlugin plugin = PluginsHelper.requirePlugin(AisTrackerPlugin.class);
 	private final Paint bitmapPaint = new Paint();
@@ -59,8 +59,8 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 	private Bitmap aisRestBitmap;
 	private SingleSkImage aisRestImage;
 	private float textScale = 1f;
-	private int lastNativeRenderZoom = -1;
-	private long lastNativeRenderRefreshTimeMs;
+	private int lastRenderZoom = -1;
+	private long lastRenderRefreshTimeMs;
 
 	public AisTrackerLayer(@NonNull Context context) {
 		super(context);
@@ -92,8 +92,8 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			aisRestImage = null;
 		}
 		objectDrawables.clear();
-		lastNativeRenderZoom = -1;
-		lastNativeRenderRefreshTimeMs = 0;
+		lastRenderZoom = -1;
+		lastRenderRefreshTimeMs = 0;
 	}
 
 	@Override
@@ -230,8 +230,8 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			return false;
 		}
 		long now = System.currentTimeMillis();
-		return tileView.getZoom() != lastNativeRenderZoom
-				|| now - lastNativeRenderRefreshTimeMs >= AIS_NATIVE_RENDER_REFRESH_INTERVAL_MS;
+		return tileView.getZoom() != lastRenderZoom
+				|| now - lastRenderRefreshTimeMs >= AIS_RENDER_REFRESH_INTERVAL_MS;
 	}
 
 	private void refreshNativeRenderData(@NonNull List<AisObject> aisObjects) {
@@ -246,8 +246,8 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 
 	private void updateNativeRenderRefreshState() {
 		OsmandMapTileView tileView = getTileView();
-		lastNativeRenderZoom = tileView != null ? tileView.getZoom() : -1;
-		lastNativeRenderRefreshTimeMs = System.currentTimeMillis();
+		lastRenderZoom = tileView != null ? tileView.getZoom() : -1;
+		lastRenderRefreshTimeMs = System.currentTimeMillis();
 	}
 
 	@Override
