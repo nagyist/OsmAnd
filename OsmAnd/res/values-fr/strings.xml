@@ -6128,4 +6128,12 @@
     <string name="route_calculation_method_standard_only_desc">Utilise toujours l\'itinéraire standard. C\'est plus lent, mais cela permet de naviguer avec des cartes datant de différentes périodes.</string>
     <string name="route_calculation_method_fast_only">Rapide uniquement</string>
     <string name="route_calculation_method_fast_only_desc">Utilise toujours l\'itinéraire le plus rapide. Le calcul s\'interrompt et demande des mises à jour si les dates de la carte ne correspondent pas.</string>
+    <string name="ais_own_object">Paramètres d\'affichage de son propre objet AIS</string>
+    <string name="ais_own_object_description">Si le navire est équipé d\'un émetteur AIS, son signal sera reçu en même temps que ceux des autres navires équipés d\'un AIS. Le traitement particulier du signal AIS du navire est défini ici.</string>
+    <string name="ais_own_mmsi">Disposer de son propre numéro MMSI (Maritime Mobile Service Identity)</string>
+    <string name="ais_own_mmsi_description">Identifiez le MMSI (numéro à 9 chiffres) de votre propre objet AIS.</string>
+    <string name="ais_display_own_position">Indiquez si l\'objet AIS correspondant doit être affiché.</string>
+    <string name="ais_display_own_position_description">En règle générale, OsmAnd affiche votre position. L\'affichage supplémentaire de votre objet AIS peut prêter à confusion et peut être désactivé ici.</string>
+    <string name="ais_receive_in_background">Recevoir les données AIS même lorsque OsmAnd est en pause.</string>
+    <string name="ais_receive_in_background_description">Si cette option est activée, le récepteur de messages AIS continue de fonctionner même si OsmAnd est en pause ou en arrière-plan. Si elle est désactivée, aucun message n\'est reçu lorsque OsmAnd est en arrière-plan.</string>
 </resources>
