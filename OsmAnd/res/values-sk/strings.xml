@@ -6221,4 +6221,12 @@
     <string name="free_download_limit_reached">Bol dosiahnutý limit sťahovania zdarma</string>
     <string name="free_download_limit_reached_description">Odomknite neobmedzené sťahovania máp a aktualizácií</string>
     <string name="get_unlimited_downloads">Získať neobmedzené sťahovania</string>
+    <string name="ais_own_object">Nastavenie pre zobrazenie vlastného objektu AIS</string>
+    <string name="ais_own_object_description">Ak vlastné plavidlo má vysielač AIS, potom bude signál prijímaný spolu so signálmi iných plavidiel s AIS. Zaobchádzanie s vlastným signálom AIS sa nastavuje tu.</string>
+    <string name="ais_own_mmsi">Vlastné MMSI (Identita námornej mobilnej služby)</string>
+    <string name="ais_own_mmsi_description">Identifikujte MMSI (9-miestne číslo) vlastného objektu AIS.</string>
+    <string name="ais_display_own_position">Určite, či má byť vlastný objekt AIS zobrazený.</string>
+    <string name="ais_display_own_position_description">OsmAnd štandardne zobrazuje vlastnú polohu. Dodatočné zobrazenie aj vlastného objektu AIS môže byť mätúce a je možné ho tu vypnúť.</string>
+    <string name="ais_receive_in_background">Prijímať údaje AIS aj keď je OsmAnd pozastavený.</string>
+    <string name="ais_receive_in_background_description">Ak je zapnuté, prijímač správ AIS zostane zapnutý aj ak je OsmAnd pozastavený alebo na pozadí. Ak je vypnuté, OsmAnd na pozadí nebude prijímať žiadne správy.</string>
 </resources>
