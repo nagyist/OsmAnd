@@ -587,7 +587,15 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 			}
 			return;
 		}
-		view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
+		if (position == 0 && getCount() == 1) {
+			view.setBackgroundResource(R.drawable.bg_quick_search_explore_card);
+		} else if (position == 0) {
+			view.setBackgroundResource(R.drawable.bg_quick_search_explore_card_top);
+		} else if (position == getCount() - 1) {
+			view.setBackgroundResource(R.drawable.bg_quick_search_explore_card_bottom);
+		} else {
+			view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
+		}
 	}
 
 	private void setupDivider(int position,

@@ -147,6 +147,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private View filterChip;
 	private View sortChip;
 	private View searchAroundChip;
+	private View advancedCoordinatesCard;
 	private View searchResultChipsScroll;
 	private View topFiltersChipScroll;
 	private LinearLayout topFiltersChipContainer;
@@ -393,6 +394,13 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		searchResultChipsScroll = view.findViewById(R.id.search_result_chips_scroll);
 		topFiltersChipScroll = view.findViewById(R.id.top_filters_chip_scroll);
 		topFiltersChipContainer = view.findViewById(R.id.top_filters_chip_container);
+		advancedCoordinatesCard = view.findViewById(R.id.advanced_coordinates_card);
+		ImageView advancedCoordinatesIcon = view.findViewById(R.id.advanced_coordinates_icon);
+		int advancedCoordinatesIconColorId = nightMode ? R.color.osmand_orange_dark : R.color.osmand_orange;
+		advancedCoordinatesIcon.setImageDrawable(iconsCache.getIcon(R.drawable.ic_action_coordinates_location,
+				advancedCoordinatesIconColorId));
+		advancedCoordinatesCard.setOnClickListener(v -> showAdvancedCoordinatesSearch());
+		updateAdvancedCoordinatesCard();
 		updateTopFilterChips();
 
 		view.findViewById(R.id.buttonToolbar).setClickable(false);
@@ -855,8 +863,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		PoiUIFilter poiUIFilter = ((QuickSearchListAdapter) mainSearchFragment.getAdapter()).getPoiUIFilter();
 		if (poiUIFilter != null) {
 			showFilterOnMap(poiUIFilter, getString(R.string.popular_places));
-		} else if (foundPartialLocation) {
-			QuickSearchCoordinatesFragment.showInstance(QuickSearchDialogFragment.this, searchPhrase.getFirstUnknownSearchWord());
 		} else if (searchPhrase.isNoSelectedType() || searchPhrase.isLastWord(POI_TYPE)) {
 			PoiUIFilter filter;
 			Object object = searchPhrase.isLastWord(POI_TYPE) ? searchPhrase.getLastSelectedWord().getResult().object : null;
@@ -952,6 +958,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		updateSearchAroundChip();
 		updateSortChip();
 		updateTopFilterChipsSelection();
+		updateAdvancedCoordinatesCard();
 	}
 
 	void refreshFilterChipState() {
@@ -1771,12 +1778,14 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			searchView.setVisibility(View.VISIBLE);
 		}
 		updateTopFilterChips();
+		updateAdvancedCoordinatesCard();
 	}
 
 	private void setButtonToolbarVisible(boolean visible) {
 		buttonToolbarView.setVisibility(visible ? View.VISIBLE : View.GONE);
 		updateShowOnMapFab();
 		updateTopFilterChips();
+		updateAdvancedCoordinatesCard();
 	}
 
 	private boolean isSearchViewVisible() {
@@ -2646,8 +2655,23 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 				}
 				updateSendEmptySearchBottomBar(false);
 			}
-			mainSearchFragment.updateListAdapter(rows, append);
+			mainSearchFragment.updateListAdapter(rows, append, false);
 			updateTopFilterChips();
+		}
+	}
+
+	private void updateAdvancedCoordinatesCard() {
+		if (advancedCoordinatesCard != null) {
+			boolean visible = foundPartialLocation && isSearchViewVisible();
+			advancedCoordinatesCard.setVisibility(visible ? View.VISIBLE : View.GONE);
+		}
+	}
+
+	private void showAdvancedCoordinatesSearch() {
+		if (searchUICore != null) {
+			SearchPhrase searchPhrase = searchUICore.getPhrase();
+			QuickSearchCoordinatesFragment.showInstance(QuickSearchDialogFragment.this,
+					searchPhrase.getFirstUnknownSearchWord());
 		}
 	}
 
