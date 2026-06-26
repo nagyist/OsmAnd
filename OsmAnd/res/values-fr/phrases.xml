@@ -543,7 +543,7 @@
     <string name="poi_healthcare_yes">Centre de soins médicaux</string>
     <string name="poi_bookmaker">Preneur de paris</string>
     <string name="poi_running_track">Piste de course</string>
-    <string name="poi_base">BASE jump</string>
+    <string name="poi_base">Base jumping</string>
     <string name="poi_roller_skating">Patinage à roulettes</string>
     <string name="poi_historic_cannon">Canon historique</string>
     <string name="poi_club_automobile">Club automobile</string>
@@ -709,7 +709,7 @@
     <string name="poi_junction">Carrefour</string>
     <string name="poi_forest">Forêt</string>
     <string name="poi_landuse_railway">Zone ferroviaire</string>
-    <string name="poi_village_green">Village green (GB)</string>
+    <string name="poi_village_green">Place du village</string>
     <string name="poi_sailing">Navigation à voile</string>
     <string name="poi_charity">Boutique caritative</string>
     <string name="poi_tomb">Sépulture</string>
@@ -2710,7 +2710,7 @@
     <string name="poi_motorcycle_type">Type de moto</string>
     <string name="poi_payment_ep_minipay_yes">Minipay</string>
     <string name="poi_vending_water">Vente d\'eau</string>
-    <string name="poi_fuel_autogas">GPL/LPG</string>
+    <string name="poi_fuel_autogas">GPL</string>
     <string name="poi_crop_rape">Culture : colza</string>
     <string name="poi_animal_shelter_type">Animaux accepté</string>
     <string name="poi_animal_shelter_purpose">Objectif</string>
@@ -3925,7 +3925,7 @@
     <string name="poi_operator_type_cooperative">Type d\'opérateur : coopérative</string>
     <string name="poi_operator_type_consortium">Type d\'opérateur : consortium</string>
     <string name="poi_operator_type_community">Type d\'opérateur : communautaire</string>
-    <string name="poi_operator_type_ngo">Type d\'opérateur : ONG</string>
+    <string name="poi_operator_type_ngo">Type d\'opérateur : ONG</string>
     <string name="poi_operator_type_religious">Type d\'opérateur : religieux</string>
     <string name="poi_operator_type_government">Type d\'opérateur : gouvernemental</string>
     <string name="poi_operator_type_private">Type d\'opérateur : privé</string>
