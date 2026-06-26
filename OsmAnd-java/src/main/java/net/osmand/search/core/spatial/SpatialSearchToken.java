@@ -46,6 +46,10 @@ public class SpatialSearchToken {
 	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
 
 	CollatorStringMatcher collatorMain;
+	// cache for popular split
+	String wordPrefix;
+	CollatorStringMatcher collatorSuffix;
+	
 	int mainNumber = -1;
 	CollatorStringMatcher[] otherMatch;
 
@@ -154,7 +158,8 @@ public class SpatialSearchToken {
 	}
 
 	boolean acceptName(String name) {
-//		System.out.printf("query '%s' matches '%s' %s\n", word, name, collatorMain.matches(name));
+//		System.out.printf("query '%s' matches '%s' %s\n", word, name, collatorMain.matches(name) || 
+//				collatorMain.matches(name.replace(' ', '-')));
 		if (mainNumber > 0) {
 			if (mainNumber == Algorithms.extractFirstIntegerNumber(name)) {
 				return true;
@@ -167,7 +172,24 @@ public class SpatialSearchToken {
 				}
 			}
 		}
-		return collatorMain.matches(name);
+		if (collatorMain.matches(name)) {
+			return true;
+		}
+		// query 'weberstrasse' matches 'weber straße': works for poular suffixes
+		int space = name.indexOf(' ');
+		if (space != -1 && CollatorStringMatcher.cmatches(collatorMain.getCollator(), word, 
+				name.substring(0, space), StringMatcherMode.CHECK_ONLY_STARTS_WITH)) {
+			String prefix = name.substring(0, name.indexOf(' ')); 
+			if (!prefix.equals(wordPrefix)) {
+				wordPrefix = prefix;
+				// could be some issues if number of letter do not match
+				collatorSuffix = new CollatorStringMatcher(word.substring(wordPrefix.length()), StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+			}
+			if (collatorSuffix.matches(name.substring(space + 1))) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static class NameIndexAtomXY {

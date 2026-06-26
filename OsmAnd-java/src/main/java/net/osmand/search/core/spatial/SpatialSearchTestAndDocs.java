@@ -33,10 +33,14 @@ import net.osmand.util.SearchAlgorithms;
 // Document TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
 // bis matching
 // !!! Building interpolation, Street intersection match
+// TESTING 2га нова
+// TESTING 'LangeStraße' (Data 'Lange Straße')
 
 ////////// IN PROGRESS//////////
-// FIXME Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k)
-
+// FIXME 'Daimler strasse' (Data 'daimlerstraße')
+// FIXME Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k) - OPTIMAL OPTIM_LIMIT_INTERSECTIONS
+// TODO Sokak 2 order
+// TODO Filter results boundaries, <Salt Lake City>
 
 // FIXME POI Categories + top poi categories
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
@@ -44,20 +48,18 @@ import net.osmand.util.SearchAlgorithms;
 
 // TO DO
 // TODO POI Categories translations / synonyms
-// TODO Sokak 2 order
-// TODO Filter results boundaries, <Salt Lake City>
-// TODO Ignore same embedded boundary city / county - deduplicate on the fly
-// TODO test: merge boundaries bbox - extend incomplete boundary same id...
 // TODO Progress / cancel
-// TODO Not forget to include regions.ocbf on client
 // TODO Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
 // TODO Inspector stats index_words_dashboard.html
-// TODO Test memory on Android device for slowest query
+// TODO Not forget to include regions.ocbf on client
 
 // TEST IDEAS
-// TODO ? Store wikidata id for boundaries (regions.ocbf) & display them - place=county, place=state ? 
+// TODO test: merge boundaries bbox - extend incomplete boundary same id...
+// TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique) 
+// TODO ? Store wikidata id for boundaries (regions.ocbf) & display them - place=county, place=state ? 
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
+// TODO Test memory on Android device for slowest query
 
 // EXTRA FEATURES
 // TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
@@ -141,6 +143,14 @@ public class SpatialSearchTestAndDocs {
 //		query = "Kelterstraße Kernen im Remstal";
 //		query = "Germany Kelter. Kernen im Remstal";
 		query = "3 Hofäckerstraße Kernen im Remstal";
+		
+		// Weberstraße (33164748) 49.2041 10.7035,  Von-Weber-Straße (4648613942) 49.5609 10.8685
+		query = "Weber Straße"; // TODO +4648613942, -33164748
+//		query = "WeberStraße";  // +33164748, +4648613942
+//		query = "Von Weberstraße"; // +4648613942
+//		query = "53 Langestraße Waiblingen"; // OK !
+		query = "69 Daimler Straße Stuttgart"; // TODO Daimlerstraße 107868593 48.8015 9.2224
+		
 
 		// Building time vs no building
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
@@ -185,7 +195,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-//		pattern = "Ukraine_";
+		pattern = "Ukraine_";
 //		pattern = "Map";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
@@ -194,11 +204,11 @@ public class SpatialSearchTestAndDocs {
 //		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 3 харків";
 //		query = "Нова пошта харків";
-//		query = "2 га Нова вулиця"; // unit test '2га', '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
+//		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
+		query = "2га Нова вулиця"; 
 //		query = "саксаг. 63 28"; // 129-Б, 129б 63/28, 63, 63-28  +'саксаг. 63 28'
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
-		
 //		query = "саксаг. Володимирська"; // intersection
 //		query = "саксаг. тарас."; // intersection
 //		query = "54-та Садова вулиця 8"; // interpolation
@@ -225,16 +235,16 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby Melbourne 18B";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-		pattern = "Us_new-"; 
-		location = new LatLon(40.64946, -74.00682); // loaded
+//		pattern = "Us_new-"; 
+//		location = new LatLon(40.64946, -74.00682); // loaded
 //		location = new LatLon(40.760536, -73.99043);
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
 //		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 //		query = "New York 4 av 8"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
-		query = "New York 4 av 8"; // 160947243
-//		query = "4 ave"; //  unit '4 ave'   
+//		query = "New York 4 av 8"; // 160947243
+//		query = "4th ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		
 		

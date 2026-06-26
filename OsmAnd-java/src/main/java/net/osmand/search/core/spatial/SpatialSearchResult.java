@@ -7,7 +7,6 @@ import java.util.List;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.ObfConstants;
 import net.osmand.data.Amenity;
-import net.osmand.data.Building;
 import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.search.core.HashQuadTree;
@@ -116,9 +115,6 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				return id;
 			}
 			if (first.atom.object != null) {
-				if(first.atom.object instanceof Building) {
-					System.out.print("-");
-				}
 				return ObfConstants.getOsmObjectId(first.atom.object);
 			}
 			return first.atom.id;

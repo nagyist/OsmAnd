@@ -79,8 +79,13 @@ public class NameIndexReader {
 			boolean match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedKey, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
 			// 2. match 2-xx (key) -> 2 (query) - another solution number, NC-42 (key) -> NC (query) or 'NC 42' 2 tokens  
 			if (!match && alignedKey.indexOf('-') != -1) {
-				// check equals substring query
+				// check equals for any substring ('-' is space for collator) - mostly we interested in first part before '-' for equals
 				match = CollatorStringMatcher.cmatches(collator, alignedKey, queryAligned, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+				// case data - '2-x...' query '2xyz', we check that user writes without space
+				if (!match) {
+					String alignedSingleWord = alignedKey.replace("-", "");
+					match = CollatorStringMatcher.cmatches(collator, queryAligned, alignedSingleWord, StringMatcherMode.CHECK_ONLY_STARTS_WITH);
+				}
 			}
 //			match = query.startsWith(key);
 			// 3. incomplete query match
