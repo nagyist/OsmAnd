@@ -5626,7 +5626,7 @@
     <string name="customize_grid_color">Rácsszín testreszabása</string>
     <string name="route_members">Tagok</string>
     <string name="route_part_of">Része ennek:</string>
-    <string name="multipoligon_related">Összefüggő</string>
+    <string name="multipoligon_related">Érintett</string>
     <string name="cant_load_map_styles">Térképstílusok betöltése sikertelen.</string>
     <string name="add_to_navigation">Hozzáadás a navigációhoz</string>
     <string name="msg_gpx_waypoints_copied_to_favorites">GPX-útpontok (%1$d) a kedvencek közé másolva.</string>
