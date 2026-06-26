@@ -169,7 +169,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 						add += " elo " + a.getTravelEloNumber() + " " + a.getCityFromTagGroups("");
 					}
 				} else if (parent != null) {
-					add += " " + parent.object.getName();
+//					add += " " + parent.object.getName();
 				}
 				LatLon resLoc = atom.getResultLocation();
 				return String.format("%s %s (%s) %.4f %.4f ", words, atom.typeStr() + " " + atom.object.getName() + add,

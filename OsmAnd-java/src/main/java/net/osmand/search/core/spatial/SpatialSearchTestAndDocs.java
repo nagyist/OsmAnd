@@ -137,6 +137,7 @@ public class SpatialSearchTestAndDocs {
 		String query = "Berlin hauptstrasse"; // slow
 //		query = "Kelterstraße Kernen im Remstal";
 //		query = "Germany Kelter. Kernen im Remstal";
+		query = "3 Hofäckerstraße Kernen im Remstal";
 
 		// Building time vs no building
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
@@ -181,7 +182,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-		pattern = "Ukraine_";
+//		pattern = "Ukraine_";
 //		pattern = "Map";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
@@ -220,13 +221,14 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-		pattern = "Us_new-"; // new-york, new-jersey
+//		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		location = new LatLon(40.64946, -74.00682);
-		location = new LatLon(40.64946, -73.50682);
+//		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
 //		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
-		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
+//		query = "New York 4 av 8"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
+//		query = "New York 4 av"; 
 //		query = "4 ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		

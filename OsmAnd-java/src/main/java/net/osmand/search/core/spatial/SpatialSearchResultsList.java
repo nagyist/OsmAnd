@@ -226,7 +226,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		// check many buildings on same street possibly unit or ref
 		if (bldCheckMap != null) {
 			Iterator<Entry<NameIndexAtom, String>> it = bldCheckMap.entrySet().iterator();
-			while(it.hasNext()) {
+			// usually map is just single street
+			while (it.hasNext()) {
 				Entry<NameIndexAtom, String> e = it.next();
 				NameIndexAtom str = e.getKey();
 				String bldName = e.getValue();
@@ -247,8 +248,16 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					skipResults.put(indx, true);
 					break;
 				} else {
-					if (bldObj.isInterpolation()) {
-						preciseLocations.put(indx, bldObj.getLocation(bldObj.interpolation(bldName)));
+					// assign buildings
+					for (int i = 0; i < tCount; i++) {
+						NameIndexAtom bld = linearResults.get(indx * tCount + i);
+						if (bld.buildingInd >= 0 && str.id == bld.id) {
+							bld.object = bldObj;
+							// bld.name = bldObj.getName();
+							if (bldObj.isInterpolation()) {
+								preciseLocations.put(indx, bldObj.getLocation(bldObj.interpolation(bldName)));
+							}
+						}
 					}
 				}
 			}
@@ -474,6 +483,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				|| (approximateRes > settings.OPTIM_LIMIT_POI_OR_STREET_INTERSECTIONS);
 		boolean noPoiIntersect = !settings.SEARCH_POI_INTERSECTIONS 
 				|| (approximateRes > settings.OPTIM_LIMIT_POI_OR_STREET_INTERSECTIONS);
+		boolean noStreetPoiIntersect = (approximateRes > settings.OPTIM_LIMIT_POI_STREET_INTERSECTIONS);
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 			if (pa.id == a.id) {
@@ -492,6 +502,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				return false;
 			}
 			if (pa.streetBuilding() && a.streetBuilding() && noStreetIntersect) {
+				return false;
+			}
+			if (noStreetPoiIntersect && a.type == SpatialSearchToken.POI_TYPE && pa.streetBuilding() ) {
+				// could be different for poi with bbox 
+				return false;
+			} else if (noStreetPoiIntersect && pa.type == SpatialSearchToken.POI_TYPE && a.streetBuilding() ) {
 				return false;
 			}
 			if (noPoiIntersect && a.type == SpatialSearchToken.POI_TYPE && pa.type == a.type) {

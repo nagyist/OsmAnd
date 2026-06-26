@@ -1180,7 +1180,7 @@ public class BinaryMapPoiReaderAdapter {
 					if (list != null && list.size() > 0) {
 						am.addTagGroup(tagGroupId, list);
 					} else {
-						System.err.printf("Error tag group %d %s %d %d\n", tagGroupId, am.getName(), x, y);
+//						System.err.printf("Error tag group %d %s %d %d\n", tagGroupId, am.getName(), x, y);
 					}
 				}
 				codedIS.popLimit(old);
