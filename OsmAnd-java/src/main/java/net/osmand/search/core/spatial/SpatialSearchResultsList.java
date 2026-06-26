@@ -34,6 +34,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	final int tCount;
 	
 	int MIN_ELO_RATING = Amenity.DEFAULT_ELO;
+	
+	public static long PARTIAL_ID_MATCH = -32; // special flag for building partial match
 
 	// NameIndexAtom[][] -- should be double array to store list of combinations
 	List<NameIndexAtom> linearResults = new ArrayList<>();
@@ -199,9 +201,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	
 	private void calcBuilding(int indx, Map<String, Building> bldCheckCache) {
 		Map<NameIndexAtom, String> bldCheckMap = null;
+		
 		for (int i = 0; i < tCount; i++) {
 			NameIndexAtom bld = linearResults.get(indx * tCount + i);
 			if (bld.buildingInd >= 0) {
+				
 				int strTokenInd = getTokenByOriginalOrder(bld.buildingInd);
 				if (strTokenInd < 0) {
 					skipResults.put(indx, true);
@@ -209,6 +213,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 				NameIndexAtom str = linearResults.get(indx * tCount + strTokenInd);
 				if (str.id != bld.id) {
+					if(bld.id == 1284571918336l) {
+						System.out.println("-------");
+					}
 					continue;
 				}
 				if (bldCheckMap == null) {
@@ -254,10 +261,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 						if (bld.buildingInd >= 0 && str.id == bld.id) {
 							bld.object = bldObj;
 							// bld.name = bldObj.getName();
-							if (bldObj.isInterpolation()) {
-								preciseLocations.put(indx, bldObj.getLocation(bldObj.interpolation(bldName)));
-							}
 						}
+					}
+					if (bldObj.isInterpolation()) {
+						preciseLocations.put(indx, bldObj.getLocation(bldObj.interpolation(bldName)));
 					}
 				}
 			}
@@ -268,7 +275,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	
 	private Building checkBuilding(Street street, String bld) {
 		Building interpolation = null;
-		Building partial = null;
+		Building partial2 = null;
+		Building partial1 = null;
 		Set<String> original = SearchAlgorithms.getBuildingCompareSet(bld);
 		for (Building b : street.getBuildings()) {
 			if (b.isInterpolation()) {
@@ -284,23 +292,27 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					return b;
 				}
 				if (cmp.size() == original.size() + 1) {
-					// case data only 18 present, 18-B searched
+					// case data only 18-B present, 18 searched
 					if (cmp.containsAll(original)) {
-						partial = b;
+						partial1 = b;
 					}
 				} else if (cmp.size() + 1 == original.size()) {
-					// case data only 18-B present, 18 searched 
+					// case data only 18 present, 18-B searched 
 					if (original.containsAll(cmp)) {
-						partial = b;
+						partial2 = b;
 					}
 				}
 			}
 		}
-		if (partial != null) {
-			return partial;
+		if (partial1 != null) {
+			return partial1;
 		}
 		if (interpolation != null) {
 			return interpolation;
+		}
+		if (partial2 != null) {
+			partial2.setId(PARTIAL_ID_MATCH);
+			return partial2;
 		}
 		return null;
 	}
@@ -416,9 +428,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				});
 				limitByRadius--;
 			}
-			System.out.printf("Approximate /\\: %,d -> %,d (%d) - %.1f ms %s (%,d) + '%s'\n", countApproximate[1],
-					countApproximate[0], limitByRadius, (System.nanoTime() - nt) / 1e6, token.word, token.atoms.size(),
-					parent.toString());
+			System.out.printf("Approximate (%.0f ms) /\\: %d (%,d) -> %d (%,d): '%s' (%,d) + %s (%,d)\n", 
+					(System.nanoTime() - nt) / 1e6,
+					ctx.limitLocationBboxes.length, countApproximate[1], limitByRadius,countApproximate[0],  
+					token.originalWord, token.atoms.size(),
+					parent.wordTokens(), parent.getCombinations());
 
 			final int lmtNearby = limitByRadius;
 			iterateIntersection(parent, token, (indx, atom) -> {
@@ -431,8 +445,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 				addResult(parent, indx, atom);
 			});
-			System.out.printf("Actual /\\: %,d res - %.1f ms %s (%,d) + '%s'\n", getCombinations(), (System.nanoTime() - nt) / 1e6,
-					token.word, token.atoms.size(),  parent.toString());
+			System.out.printf("Actual (%.0f ms) /\\: %,d res \n", (System.nanoTime() - nt) / 1e6, getCombinations());
 		}		
 	}
 
@@ -489,12 +502,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			if (pa.id == a.id) {
 				continue;
 			}
-			// pa and a using same tokens for street & house but different streets - same as below
-//			if (parent.tokens[i].originalOrder == a.buildingInd) {
-//				return false;
-//			} else if (pa.buildingInd == token.originalOrder) {
-//				return false;
-//			}
+			// pa and a using same tokens for street & house but different streets / poi - same as below
+			if (parent.tokens[i].originalOrder == a.buildingInd) {
+				return false;
+			} else if (pa.buildingInd == token.originalOrder) {
+				return false;
+			}
 			// don't intersect building with other street
 			if ((pa.buildingInd >= 0) && a.streetBuilding()) {
 				return false;
@@ -576,13 +589,18 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 
 	public String toString(boolean extended) {
+		List<String> words = wordTokens();
+		return String.format("Results %d tokens %,d%s - %s %s", tCount, getCombinations(),
+				finalResult == null ? "" : String.format(" (%,d unique)", finalResult.size()), 
+				words, !extended ? "" : (" results: " + linearResults));
+	}
+
+	public List<String> wordTokens() {
 		List<String> words = new ArrayList<>();
 		for (SpatialSearchToken t : tokens) {
 			words.add(t.originalWord);
 		}
-		return String.format("Results %d tokens %,d%s - %s %s", tCount, getCombinations(),
-				finalResult == null ? "" : String.format(" (%,d unique)", finalResult.size()), 
-				words, !extended ? "" : (" results: " + linearResults));
+		return words;
 	}
 	
 	

@@ -146,6 +146,23 @@ public class SpatialSearchContext {
 				indxInd++;
 			}
 		}
+		System.out.println(tokenStats(tokens).toString());
+	}
+
+	private StringBuilder tokenStats(List<SpatialSearchToken> tokens) {
+		StringBuilder s = new StringBuilder("Token stats: ");
+		TLongHashSet ids = new TLongHashSet();
+		for (SpatialSearchToken t : tokens) {
+			int level0 = 0;
+			for (NameIndexAtom at : t.atoms) {
+				ids.add(at.id);
+				if (at.nearbyRadius <= 1) {
+					level0++;
+				}
+			}
+			s.append(String.format("'%s' (all %,d, 0-1th %,d), ", t.word, t.atoms.size(), level0));
+		}
+		return s;
 	}
 	
 	private record ReadTokens(boolean init, boolean readCommonTokens, boolean readFreqTokens) {
@@ -505,6 +522,7 @@ public class SpatialSearchContext {
 				break;
 			}
 		}
+//		if(nearByType > 0) {return; }
 		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, streetCity, other, otherFound, coords,
 				nearByType);
 		t.addAtom(atom);

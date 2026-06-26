@@ -36,10 +36,14 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////// IN PROGRESS//////////
 // FIXME Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k)
+
+
 // FIXME POI Categories + top poi categories
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
-//       Combine regions.ocbf (boundary)
+//    Combine regions.ocbf (boundary)
+
 // TO DO
+// TODO POI Categories translations / synonyms
 // TODO Sokak 2 order
 // TODO Filter results boundaries, <Salt Lake City>
 // TODO Ignore same embedded boundary city / county - deduplicate on the fly
@@ -47,7 +51,6 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Progress / cancel
 // TODO Not forget to include regions.ocbf on client
 // TODO Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
-// TODO POI Categories translations / synonyms
 // TODO Inspector stats index_words_dashboard.html
 // TODO Test memory on Android device for slowest query
 
@@ -222,13 +225,15 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby Melbourne 18B";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-//		location = new LatLon(40.64946, -74.00682);
+		pattern = "Us_new-"; 
+		location = new LatLon(40.64946, -74.00682); // loaded
+//		location = new LatLon(40.760536, -73.99043);
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
 //		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 //		query = "New York 4 av 8"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
-//		query = "New York 4 av"; 
+		query = "New York 4 av 8"; // 160947243
 //		query = "4 ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		

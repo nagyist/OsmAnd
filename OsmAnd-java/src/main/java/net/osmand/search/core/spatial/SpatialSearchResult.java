@@ -7,6 +7,7 @@ import java.util.List;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.ObfConstants;
 import net.osmand.data.Amenity;
+import net.osmand.data.Building;
 import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.search.core.HashQuadTree;
@@ -18,16 +19,21 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	final int parentInd;
 	final SpatialSearchResultsList parent;
 	final List<SpatialSearchResultRef> objs = new ArrayList<>();
+	final LatLon preciseLatlon; 
+	final boolean incompleteMatch; // building
 	int level;
-	LatLon preciseLatlon; 
 	
 	SpatialSearchResult(SpatialSearchResultsList parentList, int parentInd, LatLon preciseLatlon) {
 		this.parentInd = parentInd;
 		this.parent = parentList;
 		this.preciseLatlon = preciseLatlon;
-		
+		boolean incomplete = false;
 		for (int i = 0; i < parent.tCount; i++) {
 			NameIndexAtom atom = parent.linearResults.get(parentInd * parentList.tCount + i);
+			if (atom.object != null && atom.object.getId() != null
+					&& atom.object.getId().longValue() == SpatialSearchResultsList.PARTIAL_ID_MATCH) {
+				incomplete = true;
+			}
 			SpatialSearchToken token = parent.tokens[i];
 			SpatialSearchResultRef ref = null;
 			// find same object or object & parent 
@@ -53,6 +59,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			}
 			ref.tokens.add(token);
 		}
+		this.incompleteMatch = incomplete;
 		sortObjects();
 	}
 	
@@ -60,14 +67,13 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		for (SpatialSearchResultRef r : objs) {
 			Collections.sort(r.tokens, (o1, o2) -> Integer.compare(o1.originalOrder, o2.originalOrder));
 		}
-		Collections.sort(objs,
-				(o1, o2) -> {
-					int r = Integer.compare(o1.typeOrder(), o2.typeOrder());
-					if (r != 0) {
-						return r;
-					}
-					return Integer.compare(o1.tokens.get(0).originalOrder, o2.tokens.get(0).originalOrder);
-				});
+		Collections.sort(objs, (o1, o2) -> {
+			int r = Integer.compare(o1.typeOrder(), o2.typeOrder());
+			if (r != 0) {
+				return r;
+			}
+			return Integer.compare(o1.tokens.get(0).originalOrder, o2.tokens.get(0).originalOrder);
+		});
 	}
 
 	
@@ -110,6 +116,9 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				return id;
 			}
 			if (first.atom.object != null) {
+				if(first.atom.object instanceof Building) {
+					System.out.print("-");
+				}
 				return ObfConstants.getOsmObjectId(first.atom.object);
 			}
 			return first.atom.id;
@@ -169,7 +178,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 						add += " elo " + a.getTravelEloNumber() + " " + a.getCityFromTagGroups("");
 					}
 				} else if (parent != null) {
-//					add += " " + parent.object.getName();
+					add += " " + parent.object.getName();
 				}
 				LatLon resLoc = atom.getResultLocation();
 				return String.format("%s %s (%s) %.4f %.4f ", words, atom.typeStr() + " " + atom.object.getName() + add,
@@ -224,6 +233,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			return res;
 		}
 		res = Integer.compare(o1.objs.size(), o2.objs.size());
+		if (res != 0) {
+			return res;
+		}
+		res = Boolean.compare(o1.incompleteMatch, o2.incompleteMatch); // buildings 18 matches 18 B
 		if (res != 0) {
 			return res;
 		}
