@@ -6046,4 +6046,12 @@
     <string name="coordinate_format_select_other">Roghnaigh formáid eile</string>
     <string name="coordinate_format_recent">Le déanaí</string>
     <string name="coordinate_format_primary">Príomhúil</string>
+    <string name="ais_own_object">Socruithe le haghaidh taispeáint réada AIS féin</string>
+    <string name="ais_own_object_description">Má tá tarchuradóir AIS ag an soitheach féin, glacfar an comhartha in éineacht le comharthaí soithí AIS eile. Sainmhínítear láimhseáil speisialta an chomhartha AIS féin anseo.</string>
+    <string name="ais_own_mmsi">MMSI Féin (Aitheantas Seirbhíse Soghluaiste Muirí)</string>
+    <string name="ais_own_mmsi_description">Aithin an MMSI (luach uimhriúil 9 ndigit) de do réada AIS féin.</string>
+    <string name="ais_display_own_position">Sainigh an dtaispeánfar an réad AIS féin.</string>
+    <string name="ais_display_own_position_description">De ghnáth, taispeántar an suíomh pearsanta le OsmAnd. D’fhéadfadh an taispeáint bhreise den réada AIS pearsanta a bheith mearbhalltach agus is féidir é a dhíchumasú anseo.</string>
+    <string name="ais_receive_in_background">Faigh sonraí AIS fiú má tá OsmAnd ar sos.</string>
+    <string name="ais_receive_in_background_description">Má tá sé cumasaithe, fanann an éisteoir teachtaireachtaí AIS ag rith má tá OsmAnd ar sos nó sa chúlra. Mura bhfuil sé cumasaithe, ní fhaightear aon teachtaireachtaí má tá OsmAnd sa chúlra.</string>
 </resources>
