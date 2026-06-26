@@ -156,8 +156,9 @@ class SearchHistoryDBHelper {
 			try {
 				db.execSQL("DELETE FROM " + HISTORY_TABLE_NAME + " WHERE " +
 								HISTORY_COL_NAME + " = ? AND " +
-								HISTORY_COL_LAT + " = ? AND " + HISTORY_COL_LON + " = ?",
-						new Object[] {entry.getSerializedName(), entry.getLat(), entry.getLon()});
+								HISTORY_COL_LAT + " = ? AND " + HISTORY_COL_LON + " = ? AND " +
+								HISTORY_COL_SOURCE + " = ?",
+						new Object[] {entry.getSerializedName(), entry.getLat(), entry.getLon(), entry.getSource().name()});
 				updateLastModifiedTime();
 			} finally {
 				db.close();
