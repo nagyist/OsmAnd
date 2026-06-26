@@ -8,8 +8,18 @@
 	   2. Every apostrophe (quote) is preceded by a backslash.
 	   3. If you modify the English strings file, please add new strings at the top of the file, this makes periodic reviews before releases easier.
 	- For wording and consistency, please note https://docs.osmand.net/docs/technical/contributions/translating-osmand
+	Strings for OsmAnd core
 	Thx - Hardy
 -->
+	<!--  AisTrackerSettings  -->
+	<string name="ais_own_object">Settings for display of own AIS object</string>
+	<string name="ais_own_object_description">If the own vessel has an AIS transmitter then the signal will be received together with other AIS vessel\'s signals. Special handling of the own AIS signal is defined here.</string>
+	<string name="ais_own_mmsi">Own MMSI (Maritime Mobile Service Identity)</string>
+	<string name="ais_own_mmsi_description">Identify the MMSI (9 digit numerical value) of own AIS object.</string>
+	<string name="ais_display_own_position">Define whether the own AIS object shall be displayed.</string>
+	<string name="ais_display_own_position_description">Usually the own position is shown by OsmAnd. The additional display of the own AIS object may be confusing and can be disabled here.</string>
+	<string name="ais_receive_in_background">Receive AIS data even if OsmAnd is paused.</string>
+	<string name="ais_receive_in_background_description">If enabled, the AIS message listener stays running if OsmAnd is paused or in background. If disabled, no messages are received if OsmAnd is in background.</string>
 	<string name="data_storage">Data storage</string>
 	<string name="main_storage">Main storage</string>
 	<string name="media_storage">Media storage</string>
