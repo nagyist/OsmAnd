@@ -7,20 +7,18 @@
 	android:layout_height="wrap_content"
 	android:background="?attr/activity_background_color"
 	android:orientation="vertical"
-	android:paddingStart="@dimen/content_padding_half"
-	android:paddingEnd="@dimen/content_padding_half"
 	android:paddingBottom="@dimen/content_padding_half">
 
 	<LinearLayout
 		android:id="@+id/card_container"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:background="@drawable/bg_quick_search_disabled_history_card"
+		android:background="@drawable/bg_quick_search_explore_card_bottom"
 		android:orientation="vertical">
 
 		<include
 			android:id="@+id/top_divider"
-			layout="@layout/list_item_divider" />
+			layout="@layout/simple_divider_item" />
 
 		<LinearLayout
 			android:layout_width="match_parent"

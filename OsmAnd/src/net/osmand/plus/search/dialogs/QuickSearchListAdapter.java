@@ -577,8 +577,10 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 	}
 
 	private void setupBackground(int position, @NonNull View view, @NonNull QuickSearchListItem listItem) {
-		if (exploreHistoryCard && listItem.getType() != QuickSearchListItemType.DISABLED_HISTORY) {
-			if (position == getCount() - 1) {
+		if (exploreHistoryCard) {
+			if (listItem.getType() == QuickSearchListItemType.DISABLED_HISTORY) {
+				view.setBackgroundColor(ColorUtilities.getActivityBgColor(app, nightMode));
+			} else if (position == getCount() - 1) {
 				view.setBackgroundResource(R.drawable.bg_quick_search_explore_card_bottom);
 			} else {
 				view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
