@@ -153,7 +153,7 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			} else if (drawable != null) {
 				drawable.setOwnObject(isOwnObject(ais));
 				drawable.updateAisRenderData(getTileView(), bitmapPaint);
-			} else if (isOwnObject(ais)) {
+			} else {
 				onAisObjectReceived(ais);
 			}
 		}
@@ -273,6 +273,9 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			}
 		}
 		for (AisObject object : aisObjects) {
+			if (isOwnObjectHidden(object)) {
+				continue;
+			}
 			AisLatLon latLon = object.getPosition();
 			if (latLon != null) {
 				double lat = latLon.getLatitude();
