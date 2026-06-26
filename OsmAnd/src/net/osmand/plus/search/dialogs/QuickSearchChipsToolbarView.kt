@@ -71,7 +71,7 @@ class QuickSearchChipsToolbarView @JvmOverloads constructor(
 		fun onTypeChipClick(typeName: String)
 	}
 
-	private var sortTitleId by mutableIntStateOf(R.string.sort_by_last_viewed)
+	private var sortTitleId by mutableIntStateOf(R.string.shared_string_recent)
 
 	private var sortIconId by mutableIntStateOf(R.drawable.ic_action_sort)
 

@@ -6086,7 +6086,6 @@
     <string name="coordinate_format_discard_changes">Ignorer les modifications</string>
     <string name="coordinate_format_last_item_warning">Au moins un format de coordonnées est requis.</string>
     <string name="coordinate_format_select_other">Choisissez un autre format</string>
-    <string name="coordinate_format_recent">Récents</string>
     <string name="coordinate_format_primary">Primaire</string>
     <string name="gallery_media_playback_error">Impossible de lire le fichier multimédia.</string>
     <string name="gallery_open_in">Ouvrir avec</string>

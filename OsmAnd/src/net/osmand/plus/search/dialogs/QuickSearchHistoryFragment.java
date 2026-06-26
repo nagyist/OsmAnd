@@ -61,7 +61,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private static final org.apache.commons.logging.Log LOG = PlatformUtil.getLog(QuickSearchHistoryFragment.class);
 
 	private enum HistorySortMode {
-		RECENT(R.string.sort_by_last_viewed, R.drawable.ic_action_sort),
+		RECENT(R.string.shared_string_recent, R.drawable.ic_action_sort),
 		NEAREST(R.string.shared_string_nearest, R.drawable.ic_action_sort),
 		MAP_CENTER(R.string.sort_by_nearest_to_map_center, R.drawable.ic_action_sort);
 

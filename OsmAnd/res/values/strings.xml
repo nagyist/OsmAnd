@@ -10,7 +10,7 @@
 	- For wording and consistency, please note https://docs.osmand.net/docs/technical/contributions/translating-osmand
 	Thx - Hardy
 -->
-	<string name="sort_by_last_viewed">Recent</string>
+	<string name="shared_string_recent">Recent</string>
 	<string name="sort_by_nearest_to_map_center">Nearest to map center</string>
 	<string name="last_week">Last week</string>
 	<string name="history_is_turned_off">History is turned off</string>
@@ -64,7 +64,6 @@
 	<string name="coordinate_format_discard_changes">Discard changes</string>
 	<string name="coordinate_format_last_item_warning">At least one coordinate format is required.</string>
 	<string name="coordinate_format_select_other">Select other format</string>
-	<string name="coordinate_format_recent">Recent</string>
 	<string name="coordinate_format_primary">Primary</string>
 	<string name="favorite_confirm_delete_folder">This will delete folder \"%1$s\", including nested folders and %2$d favorite point(s).</string>
 	<string name="favorite_folder_rename_conflict">A folder with this name already exists.</string>
