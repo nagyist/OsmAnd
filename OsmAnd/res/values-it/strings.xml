@@ -6159,4 +6159,12 @@
     <string name="ais_own_mmsi">MMSI personale (identificativo del servizio mobile marittimo)</string>
     <string name="ais_own_mmsi_description">Identificare l\'MMSI (valore numerico a 9 cifre) del proprio oggetto AIS.</string>
     <string name="ais_display_own_position">Definire se il proprio oggetto AIS deve essere visualizzato.</string>
+    <string name="ais_display_own_position_description">Normalmente la propria posizione è indicata da OsmAnd. La visualizzazione aggiuntiva del proprio oggetto AIS potrebbe creare confusione e può essere disabilitata qui.</string>
+    <string name="ais_receive_in_background">Ricevi i dati AIS anche se OsmAnd è in pausa.</string>
+    <string name="ais_receive_in_background_description">Se abilitato, il ricevitore dei messaggi AIS rimane attivo anche se OsmAnd è in pausa o in sottofondo. Se disabilitato, non vengono ricevuti messaggi se OsmAnd è in sottofondo.</string>
+    <string name="data_storage">Archiviazione dei dati</string>
+    <string name="main_storage">Archivio principale</string>
+    <string name="media_storage">Archivio multimediale</string>
+    <string name="camera_folder">Cartella della fotocamera</string>
+    <string name="media_storage_main_storage_descr">I file sono salvati nell\'archivio privato dell\'app. Sono nascosti dalla Galleria e dalle altre app.</string>
 </resources>
