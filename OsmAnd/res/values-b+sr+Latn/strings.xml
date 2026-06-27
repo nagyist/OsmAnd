@@ -6203,4 +6203,12 @@
     <string name="route_calculation_method_standard_only_desc">Uvek koristi standardno rutiranje. Sporije je, ali omogućava navigaciju sa mapama različitih datuma.</string>
     <string name="route_calculation_method_fast_only">Samo brzi</string>
     <string name="route_calculation_method_fast_only_desc">Uvek koristi brzo rutiranje. Proračun će se zaustaviti i zatražiti ažuriranja ako se datumi mape ne podudaraju.</string>
+    <string name="ais_own_object">Podešavanja za prikaz sopstvenog AIS objekta</string>
+    <string name="ais_own_object_description">Ako sopstveno plovilo ima AIS predajnik, signal će biti primljen zajedno sa signalima drugih AIS plovila. Ovde je definisano posebno rukovanje sopstvenim AIS signalom.</string>
+    <string name="ais_own_mmsi">Sopstveni MMSI (Identitet pomorske mobilne službe)</string>
+    <string name="ais_own_mmsi_description">Identifikujte MMSI (9-cifrenu numeričku vrednost) sopstvenog AIS objekta.</string>
+    <string name="ais_display_own_position">Definišite da li će se prikazivati sopstveni AIS objekat.</string>
+    <string name="ais_display_own_position_description">Obično sopstvenu poziciju prikazuje OsmAnd. Dodatni prikaz sopstvenog AIS objekta može biti zbunjujući i može se ovde onemogućiti.</string>
+    <string name="ais_receive_in_background">Primajte AIS podatke čak i ako je OsmAnd pauziran.</string>
+    <string name="ais_receive_in_background_description">Ako je omogućeno, AIS slušalac poruka ostaje u funkciji ako je OsmAnd pauziran ili u pozadini. Ako je onemogućeno, poruke se ne primaju ako je OsmAnd u pozadini.</string>
 </resources>

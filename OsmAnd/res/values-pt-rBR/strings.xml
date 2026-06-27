@@ -6593,4 +6593,12 @@
     <string name="gallery_stats_counts">Fotos %1$d, vídeos %2$d, áudio %3$d.</string>
     <string name="gallery_stats_size">Tamanho %1$s.</string>
     <string name="gallery_sort_nearest">Mais próximo</string>
+    <string name="ais_own_object">Configurações para a exibição do próprio objeto AIS</string>
+    <string name="ais_own_object_description">Se a própria embarcação possuir um transmissor AIS, o sinal será recebido juntamente com os sinais de outras embarcações equipadas com AIS. O tratamento especial do sinal AIS da própria embarcação é definido aqui.</string>
+    <string name="ais_own_mmsi">Possuir um MMSI (Identidade de Serviço Móvel Marítimo)</string>
+    <string name="ais_own_mmsi_description">Identifique o MMSI (valor numérico de 9 dígitos) do seu próprio objeto AIS.</string>
+    <string name="ais_display_own_position">Defina se o objeto AIS próprio deve ser exibido.</string>
+    <string name="ais_display_own_position_description">Normalmente, a posição do usuário é exibida pelo OsmAnd. A exibição adicional do próprio objeto AIS pode causar confusão e pode ser desativada aqui.</string>
+    <string name="ais_receive_in_background">Receba dados AIS mesmo que o OsmAnd esteja em pausa.</string>
+    <string name="ais_receive_in_background_description">Se ativado, o receptor de mensagens AIS continua em execução mesmo que o OsmAnd esteja em pausa ou em segundo plano. Se desativado, nenhuma mensagem é recebida quando o OsmAnd está em segundo plano.</string>
 </resources>
