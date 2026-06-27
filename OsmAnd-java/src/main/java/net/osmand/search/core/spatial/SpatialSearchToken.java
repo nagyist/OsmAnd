@@ -1,6 +1,7 @@
 package net.osmand.search.core.spatial;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -38,6 +39,7 @@ public class SpatialSearchToken {
 	boolean incomplete;
 	String originalWord;
 	String word;
+	String wordAligned;
 	Set<String> bldWordSplit;
 	
 	List<NameIndexAtom> atoms = new ArrayList<>();
@@ -47,8 +49,8 @@ public class SpatialSearchToken {
 
 	CollatorStringMatcher collatorMain;
 	// cache for popular split
-	String wordPrefix;
-	CollatorStringMatcher collatorSuffix;
+	String wordSpacePrefixCache;
+	CollatorStringMatcher wordSpaceCollatorSuffix;
 	
 	int mainNumber = -1;
 	CollatorStringMatcher[] otherMatch;
@@ -57,6 +59,7 @@ public class SpatialSearchToken {
 		this.MIN_CHAR_INCOMPLETE = MIN_CHAR_INCOMPLETE;
 		originalWord = original;
 		word = w;
+		wordAligned = CollatorStringMatcher.alignChars(word);
 		bldWordSplit = SearchAlgorithms.getBuildingCompareSet(word);
 		originalOrder = order;
 		String noDot = w;
@@ -157,7 +160,7 @@ public class SpatialSearchToken {
 		quadTree.put(atom.coords.bboxTileZoom, atom.coords.bboxTileId, atom);
 	}
 
-	boolean acceptName(String name) {
+	boolean matchName(String name) {
 //		System.out.printf("query '%s' matches '%s' %s\n", word, name, collatorMain.matches(name) || 
 //				collatorMain.matches(name.replace(' ', '-')));
 		if (mainNumber > 0) {
@@ -175,21 +178,40 @@ public class SpatialSearchToken {
 		if (collatorMain.matches(name)) {
 			return true;
 		}
-		// query 'weberstrasse' matches 'weber straße': works for poular suffixes
+		// wordAligned without space but input name with space
+		// query 'weberstrasse' matches 'weber straße': works for popular suffixes
 		int space = name.indexOf(' ');
-		if (space != -1 && CollatorStringMatcher.cmatches(collatorMain.getCollator(), word, 
-				name.substring(0, space), StringMatcherMode.CHECK_ONLY_STARTS_WITH)) {
-			String prefix = name.substring(0, name.indexOf(' ')); 
-			if (!prefix.equals(wordPrefix)) {
-				wordPrefix = prefix;
-				// could be some issues if number of letter do not match
-				collatorSuffix = new CollatorStringMatcher(word.substring(wordPrefix.length()), StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
-			}
-			if (collatorSuffix.matches(name.substring(space + 1))) {
-				return true;
+		if (space != -1) {
+			String namePrefix = CollatorStringMatcher.alignChars(name.substring(0, space));
+			if (wordAligned.length() > space && collatorMain.getCollator().equals(namePrefix, wordAligned.substring(0, space))) {
+				if (!namePrefix.equals(wordSpacePrefixCache)) {
+					wordSpacePrefixCache = namePrefix;
+					// could be some issues if number of letter do not match
+					wordSpaceCollatorSuffix = new CollatorStringMatcher(word.substring(wordSpacePrefixCache.length()),
+							StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+				}
+				if (wordSpaceCollatorSuffix.matches(name.substring(space + 1))) {
+					return true;
+				}
 			}
 		}
 		return false;
+	}
+	
+	String[] matchSplitName(String name) {
+		name = CollatorStringMatcher.alignChars(name);
+		String[] res = null;
+		if (wordAligned.length() < name.length()
+				&& collatorMain.getCollator().equals(name.substring(0, wordAligned.length()), wordAligned)) {
+			res = new String[2];
+			res[0] = name.substring(0, wordAligned.length());
+			res[1] = name.substring(wordAligned.length());
+			while (res[1].length() > 0 && !Character.isLetter(res[1].charAt(0))
+					&& !Character.isDigit(res[1].charAt(0))) {
+				res[1] = res[1].substring(1);
+			}
+		}
+		return res;
 	}
 
 	public static class NameIndexAtomXY {
@@ -377,6 +399,7 @@ public class SpatialSearchToken {
 
 
 
-	};
+	}
+
 
 }

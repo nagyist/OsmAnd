@@ -27,6 +27,7 @@ import net.osmand.util.SearchAlgorithms;
 // ALL Stats 9525.7 ms - 54.6 ms 17,899 atoms (read 0.0, match 30.7), 9168.0 ms compute 2,357,716 (loadBld 924.3, read 335.8)
 // NO STREET 1737.2 ms - 264.1 ms 17,899 atoms (read 162.5, match 84.2), 1445.2 ms compute 95,842 (loadBld 177.3, read 95.8)
 // NO INTERS 1108.2 ms - 257.5 ms 17,899 atoms (read 148.5, match 93.6), 824.5 ms compute 22,690 (loadBld 92.4, read 74.0)
+//------------------------------------------- //
 
 //////////// TESTING //////////
 // REVIEW UI FILTER_MIN_WORDS_COUNT - 'New york plaza' ('the'), Issues Nova poshta Kharkiv 
@@ -35,23 +36,18 @@ import net.osmand.util.SearchAlgorithms;
 // !!! Building interpolation, Street intersection match
 // TESTING 2га нова
 // TESTING 'LangeStraße' (Data 'Lange Straße')
+// TESTING 'Daimler strasse' (Data 'daimlerstraße')
 
-////////// IN PROGRESS//////////
-// FIXME 'Daimler strasse' (Data 'daimlerstraße')
+////////// IN PROGRESS //////////
+// TODO WEB Add url / coordinates parsing
 // FIXME Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k) - OPTIMAL OPTIM_LIMIT_INTERSECTIONS
 // TODO Sokak 2 order
 // TODO Filter results boundaries, <Salt Lake City>
 
 // FIXME POI Categories + top poi categories
+// TODO POI Categories translations / synonyms
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 //    Combine regions.ocbf (boundary)
-
-// TO DO
-// TODO POI Categories translations / synonyms
-// TODO Progress / cancel
-// TODO Web add regions.ocbf and 2nd search to search (Ksenia) - test "Arizona"
-// TODO Inspector stats index_words_dashboard.html
-// TODO Not forget to include regions.ocbf on client
 
 // TEST IDEAS
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
@@ -59,12 +55,19 @@ import net.osmand.util.SearchAlgorithms;
 // TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique) 
 // TODO ? Store wikidata id for boundaries (regions.ocbf) & display them - place=county, place=state ? 
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
+
+// TO DO
+// TODO Inspector stats index_words_dashboard.html
+// TODO Progress / cancel
+// TODO Not forget to include regions.ocbf on client
 // TODO Test memory on Android device for slowest query
 
+// ------------------------------------- ///
 // EXTRA FEATURES
 // TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Search near key objects (subway station artificial bbox)
+// TODO Web worldwide search on missing results test "Arizona"
 // TODO New Geocoding for cases ("NC 42" == "NC-42") 
 // TODO Add flats: https://www.openstreetmap.org/node/5843642738
 // TODO Sugggestion-correction
@@ -145,11 +148,11 @@ public class SpatialSearchTestAndDocs {
 		query = "3 Hofäckerstraße Kernen im Remstal";
 		
 		// Weberstraße (33164748) 49.2041 10.7035,  Von-Weber-Straße (4648613942) 49.5609 10.8685
-		query = "Weber Straße"; // TODO +4648613942, -33164748
+//		query = "Weber Straße"; // +4648613942, +33164748
 //		query = "WeberStraße";  // +33164748, +4648613942
 //		query = "Von Weberstraße"; // +4648613942
-//		query = "53 Langestraße Waiblingen"; // OK !
-		query = "69 Daimler Straße Stuttgart"; // TODO Daimlerstraße 107868593 48.8015 9.2224
+//		query = "53 Langestraße Waiblingen"; // OK - 48.8315 9.3155 !
+//		query = "69 Daimler Straße Stuttgart"; //  (Daimlerstraße) 107868593 48.8015 9.2224 // 69
 		
 
 		// Building time vs no building
@@ -184,18 +187,18 @@ public class SpatialSearchTestAndDocs {
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 		
-//		pattern = "Turkey_";
+		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // OK
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
 		// ALL - Search Stats 1569.2 ms - 554.0 ms 59,656 atoms (read 318.8, match 134.1), 985.8 ms compute 693,139 (loadBld 396.2, read 149.5)
         // NO INTER - Search Stats 871.5 ms - 546.4 ms 59,656 atoms (read 313.7, match 135.6), 299.9 ms compute 4,735 (loadBld 54.1, read 37.2)
-//		 query = "Sokak 2"; 
+		 query = "Sokak 2"; 
 //		query = "2/1 21038 Sokak"; // 1380369156
 		
 		
 //		pattern = "regions.ocbf" ;
 		
-		pattern = "Ukraine_";
+//		pattern = "Ukraine_";
 //		pattern = "Map";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
@@ -205,7 +208,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Нова пошта 3 харків";
 //		query = "Нова пошта харків";
 //		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
-		query = "2га Нова вулиця"; 
+//		query = "2га Нова вулиця"; 
 //		query = "саксаг. 63 28"; // 129-Б, 129б 63/28, 63, 63-28  +'саксаг. 63 28'
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";

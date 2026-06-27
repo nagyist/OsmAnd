@@ -425,7 +425,7 @@ public class SpatialSearchContext {
 					} else if(b != null && wordInd < b.getExtraSuffixCount()) {
 						name += b.getExtraSuffix(wordInd);
 					}
-					if (acceptName(t, name)) {
+					if (matchName(t, name) || (name = matchPartName(t, name, allTokens)) != null) {
 						int other;
 						if (a != null) {
 							other = wordInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wordInd) : 0;
@@ -457,7 +457,11 @@ public class SpatialSearchContext {
 		} else if (b != null && wordInd < b.getExtraSuffixCount()) {
 			name += b.getExtraSuffix(wordInd);
 		}
-		if (name.length() != 0 && acceptName(t, name)) {
+		if(name.startsWith("2.sokak")) {
+			//FIXME
+			System.out.println(name);
+		}
+		if (name.length() != 0 && (matchName(t, name) || (name = matchPartName(t, name, allTokens)) != null)) {
 			int other;
 			if (a != null) {
 				other = wordInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wordInd) : 0;
@@ -468,11 +472,28 @@ public class SpatialSearchContext {
 		}
 	}
 
-	private boolean acceptName(SpatialSearchToken t, String name) {
+	private boolean matchName(SpatialSearchToken t, String name) {
 		stats.matchTime -= System.nanoTime();
-		boolean acceptName = t.acceptName(name);
+		boolean acceptName = t.matchName(name);
 		stats.matchTime += System.nanoTime();
 		return acceptName;
+	}
+	
+	private String matchPartName(SpatialSearchToken t, String name, List<SpatialSearchToken> allTokens) {
+		stats.matchTime -= System.nanoTime();
+		String[] res = t.matchSplitName(name);
+		String resName = null;
+		if (res != null) {
+			for (SpatialSearchToken st : allTokens) {
+				if (st != t && st.matchName(res[1])) {
+//					System.out.printf("%s -> '%s %s'\n", name, res[0], res[1]);
+					resName = res[0] + " " + res[1];
+					break;
+				}
+			}
+		}
+		stats.matchTime += System.nanoTime();
+		return resName;
 	}
 
 	private void addObject(SpatialSearchToken t, String name, int type, long lid, long pid, MapObject obj, int other,
@@ -486,18 +507,23 @@ public class SpatialSearchContext {
 			possiblyMultiword = true;
 			name = name.replace('-', ' ');
 		}
+		if (name.startsWith("2") && name.indexOf('.') != -1) {
+			// FIXME
+			possiblyMultiword = true;
+			name = name.replace('.', ' ');
+		}
 		if (possiblyMultiword) {
 			List<String> split = SearchAlgorithms.splitAndNormalize(name, false);
 			for (int k = 1; k < split.size(); k++) {
 				String otherName = split.get(k);
-				boolean numeric =SearchAlgorithms.isNumber2Letters(otherName);
+				boolean numeric = SearchAlgorithms.isNumber2Letters(otherName);
 				if (otherName.equalsIgnoreCase(NameIndexReader.CITY_AS_STREET_COMMON)) {
 					streetCity = true;
 					continue;
 				}
 				boolean matched = false;
 				for (SpatialSearchToken token : allTokens) {
-					if (t != token && acceptName(token, otherName)
+					if (t != token && matchName(token, otherName)
 							&& (otherTokens == null || !otherTokens.contains(token))) {
 						if (otherTokens == null) {
 							otherTokens = new ArrayList<>();
