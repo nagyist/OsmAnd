@@ -1919,7 +1919,7 @@
     <string name="give_permission">Autoriser</string>
     <string name="allow_access_location">Autoriser l\'accès à la position</string>
     <string name="search_my_location">Rechercher ma position</string>
-    <string name="storage_place_description">Stockage des données d\'OsmAnd (cartes, fichiers de tracé, etc.) : %1$s.</string>
+    <string name="storage_place_description">Stockage des données d\'OsmAnd (cartes, fichiers de trace, etc.) : %1$s.</string>
     <string name="first_usage_greeting">Suivez des itinéraires et découvrez de nouveaux lieux sans connexion Internet</string>
     <string name="get_for">Obtenir pour %1$s</string>
     <string name="si_mi_meters">Milles/mètres</string>
@@ -2538,7 +2538,7 @@
     <string name="light_rs_render_descr">Style simple pour la conduite. Mode nuit doux, routes contrastées de couleur orange, objets secondaires atténués comme les courbes de niveau.</string>
     <string name="default_render_descr">Style générique. Zones urbaines affichées de manière claire, routes, revêtement des routes, restrictions d\'accès, rendu des chemins selon l\'échelle SAC/CAI, sports d\'eau vive, courbes de niveau.</string>
     <string name="shared_string_bookmark">Favori</string>
-    <string name="topo_render_descr">Pour la randonnée, le trekking et le vélo en pleine nature. Lisible en extérieur. Contraste entre les routes et les éléments naturels, différents types d\'itinéraires, options avancées pour les courbes de niveau, détails supplémentaires. Le réglage de l\'« intégrité de la surface » permet de distinguer la qualité des routes. Pas de mode nuit.</string>
+    <string name="topo_render_descr">Pour la randonnée, le trek et le vélo en pleine nature. Lisible en extérieur. Contraste entre les routes et les éléments naturels, différents types de routes, options avancées pour les courbes de niveau, détails supplémentaires. Le réglage « intégrité de la surface » permet de distinguer la qualité des routes. Pas de mode nuit.</string>
     <string name="off_road_render_descr">Pour la conduite sur voies non revêtues. Style basé sur le style « Topo » et à utiliser avec la sous-couche verte d\'images satellites. Largeur réduite pour les routes, largeur augmentée pour les chemins et autres pistes.</string>
     <string name="touring_view_render_descr">Style très détaillé pour le tourisme. Inclus tous les caractéristiques du style OsmAnd par défaut plus : information les plus détaillées possibles sur les routes, chemins, sentiers et tous les moyens permettant de se déplacer. Distinction visuelle claire des différents types de routes. Adapté à un usage en extérieur, de jour comme de nuit.</string>
     <string name="access_intermediate_arrival_time">Heure d\'arrivée à l\'étape</string>
@@ -3116,10 +3116,10 @@
     <string name="monitoring_min_distance_descr_recommendation">Recommandation : paramétrez 5 mètres si vous ne souhaitez pas enregistrer les petits détails de votre itinéraire et que vous ne souhaitez pas non plus d\'informations supplémentaires sur vos pauses.</string>
     <string name="monitoring_min_speed_descr_side_effect">Effet secondaire : votre trace ne contiendra pas les parties où la vitesse minimale n\'a pas été atteinte (par exemple lorsque vous poussez votre vélo en montée ou pendant une pause). De ce fait certaines informations de votre trace seront faussées comme la durée de déplacement ou la vitesse moyenne.</string>
     <string name="monitoring_min_speed_descr_recommendation">Recommandation : commencez par utiliser la détection de mouvement via le filtre de déplacement minimal (B) vous pourriez obtenir de meilleurs résultats en perdant moins de données. Si vos traces restent bruyantes à basse vitesse, essayez ici des valeurs non nulles. Veuillez noter que certaines mesures peuvent retourner une vitesse nulle (en raison de méthodes basées sur le réseau), dans ce cas rien ne sera enregistré.</string>
-    <string name="monitoring_min_accuracy_descr">Cette fonction n\'enregistrera que les points mesurés avec un niveau de précision minimal (en mètres/pieds, tel qu\'indiqué par Android pour votre chipset). La précision correspond à la proximité des mesures par rapport à la position réelle ; elle n\'est pas directement liée à l\'exactitude, qui désigne la dispersion des mesures répétées.</string>
-    <string name="monitoring_min_accuracy_descr_side_effect">Effet secondaire : avec le filtrage de précision certains points peuvent manquer ; par exemple : sous un pont, en forêt, entre de hauts bâtiments ou dans certaines conditions météorologiques.</string>
-    <string name="monitoring_min_accuracy_descr_remark">Remarque : si la localisation GPS est activée juste avant le début d\'enregistrement, la première position peut être imprécise. L\'application pourrait attendre quelques secondes avant d\'enregistrer un point (ou enregistrer le meilleur de 3 points successifs, etc), mais ces évolutions ne sont pas encore disponibles.</string>
-    <string name="monitoring_min_speed_descr_remark">Remarque : vérification de vitesse &gt; 0. La plupart des puces GPS fournissent une vitesse uniquement lorsque vous êtes en mouvement. Par conséquent, l\'indication du paramètre &gt; 0 pour ce filtre utilise la détection de mouvement par la puce GPS. Mais même s\'il n\'est pas filtré ici au moment de l\'enregistrement, nous utilisons toujours cette fonctionnalité dans notre analyse des traces GPX pour déterminer la distance corrigée, c\'est-à-dire que la valeur affichée dans ce champ est la distance enregistrée en déplacement.</string>
+    <string name="monitoring_min_accuracy_descr">Cette fonction n\'enregistrera que les points mesurés avec une exactitude minimale (en mètres/pieds, telle que fourni par Android et votre puce GPS). L’exactitude correspond à la distance des mesures par rapport à la position réelle ; elle n\'est pas directement liée à la précision qui désigne la dispersion de plusieurs mesures successives.</string>
+    <string name="monitoring_min_accuracy_descr_side_effect">Effet secondaire : avec le filtrage d’exactitude certains points peuvent manquer ; par exemple : sous un pont, en forêt, entre de hauts bâtiments ou dans certaines conditions météorologiques.</string>
+    <string name="monitoring_min_accuracy_descr_remark">Remarque : si la localisation GPS est activée juste avant le début d\'enregistrement, la première position peut être imprécise. L\'application pourrait attendre quelques secondes avant d\'enregistrer un point (ou enregistrer le meilleur de 3 points successifs, etc.), mais ces évolutions ne sont pas encore disponibles.</string>
+    <string name="monitoring_min_speed_descr_remark">Remarque : vérification de vitesse &gt; 0. La plupart des puces GPS fournissent une vitesse uniquement lorsque vous êtes en mouvement. Par conséquent, l\'indication du paramètre &gt; 0 pour ce filtre utilise la détection de mouvement par la puce GPS. Mais même s\'il n\'est pas filtré lors de l\'enregistrement, nous utilisons toujours cette fonctionnalité dans notre analyse des traces GPX pour déterminer la distance corrigée, c\'est-à-dire que la valeur affichée dans ce champ est la distance enregistrée en déplacement.</string>
     <string name="monitoring_min_distance_descr_side_effect">Effet secondaire : les périodes de repos ne seront pas enregistrées ou seulement par un point. De petits mouvements, comme des pas sur le côté, pourront être ignorés. Votre fichier contiendra moins d\'informations exploitables en post-traitement et aura des statistiques moins exactes (éliminant les points redondants, mais conservant les erreurs de position dues à une mauvaise réception ou aux artefacts de la puce GPS).</string>
     <string name="shared_string_available">Disponible</string>
     <string name="add_custom_category">Ajouter une catégorie personnalisée</string>
@@ -3907,7 +3907,7 @@
     <string name="rendering_value_walkingRoutesOSMCNodes_description">Colorer les itinéraires selon le type de réseau (international, régional, local).</string>
     <string name="walking_route_osmc_description">Colorer les itinéraires selon leur définition locale (si elle est connue d’OpenStreetMap) et du type d\'itinéraire (international, régional, local).</string>
     <string name="backup_error_no_subscription">Aucun abonnement en cours</string>
-    <string name="map_updates_for_mappers">Mises à jour cartographiques pour les contributeurs OSM</string>
+    <string name="map_updates_for_mappers">Mises à jour des cartes pour les contributeurs OSM</string>
     <string name="benefits_for_contributors_primary_descr">Les contributeurs actifs d\'OpenStreetMap bénéficient des mises à jour horaires et illimitées des cartes.</string>
     <string name="benefits_for_contributors_secondary_descr">Connectez-vous à OpenStreetMap pour vérifiez si vous êtes éligible aux mises à jour illimitées.</string>
     <string name="enough_contributions_descr">Félicitations, vous avez suffisamment contribué à OpenStreetMap pour profiter de mises à jour illimitées des cartes OsmAnd !</string>
@@ -4791,7 +4791,7 @@
     <string name="cache_size">Taille du cache</string>
     <string name="shared_string_avoid">Éviter</string>
     <string name="may_be_used_if_there_is_shortcut">Peut être utilisé si un raccourci existe</string>
-    <string name="use_raster_sqlitedb_for_slope_hillshade">Utiliser une base de données SQLite raster pour l\'ombrage de relief et la pente</string>
+    <string name="use_raster_sqlitedb_for_slope_hillshade">Utiliser une base de données SQLite raster pour l\'ombrage du relief et les pentes</string>
     <string name="routing_attr_allow_via_ferrata_name">Itinéraire à flanc de montagne (Via ferrata)</string>
     <string name="free_settings_backup">Sauvegarde gratuite des paramètres</string>
     <string name="free_ride">Freeride</string>
@@ -6128,12 +6128,12 @@
     <string name="route_calculation_method_standard_only_desc">Utilise toujours l\'itinéraire standard. C\'est plus lent, mais cela permet de naviguer avec des cartes datant de différentes périodes.</string>
     <string name="route_calculation_method_fast_only">Rapide uniquement</string>
     <string name="route_calculation_method_fast_only_desc">Utilise toujours l\'itinéraire le plus rapide. Le calcul s\'interrompt et demande des mises à jour si les dates de la carte ne correspondent pas.</string>
-    <string name="ais_own_object">Paramètres d\'affichage de son propre objet AIS</string>
-    <string name="ais_own_object_description">Si le navire est équipé d\'un émetteur AIS, son signal sera reçu en même temps que ceux des autres navires équipés d\'un AIS. Le traitement particulier du signal AIS du navire est défini ici.</string>
-    <string name="ais_own_mmsi">Disposer de son propre numéro MMSI (Maritime Mobile Service Identity)</string>
+    <string name="ais_own_object">Paramètres d\'affichage de votre objet AIS</string>
+    <string name="ais_own_object_description">Si votre navire est équipé d\'un émetteur AIS, son signal sera reçu en même temps que ceux des autres navires équipés d\'un AIS. Le traitement particulier du signal AIS de votre navire est défini ici.</string>
+    <string name="ais_own_mmsi">Votre numéro MMSI (Maritime Mobile Service Identity)</string>
     <string name="ais_own_mmsi_description">Identifiez le MMSI (numéro à 9 chiffres) de votre propre objet AIS.</string>
     <string name="ais_display_own_position">Indiquez si l\'objet AIS correspondant doit être affiché.</string>
     <string name="ais_display_own_position_description">En règle générale, OsmAnd affiche votre position. L\'affichage supplémentaire de votre objet AIS peut prêter à confusion et peut être désactivé ici.</string>
     <string name="ais_receive_in_background">Recevoir les données AIS même lorsque OsmAnd est en pause.</string>
-    <string name="ais_receive_in_background_description">Si cette option est activée, le récepteur de messages AIS continue de fonctionner même si OsmAnd est en pause ou en arrière-plan. Si elle est désactivée, aucun message n\'est reçu lorsque OsmAnd est en arrière-plan.</string>
+    <string name="ais_receive_in_background_description">Lorsque cette option est activée, le récepteur AIS fonctionne même si OsmAnd est en pause ou s\'exécute en arrière-plan. Si l\'option est désactivée, aucun message AIS n\'est reçu lorsque OsmAnd s\'exécute en arrière-plan.</string>
 </resources>
