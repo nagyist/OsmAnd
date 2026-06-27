@@ -6125,4 +6125,12 @@
     <string name="route_calculation_method_standard_only_desc">Mindig a normál útvonaltervezés használata. Lassabb, de lehetővé teszi a navigációt különböző dátumú térképekkel.</string>
     <string name="route_calculation_method_fast_only">Csak gyors</string>
     <string name="route_calculation_method_fast_only_desc">Mindig a gyors útvonaltervezés használata. A tervezés leáll, és frissítést igényel, ha a térképek dátumai nem egyeznek.</string>
+    <string name="ais_own_object">Saját AIS-objektum megjelenítésének beállításai</string>
+    <string name="ais_own_object_description">Ha a saját hajó rendelkezik AIS-adóval, akkor a jel a többi AIS-jelű hajó jelével együtt fogható. A saját AIS-jel különleges kezelését itt lehet meghatározni.</string>
+    <string name="ais_own_mmsi">Saját MMSI (Maritime Mobile Service Identity)</string>
+    <string name="ais_own_mmsi_description">Határozza meg a saját AIS-objektum MMSI-számát (9 számjegyű érték).</string>
+    <string name="ais_display_own_position">Határozza meg, hogy a saját AIS-objektum megjelenjen-e.</string>
+    <string name="ais_display_own_position_description">Az OsmAnd általában véve megjeleníti a saját pozíciót. A saját AIS-objektum kiegészítő megjelenítése zavaró lehet, ezért itt kikapcsolható.</string>
+    <string name="ais_receive_in_background">Az AIS-adatok fogadása akkor is lehetséges, ha az OsmAnd szünetel.</string>
+    <string name="ais_receive_in_background_description">Ha engedélyezve van, az AIS-üzenetfigyelő továbbra is fut, ha az OsmAnd szünetel vagy háttérben van. Ha le van tiltva, akkor az OsmAnd háttérben való futása esetén nem érkeznek üzenetek.</string>
 </resources>
