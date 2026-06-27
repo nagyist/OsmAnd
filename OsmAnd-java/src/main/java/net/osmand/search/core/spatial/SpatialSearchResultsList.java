@@ -9,9 +9,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BiConsumer;
 import java.util.Set;
 
+import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -39,9 +39,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 
 	// NameIndexAtom[][] -- should be double array to store list of combinations
 	List<NameIndexAtom> linearResults = new ArrayList<>();
+	TIntArrayList typeIntersections = new TIntArrayList();
 	TLongArrayList tileIds = new TLongArrayList();
 	TIntArrayList tileZooms = new TIntArrayList();
 	HashQuadTree<Integer> quadTree = new HashQuadTree<>(16);
+	
+	int limitIntersection = -1;
 
 	TIntObjectHashMap<Boolean> skipResults = new TIntObjectHashMap<>();
 	Map<Integer, LatLon> preciseLocations = new HashMap<Integer, LatLon>();
@@ -63,6 +66,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		tCount = tokens.length;
 		if (parent != null) {
+			limitIntersection = parent.limitIntersection == -1 ? (ctx.limitLocationBboxes.length) : parent.limitIntersection;
 			MIN_ELO_RATING = ctx.settings.MIN_ELO_RATING;
 			calculateMainIntersection(ctx, token, parent);
 		}
@@ -331,12 +335,16 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	public int nearbyResult(int ind) {
-		int min = 100;
+		int min = limitIntersection;
 		for (int i = 0; i < tCount; i++) {
 			NameIndexAtom ni = linearResults.get(ind * tCount + i);
 			min = Math.min(ni.nearbyRadius, min);
 		}
 		return min;
+	}
+	
+	public List<NameIndexAtom> getRawAtoms(int ind) {
+		return linearResults.subList(ind * tCount, (ind +1)* tCount);
 	}
 
 	public int getCombinations() {
@@ -380,9 +388,14 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	
+	@FunctionalInterface
+	private interface IterateIntersection {
+
+		void iterate(int parentIndx, NameIndexAtom atom, int atomIndex);
+
+	}
 	
-	private void iterateIntersection(SpatialSearchResultsList parent, SpatialSearchToken token, 
-			BiConsumer<Integer, NameIndexAtom> consumer) {
+	private void iterateIntersection(SpatialSearchResultsList parent, SpatialSearchToken token, IterateIntersection iterate) {
 		// 1. iterate parent objects and find all objects from <parent>
 		//    that are fully inside object <token> or have same the same tile
 		for (int i = 0; i < parent.tileIds.size(); i++) {
@@ -390,17 +403,20 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			int zoom = parent.tileZooms.get(i);
 			final int indx = i;
 			token.quadTree.forEachMatch(zoom, tileId, atoms -> {
-				for (NameIndexAtom a : atoms) {
-					consumer.accept(indx, a);
+				for (int ij = 0; ij < atoms.size(); ij++) {
+					Integer indxAtom = atoms.get(ij);
+					iterate.iterate(indx, token.atoms.get(indxAtom), indxAtom);
 				}
 			});
 		}
 		// 2. reverse search quad tree from <token> and find objects
 		//    that are fully inside any object <parent> and not the same the same tile!
-		for (final NameIndexAtom a : token.atoms) {
-			parent.quadTree.forEachMatchHigherZoom(a.coords.bboxTileZoom, a.coords.bboxTileId, indxs -> {
+		for(int indxAtom = 0; indxAtom < token.atoms.size(); indxAtom++) {
+			final int findxAtom = indxAtom;
+			NameIndexAtom atom = token.atoms.get(indxAtom);
+			parent.quadTree.forEachMatchHigherZoom(atom.coords.bboxTileZoom, atom.coords.bboxTileId, indxs -> {
 				for (int indx : indxs) {
-					consumer.accept(indx, a);
+					iterate.iterate(indx, atom, findxAtom);
 				}
 			});
 		}
@@ -409,44 +425,79 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	private void calculateMainIntersection(SpatialSearchContext ctx, SpatialSearchToken token, SpatialSearchResultsList parent) {
 		if (parent.getTokenCount() == 0) {
 			for (NameIndexAtom atom : token.atoms) {
-				addResult(null, 0, atom);
+				addResult(null, 0, atom, 0);
 			}
 		} else if (parent.getCombinations() > 0) {
-			long[] countApproximate = new long[2];
 			long nt = System.nanoTime();
-			iterateIntersection(parent, token, (indx, a) -> { countApproximate[1]++; });
-			int limitByRadius = ctx.limitLocationBboxes.length;
-			countApproximate[0] = countApproximate[1];
-			while (limitByRadius > 0 && countApproximate[0] > ctx.settings.OPTIM_LIMIT_INTERSECTIONS) {
-				countApproximate[0] = 0;
-				final int lmtNearby = limitByRadius;
-				iterateIntersection(parent, token, (indx, atom) -> {
-					if (atom.nearbyRadius > lmtNearby || parent.nearbyResult(indx) > lmtNearby) {
-						return;
-					}
-					countApproximate[0]++;
-				});
-				limitByRadius--;
+			TIntArrayList[] intersections = new TIntArrayList[limitIntersection + 1];
+			TIntArrayList[] interPoiStreet = new TIntArrayList[limitIntersection + 1]; // type 1
+			TIntArrayList[] interPoiPoiOrStreetStreet = new TIntArrayList[limitIntersection + 1]; // type 2
+			for(int i = 0; i < intersections.length; i++) {
+				intersections[i] = new TIntArrayList();
+				interPoiPoiOrStreetStreet[i] = new TIntArrayList();
+				interPoiStreet[i] = new TIntArrayList();
 			}
-			System.out.printf("Approximate (%.0f ms) /\\: %d (%,d) -> %d (%,d): '%s' (%,d) + %s (%,d)\n", 
-					(System.nanoTime() - nt) / 1e6,
-					ctx.limitLocationBboxes.length, countApproximate[1], limitByRadius,countApproximate[0],  
+			int originalLimit = limitIntersection;
+			int[] typeIntersection = new int[] { 0 };
+			iterateIntersection(parent, token, (parentIndx, atom,  indxAtom) -> { 
+				int level = Math.min(atom.nearbyRadius, parent.nearbyResult(parentIndx));
+				if (level > limitIntersection) {
+					return;
+				}
+				boolean acceptIntersection = acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
+				if (acceptIntersection) {
+					TIntArrayList c = intersections[level];
+					if (typeIntersection[0] == 2) {
+						c = interPoiPoiOrStreetStreet[level];
+					} else if (typeIntersection[0] == 1) {
+						c = interPoiStreet[level];
+					}
+					c.add(parentIndx);
+					c.add(indxAtom);
+					c.add(typeIntersection[0]);
+				}
+			});
+			List<String> sizes = new ArrayList<String>();
+			for (int k = 0; k < intersections.length; k++) {
+				sizes.add(String.format("%,d/%,d/%,d", intersections[k].size() / 3,
+						interPoiStreet[k].size() /3, interPoiPoiOrStreetStreet[k].size() /3));
+			}
+			int newLevel = 0;
+			TIntArrayList res = new TIntArrayList();
+			newLevel = addResIntersections(ctx.settings.OPTIM_LIMIT_INTERSECTIONS * 3, intersections, limitIntersection, res);
+			addResIntersections(ctx.settings.OPTIM_LIMIT_INTERSECTIONS * 3, interPoiStreet, newLevel, res);
+			addResIntersections(ctx.settings.OPTIM_LIMIT_INTERSECTIONS * 3, interPoiPoiOrStreetStreet, newLevel, res);
+			
+			System.out.printf("Intersect (%.0f ms) /\\: %s (%d) -> %,d (%,d): '%s' (%,d) + %s (%,d)\n", 
+					(System.nanoTime() - nt) / 1e6, sizes, originalLimit, res.size() / 3, limitIntersection,  
 					token.originalWord, token.atoms.size(),
 					parent.wordTokens(), parent.getCombinations());
-
-			final int lmtNearby = limitByRadius;
-			iterateIntersection(parent, token, (indx, atom) -> {
-				if (atom.nearbyRadius > lmtNearby || parent.nearbyResult(indx) > lmtNearby) {
-					return;
-				}
-				boolean acceptIntersection = acceptIntersection(ctx, countApproximate[0], parent, indx, token, atom);
-				if (!acceptIntersection) {
-					return;
-				}
-				addResult(parent, indx, atom);
-			});
-			System.out.printf("Actual (%.0f ms) /\\: %,d res \n", (System.nanoTime() - nt) / 1e6, getCombinations());
+			limitIntersection = newLevel;
+			TIntIterator it = res.iterator();
+			while (it.hasNext()) {
+				int parentIndx = it.next();
+				int indxAtom = it.next();
+				int type = it.next();
+//				System.out.println(token.atoms.get(indxAtom) + " " + parent.getRawAtoms(parentIndx) + " ");
+				addResult(parent, parentIndx, token.atoms.get(indxAtom), type);
+			}
+			
+			
 		}		
+	}
+
+	private int addResIntersections(int limit, TIntArrayList[] intersections, int maxLevel, TIntArrayList res) {
+		int newLevel = 0;
+		for (int level = 0; level <= maxLevel; level++) {
+			TIntArrayList toAdd = intersections[level];
+			if (res.size() == 0 || (level == 0 && maxLevel > 0) || res.size() + toAdd.size() < limit) {
+				res.addAll(toAdd);
+				newLevel = level;
+			} else {
+				break;
+			}
+		}
+		return newLevel;
 	}
 
 
@@ -458,7 +509,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		return sum;
 	}
 
-	boolean addResult(SpatialSearchResultsList parent, int pindx, NameIndexAtom a) {
+	boolean addResult(SpatialSearchResultsList parent, int pindx, NameIndexAtom a, int typeIntersection) {
 		finalResult = null;
 		int pzoom = parent == null ? 0 : parent.tileZooms.get(pindx);
 		int zoom = Math.max(pzoom, a.coords.bboxTileZoom);
@@ -468,16 +519,25 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			this.linearResults.add(parent.linearResults.get(pindx * parent.tCount + i));
 		}
-
+		this.typeIntersections.add(typeIntersection);
 		this.tileIds.add(tileId);
 		this.tileZooms.add(zoom);
 		quadTree.put(zoom, tileId, insIndx);
 		return true;
 	}
 
-	private boolean acceptIntersection(SpatialSearchContext ctx, long approximateRes, 
-			SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a) {
+	private boolean acceptIntersection(SpatialSearchContext ctx,  SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a,
+			int[] typeIntersection) {
 		SpatialTextSearchSettings settings = ctx.settings;
+		typeIntersection[0] = 0;
+		// speed up
+		for (int i = 0; parent != null && i < parent.tCount; i++) {
+			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
+			if (pa.id == a.id) {
+				typeIntersection[0] = parent.typeIntersections.get(i);
+				return true;
+			}
+		}
 		// 1. Precise intersection
 		// no cache for parent now needed
 		boolean intersect = true;
@@ -492,11 +552,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			return false;
 		}
 		// 2. Don't allow intersect potential building with other object
-		boolean noStreetIntersect = !settings.SEARCH_STREET_INTERSECTIONS  
-				|| (approximateRes > settings.OPTIM_LIMIT_POI_OR_STREET_INTERSECTIONS);
-		boolean noPoiIntersect = !settings.SEARCH_POI_INTERSECTIONS 
-				|| (approximateRes > settings.OPTIM_LIMIT_POI_OR_STREET_INTERSECTIONS);
-		boolean noStreetPoiIntersect = (approximateRes > settings.OPTIM_LIMIT_POI_STREET_INTERSECTIONS);
+		HashMap<Long, NameIndexAtom> objects = new HashMap<>(4);
+		if(a.atomicObject()) {
+			objects.put(a.id, a);
+		}
+		
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 			if (pa.id == a.id) {
@@ -514,18 +574,30 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			} else if ((a.buildingInd >= 0) && pa.streetBuilding()) {
 				return false;
 			}
-			if (pa.streetBuilding() && a.streetBuilding() && noStreetIntersect) {
+			if(pa.atomicObject()) {
+				objects.put(pa.id, pa);
+			}
+			if (objects.size() > settings.LIMIT_ATOMIC_OBJECTS) {
 				return false;
 			}
-			if (noStreetPoiIntersect && a.type == SpatialSearchToken.POI_TYPE && pa.streetBuilding() ) {
-				// could be different for poi with bbox 
-				return false;
-			} else if (noStreetPoiIntersect && pa.type == SpatialSearchToken.POI_TYPE && a.streetBuilding() ) {
+			//    Don't intersect <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street')
+			if ((a.isCityStreetName() && pa.id != a.id) || (pa.isCityStreetName() && a.id != pa.id)) {
 				return false;
 			}
-			if (noPoiIntersect && a.type == SpatialSearchToken.POI_TYPE && pa.type == a.type) {
-				// could be different for poi with bbox 
-				return false;
+		}
+		if (objects.size() > 1) {
+			Iterator<NameIndexAtom> it = objects.values().iterator();
+			NameIndexAtom a1 = it.next();
+			NameIndexAtom a2 = it.next();
+			if ((a1.streetBuilding() != a2.streetBuilding()) && !it.hasNext()) {
+				typeIntersection[0] = 1;
+			} else {
+				typeIntersection[0] = 2;
+				if (!settings.SEARCH_STREET_INTERSECTIONS && a1.streetBuilding() && a2.streetBuilding()) {
+					return false;
+				} else if (!settings.SEARCH_POI_INTERSECTIONS && !a1.streetBuilding() && !a2.streetBuilding()) {
+					return false;
+				}
 			}
 		}
 		
@@ -538,37 +610,6 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				if (indexOf != -1 && a.name.indexOf(tokens[0].word, indexOf + 1) >= 0) {
 					// duplicate name in object
 				} else {
-					return false;
-				}
-			}
-			if (!pa.coords.intersects(a.coords)) {
-				intersect = false;
-				break;
-			}
-		}
-		
-		// 4. ignore multiple atomic objects intersections POI / Streets > 2!
-		//    Building + Street (counts as 2 objects) - no (Building + Street 1 + Street 2)
-		if (a.atomicObject()) {
-			// check limit atomic objects to add
-			List<Long> objects = new ArrayList<Long>(settings.LIMIT_ATOMIC_OBJECTS);
-			objects.add(a.id);
-			for (int i = 0; parent != null && i < parent.tCount; i++) {
-				NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
-				if (pa.atomicObject()) {
-					long id = pa.id;
-					if (pa.buildingInd >= 0) {
-//						id += Integer.MAX_VALUE;
-					}
-					if (!objects.contains(id)) {
-						objects.add(id);
-					}
-					//    Don't intersect <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street')
-					if ((a.isCityStreetName() && pa.id != a.id) || (pa.isCityStreetName() && a.id != pa.id)) {
-						return false;
-					}
-				}
-				if (objects.size() > settings.LIMIT_ATOMIC_OBJECTS) {
 					return false;
 				}
 			}

@@ -41,6 +41,7 @@ import net.osmand.util.SearchAlgorithms;
 ////////// IN PROGRESS //////////
 // TODO WEB Add url / coordinates parsing
 // FIXME Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k) - OPTIMAL OPTIM_LIMIT_INTERSECTIONS
+// TODO Ignore same embedded boundary city / county - deduplicate on the fly (new york x10)
 // TODO Sokak 2 order
 // TODO Filter results boundaries, <Salt Lake City>
 
@@ -51,7 +52,6 @@ import net.osmand.util.SearchAlgorithms;
 
 // TEST IDEAS
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
-// TODO Ignore same embedded boundary city / county - deduplicate on the fly
 // TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique) 
 // TODO ? Store wikidata id for boundaries (regions.ocbf) & display them - place=county, place=state ? 
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
@@ -72,6 +72,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Add flats: https://www.openstreetmap.org/node/5843642738
 // TODO Sugggestion-correction
 // TODO English postcodes
+
 
 public class SpatialSearchTestAndDocs {
 
@@ -192,7 +193,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
 		// ALL - Search Stats 1569.2 ms - 554.0 ms 59,656 atoms (read 318.8, match 134.1), 985.8 ms compute 693,139 (loadBld 396.2, read 149.5)
         // NO INTER - Search Stats 871.5 ms - 546.4 ms 59,656 atoms (read 313.7, match 135.6), 299.9 ms compute 4,735 (loadBld 54.1, read 37.2)
-		 query = "Sokak 2"; 
+		query = "Sokak 2";// 380657094 2.Sokak
+		location = new LatLon(40.7627, 29.8454);  
 //		query = "2/1 21038 Sokak"; // 1380369156
 		
 		
@@ -237,16 +239,16 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-//		pattern = "Us_new-york_new"; // new-york, new-jersey
+		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		pattern = "Us_new-"; 
-//		location = new LatLon(40.64946, -74.00682); // loaded
+		location = new LatLon(40.64946, -74.00682); // loaded
 //		location = new LatLon(40.760536, -73.99043);
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
 //		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
-//		query = "New York 4 av 8"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
-//		query = "New York 4 av 8"; // 160947243
+		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
+		query = "New York 4 av 8"; // 160947243
 //		query = "4th ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		
@@ -310,4 +312,5 @@ public class SpatialSearchTestAndDocs {
 		searchContext = new SpatialSearchContext(settings, ls, location);
 		a.searchTest(query, searchContext);
 	}
+	
 }

@@ -1,7 +1,6 @@
 package net.osmand.search.core.spatial;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -44,7 +43,7 @@ public class SpatialSearchToken {
 	
 	List<NameIndexAtom> atoms = new ArrayList<>();
 	TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
-	HashQuadTree<NameIndexAtom> quadTree = new HashQuadTree<>(16);
+	HashQuadTree<Integer> quadTree = new HashQuadTree<>(16);
 	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
 
 	CollatorStringMatcher collatorMain;
@@ -157,7 +156,8 @@ public class SpatialSearchToken {
 		}
 		index.put(atom.id, atom);
 		atoms.add(atom);
-		quadTree.put(atom.coords.bboxTileZoom, atom.coords.bboxTileId, atom);
+		int indx = atoms.size() - 1;
+		quadTree.put(atom.coords.bboxTileZoom, atom.coords.bboxTileId, indx);
 	}
 
 	boolean matchName(String name) {
