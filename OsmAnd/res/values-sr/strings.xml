@@ -6205,4 +6205,12 @@
     <string name="route_calculation_method_standard_only_desc">Увек користи стандардно рутирање. Спорије је, али омогућава навигацију са мапама различитих датума.</string>
     <string name="route_calculation_method_fast_only">Само брзи</string>
     <string name="route_calculation_method_fast_only_desc">Увек користи брзо рутирање. Прорачун ће се зауставити и затражити ажурирања ако се датуми мапе не подударају.</string>
+    <string name="ais_own_object">Подешавања за приказ сопственог АИС објекта</string>
+    <string name="ais_own_object_description">Ако сопствено пловило има АИС предајник, сигнал ће бити примљен заједно са сигналима других АИС пловила. Овде је дефинисано посебно руковање сопственим АИС сигналом.</string>
+    <string name="ais_own_mmsi">Сопствени ММСИ (Идентитет поморске мобилне службе)</string>
+    <string name="ais_own_mmsi_description">Идентификујте ММСИ (9-цифрену нумеричку вредност) сопственог АИС објекта.</string>
+    <string name="ais_display_own_position">Дефинишите да ли ће се приказивати сопствени АИС објекат.</string>
+    <string name="ais_display_own_position_description">Обично сопствену позицију приказује ОсмАнд. Додатни приказ сопственог АИС објекта може бити збуњујући и може се овде онемогућити.</string>
+    <string name="ais_receive_in_background">Примајте АИС податке чак и ако је ОсмАнд паузиран.</string>
+    <string name="ais_receive_in_background_description">Ако је омогућено, АИС слушалац порука остаје у функцији ако је ОсмАнд паузиран или у позадини. Ако је онемогућено, поруке се не примају ако је ОсмАнд у позадини.</string>
 </resources>
