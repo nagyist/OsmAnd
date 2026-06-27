@@ -141,9 +141,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			Map<String, Building> bldCheckCache = new HashMap<>();
 			for (int indx = 0; indx < getCombinations(); indx++) {
 				calcBuilding(indx, bldCheckCache);
+//				System.out.println(getRawAtoms(indx) + " " + skipResults.contains(indx));
 			}
 		}
-		if (ctx.settings.SEARCH_STREET_INTERSECTIONS ) {
+		if (ctx.settings.SEARCH_STREET_INTERSECTIONS) {
 			for (int indx = 0; indx < getCombinations(); indx++) {
 				calcStreetIntersections(ctx, indx);
 			}
@@ -217,9 +218,6 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 				NameIndexAtom str = linearResults.get(indx * tCount + strTokenInd);
 				if (str.id != bld.id) {
-					if(bld.id == 1284571918336l) {
-						System.out.println("-------");
-					}
 					continue;
 				}
 				if (bldCheckMap == null) {
@@ -469,7 +467,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			addResIntersections(ctx.settings.OPTIM_LIMIT_INTERSECTIONS * 3, interPoiPoiOrStreetStreet, newLevel, res);
 			
 			System.out.printf("Intersect (%.0f ms) /\\: %s (%d) -> %,d (%,d): '%s' (%,d) + %s (%,d)\n", 
-					(System.nanoTime() - nt) / 1e6, sizes, originalLimit, res.size() / 3, limitIntersection,  
+					(System.nanoTime() - nt) / 1e6, sizes, originalLimit, res.size() / 3, newLevel,  
 					token.originalWord, token.atoms.size(),
 					parent.wordTokens(), parent.getCombinations());
 			limitIntersection = newLevel;
@@ -553,7 +551,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		// 2. Don't allow intersect potential building with other object
 		HashMap<Long, NameIndexAtom> objects = new HashMap<>(4);
-		if(a.atomicObject()) {
+		if (a.atomicObject()) {
 			objects.put(a.id, a);
 		}
 		

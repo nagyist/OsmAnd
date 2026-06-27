@@ -457,10 +457,6 @@ public class SpatialSearchContext {
 		} else if (b != null && wordInd < b.getExtraSuffixCount()) {
 			name += b.getExtraSuffix(wordInd);
 		}
-		if(name.startsWith("2.sokak")) {
-			//FIXME
-			System.out.println(name);
-		}
 		if (name.length() != 0 && (matchName(t, name) || (name = matchPartName(t, name, allTokens)) != null)) {
 			int other;
 			if (a != null) {
@@ -507,8 +503,8 @@ public class SpatialSearchContext {
 			possiblyMultiword = true;
 			name = name.replace('-', ' ');
 		}
-		if (name.startsWith("2") && name.indexOf('.') != -1) {
-			// FIXME
+		// 2.Sokak
+		if (name.indexOf('.') != -1) {
 			possiblyMultiword = true;
 			name = name.replace('.', ' ');
 		}

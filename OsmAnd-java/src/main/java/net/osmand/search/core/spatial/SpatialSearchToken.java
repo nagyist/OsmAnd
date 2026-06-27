@@ -288,8 +288,8 @@ public class SpatialSearchToken {
 				bbox31 = SearchAlgorithms.decodeBboxForNameAtomsBytes(bbox, x16, y16);
 				if (bbox31 != null) {
 					int z = 31;
-					int xleft = bbox31[0], xright = bbox31[2];
-					int ytop = bbox31[1], ybottom = bbox31[3];
+					int xleft = bbox31[0], xright = Math.max(bbox31[2], bbox31[0]);
+					int ytop = bbox31[1], ybottom = Math.max(bbox31[3], bbox31[3]);;
 					while (xleft != xright || ytop != ybottom) {
 						z--;
 						xleft >>= 1;

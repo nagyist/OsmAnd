@@ -160,9 +160,9 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
-//		pattern = "Us_";
+		pattern = "Us_";
 //		pattern = "Map";
-//		query = "Salt Lake City Pennsylvania Place 123 UT USA";
+		query = "Salt Lake City Pennsylvania Place 123 UT USA";
 //		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
 //		query = "Salt Lake City Pennsylvania Street";
@@ -188,13 +188,13 @@ public class SpatialSearchTestAndDocs {
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 		
-		pattern = "Turkey_";
+//		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // OK
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
 		// ALL - Search Stats 1569.2 ms - 554.0 ms 59,656 atoms (read 318.8, match 134.1), 985.8 ms compute 693,139 (loadBld 396.2, read 149.5)
         // NO INTER - Search Stats 871.5 ms - 546.4 ms 59,656 atoms (read 313.7, match 135.6), 299.9 ms compute 4,735 (loadBld 54.1, read 37.2)
-		query = "Sokak 2";// 380657094 2.Sokak
-		location = new LatLon(40.7627, 29.8454);  
+//		query = "Sokak 2";// 380657094 2.Sokak
+//		location = new LatLon(40.7627, 29.8454);  
 //		query = "2/1 21038 Sokak"; // 1380369156
 		
 		
@@ -235,20 +235,21 @@ public class SpatialSearchTestAndDocs {
 //		pattern = "Belarus_minsk";
 //		query = "Независим. 48, 1";
 		
-//		pattern = "Australia";
+		pattern = "Australia";
+//		pattern = "Oceania";
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
-//		query = "Holmby Melbourne 18B";
+		query = "Holmby Melbourne 18B";
 		
-		pattern = "Us_new-york_new"; // new-york, new-jersey
+//		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		pattern = "Us_new-"; 
-		location = new LatLon(40.64946, -74.00682); // loaded
+//		location = new LatLon(40.64946, -74.00682); // loaded
 //		location = new LatLon(40.760536, -73.99043);
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
 //		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
-		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
-		query = "New York 4 av 8"; // 160947243
+//		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
+//		query = "New York 4 av 8"; // 160947243
 //		query = "4th ave"; //  unit '4 ave'   
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		
