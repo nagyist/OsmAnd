@@ -148,9 +148,11 @@ public class SpatialSearchToken {
 		NameIndexAtom aa = index.get(atom.id);
 		if (aa != null) {
 			if (aa != atom) {
-				// select shortest avaiable version
-				aa.otherWordsCnt = Math.min(aa.otherWordsCnt, atom.otherWordsCnt);
-//				System.out.println(aa.name + " != " + atom.name  + " " + aa + " " + aa.object.getLocation());
+				// select shortest available version
+				if (atom.otherWordsCnt < aa.otherWordsCnt) {
+					aa.otherWordsCnt = atom.otherWordsCnt;
+					aa.otherFoundCnt = atom.otherFoundCnt;
+				}
 			}
 			return;
 		}
@@ -323,8 +325,8 @@ public class SpatialSearchToken {
 		final long parentid; // used to read object
 		MapObject object; // same for all
 		int otherWordsCnt; // added before intersection
+		int otherFoundCnt;
 		final boolean cityAsStreet;
-		final int otherFoundCnt;
 		final NameIndexAtomXY coords; 
 		final int buildingInd; // added before intersection
 		final int nearbyRadius;

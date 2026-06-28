@@ -544,7 +544,6 @@ public class SpatialSearchContext {
 				break;
 			}
 		}
-//		if(nearByType > 0) {return; }
 		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, streetCity, other, otherFound, coords,
 				nearByType);
 		t.addAtom(atom);

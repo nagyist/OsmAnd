@@ -294,6 +294,14 @@ public class SpatialTextSearch {
 		return result;
 
 	}
+	public SpatialSearchResults searchStreetAPI(String input, SpatialSearchContext ctx) throws IOException {
+		SpatialSearchResults res = new SpatialSearchResults();
+		ctx.initFiles(cache);
+		res.input = input;
+		res.tokens = splitWords(ctx, input);
+		ctx.readAtoms(res.tokens);
+		return res;
+	}
 
 	public SpatialSearchResults searchAPI(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = new SpatialSearchResults();
