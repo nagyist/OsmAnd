@@ -5842,7 +5842,7 @@
     <string name="astro_stars">Étoiles</string>
     <string name="astro_galaxies">Galaxies</string>
     <string name="astro_nebulae">Nébuleuses</string>
-    <string name="astro_open_clusters">Amas ouverts</string>
+    <string name="astro_open_clusters">Ouvrir les amas</string>
     <string name="astro_globular_clusters">Amas globulaires</string>
     <string name="astro_galaxy_clusters">Amas de galaxies</string>
     <string name="astro_black_holes">Trous noirs</string>
@@ -5885,7 +5885,7 @@
     <string name="backup_deleting_all_data">Suppression des données…</string>
     <string name="astro_solar_system">Système solaire</string>
     <string name="astro_nebulas">Nébuleuses</string>
-    <string name="astro_star_clusters">Amas stellaires</string>
+    <string name="astro_star_clusters">Amas d\'étoiles</string>
     <string name="map_3d">3D</string>
     <string name="map_2d">2D</string>
     <string name="astro_deep_sky">Ciel profond</string>
@@ -6029,7 +6029,7 @@
     <string name="purchases_feature_desc_astronomy">Explorez le ciel nocturne grâce à une carte hors ligne et à un catalogue des astres. Planifiez vos observations à l\'aide de graphiques de visibilité intelligents, d\'horaires quotidiens et d\'un mode RA interactif.</string>
     <string name="astro_expand_your_universe_description">Accédez à la base de données étendue comprenant des catalogues du ciel profond, des articles Wikipédia et le mode de réalité augmentée hors ligne.</string>
     <string name="astro_offline_knowledge_base_title">Base de connaissances hors ligne</string>
-    <string name="astro_offline_knowledge_base_description">Téléchargez la base de données étendue pour accéder hors ligne aux articles de Wikipédia et aux catalogues du ciel profond.</string>
+    <string name="astro_offline_knowledge_base_description">Téléchargez la base de données étendue pour accéder aux articles de Wikipédia et aux catalogues du ciel profond hors ligne.</string>
     <string name="astro_schedule_next_day_note">⁺¹ Le lendemain.</string>
     <string name="astro_visibility_show_today">Afficher la visibilité d\'aujourd\'hui</string>
     <string name="astro_schedule_show_current_week">Afficher la semaine en cours</string>

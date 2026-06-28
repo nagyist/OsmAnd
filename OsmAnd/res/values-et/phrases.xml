@@ -5153,4 +5153,6 @@
     <string name="poi_denomination_pkn">Madalmaade protestantlik kirik</string>
     <string name="poi_denomination_tiantai">Tiantai-budistlik</string>
     <string name="poi_denomination_scottish_episcopal">Šoti Episkopaalne Kirik</string>
+    <string name="poi_denomination_catholic_apostolic">Katoliiklik apostellik kirik</string>
+    <string name="poi_denomination_czechoslovak_hussite">Tšehhi hussiidikirik</string>
 </resources>

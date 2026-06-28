@@ -6265,4 +6265,12 @@
     <string name="route_calculation_method_standard_only_desc">Bruger altid standardruteberegning. Det er langsommere, men gør det muligt at navigere med kort fra forskellige datoer.</string>
     <string name="route_calculation_method_fast_only">Kun hurtig</string>
     <string name="route_calculation_method_fast_only_desc">Bruger altid hurtig ruteberegning. Beregningen stopper og beder om opdateringer, hvis kortdataene ikke stemmer overens.</string>
+    <string name="ais_own_object">Indstillinger for visning af eget AIS-objekt</string>
+    <string name="ais_own_object_description">Hvis eget fartøj er udstyret med en AIS-sender, modtages signalet sammen med signaler fra andre AIS-fartøjer. Her beskrives den særlige håndtering af eget AIS-signal.</string>
+    <string name="ais_own_mmsi">Eget MMSI-nummer (Maritime Mobile Service Identity)</string>
+    <string name="ais_own_mmsi_description">Find MMSI-nummeret (9-cifret tal) for dit eget AIS-objekt.</string>
+    <string name="ais_display_own_position">Angiv, om eget AIS-objekt skal vises.</string>
+    <string name="ais_display_own_position_description">Normalt viser OsmAnd ens egen position. Den ekstra visning af ens eget AIS-objekt kan være forvirrende og kan deaktiveres her.</string>
+    <string name="ais_receive_in_background">Modtag AIS-data, selvom OsmAnd er sat på pause.</string>
+    <string name="ais_receive_in_background_description">Hvis denne funktion er aktiveret, fortsætter AIS-meddelelseslytteren med at køre, selvom OsmAnd er sat på pause eller kører i baggrunden. Hvis funktionen er deaktiveret, modtages der ingen meddelelser, når OsmAnd kører i baggrunden.</string>
 </resources>
