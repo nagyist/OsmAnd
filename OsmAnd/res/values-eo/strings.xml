@@ -6216,4 +6216,12 @@
     <string name="free_download_limit_reached">Atingis limigon de senpagaj elŝutoj</string>
     <string name="free_download_limit_reached_description">Malŝlosi senlimajn elŝutojn kaj ĝisdatigojn de mapo</string>
     <string name="get_unlimited_downloads">Akiri senlimajn elŝutojn</string>
+    <string name="ais_own_object">Agordoj pri vidigi propran AIS-objekton</string>
+    <string name="ais_own_object_description">Se via propra ŝipo havas AIS-transsendilon, ĝia signalo estos ricevita kune kun signaloj de aliaj AIS-ŝipoj. Tie ĉi vi povas alĝustigi specifan traktadon de via propra signalo.</string>
+    <string name="ais_own_mmsi">Propra MMSI (mara portebl-serva identigilo)</string>
+    <string name="ais_own_mmsi_description">MMSI-identigilo (9 ciferoj) de via propra AIS-objekto.</string>
+    <string name="ais_display_own_position">Difini ĉu vidigi sian propran AIS-objekton.</string>
+    <string name="ais_display_own_position_description">Kutime via propra pozicio montriĝas en OsmAnd. La aldona vidigo de via propra AIS-objekto povas esti konfuza, do vi povas malaktivigi ĝin tie ĉi.</string>
+    <string name="ais_receive_in_background">Ricevi AIS-datumojn eĉ kiam OsmAdn estas paŭzigita.</string>
+    <string name="ais_receive_in_background_description">Se aktiva, aŭskultanto de AIS-mesaĝoj pluos funkcii, kiam OsmAnd estas paŭzigita aŭ funkcias fone. Se malaktiva, neniu mesaĝo estos ricevita, kiam OsmAnd funkcios fone.</string>
 </resources>
