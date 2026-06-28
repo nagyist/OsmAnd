@@ -34,27 +34,29 @@ import net.osmand.util.SearchAlgorithms;
 // Document TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
 // bis matching
 // !!! Building interpolation, Street intersection match
-// TESTING 2га нова
+// TESTING 2га нова - TODO order
 // TESTING 'LangeStraße' (Data 'Lange Straße')
 // TESTING 'Daimler strasse' (Data 'daimlerstraße')
+// TESTING Sokak 2 order
+// TESTING Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k) - OPTIMAL 
 
 ////////// IN PROGRESS //////////
-// TODO WEB Add url / coordinates parsing
-// FIXME Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k) - OPTIMAL OPTIM_LIMIT_INTERSECTIONS
-// TODO Ignore same embedded boundary city / county - deduplicate on the fly (new york x10)
-// TODO Sokak 2 order
-// TODO Filter results boundaries, <Salt Lake City>
+
+// FIXME Ignore same embedded boundary city / county - deduplicate on the fly (new york x10)
+// TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique)
+// TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
+
 
 // FIXME POI Categories + top poi categories
 // TODO POI Categories translations / synonyms
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 //    Combine regions.ocbf (boundary)
+// TODO Filter results boundaries, <Salt Lake City>
+// TODO WEB Add url / coordinates parsing
 
 // TEST IDEAS
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
-// TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique) 
 // TODO ? Store wikidata id for boundaries (regions.ocbf) & display them - place=county, place=state ? 
-// TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
 
 // TO DO
 // TODO Inspector stats index_words_dashboard.html
@@ -162,14 +164,14 @@ public class SpatialSearchTestAndDocs {
 		
 		pattern = "Us_";
 //		pattern = "Map";
-		query = "Salt Lake City Pennsylvania Place 123 UT USA";
+//		query = "Salt Lake City Pennsylvania Place 123 UT USA";
 //		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
 //		query = "Salt Lake City Pennsylvania Street";
 //		query = "West Valley City";
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 //		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
-//		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA";
+//		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; // 50193098, 26283396442
 //		query = "Pennsylvania Avenue Philadelphia PA USA"; 
 //		query = "Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA";
 //		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
@@ -235,22 +237,26 @@ public class SpatialSearchTestAndDocs {
 //		pattern = "Belarus_minsk";
 //		query = "Независим. 48, 1";
 		
-		pattern = "Australia";
+//		pattern = "Australia";
 //		pattern = "Oceania";
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
-		query = "Holmby Melbourne 18B";
+//		query = "Holmby Melbourne 18B";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-//		pattern = "Us_new-"; 
-//		location = new LatLon(40.64946, -74.00682); // loaded
-//		location = new LatLon(40.760536, -73.99043);
+		pattern = "Us_new-"; 
+		
+//		location = new LatLon(41.10566, -73.89009); // new york avenue 4
+		location = new LatLon(40.64946, -74.00682); // loaded
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
 //		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
-//		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
-//		query = "New York 4 av 8"; // 160947243
+		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
+		query = "New York 4 av 8"; // 160947243
 //		query = "4th ave"; //  unit '4 ave'   
+//		query = "4th ave 8 paterson"; //  wrong city...
+		// Result 4 - 40.8407, -74.0954 [[4th, 8] Building 2 4th Street (26238417818) 40.8441 -74.0910 , [ave, paterson] STREET_TYPE Paterson Avenue (651531238) 40.8374 -74.0997 ]
+
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		
 		

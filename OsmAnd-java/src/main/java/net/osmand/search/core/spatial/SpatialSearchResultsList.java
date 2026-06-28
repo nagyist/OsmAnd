@@ -333,10 +333,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	public int nearbyResult(int ind) {
-		int min = limitIntersection;
+		int min = 0;
 		for (int i = 0; i < tCount; i++) {
 			NameIndexAtom ni = linearResults.get(ind * tCount + i);
-			min = Math.min(ni.nearbyRadius, min);
+			min = Math.max(ni.nearbyRadius, min);
 		}
 		return min;
 	}
@@ -438,12 +438,18 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			int originalLimit = limitIntersection;
 			int[] typeIntersection = new int[] { 0 };
 			iterateIntersection(parent, token, (parentIndx, atom,  indxAtom) -> { 
-				int level = Math.min(atom.nearbyRadius, parent.nearbyResult(parentIndx));
+				int level = Math.max(atom.nearbyRadius, parent.nearbyResult(parentIndx));
 				if (level > limitIntersection) {
 					return;
 				}
 				boolean acceptIntersection = acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
 				if (acceptIntersection) {
+					if ((atom.id % 0xffff == 34960)) {
+						System.out.println(atom  + " ++ " + parent.getRawAtoms(parentIndx));
+					}
+					if (parent.tCount == 3) {
+//						System.out.println(atom + " ++ " + parent.getRawAtoms(parentIndx));
+					}
 					TIntArrayList c = intersections[level];
 					if (typeIntersection[0] == 2) {
 						c = interPoiPoiOrStreetStreet[level];
@@ -527,16 +533,49 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	private boolean acceptIntersection(SpatialSearchContext ctx,  SpatialSearchResultsList parent, int pindx, SpatialSearchToken token, NameIndexAtom a,
 			int[] typeIntersection) {
 		SpatialTextSearchSettings settings = ctx.settings;
-		typeIntersection[0] = 0;
-		// speed up
+		typeIntersection[0] = -1;
+		// 1. speed up for same id
+		// Don't allow intersect potential building with other object
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 			if (pa.id == a.id) {
 				typeIntersection[0] = parent.typeIntersections.get(i);
-				return true;
+				continue;
+			}
+			// pa and a using same tokens for street & house but different streets / poi same as below
+			if (parent.tokens[i].originalOrder == a.buildingInd) {
+				return false;
+			} else if (pa.buildingInd == token.originalOrder) {
+				return false;
+			}
+			// don't intersect building with other street
+			if ((pa.buildingInd >= 0) && a.streetBuilding()) {
+				return false;
+			} else if ((a.buildingInd >= 0) && pa.streetBuilding()) {
+				return false;
+			}
+			
+		}
+		// 2. Duplicate words in query
+		for (int i = 0; parent != null && i < parent.tCount; i++) {
+			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
+			if (pa.id == a.id && tokens[0].word.equals(tokens[i + 1].word)) {
+				// NameIndexAtom supports "<word> <...> <word>" but it's not present in DATA now
+				int indexOf = a.name.indexOf(tokens[0].word, pindx);
+				if (indexOf != -1 && a.name.indexOf(tokens[0].word, indexOf + 1) >= 0) {
+					// duplicate name in object
+				} else {
+					return false;
+				}
 			}
 		}
-		// 1. Precise intersection
+		// speed up for sme id checks
+		if (typeIntersection[0] >= 0) {
+			return true;
+		}
+		
+		typeIntersection[0] = 0;
+		// 3. Precise intersection
 		// no cache for parent now needed
 		boolean intersect = true;
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
@@ -549,30 +588,21 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		if (!intersect) {
 			return false;
 		}
-		// 2. Don't allow intersect potential building with other object
+		// 4. New intersection check the limits
 		HashMap<Long, NameIndexAtom> objects = new HashMap<>(4);
 		if (a.atomicObject()) {
 			objects.put(a.id, a);
 		}
-		
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 			if (pa.id == a.id) {
 				continue;
 			}
-			// pa and a using same tokens for street & house but different streets / poi - same as below
-			if (parent.tokens[i].originalOrder == a.buildingInd) {
-				return false;
-			} else if (pa.buildingInd == token.originalOrder) {
+			if (parent.tokens[i].index.containsKey(a.id) && !tokens[0].word.equals(parent.tokens[i].word)) {
+				// ignore every object that has this name already (except duplicate words)
 				return false;
 			}
-			// don't intersect building with other street
-			if ((pa.buildingInd >= 0) && a.streetBuilding()) {
-				return false;
-			} else if ((a.buildingInd >= 0) && pa.streetBuilding()) {
-				return false;
-			}
-			if(pa.atomicObject()) {
+			if (pa.atomicObject()) {
 				objects.put(pa.id, pa);
 			}
 			if (objects.size() > settings.LIMIT_ATOMIC_OBJECTS) {
@@ -599,19 +629,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		
-		// 3. Duplicate words		
-		for (int i = 0; parent != null && i < parent.tCount; i++) {
-			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
-			if (pa.id == a.id && tokens[0].word.equals(tokens[i + 1].word)) {
-				// NameIndexAtom supports "<word> <...> <word>" but it's not present in DATA now
-				int indexOf = a.name.indexOf(tokens[0].word, pindx);
-				if (indexOf != -1 && a.name.indexOf(tokens[0].word, indexOf + 1) >= 0) {
-					// duplicate name in object
-				} else {
-					return false;
-				}
-			}
-		}
+		
 		return true;
 	}
 

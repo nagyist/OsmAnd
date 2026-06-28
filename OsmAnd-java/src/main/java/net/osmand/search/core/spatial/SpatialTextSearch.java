@@ -53,9 +53,9 @@ public class SpatialTextSearch {
 		// no intersection recorded but streets are nearby
 		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
 		
-		public int[] OPTIM_LIMIT_RADIUS = new int[] {5_000, 30_000, 50_000}; // 10 km
+		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 30_000, 100_000}; // 
 //		public int[] OPTIM_LIMIT_RADIUS = new int[] {}; 
-		public int OPTIM_LIMIT_INTERSECTIONS = 50_000; // 50K
+		public int OPTIM_LIMIT_INTERSECTIONS = 20_000; // 20K or 50K
 		
 		// max prefixes for each name reader
 		public int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
