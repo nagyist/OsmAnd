@@ -6056,7 +6056,7 @@
     <string name="shared_string_allocated">Alloué</string>
     <string name="open_till_short">Jusqu\'à</string>
     <string name="open_from_short">De</string>
-    <string name="astro_designations">Designations</string>
+    <string name="astro_designations">Désignations</string>
     <string name="astronomy_map">Carte astronomique</string>
     <string name="obd_simulation_device">Dispositif de simulation</string>
     <string name="favorite_confirm_delete_folder">Cette opération supprimera le dossier « %1$s », y compris les dossiers qu\'il contient et %2$d favoris.</string>
