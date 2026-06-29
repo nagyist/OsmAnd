@@ -6167,4 +6167,9 @@
     <string name="media_storage">Archivio multimediale</string>
     <string name="camera_folder">Cartella della fotocamera</string>
     <string name="media_storage_main_storage_descr">I file sono salvati nell\'archivio privato dell\'app. Sono nascosti dalla Galleria e dalle altre app.</string>
+    <string name="media_storage_shared_storage_descr">I file sono salvati nelle cartelle pubbliche (Immagini, Video, Musica). Sono visibili nella Galleria e in Google Foto.</string>
+    <string name="media_storage_camera_folder_descr">I file sono salvati nel Rullino fotografico. Nota: l\'audio è salvato in Musica/OsmAnd.</string>
+    <string name="media_storage_manually_specified_descr">I file sono salvati in una cartella personalizzata e ordinati per tipo (Audio, Foto, Video).</string>
+    <string name="change_media_storage_question">Cambio l\'archivio multimediale?</string>
+    <string name="change_media_storage_full_description">Sposto i file multimediali esistenti nella nuova destinazione?\n%1$s &gt; %2$s</string>
 </resources>
