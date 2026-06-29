@@ -271,6 +271,7 @@ public class ConnectedApp implements Comparable<ConnectedApp> {
 		private String cachedSubtext;
 		private Boolean cachedNight;
 		private Integer cachedIcon;
+		private String cachedIconUri;
 		private boolean init = true;
 
 		public AidlTextInfoWidget(@NonNull MapActivity mapActivity, @NonNull String widgetId, @Nullable WidgetsPanel widgetsPanel) {
@@ -297,17 +298,25 @@ public class ConnectedApp implements Comparable<ConnectedApp> {
 				String txt = widget.getText();
 				String subtext = widget.getDescription();
 				boolean nightMode = drawSettings != null && drawSettings.isNightMode();
-				int icon = AndroidUtils.getDrawableId(app, nightMode ? widget.getDarkIconName() : widget.getLightIconName());
+				String iconUri = nightMode ? widget.getDarkIconUri() : widget.getLightIconUri();
+				int icon = Algorithms.isEmpty(iconUri)
+						? AndroidUtils.getDrawableId(app, nightMode ? widget.getDarkIconName() : widget.getLightIconName())
+						: 0;
 				if (init || !Algorithms.objectEquals(txt, cachedTxt) || !Algorithms.objectEquals(subtext, cachedSubtext)
-						|| !Algorithms.objectEquals(nightMode, cachedNight) || !Algorithms.objectEquals(icon, cachedIcon)) {
+						|| !Algorithms.objectEquals(nightMode, cachedNight) || !Algorithms.objectEquals(icon, cachedIcon)
+						|| !Algorithms.objectEquals(iconUri, cachedIconUri)) {
 					init = false;
 					cachedTxt = txt;
 					cachedSubtext = subtext;
 					cachedNight = nightMode;
 					cachedIcon = icon;
+					cachedIconUri = iconUri;
 
 					setText(txt, subtext);
-					if (icon != 0) {
+					Drawable customIcon = AidlExternalIconHelper.getIconDrawable(app, iconUri);
+					if (customIcon != null) {
+						setImageDrawable(customIcon);
+					} else if (icon != 0) {
 						setImageDrawable(icon);
 					} else {
 						setImageDrawable(null);
@@ -365,6 +374,9 @@ public class ConnectedApp implements Comparable<ConnectedApp> {
 		return false;
 	}
 
+	/**
+	 * Registers a widget group or updates an existing one with the same id
+	 */
 	boolean addWidgetGroup(AidlWidgetGroupWrapper group) {
 		if (group != null && !Algorithms.isEmpty(group.getId())) {
 			widgetGroups.put(group.getId(), group);
@@ -374,32 +386,16 @@ public class ConnectedApp implements Comparable<ConnectedApp> {
 		return false;
 	}
 
-	boolean updateWidgetGroup(AidlWidgetGroupWrapper group) {
-		if (group != null && widgetGroups.containsKey(group.getId())) {
-			widgetGroups.put(group.getId(), group);
-			app.getAidlApi().reloadMap();
-			return true;
+	/**
+	 * Removes a widget group. By default its widgets are kept but ungrouped (their
+	 * group reference is cleared); if removeWidgets is true the widgets are removed
+	 * too. Returns true only if the group existed
+	 */
+	boolean removeWidgetGroup(String groupId, boolean removeWidgets) {
+		if (Algorithms.isEmpty(groupId) || widgetGroups.remove(groupId) == null) {
+			return false;
 		}
-		return false;
-	}
-
-	boolean removeWidgetGroup(String groupId) {
-		if (!Algorithms.isEmpty(groupId)) {
-			widgetGroups.remove(groupId);
-			for (AidlMapWidgetWrapper widget : widgets.values()) {
-				if (groupId.equals(widget.getGroupId())) {
-					widget.setGroupId(null);
-				}
-			}
-			app.getAidlApi().reloadMap();
-			return true;
-		}
-		return false;
-	}
-
-	boolean removeWidgetGroupWithWidgets(String groupId) {
-		if (!Algorithms.isEmpty(groupId)) {
-			widgetGroups.remove(groupId);
+		if (removeWidgets) {
 			List<String> idsToRemove = new ArrayList<>();
 			for (AidlMapWidgetWrapper widget : widgets.values()) {
 				if (groupId.equals(widget.getGroupId())) {
@@ -409,10 +405,15 @@ public class ConnectedApp implements Comparable<ConnectedApp> {
 			for (String widgetId : idsToRemove) {
 				removeMapWidget(widgetId);
 			}
-			app.getAidlApi().reloadMap();
-			return true;
+		} else {
+			for (AidlMapWidgetWrapper widget : widgets.values()) {
+				if (groupId.equals(widget.getGroupId())) {
+					widget.setGroupId(null);
+				}
+			}
 		}
-		return false;
+		app.getAidlApi().reloadMap();
+		return true;
 	}
 
 	boolean addMapLayer(AidlMapLayerWrapper layer) {

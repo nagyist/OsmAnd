@@ -9,6 +9,8 @@ public class AidlWidgetGroupWrapper {
 	private final String description;
 	private final String dayIconName;
 	private final String nightIconName;
+	private final String dayIconUri;
+	private final String nightIconUri;
 
 	public AidlWidgetGroupWrapper(AWidgetGroup group) {
 		this.id = group.getId();
@@ -16,6 +18,8 @@ public class AidlWidgetGroupWrapper {
 		this.description = group.getDescription();
 		this.dayIconName = group.getDayIconName();
 		this.nightIconName = group.getNightIconName();
+		this.dayIconUri = group.getDayIconUri();
+		this.nightIconUri = group.getNightIconUri();
 	}
 
 	public String getId() {
@@ -36,5 +40,13 @@ public class AidlWidgetGroupWrapper {
 
 	public String getNightIconName() {
 		return nightIconName;
+	}
+
+	public String getDayIconUri() {
+		return dayIconUri;
+	}
+
+	public String getNightIconUri() {
+		return nightIconUri;
 	}
 }

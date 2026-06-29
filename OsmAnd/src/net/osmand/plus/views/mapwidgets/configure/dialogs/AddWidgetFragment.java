@@ -1,6 +1,7 @@
 package net.osmand.plus.views.mapwidgets.configure.dialogs;
 
 import static net.osmand.plus.views.mapwidgets.configure.dialogs.WidgetDataHolder.KEY_EXTERNAL_GROUP_ID;
+import static net.osmand.plus.views.mapwidgets.configure.dialogs.WidgetDataHolder.KEY_EXTERNAL_GROUP_WIDGET_IDS;
 import static net.osmand.plus.views.mapwidgets.configure.dialogs.WidgetDataHolder.KEY_EXTERNAL_PROVIDER_PACKAGE;
 import static net.osmand.plus.views.mapwidgets.configure.dialogs.WidgetDataHolder.KEY_EXTERNAL_WIDGET_ID;
 import static net.osmand.plus.views.mapwidgets.configure.dialogs.WidgetDataHolder.KEY_GROUP_NAME;
@@ -24,6 +25,7 @@ import androidx.fragment.app.FragmentManager;
 
 import net.osmand.Collator;
 import net.osmand.OsmAndCollator;
+import net.osmand.aidl.AidlExternalIconHelper;
 import net.osmand.aidl.AidlMapWidgetWrapper;
 import net.osmand.aidl.OsmandAidlApi;
 import net.osmand.plus.R;
@@ -209,10 +211,7 @@ public class AddWidgetFragment extends BaseFullScreenFragment {
 		View view = inflater.inflate(R.layout.add_widget_item, container, false);
 		String widgetId = getAidlWidgetId(aidlWidgetData);
 		String title = aidlWidgetData.getMenuTitle();
-		String iconName = aidlWidgetData.getMenuIconName();
-		int iconId = AndroidUtils.getDrawableId(app, iconName);
-		Drawable icon = iconId != 0 ? getPaintedIcon(iconId, appMode.getProfileColor(nightMode)) : null;
-		setupWidgetItemView(view, widgetId, title, null, icon, false);
+		setupWidgetItemView(view, widgetId, title, null, getAidlWidgetIcon(aidlWidgetData), false);
 
 		container.addView(view);
 	}
@@ -226,12 +225,20 @@ public class AddWidgetFragment extends BaseFullScreenFragment {
 			View itemView = inflater.inflate(R.layout.add_widget_item, container, false);
 			String widgetId = getAidlWidgetId(aidlWidgetData);
 			String title = aidlWidgetData.getMenuTitle();
-			int iconId = AndroidUtils.getDrawableId(app, aidlWidgetData.getMenuIconName());
-			Drawable icon = iconId != 0 ? getPaintedIcon(iconId, appMode.getProfileColor(nightMode)) : null;
 			boolean showDivider = i + 1 < aidlWidgets.size();
-			setupWidgetItemView(itemView, widgetId, title, null, icon, showDivider);
+			setupWidgetItemView(itemView, widgetId, title, null, getAidlWidgetIcon(aidlWidgetData), showDivider);
 			container.addView(itemView);
 		}
+	}
+
+	@Nullable
+	private Drawable getAidlWidgetIcon(@NonNull AidlMapWidgetWrapper aidlWidgetData) {
+		Drawable customIcon = AidlExternalIconHelper.getIconDrawable(app, aidlWidgetData.getMenuIconUri());
+		if (customIcon != null) {
+			return customIcon;
+		}
+		int iconId = AndroidUtils.getDrawableId(app, aidlWidgetData.getMenuIconName());
+		return iconId != 0 ? getPaintedIcon(iconId, appMode.getProfileColor(nightMode)) : null;
 	}
 
 	private void setupWidgetItemView(@NonNull View view,
@@ -355,12 +362,14 @@ public class AddWidgetFragment extends BaseFullScreenFragment {
 	                                           @NonNull WidgetsPanel widgetsPanel,
 	                                           @NonNull String externalProviderPackage,
 	                                           @NonNull String externalGroupId,
+	                                           @Nullable ArrayList<String> groupWidgetIds,
 	                                           @Nullable List<String> alreadySelectedWidgetsIds) {
 		Bundle args = new Bundle();
 		args.putString(APP_MODE_KEY, appMode.getStringKey());
 		args.putString(KEY_WIDGETS_PANEL_ID, widgetsPanel.name());
 		args.putString(KEY_EXTERNAL_PROVIDER_PACKAGE, externalProviderPackage);
 		args.putString(KEY_EXTERNAL_GROUP_ID, externalGroupId);
+		args.putStringArrayList(KEY_EXTERNAL_GROUP_WIDGET_IDS, groupWidgetIds);
 		args.putSerializable(KEY_ALREADY_SELECTED_WIDGETS_IDS, (Serializable) alreadySelectedWidgetsIds);
 		AddWidgetFragment fragment = new AddWidgetFragment();
 		fragment.setArguments(args);

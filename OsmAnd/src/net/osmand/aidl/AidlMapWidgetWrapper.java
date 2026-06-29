@@ -19,6 +19,10 @@ public class AidlMapWidgetWrapper {
 
 	private String groupId;
 
+	private final String menuIconUri;
+	private final String lightIconUri;
+	private final String darkIconUri;
+
 	/**
 	 * Old API constructor
 	 */
@@ -34,6 +38,9 @@ public class AidlMapWidgetWrapper {
 		this.rightPanelByDefault = true;
 		this.intentOnClick = aMapWidget.getIntentOnClick();
 		this.groupId = null;
+		this.menuIconUri = null;
+		this.lightIconUri = null;
+		this.darkIconUri = null;
 	}
 
 	/**
@@ -51,6 +58,9 @@ public class AidlMapWidgetWrapper {
 		this.rightPanelByDefault = aMapWidget.isRightPanelByDefault();
 		this.intentOnClick = aMapWidget.getIntentOnClick();
 		this.groupId = aMapWidget.getGroupId();
+		this.menuIconUri = aMapWidget.getMenuIconUri();
+		this.lightIconUri = aMapWidget.getLightIconUri();
+		this.darkIconUri = aMapWidget.getDarkIconUri();
 	}
 
 	public String getId() {
@@ -99,5 +109,17 @@ public class AidlMapWidgetWrapper {
 
 	public void setGroupId(String groupId) {
 		this.groupId = groupId;
+	}
+
+	public String getMenuIconUri() {
+		return menuIconUri;
+	}
+
+	public String getLightIconUri() {
+		return lightIconUri;
+	}
+
+	public String getDarkIconUri() {
+		return darkIconUri;
 	}
 }

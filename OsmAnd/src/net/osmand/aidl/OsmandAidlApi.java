@@ -1181,31 +1181,11 @@ public class OsmandAidlApi {
 		return false;
 	}
 
-	boolean updateWidgetGroup(String packName, AidlWidgetGroupWrapper group) {
-		if (group != null) {
-			ConnectedApp connectedApp = connectedApps.get(packName);
-			if (connectedApp != null) {
-				return connectedApp.updateWidgetGroup(group);
-			}
-		}
-		return false;
-	}
-
-	boolean removeWidgetGroup(String packName, String groupId) {
+	boolean removeWidgetGroup(String packName, String groupId, boolean removeWidgets) {
 		if (!Algorithms.isEmpty(groupId)) {
 			ConnectedApp connectedApp = connectedApps.get(packName);
 			if (connectedApp != null) {
-				return connectedApp.removeWidgetGroup(groupId);
-			}
-		}
-		return false;
-	}
-
-	boolean removeWidgetGroupWithWidgets(String packName, String groupId) {
-		if (!Algorithms.isEmpty(groupId)) {
-			ConnectedApp connectedApp = connectedApps.get(packName);
-			if (connectedApp != null) {
-				return connectedApp.removeWidgetGroupWithWidgets(groupId);
+				return connectedApp.removeWidgetGroup(groupId, removeWidgets);
 			}
 		}
 		return false;

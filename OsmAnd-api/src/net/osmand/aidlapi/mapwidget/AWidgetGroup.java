@@ -20,6 +20,8 @@ public class AWidgetGroup extends AidlParams {
 	private String description;
 	private String dayIconName;
 	private String nightIconName;
+	private String dayIconUri;
+	private String nightIconUri;
 
 	public AWidgetGroup(String id, String name, String description) {
 		this.id = id;
@@ -54,6 +56,19 @@ public class AWidgetGroup extends AidlParams {
 		this.nightIconName = nightIconName;
 	}
 
+	/**
+	 * Sets custom group icons as content URIs. When set, they take
+	 * precedence over the resource-name icons. The external app must grant OsmAnd
+	 * read access to the URIs.
+	 *
+	 * @param dayIconUri   group icon for the light theme.
+	 * @param nightIconUri group icon for the dark theme.
+	 */
+	public void setIconUris(String dayIconUri, String nightIconUri) {
+		this.dayIconUri = dayIconUri;
+		this.nightIconUri = nightIconUri;
+	}
+
 	public String getId() {
 		return id;
 	}
@@ -74,6 +89,14 @@ public class AWidgetGroup extends AidlParams {
 		return nightIconName;
 	}
 
+	public String getDayIconUri() {
+		return dayIconUri;
+	}
+
+	public String getNightIconUri() {
+		return nightIconUri;
+	}
+
 	@Override
 	public void writeToBundle(Bundle bundle) {
 		bundle.putString("id", id);
@@ -81,6 +104,8 @@ public class AWidgetGroup extends AidlParams {
 		bundle.putString("description", description);
 		bundle.putString("dayIconName", dayIconName);
 		bundle.putString("nightIconName", nightIconName);
+		bundle.putString("dayIconUri", dayIconUri);
+		bundle.putString("nightIconUri", nightIconUri);
 	}
 
 	@Override
@@ -90,5 +115,7 @@ public class AWidgetGroup extends AidlParams {
 		description = bundle.getString("description");
 		dayIconName = bundle.getString("dayIconName");
 		nightIconName = bundle.getString("nightIconName");
+		dayIconUri = bundle.getString("dayIconUri");
+		nightIconUri = bundle.getString("nightIconUri");
 	}
 }

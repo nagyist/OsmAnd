@@ -88,7 +88,6 @@ import net.osmand.aidlapi.mapwidget.AddMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.RemoveMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.UpdateMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.AddWidgetGroupParams;
-import net.osmand.aidlapi.mapwidget.UpdateWidgetGroupParams;
 import net.osmand.aidlapi.mapwidget.RemoveWidgetGroupParams;
 import net.osmand.aidlapi.navdrawer.NavDrawerFooterParams;
 import net.osmand.aidlapi.navdrawer.NavDrawerHeaderParams;
@@ -449,35 +448,11 @@ public class OsmandAidlServiceV2 extends Service implements AidlCallbackListener
 		}
 
 		@Override
-		public boolean updateWidgetGroup(UpdateWidgetGroupParams params) {
-			try {
-				OsmandAidlApi api = getApi("updateWidgetGroup");
-				String packName = getCallingAppPackName();
-				return params != null && api != null && api.updateWidgetGroup(packName, new AidlWidgetGroupWrapper(params.getGroup()));
-			} catch (Exception e) {
-				handleException(e);
-				return false;
-			}
-		}
-
-		@Override
 		public boolean removeWidgetGroup(RemoveWidgetGroupParams params) {
 			try {
 				OsmandAidlApi api = getApi("removeWidgetGroup");
 				String packName = getCallingAppPackName();
-				return params != null && api != null && api.removeWidgetGroup(packName, params.getId());
-			} catch (Exception e) {
-				handleException(e);
-				return false;
-			}
-		}
-
-		@Override
-		public boolean removeWidgetGroupWithWidgets(RemoveWidgetGroupParams params) {
-			try {
-				OsmandAidlApi api = getApi("removeWidgetGroupWithWidgets");
-				String packName = getCallingAppPackName();
-				return params != null && api != null && api.removeWidgetGroupWithWidgets(packName, params.getId());
+				return params != null && api != null && api.removeWidgetGroup(packName, params.getId(), params.isRemoveWidgets());
 			} catch (Exception e) {
 				handleException(e);
 				return false;

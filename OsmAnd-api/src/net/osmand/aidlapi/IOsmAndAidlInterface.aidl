@@ -36,7 +36,6 @@ import net.osmand.aidlapi.mapwidget.RemoveMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.UpdateMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.AWidgetGroup;
 import net.osmand.aidlapi.mapwidget.AddWidgetGroupParams;
-import net.osmand.aidlapi.mapwidget.UpdateWidgetGroupParams;
 import net.osmand.aidlapi.mapwidget.RemoveWidgetGroupParams;
 
 import net.osmand.aidlapi.maplayer.point.AMapPoint;
@@ -945,24 +944,16 @@ interface IOsmAndAidlInterface {
     boolean setZoomLimits(in ZoomLimitsParams params);
 
     /**
-     * Register a widget group. Widgets assigned to this group via
-     * AMapWidget.setGroupId(id) are shown together in the "Configure screen"
-     * Groups are transient and must be re-registered on each connection
+     * Register or update a widget group. Widgets assigned to this group via
+     * AMapWidget.setGroupId(id) are shown together in the "Configure screen".
+     * Calling it again with the same id updates the group's name/description/icons.
+     * Groups are transient and must be re-registered on each connection.
      */
     boolean addWidgetGroup(in AddWidgetGroupParams params);
 
     /**
-     * Update name/description/icons of a previously registered widget group
-     */
-    boolean updateWidgetGroup(in UpdateWidgetGroupParams params);
-
-    /**
-     * Remove a widget group. Its widgets are kept but become ungrouped
+     * Remove a widget group. By default its widgets are kept but become ungrouped;
+     * set RemoveWidgetGroupParams.removeWidgets = true to also remove the widgets.
      */
     boolean removeWidgetGroup(in RemoveWidgetGroupParams params);
-
-    /**
-     * Remove a widget group together with all of its widgets
-     */
-    boolean removeWidgetGroupWithWidgets(in RemoveWidgetGroupParams params);
 }

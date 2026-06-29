@@ -33,6 +33,7 @@ public class WidgetDataHolder {
 	public static final String KEY_EXTERNAL_WIDGET_ID = "aidl_widget_id";
 	public static final String KEY_EXTERNAL_PROVIDER_PACKAGE = "external_provider_package";
 	public static final String KEY_EXTERNAL_GROUP_ID = "aidl_group_id";
+	public static final String KEY_EXTERNAL_GROUP_WIDGET_IDS = "aidl_group_widget_ids";
 
 	private final OsmandApplication app;
 
@@ -49,6 +50,7 @@ public class WidgetDataHolder {
 	private String externalGroupId;
 	private String externalGroupName;
 	private String externalGroupDescription;
+	private ArrayList<String> externalGroupWidgetIds;
 	private List<AidlMapWidgetWrapper> aidlGroupWidgets;
 
 	public WidgetDataHolder(@NonNull OsmandApplication app, @NonNull Bundle bundle) {
@@ -63,6 +65,7 @@ public class WidgetDataHolder {
 			if (!Algorithms.isEmpty(externalProviderPackage)) {
 				connectedApp = app.getAidlApi().getConnectedApp(externalProviderPackage);
 			}
+			externalGroupWidgetIds = bundle.getStringArrayList(KEY_EXTERNAL_GROUP_WIDGET_IDS);
 			aidlGroupWidgets = new ArrayList<>();
 			if (connectedApp != null) {
 				AidlWidgetGroupWrapper groupData = connectedApp.getWidgetGroups().get(externalGroupId);
@@ -72,11 +75,21 @@ public class WidgetDataHolder {
 				} else {
 					externalGroupName = externalGroupId;
 				}
-				for (AidlMapWidgetWrapper widget : connectedApp.getWidgets().values()) {
-					if (externalGroupId.equals(widget.getGroupId())) {
-						aidlGroupWidgets.add(widget);
+				if (externalGroupWidgetIds != null) {
+					for (String sourceId : externalGroupWidgetIds) {
+						AidlMapWidgetWrapper widget = connectedApp.getWidgets().get(sourceId);
+						if (widget != null) {
+							aidlGroupWidgets.add(widget);
+						}
+					}
+				} else {
+					for (AidlMapWidgetWrapper widget : connectedApp.getWidgets().values()) {
+						if (externalGroupId.equals(widget.getGroupId())) {
+							aidlGroupWidgets.add(widget);
+						}
 					}
 				}
+				aidlGroupWidgets.sort((first, second) -> Integer.compare(first.getOrder(), second.getOrder()));
 			}
 		} else if (bundle.containsKey(KEY_EXTERNAL_PROVIDER_PACKAGE)) {
 			aidlWidgetId = bundle.getString(KEY_EXTERNAL_WIDGET_ID);
@@ -238,6 +251,9 @@ public class WidgetDataHolder {
 		} else if (externalGroupId != null) {
 			outState.putString(KEY_EXTERNAL_PROVIDER_PACKAGE, externalProviderPackage);
 			outState.putString(KEY_EXTERNAL_GROUP_ID, externalGroupId);
+			if (externalGroupWidgetIds != null) {
+				outState.putStringArrayList(KEY_EXTERNAL_GROUP_WIDGET_IDS, externalGroupWidgetIds);
+			}
 		} else {
 			outState.putString(KEY_EXTERNAL_WIDGET_ID, aidlWidgetId);
 			outState.putString(KEY_EXTERNAL_PROVIDER_PACKAGE, externalProviderPackage);
