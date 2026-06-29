@@ -23,16 +23,12 @@ import net.osmand.search.core.SearchCoreFactory
 import net.osmand.search.core.SearchResult
 import java.util.Calendar
 
-class DestinationReachedScreen(
-	carContext: CarContext,
-	private val settingsAction: Action
-) : BaseAndroidAutoScreen(carContext) {
+class DestinationReachedScreen(carContext: CarContext) : BaseAndroidAutoScreen(carContext) {
 
 	override fun getTemplate(): Template {
 		return MapWithContentTemplate.Builder()
 			.setActionStrip(
 				ActionStrip.Builder()
-					.addAction(settingsAction)
 					.addAction(createSearchAction())
 					.build()
 			)
