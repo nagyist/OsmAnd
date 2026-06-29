@@ -1171,6 +1171,26 @@ public class OsmandAidlApi {
 		return false;
 	}
 
+	boolean addWidgetGroup(String packName, AidlWidgetGroupWrapper group) {
+		if (group != null) {
+			ConnectedApp connectedApp = connectedApps.get(packName);
+			if (connectedApp != null) {
+				return connectedApp.addWidgetGroup(group);
+			}
+		}
+		return false;
+	}
+
+	boolean removeWidgetGroup(String packName, String groupId, boolean removeWidgets) {
+		if (!Algorithms.isEmpty(groupId)) {
+			ConnectedApp connectedApp = connectedApps.get(packName);
+			if (connectedApp != null) {
+				return connectedApp.removeWidgetGroup(groupId, removeWidgets);
+			}
+		}
+		return false;
+	}
+
 	boolean addMapLayer(String packName, AidlMapLayerWrapper layer) {
 		if (layer != null) {
 			ConnectedApp connectedApp = connectedApps.get(packName);
