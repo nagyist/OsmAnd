@@ -6,7 +6,6 @@ import static net.osmand.plus.myplaces.favorites.FavouritesHelper.getPointsFromG
 import android.os.AsyncTask;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import net.osmand.PlatformUtil;
 import net.osmand.data.FavouritePoint;
@@ -31,42 +30,22 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
+final class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 
 	private static final Log log = PlatformUtil.getLog(SaveFavoritesTask.class);
 
 	private final FavouritesFileHelper helper;
 	private final List<FavoriteGroup> groups;
-	@Nullable
-	private final FavoritesListener listener;
-	@Nullable
 	private final CompletionListener completionListener;
 	private final boolean saveAllGroups;
 
-	public SaveFavoritesTask(@NonNull FavouritesFileHelper helper,
-			@NonNull List<FavoriteGroup> groups, boolean saveAllGroups,
-			@Nullable FavoritesListener listener) {
-		this.saveAllGroups = saveAllGroups;
-		this.helper = helper;
-		this.groups = groups;
-		this.listener = listener;
-		this.completionListener = null;
-	}
-
-	private SaveFavoritesTask(@NonNull FavouritesFileHelper helper,
+	SaveFavoritesTask(@NonNull FavouritesFileHelper helper,
 			@NonNull List<FavoriteGroup> groups, boolean saveAllGroups,
 			@NonNull CompletionListener completionListener) {
 		this.saveAllGroups = saveAllGroups;
 		this.helper = helper;
 		this.groups = groups;
-		this.listener = null;
 		this.completionListener = completionListener;
-	}
-
-	static SaveFavoritesTask createCoordinated(@NonNull FavouritesFileHelper helper,
-			@NonNull List<FavoriteGroup> groups, boolean saveAllGroups,
-			@NonNull CompletionListener completionListener) {
-		return new SaveFavoritesTask(helper, groups, saveAllGroups, completionListener);
 	}
 
 	@Override
@@ -80,9 +59,7 @@ public class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 			log.error(e.getMessage(), e);
 			success = false;
 		}
-		if (completionListener != null) {
-			completionListener.onSaveFinished(success);
-		}
+		completionListener.onSaveFinished(success);
 		return null;
 	}
 
@@ -256,12 +233,5 @@ public class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 
 	interface CompletionListener {
 		void onSaveFinished(boolean success);
-	}
-
-	@Override
-	protected void onPostExecute(Void result) {
-		if (listener != null) {
-			listener.onSavingFavoritesFinished();
-		}
 	}
 }

@@ -150,10 +150,10 @@ public class FavouritesFileHelper {
 	}
 
 	public void saveFavoritesIntoFileSync(@NonNull List<FavoriteGroup> groups, boolean saveAllGroups, @Nullable FavoritesListener listener) {
-		CountDownLatch completion = new CountDownLatch(1);
-		enqueueSave(groups, saveAllGroups, listener, completion);
+		CountDownLatch waiter = new CountDownLatch(1);
+		enqueueSave(groups, saveAllGroups, listener, waiter);
 		try {
-			completion.await();
+			waiter.await();
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			log.error(e.getMessage(), e);
@@ -161,16 +161,16 @@ public class FavouritesFileHelper {
 	}
 
 	private void enqueueSave(@NonNull List<FavoriteGroup> groups, boolean saveAllGroups,
-			@Nullable FavoritesListener listener, @Nullable CountDownLatch completion) {
+			@Nullable FavoritesListener listener, @Nullable CountDownLatch waiter) {
 		SaveBatch batchToStart = null;
 		synchronized (saveLock) {
 			if (!saveRunning) {
 				saveRunning = true;
-				batchToStart = new SaveBatch(groups, saveAllGroups, listener, completion);
+				batchToStart = new SaveBatch(groups, saveAllGroups, listener, waiter);
 			} else if (pendingSave == null) {
-				pendingSave = new SaveBatch(groups, saveAllGroups, listener, completion);
+				pendingSave = new SaveBatch(groups, saveAllGroups, listener, waiter);
 			} else {
-				pendingSave.merge(groups, saveAllGroups, listener, completion);
+				pendingSave.merge(groups, saveAllGroups, listener, waiter);
 			}
 		}
 		if (batchToStart != null) {
@@ -179,7 +179,7 @@ public class FavouritesFileHelper {
 	}
 
 	private void startSave(@NonNull SaveBatch batch) {
-		SaveFavoritesTask task = SaveFavoritesTask.createCoordinated(
+		SaveFavoritesTask task = new SaveFavoritesTask(
 				this, batch.groups, batch.saveAllGroups,
 				success -> onSaveFinished(batch, success));
 		OsmAndTaskManager.executeTask(task, singleThreadExecutor);
@@ -194,8 +194,8 @@ public class FavouritesFileHelper {
 				saveRunning = false;
 			}
 		}
-		for (CountDownLatch completion : completedBatch.completions) {
-			completion.countDown();
+		for (CountDownLatch waiter : completedBatch.waiters) {
+			waiter.countDown();
 		}
 		if (success) {
 			for (FavoritesListener listener : completedBatch.listeners) {
@@ -404,32 +404,32 @@ public class FavouritesFileHelper {
 		@NonNull
 		private final List<FavoritesListener> listeners = new ArrayList<>();
 		@NonNull
-		private final List<CountDownLatch> completions = new ArrayList<>();
+		private final List<CountDownLatch> waiters = new ArrayList<>();
 
 		SaveBatch(@NonNull List<FavoriteGroup> groups, boolean saveAllGroups,
-				@Nullable FavoritesListener listener, @Nullable CountDownLatch completion) {
+				@Nullable FavoritesListener listener, @Nullable CountDownLatch waiter) {
 			this.groups = new ArrayList<>(groups);
 			this.saveAllGroups = saveAllGroups;
-			addCompletion(listener, completion);
+			addRequest(listener, waiter);
 		}
 
 		void merge(@NonNull List<FavoriteGroup> groups, boolean saveAllGroups,
-				@Nullable FavoritesListener listener, @Nullable CountDownLatch completion) {
+				@Nullable FavoritesListener listener, @Nullable CountDownLatch waiter) {
 			if (saveAllGroups) {
 				this.groups = new ArrayList<>(groups);
 				this.saveAllGroups = true;
 			} else {
 				mergeGroups(this.groups, groups);
 			}
-			addCompletion(listener, completion);
+			addRequest(listener, waiter);
 		}
 
-		private void addCompletion(@Nullable FavoritesListener listener, @Nullable CountDownLatch completion) {
+		private void addRequest(@Nullable FavoritesListener listener, @Nullable CountDownLatch waiter) {
 			if (listener != null) {
 				listeners.add(listener);
 			}
-			if (completion != null) {
-				completions.add(completion);
+			if (waiter != null) {
+				waiters.add(waiter);
 			}
 		}
 
