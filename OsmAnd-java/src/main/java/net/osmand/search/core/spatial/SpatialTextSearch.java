@@ -86,9 +86,8 @@ public class SpatialTextSearch {
 		// don't go level-2 if there are on level matching results
 		public int LIMIT_GOAL_LEVEL_2 = 1;
 		
-		// Filter within same matched words but different number of objects [3 matched tokens - 1 single object]
-		public int[] FILTER_MIN_WORDS_COUNT = new int[] {3, 10};
-//		public int[] FILTER_MIN_WORDS_COUNT = new int[] {};
+		// Hide results under SHOW MORE
+		public int[] SHOW_MORE_WORDS_COUNT = new int[] {3, 20};
 		
 		// only do incomplete search with 2+ chars
 		public int MIN_CHARACTERS_INCOMPLETE = 2;
@@ -344,23 +343,22 @@ public class SpatialTextSearch {
 		}
 		res.mainResults = main.sortResults(ctx, res.mainResults, ctx.settings.DEDUPLICATE_RES);
 		if (res.mainResults.size() > 0) {
-			int[] limits = ctx.settings.FILTER_MIN_WORDS_COUNT.clone();
-			int sz = res.mainResults.get(0).getObjectsSize(), ind = 0, lind = 0;
+			int[] limits = ctx.settings.SHOW_MORE_WORDS_COUNT.clone();
+			long cKey = SpatialSearchResult.compareKey(res.mainResults.get(0));
+			int ind = 0, lind = 0;
 			int level = 0; 
 			for (SpatialSearchResult r : res.mainResults) {
-				if (sz != r.getObjectsSize()) {
-					if (level == 0) {
-						if (lind < limits.length && ind >= limits[lind]) {
-							level++;
-						} else if (lind < limits.length - 1) {
-							lind++;
-						}
-					} else {
+				long nextKey = SpatialSearchResult.compareKey(r);
+				if (cKey != nextKey) {
+					if (lind < limits.length && ind >= limits[lind]) {
 						level++;
+						ind = 0;
+					} else if (lind < limits.length - 1) {
+						lind++;
 					}
-					sz = r.getObjectsSize();
+					cKey = nextKey;
 				}
-				r.level = level;
+				r.visibleLevel = level;
 				ind++;
 			}
 		}
@@ -390,7 +388,7 @@ public class SpatialTextSearch {
 			int all = res.mainResults.size();
 			int level = 0;
 			for (SpatialSearchResult r : res.mainResults) {
-				if (r.level != level) {
+				if (r.visibleLevel != level) {
 					level++;
 					System.out.println("### LEVEL " + level);
 				}

@@ -59,7 +59,7 @@ public class SpatialSearchToken {
 		originalWord = original;
 		word = w;
 		wordAligned = CollatorStringMatcher.alignChars(word);
-		bldWordSplit = SearchAlgorithms.getBuildingCompareSet(word);
+		bldWordSplit = SearchAlgorithms.getBuildingCompareSet(word, null);
 		originalOrder = order;
 		String noDot = w;
 		if (w.endsWith(DOT_INCOMPLETE_STRING)) {
@@ -324,6 +324,7 @@ public class SpatialSearchToken {
 		final long id; // used to read object
 		final long parentid; // used to read object
 		MapObject object; // same for all
+		MapObject bldObject; // same for all
 		int otherWordsCnt; // added before intersection
 		int otherFoundCnt;
 		final boolean cityAsStreet;
@@ -357,8 +358,16 @@ public class SpatialSearchToken {
 			return cityAsStreet;
 		}
 		
-		public boolean streetBuilding() {
+		public boolean isStreetBuilding() {
 			return type == STREET_TYPE || type == BUILDING_TYPE;
+		}
+		
+		public boolean isPostcode() {
+			return type == CityBlocks.POSTCODES_TYPE.index;
+		}
+		
+		public boolean isBoundary() {
+			return type == CityBlocks.BOUNDARY_TYPE.index;
 		}
 		
 		public boolean isStreet() {
@@ -368,12 +377,20 @@ public class SpatialSearchToken {
 		public boolean atomicObject() {
 			return type == STREET_TYPE || type == POI_TYPE || type == BUILDING_TYPE;
 		}
+		
+		public boolean isBuilding() {
+			return type == BUILDING_TYPE || (type == STREET_TYPE && bldObject != null);
+		}
+		
+		public boolean isPOI() {
+			return type == POI_TYPE;
+		}
 
 		String typeStr() {
 			String typeS = "";
-			if (type == POI_TYPE) {
+			if (isPOI()) {
 				typeS = "POI";
-			} else if (type == BUILDING_TYPE) {
+			} else if (isBuilding()) {
 				typeS = "Building";
 			} else {
 				typeS = CityBlocks.getByType(type).toString();
@@ -387,6 +404,9 @@ public class SpatialSearchToken {
 		}
 		
 		public LatLon getResultLocation() {
+			if (bldObject != null) {
+				return bldObject.getLocation();
+			}
 			if (object != null) {
 				return object.getLocation();
 			}

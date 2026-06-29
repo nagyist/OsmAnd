@@ -580,7 +580,7 @@ public class SpatialSearchContext {
 		// numericNotMatch - require full street match to assign buildings 
 		if (!numericNotMatch && street && settings.SEARCH_BUILDINGS) {
 			for (SpatialSearchToken token : allTokens) {
-				// assign building to wordsor isNumber2Letters (number + 1 char) + possible buildings
+				// assign building to word token isNumber2Letters (number + 1 char) + possible buildings
 				if (t != token && Abbreviations.likelyPartOfBuilding(token.word, token.getWordSplitAsBuidingName())
 						&& (otherTokens == null || !otherTokens.contains(token))) {
 					NameIndexAtom atomB = new NameIndexAtom(name, SpatialSearchToken.BUILDING_TYPE, lid, pid, obj,
