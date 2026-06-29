@@ -53,7 +53,7 @@ public class SpatialTextSearch {
 		
 		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 20_000, 80_000}; // 
 //		public int[] OPTIM_LIMIT_RADIUS = new int[] {}; 
-		public int OPTIM_LIMIT_INTERSECTIONS = 15_000; // 20K or 50K
+		public int OPTIM_LIMIT_INTERSECTIONS = 50_000; // 10K (fast enough) or 50K (slow) - in new york  26,630 (3) -> 2,502 unique
 		
 		// produces x10 less intersection and maintains x2-x4 ratio for DEDUPLICATE_RES
 		// by deleting embedded or duplicate boundaries in each other

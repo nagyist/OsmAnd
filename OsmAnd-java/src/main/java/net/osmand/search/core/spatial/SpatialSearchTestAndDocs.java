@@ -43,7 +43,7 @@ import net.osmand.util.SearchAlgorithms;
 ////////// IN PROGRESS //////////
 // TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique)
 
-// FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
+// FIXME Combine by osmid (poi type internet) & wikidata id ? 
 // FIXME Combine regions.ocbf (boundary)?
 // FIXME POI Categories + top poi categories
 // TODO POI Categories translations / synonyms
@@ -58,6 +58,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Inspector stats index_words_dashboard.html
 
 // TO DO - RZR
+// TODO review osm route id  combine by?
 // TODO WEB Add url / coordinates parsing
 // TODO Progress / cancel
 // TODO Not forget to include regions.ocbf on client
