@@ -51,9 +51,9 @@ public class SpatialTextSearch {
 		// no intersection recorded but streets are nearby
 		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
 		
-		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 20_000, 80_000}; // 
+		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 30_000, 80_000}; // 
 //		public int[] OPTIM_LIMIT_RADIUS = new int[] {}; 
-		public int OPTIM_LIMIT_INTERSECTIONS = 50_000; // 10K (fast enough) or 50K (slow) - in new york  26,630 (3) -> 2,502 unique
+		public int OPTIM_LIMIT_INTERSECTIONS = 30_000; // 10K (fast enough) or 50K (slow) - in new york  26,630 (3) -> 2,502 unique
 		
 		// produces x10 less intersection and maintains x2-x4 ratio for DEDUPLICATE_RES
 		// by deleting embedded or duplicate boundaries in each other
