@@ -3,6 +3,16 @@
 # First R8 rollout: keep OsmAnd-owned bytecode intact and shrink dependency code.
 # OsmAnd still has many reflection and dynamic resource lookup paths.
 -keep class net.osmand.** { *; }
+
+# Keep repo-source/vendor packages outside net.osmand as project code too.
+-keep class btools.routingapp.** { *; }
+-keep class com.example.android.common.view.** { *; }
+-keep class com.github.ksoichiro.android.observablescrollview.** { *; }
+-keep class com.google.protobuf.** { *; }
+-keep class com.jwetherell.openmap.common.** { *; }
+-keep class com.wdtinc.mapbox_vector_tile.** { *; }
+-keep class io.github.cosinekitty.astronomy.** { *; }
+-keep class net.sf.marineapi.** { *; }
 -keep class org.openplacereviews.** { *; }
 
 # Gson relies on generic signatures for fields like List<AssetEntry>.
