@@ -6099,8 +6099,8 @@
     <string name="release_5_3">• Přidána podpora 3D budov\n\n• Sférické zobrazení mapy\n\n• Astronomický plugin s noční mapou a databází hvězd\n\n• Nové barevné režimy pro rychloměr: tolerance a rychlost\n\n• Samostatné rozvržení widgetů pro zobrazení na šířku a na výšku\n\n• Widgety pro záznam tras: Rychlost pohybu a Průměrná rychlost\n\n• Widget pro napětí adaptéru pro metriky vozidel\n\n• Data metrik vozidel v Analyzátoru tras\n\n• Automatické uspořádání tras podle roku, délky, aktivity a dalších faktorů\n\n• Editor palet pro vizualizaci terénu a trasy\n\n• Vylepšené vyhledávací algoritmy a aktualizované uživatelské rozhraní\n\n• Opraveny profily nadmořské výšky pro trasy\n\n• Oblíbené: nové možnosti řazení a aktualizace uživatelského rozhraní\n\n• Sdílení odkazu na libovolný bod zájmu (POI)\n\n• Náhled trasového bodu bez zavření seznamu\n\n• Parametr šířky kola pro vyhnutí se úzkým silnicím\n\n• Popisy fotografií z Wikimedia</string>
     <string name="purchases_feature_desc_astronomy">Prozkoumejte noční oblohu s offline mapou a nebeským katalogem. Naplánujte si pozorování pomocí chytrých grafů viditelnosti, denních plánů a interaktivního režimu AR.</string>
     <string name="shared_string_clear_filters">Vymazat filtry</string>
-    <string name="astro_sort_newest_first">Nejnovější první</string>
-    <string name="astro_sort_oldest_first">Nejstarší první</string>
+    <string name="astro_sort_newest_first">Nejnovější jako první</string>
+    <string name="astro_sort_oldest_first">nejstarší jako první</string>
     <string name="astro_expand_your_universe_title">Rozšiřte svůj vesmír</string>
     <string name="astro_expand_your_universe_description">Získejte přístup k rozšířené databázi katalogů hlubokého vesmíru, článkům na Wikipedii a offline režimu AR.</string>
     <string name="astro_offline_knowledge_base_title">Offline znalostní báze</string>
@@ -6112,7 +6112,7 @@
     <string name="start_free_trial">Začít zkušební verzi zdarma</string>
     <string name="subscription_free_trial_with_price">%1$s zdarma, poté %2$s</string>
     <string name="subscription_then_price">potom %1$s</string>
-    <string name="no_objects_found">Objekty nenalezeny</string>
+    <string name="no_objects_found">Žádné objekty nenalezeny</string>
     <string name="astro_search_info_solar_system">Sluneční soustava je gravitačně vázaný systém Slunce a hmot, které ho obíhají, zejména jeho osmi planet, z nichž jednou je Země.</string>
     <string name="astro_search_info_constellations">Souhvězdí je oblast na nebeské sféře, ve které skupina viditelných hvězd tvoří vnímaný vzor nebo obrys.</string>
     <string name="astro_search_info_stars">Hvězdy jsou zářivé astronomické objekty tvořené plazmatem, které drží pohromadě vlastní gravitací.</string>
@@ -6121,8 +6121,8 @@
     <string name="astro_search_info_deep_sky">Mezi objekty hlubokého vesmíru patří galaxie, mlhoviny, hvězdokupy a další vzdálené astronomické cíle.</string>
     <string name="astro_go_to_map">Přejít na mapu</string>
     <string name="astro_my_data_no_favorites_title">Tady nic není</string>
-    <string name="astro_my_data_no_favorites_description">Můžete přidat objekty do svých oblíbených z kontextového menu</string>
-    <string name="astro_my_data_no_daily_paths_title">Žádné denní cesty</string>
+    <string name="astro_my_data_no_favorites_description">Objekty si můžete přidat do oblíbených položek z jejich kontextové nabídky</string>
+    <string name="astro_my_data_no_daily_paths_title">Žádné denní trasy</string>
     <string name="astro_my_data_no_daily_paths_description">Povolte denní cestu pro objekt z kontextového menu, abyste ji viděli zde</string>
     <string name="astro_search_constellation_with_code">Souhvězdí (%1$s)</string>
     <string name="astro_search_type_in_location">%1$s v %2$s</string>
