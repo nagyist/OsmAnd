@@ -485,12 +485,6 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 				boolean acceptIntersection = acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
 				if (acceptIntersection) {
-					if ((atom.id % 0xffff == 34960)) {
-						System.out.println(atom  + " ++ " + parent.getRawAtoms(parentIndx));
-					}
-					if (parent.tCount == 3) {
-//						System.out.println(atom + " ++ " + parent.getRawAtoms(parentIndx));
-					}
 					TIntArrayList c = intersections[level];
 					if (typeIntersection[0] == 2) {
 						c = interPoiPoiOrStreetStreet[level];

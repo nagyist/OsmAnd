@@ -87,7 +87,7 @@ public class SpatialTextSearch {
 		public int LIMIT_GOAL_LEVEL_2 = 1;
 		
 		// Hide results under SHOW MORE
-		public int[] SHOW_MORE_WORDS_COUNT = new int[] {3, 20};
+		public int[] SHOW_MORE_WORDS_COUNT = new int[] {3, 20, 100};
 		
 		// only do incomplete search with 2+ chars
 		public int MIN_CHARACTERS_INCOMPLETE = 2;
@@ -353,8 +353,9 @@ public class SpatialTextSearch {
 					if (lind < limits.length && ind >= limits[lind]) {
 						level++;
 						ind = 0;
-					} else if (lind < limits.length - 1) {
-						lind++;
+						if (lind < limits.length - 1) {
+							lind++;
+						}
 					}
 					cKey = nextKey;
 				}

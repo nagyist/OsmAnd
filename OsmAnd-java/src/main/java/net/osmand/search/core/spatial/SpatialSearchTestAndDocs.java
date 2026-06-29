@@ -248,14 +248,14 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-		pattern = "Us_new-york_new"; // new-york, new-jersey
+//		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		pattern = "Us_new-"; 
 		
 //		location = new LatLon(41.10566, -73.89009); // new york avenue 4
 //		location = new LatLon(40.64946, -74.00682); // loaded
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
-		query = "New York plaza";
+//		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 //		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
 //		query = "New York 4 av 8"; // 160947243
