@@ -311,25 +311,25 @@ public class SpatialTextSearch {
 		res.tokens = splitWords(ctx, input);
 
 		// 2. read atoms
-		ctx.stats.stepAtoms -= System.nanoTime();
+		ctx.stats.step1Atoms.start();
 		ctx.readAtoms(res.tokens);
-		ctx.stats.stepAtoms += System.nanoTime();
+		ctx.stats.step1Atoms.finish();
 
 		// 3. sort tokens
 		sortTokens(res.tokens);
 
 		// 4. find combinations
-		ctx.stats.stepCompute -= System.nanoTime();
+		ctx.stats.step2Compute.start();
 //		res.combinations = findObjCombinationsSimpleIteration(res.tokens);
 		res.combinations = findLongestCombinations(ctx, res.tokens);
-		ctx.stats.stepCompute += System.nanoTime();
+		ctx.stats.step2Compute.finish();
 		// 5. sort combinations, load objects, objects and filter duplicate
 		res.mainResults = new ArrayList<>();
-		ctx.stats.stepSort -= System.nanoTime();
+		ctx.stats.step3Sort.start();
 		if (res.combinations.size() > 0) {
 			combineSortFilterResults(ctx, res);
 		}
-		ctx.stats.stepSort += System.nanoTime();
+		ctx.stats.step3Sort.finish();
 		return res;
 	}
 
@@ -380,8 +380,9 @@ public class SpatialTextSearch {
 	}
 
 	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx) throws IOException {
+		ctx.stats.requestTime.start();
 		SpatialSearchResults res = searchAPI(input, ctx);
-		ctx.stats.finish();
+		ctx.stats.requestTime.finish();
 		if (res.mainResults != null && res.mainResults.size() > 0) {
 			System.out.println("--------");
 			System.out.println("Main: " + res.combinations.get(0));

@@ -111,7 +111,7 @@ public class SpatialSearchToken {
 			
 			@Override
 			public boolean matchKey(String key) {
-				stats.matchTime -= System.nanoTime();
+				stats.sub1MatchTime.start();
 				String alignedKey = CollatorStringMatcher.alignChars(key);
 				// could be empty after align so match = true! ("''" -> "")
 				boolean matched = matchAlignedKey(alignedKey);
@@ -127,7 +127,7 @@ public class SpatialSearchToken {
 //						System.out.println(alignedKey + " ??? " + matched + " " + o.getPart());
 					}
 				}
-				stats.matchTime += System.nanoTime();
+				stats.sub1MatchTime.finish();
 				return matched;
 			}
 		};

@@ -41,33 +41,55 @@ public class SpatialSearchContext {
 	SpatialSearchStats stats = new SpatialSearchStats();
 	SpatialTextSearchSettings settings;
 
+	
+	
 	public static class SpatialSearchStats {
-		public long time = System.nanoTime();
-		public long stepAtoms = 0;
-		public long fileAtomsTime = 0;
-		public long matchTime = 0;
+		public Timer requestTime = new Timer();
+		public Timer step1Atoms = new Timer();
+		public Timer sub1FileAtomsTime = new Timer();
+		public Timer sub1MatchTime = new Timer();
 		public int tokenObjs;
 		
-		public long stepCompute = 0;
-		public long loadObjectsBld = 0;
-		public long readObjTime = 0;
+		public Timer step2Compute = new Timer();
+		public Timer sub2LoadObjectsBldTime = new Timer();
+		public Timer sub2ReadObjTime = new Timer();
 		public int maxCombinations = 0;
 		
-		public long stepSort = 0;
+		public Timer step3Sort = new Timer();
 		
+		public boolean doTiming = true;
+		public boolean printLogs = true;
+	
+		public class Timer {
+			public long time = 0;
+			public long endTime = System.nanoTime();
+			
+			public void start() {
+				if (doTiming) {
+					time -= System.nanoTime();
+				}
+			}
+
+			public void finish() {
+				if (doTiming) {
+					time += System.nanoTime();
+				}
+			}
+			
+			public double ms() {
+				return time / 1e6;
+			}
+		}
 		
 		@Override
 		public String toString() {
 			return String.format(
 					"Search Stats %.1f ms - %.1f ms %,d atoms (read %.1f, match %.1f), "
 					+ "%.1f ms compute %,d (loadBld %.1f, read %.1f)",
-					time / 1e6, stepAtoms / 1e6, tokenObjs,  fileAtomsTime / 1e6, matchTime / 1e6,
-					stepCompute / 1e6, maxCombinations, loadObjectsBld / 1e6, readObjTime / 1e6);
+					requestTime.ms(), step1Atoms.ms(), tokenObjs,  sub1FileAtomsTime.ms(), sub1MatchTime.ms(),
+					step2Compute.ms(), maxCombinations, sub2LoadObjectsBldTime.ms(), sub2ReadObjTime.ms());
 		}
 
-		public void finish() {
-			time = System.nanoTime() - time;
-		}
 	}
 
 	public SpatialSearchContext(SpatialTextSearchSettings settings, List<BinaryMapIndexReader> files, LatLon location) {
@@ -146,7 +168,9 @@ public class SpatialSearchContext {
 				indxInd++;
 			}
 		}
-		System.out.println(tokenStats(tokens).toString());
+		if (stats.printLogs) {
+			System.out.println(tokenStats(tokens).toString());
+		}
 	}
 
 	private StringBuilder tokenStats(List<SpatialSearchToken> tokens) {
@@ -227,10 +251,10 @@ public class SpatialSearchContext {
 			}
 			List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
 			if (matchedPrefixes == null) {
-				stats.fileAtomsTime -= System.nanoTime();
+				stats.sub1FileAtomsTime.start();
 				matchedPrefixes = b.readFullNameIndex(indx.setQuery(t.word, t.getPrefixMatcher(stats)));
 //				matchedPrefixes = indx.getMatchedPrefixes(t.word);
-				stats.fileAtomsTime += System.nanoTime();
+				stats.sub1FileAtomsTime.finish();
 			}
 			for (PrefixNameValue prefix : matchedPrefixes) {
 				parseAtomSuffixes(t, indxInd, indx, prefix, tokens);
@@ -315,9 +339,9 @@ public class SpatialSearchContext {
 				break;
 			}
 		}
-		stats.readObjTime -= System.nanoTime();
+		stats.sub2ReadObjTime.start();
 		files.get(c.fileInd).readAmenityBboxes(nameIndex.poiRegion, tiles);
-		stats.readObjTime += System.nanoTime();
+		stats.sub2ReadObjTime.finish();
 	}
 	
 	public int getFileInd(long id) {
@@ -349,7 +373,7 @@ public class SpatialSearchContext {
 			}
 		}
 
-		long tm = System.nanoTime();
+		stats.sub2ReadObjTime.start();
 		List<Amenity> lst = files.get(c.fileInd).readAmenityBlock(nameIndex.poiRegion, shift, poiInd);
 		if (cache != null) {
 			long ofirstid = oid - (poiInd << SHIFT_FILE_IND);
@@ -358,7 +382,7 @@ public class SpatialSearchContext {
 			}
 		}
 		MapObject amenity = lst.get(poiInd);
-		stats.readObjTime += (System.nanoTime() - tm);
+		stats.sub2ReadObjTime.finish();
 		return amenity;
 	}
 
@@ -384,7 +408,7 @@ public class SpatialSearchContext {
 			}
 		}		
 		
-		long tm = System.nanoTime();
+		stats.sub2ReadObjTime.start();
 		MapObject obj;
 		if (pid != 0) {
 			int pIndInd = (int) (pid & ((1l << SHIFT_FILE_IND) - 1));
@@ -404,7 +428,7 @@ public class SpatialSearchContext {
 		} else  {
 			obj = files.get(c.fileInd).readCityObject(nameIndex.addressRegion, shift);
 		}
-		stats.readObjTime += (System.nanoTime() - tm);
+		stats.sub2ReadObjTime.finish();
 		return obj;
 	}
 
@@ -469,14 +493,14 @@ public class SpatialSearchContext {
 	}
 
 	private boolean matchName(SpatialSearchToken t, String name) {
-		stats.matchTime -= System.nanoTime();
+		stats.sub1MatchTime.start();
 		boolean acceptName = t.matchName(name);
-		stats.matchTime += System.nanoTime();
+		stats.sub1MatchTime.finish();
 		return acceptName;
 	}
 	
 	private String matchPartName(SpatialSearchToken t, String name, List<SpatialSearchToken> allTokens) {
-		stats.matchTime -= System.nanoTime();
+		stats.sub1MatchTime.start();
 		String[] res = t.matchSplitName(name);
 		String resName = null;
 		if (res != null) {
@@ -488,7 +512,7 @@ public class SpatialSearchContext {
 				}
 			}
 		}
-		stats.matchTime += System.nanoTime();
+		stats.sub1MatchTime.finish();
 		return resName;
 	}
 

@@ -19,6 +19,7 @@ import net.osmand.util.SearchAlgorithms;
 // - Unit test: duplicate words in query Pennsylvania Street in Pennsylvania, Find More
 // - Unit test: (<common_word> <almost_number>) -('№25', '25', '#25' - no search) -- OK ('школа', 'школа №25', 'школа 25', 'школа #25')
 // - Unit test: Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
+// - Tests: Harderwijk estrado,
 
 //////////// SLOWEST /////////
 // - QUERY: 'New York 4 av' - 7.5s (2M), 'New York st' - 2s (700k),
@@ -37,6 +38,7 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING 2га нова - TODO order
 // TESTING 'LangeStraße' (Data 'Lange Straße')
 // TESTING 'Daimler strasse' (Data 'daimlerstraße')
+// TESTING Húns Huns 39a-MLN 8832kd
 // TESTING Sokak 2 order
 // TESTING Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k) - OPTIMAL 
 
@@ -45,7 +47,6 @@ import net.osmand.util.SearchAlgorithms;
 // FIXME Ignore same embedded boundary city / county - deduplicate on the fly (new york x10)
 // TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique)
 // TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
-
 
 // FIXME POI Categories + top poi categories
 // TODO POI Categories translations / synonyms
@@ -186,16 +187,17 @@ public class SpatialSearchTestAndDocs {
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 
-//		pattern = "Netherlands_";
+		pattern = "Netherlands_";
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
+		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
 		
-		pattern = "Turkey_";
+//		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // OK
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
 		// ALL - Search Stats 1569.2 ms - 554.0 ms 59,656 atoms (read 318.8, match 134.1), 985.8 ms compute 693,139 (loadBld 396.2, read 149.5)
         // NO INTER - Search Stats 871.5 ms - 546.4 ms 59,656 atoms (read 313.7, match 135.6), 299.9 ms compute 4,735 (loadBld 54.1, read 37.2)
-		query = "Sokak 2";// 380657094 2.Sokak
+//		query = "Sokak 2";// 380657094 2.Sokak
 //		location = new LatLon(40.7627, 29.8454);  
 //		query = "2/1 21038 Sokak"; // 1380369156
 		

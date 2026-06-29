@@ -134,7 +134,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	public void loadObjectsAndCalcBuildings(SpatialSearchContext ctx) throws IOException {
-		ctx.stats.loadObjectsBld -= System.nanoTime();
+		ctx.stats.sub2LoadObjectsBldTime.start();
 		loadObjects(ctx);
 		
 		if (ctx.settings.SEARCH_BUILDINGS) {
@@ -150,7 +150,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		
-		ctx.stats.loadObjectsBld += System.nanoTime();
+		ctx.stats.sub2LoadObjectsBldTime.finish();
 	}
 	
 	private void calcStreetIntersections(SpatialSearchContext ctx, int indx) {
@@ -472,10 +472,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			addResIntersections(ctx.settings.OPTIM_LIMIT_INTERSECTIONS * 3, interPoiStreet, newLevel, res);
 			addResIntersections(ctx.settings.OPTIM_LIMIT_INTERSECTIONS * 3, interPoiPoiOrStreetStreet, newLevel, res);
 			
-			System.out.printf("Intersect (%.0f ms) /\\: %s (%d) -> %,d (%,d): '%s' (%,d) + %s (%,d)\n", 
+			if (ctx.stats.printLogs) {
+				System.out.printf("Intersect (%.0f ms) /\\: %s (%d) -> %,d (%,d): '%s' (%,d) + %s (%,d)\n", 
 					(System.nanoTime() - nt) / 1e6, sizes, originalLimit, res.size() / 3, newLevel,  
 					token.originalWord, token.atoms.size(),
 					parent.wordTokens(), parent.getCombinations());
+			}
 			limitIntersection = newLevel;
 			TIntIterator it = res.iterator();
 			while (it.hasNext()) {
