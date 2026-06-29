@@ -296,6 +296,13 @@ public class SearchWidgetsFragment extends BaseFullScreenFragment implements Sea
 			allWidgetItems.clear();
 			allWidgetItems.addAll(allWidgetTypes);
 			allWidgetItems.addAll(externalItems);
+			// Add external group members individually so search lists them like
+			// standard group widgets (the default view still shows only the group row).
+			for (Object item : externalItems) {
+				if (item instanceof ExternalGroupItem externalGroupItem) {
+					allWidgetItems.addAll(externalGroupItem.getWidgetInfos());
+				}
+			}
 
 			for (Map.Entry<WidgetGroup, List<WidgetType>> entry : groupedWidgets.entrySet()) {
 				GroupItem groupItem = new GroupItem(entry.getKey(), entry.getValue().size());
@@ -362,7 +369,10 @@ public class SearchWidgetsFragment extends BaseFullScreenFragment implements Sea
 					String description = groupData != null ? groupData.getDescription() : null;
 					String dayIcon = groupData != null ? groupData.getDayIconName() : null;
 					String nightIcon = groupData != null ? groupData.getNightIconName() : null;
-					groupItem = new ExternalGroupItem(packageName, groupId, name, description, dayIcon, nightIcon);
+					String dayIconUri = groupData != null ? groupData.getDayIconUri() : null;
+					String nightIconUri = groupData != null ? groupData.getNightIconUri() : null;
+					groupItem = new ExternalGroupItem(packageName, groupId, name, description,
+							dayIcon, nightIcon, dayIconUri, nightIconUri);
 					groups.put(key, groupItem);
 					externalItems.add(groupItem);
 				}
@@ -409,7 +419,7 @@ public class SearchWidgetsFragment extends BaseFullScreenFragment implements Sea
 					searchResults.add(widgetType);
 				}
 			} else if (object instanceof MapWidgetInfo widgetInfo) {
-				String widgetTitle = widgetInfo.key.toLowerCase();
+				String widgetTitle = widgetInfo.getTitle(app).toLowerCase();
 				if (widgetTitle.contains(query.toLowerCase())) {
 					searchResults.add(widgetInfo);
 				}
@@ -496,7 +506,8 @@ public class SearchWidgetsFragment extends BaseFullScreenFragment implements Sea
 		if (activity != null && target != null) {
 			FragmentManager fragmentManager = activity.getSupportFragmentManager();
 			AddWidgetFragment.showExternalGroupDialog(fragmentManager, target,
-					selectedAppMode, selectedPanel, group.getPackageName(), group.getGroupId(), null);
+					selectedAppMode, selectedPanel, group.getPackageName(), group.getGroupId(),
+					group.getWidgetSourceIds(), null);
 		}
 	}
 
@@ -584,17 +595,22 @@ public class SearchWidgetsFragment extends BaseFullScreenFragment implements Sea
 		private final String groupDescription;
 		private final String dayIconName;
 		private final String nightIconName;
+		private final String dayIconUri;
+		private final String nightIconUri;
 		private final List<MapWidgetInfo> widgets = new ArrayList<>();
 
 		public ExternalGroupItem(@NonNull String packageName, @NonNull String groupId,
 		                         @Nullable String groupName, @Nullable String groupDescription,
-		                         @Nullable String dayIconName, @Nullable String nightIconName) {
+		                         @Nullable String dayIconName, @Nullable String nightIconName,
+		                         @Nullable String dayIconUri, @Nullable String nightIconUri) {
 			this.packageName = packageName;
 			this.groupId = groupId;
 			this.groupName = groupName;
 			this.groupDescription = groupDescription;
 			this.dayIconName = dayIconName;
 			this.nightIconName = nightIconName;
+			this.dayIconUri = dayIconUri;
+			this.nightIconUri = nightIconUri;
 		}
 
 		@NonNull
@@ -622,12 +638,31 @@ public class SearchWidgetsFragment extends BaseFullScreenFragment implements Sea
 			return nightMode ? nightIconName : dayIconName;
 		}
 
+		@Nullable
+		public String getIconUri(boolean nightMode) {
+			return nightMode ? nightIconUri : dayIconUri;
+		}
+
 		public void addWidget(@NonNull MapWidgetInfo widgetInfo) {
 			widgets.add(widgetInfo);
 		}
 
+		@NonNull
+		public List<MapWidgetInfo> getWidgetInfos() {
+			return widgets;
+		}
+
 		public int count() {
 			return widgets.size();
+		}
+
+		@NonNull
+		public ArrayList<String> getWidgetSourceIds() {
+			ArrayList<String> ids = new ArrayList<>();
+			for (MapWidgetInfo info : widgets) {
+				ids.add(info.key.replaceFirst(OsmandAidlApi.WIDGET_ID_PREFIX, ""));
+			}
+			return ids;
 		}
 	}
 

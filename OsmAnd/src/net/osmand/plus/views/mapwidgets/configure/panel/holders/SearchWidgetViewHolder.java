@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import net.osmand.aidl.AidlExternalIconHelper;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.helpers.AndroidUiHelper;
@@ -74,8 +75,13 @@ public class SearchWidgetViewHolder extends RecyclerView.ViewHolder {
 		AndroidUiHelper.updateVisibility(proIcon, false);
 		divider.setVisibility(showDivider ? View.VISIBLE : View.INVISIBLE);
 
-		int iconId = AndroidUtils.getDrawableId(app, groupItem.getIconName(nightMode));
-		icon.setImageResource(iconId != 0 ? iconId : R.drawable.ic_extension_dark);
+		Drawable customIcon = AidlExternalIconHelper.getIconDrawable(app, groupItem.getIconUri(nightMode));
+		if (customIcon != null) {
+			icon.setImageDrawable(customIcon);
+		} else {
+			int iconId = AndroidUtils.getDrawableId(app, groupItem.getIconName(nightMode));
+			icon.setImageResource(iconId != 0 ? iconId : R.drawable.ic_extension_dark);
+		}
 
 		setupSelectableBackground(selectedAppMode, nightMode);
 		itemView.setOnClickListener(view -> listener.externalGroupSelected(groupItem));
