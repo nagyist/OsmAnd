@@ -1,5 +1,10 @@
 -dontobfuscate
 
+# First R8 rollout: keep OsmAnd-owned bytecode intact and shrink dependency code.
+# OsmAnd still has many reflection and dynamic resource lookup paths.
+-keep class net.osmand.** { *; }
+-keep class org.openplacereviews.** { *; }
+
 # Gson relies on generic signatures for fields like List<AssetEntry>.
 -keepattributes Signature
 -keepattributes *Annotation*
@@ -8,8 +13,6 @@
 
 # Java classes called from Qt/OsmAndCore native code must keep their JNI-visible names and members.
 -keep class org.qtproject.qt5.android.** { *; }
--keep class net.osmand.core.android.** { *; }
--keep class net.osmand.core.jni.** { *; }
 
 # Optional dependency surfaces referenced by bundled libraries but not available on Android.
 -dontwarn java.beans.**

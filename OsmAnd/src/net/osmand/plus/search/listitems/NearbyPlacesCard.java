@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.facebook.shimmer.ShimmerFrameLayout;
 
+import net.osmand.PlatformUtil;
 import net.osmand.data.Amenity;
 import net.osmand.data.DataSourceType;
 import net.osmand.data.LatLon;
@@ -40,7 +41,6 @@ import net.osmand.search.SearchUICore.SearchResultCollection;
 import net.osmand.search.core.SearchResult;
 
 import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,7 +52,7 @@ import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 public class NearbyPlacesCard extends FrameLayout implements DownloadItemsAdapter.OnItemClickListener {
 
 	private static final int DISPLAY_ITEMS = 25;
-	private static final Log log = LogFactory.getLog(NearbyPlacesCard.class);
+	private static final Log log = PlatformUtil.getLog(NearbyPlacesCard.class);
 
 	private final OsmandApplication app;
 	private final WikipediaPlugin plugin = PluginsHelper.requirePlugin(WikipediaPlugin.class);
