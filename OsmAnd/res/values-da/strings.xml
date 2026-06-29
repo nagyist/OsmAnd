@@ -6216,7 +6216,6 @@
     <string name="coordinate_format_add_title">Tilføj format</string>
     <string name="coordinate_format_add_empty_body">Søg i en database med over 5.000 lokale og nationale EPSG-koder efter land, navn eller ID.</string>
     <string name="coordinate_format_select_other">Vælg et andet format</string>
-    <string name="coordinate_format_recent">Seneste</string>
     <string name="coordinate_format_primary">Primær</string>
     <string name="coordinate_format_add_empty_title">Leder du efter et bestemt format?</string>
     <string name="coordinate_format_add_search_hint">Søg efter EPSG-kode eller formatnavn</string>

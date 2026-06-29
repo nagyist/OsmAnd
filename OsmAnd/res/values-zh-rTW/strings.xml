@@ -6002,7 +6002,6 @@
     <string name="coordinate_format_discard_changes">放棄變動</string>
     <string name="coordinate_format_last_item_warning">至少需要指定一種座標格式。</string>
     <string name="coordinate_format_select_other">選擇其他格式</string>
-    <string name="coordinate_format_recent">最近</string>
     <string name="coordinate_format_primary">主要</string>
     <string name="gallery_media_playback_error">無法播放多媒體。</string>
     <string name="gallery_open_in">在…開啟</string>

@@ -11,6 +11,12 @@
 	Strings for OsmAnd core
 	Thx - Hardy
 -->
+	<string name="shared_string_recent">Recent</string>
+	<string name="sort_by_nearest_to_map_center">Nearest to map center</string>
+	<string name="last_week">Last week</string>
+	<string name="history_is_turned_off">History is turned off</string>
+	<string name="search_and_navigation_history_disabled_descr">Search and navigation history are disabled. Enable them in settings to see recent activity here.</string>
+	<string name="open_history_settings">Open History settings</string>
 	<!--  AisTrackerSettings  -->
 	<string name="ais_own_object">Settings for display of own AIS object</string>
 	<string name="ais_own_object_description">If the own vessel has an AIS transmitter then the signal will be received together with other AIS vessel\'s signals. Special handling of the own AIS signal is defined here.</string>
@@ -56,6 +62,11 @@
 	<string name="gallery_sort_duration_short_long">Shortest duration first</string>
     <string name="navigate_point_format_maidenhead">Maidenhead</string>
     <string name="maidenhead_format_descr">Maidenhead Locator System (QTH Locator).</string>
+	<string name="search_around">Search around</string>
+	<string name="search_around_map_center_description">%1$s away from your location</string>
+	<string name="search_around_my_location">My location</string>
+	<string name="search_around_my_location_description">Search around your position</string>
+	<string name="sort_by_relevance">Relevance</string>
 	<string name="auto_copy_media_to_osmand_storage">Auto-copy media to OsmAnd storage</string>
 	<string name="choose_from_gallery">Choose from Gallery</string>
 	<string name="choose_from_files">Choose from Files</string>
@@ -81,7 +92,6 @@
 	<string name="coordinate_format_discard_changes">Discard changes</string>
 	<string name="coordinate_format_last_item_warning">At least one coordinate format is required.</string>
 	<string name="coordinate_format_select_other">Select other format</string>
-	<string name="coordinate_format_recent">Recent</string>
 	<string name="coordinate_format_primary">Primary</string>
 	<string name="favorite_confirm_delete_folder">This will delete folder \"%1$s\", including nested folders and %2$d favorite point(s).</string>
 	<string name="favorite_folder_rename_conflict">A folder with this name already exists.</string>

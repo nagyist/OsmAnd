@@ -15,6 +15,7 @@ import net.osmand.PlatformUtil;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.backup.ui.DeleteAllDataConfirmationBottomSheet.OnConfirmDeletionListener;
+import net.osmand.plus.search.QuickSearchHelper.SearchHistoryAPI.HistorySearchResult;
 import net.osmand.plus.search.history.SearchHistoryHelper;
 import net.osmand.plus.search.history.HistoryEntry;
 import net.osmand.plus.helpers.TargetPointsHelper;
@@ -201,7 +202,9 @@ public class HistorySettingsFragment extends BaseSettingsFragment implements OnC
 
 	@Nullable
 	protected static HistoryEntry getHistoryEntry(SearchResult searchResult) {
-		if (searchResult.object instanceof HistoryEntry) {
+		if (searchResult instanceof HistorySearchResult historySearchResult) {
+			return historySearchResult.getHistoryEntry();
+		} else if (searchResult.object instanceof HistoryEntry) {
 			return (HistoryEntry) searchResult.object;
 		} else if (searchResult.relatedObject instanceof HistoryEntry) {
 			return (HistoryEntry) searchResult.relatedObject;
