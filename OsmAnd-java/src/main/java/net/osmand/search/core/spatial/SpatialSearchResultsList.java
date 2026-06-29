@@ -463,7 +463,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
  	
 	private void calculateMainIntersection(SpatialSearchContext ctx, SpatialSearchToken token, SpatialSearchResultsList parent) {
 		if (parent.getTokenCount() == 0) {
-			for (NameIndexAtom atom : token.atoms) {
+			for(int indxAtom = 0; indxAtom < token.atoms.size(); indxAtom++) {
+				NameIndexAtom atom = token.atoms.get(indxAtom);
+				if (token.deletedAtoms.contains(indxAtom)) {
+					continue;
+				}
 				addResult(null, 0, atom, 0);
 			}
 		} else if (parent.getCombinations() > 0) {
@@ -479,6 +483,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			int originalLimit = limitIntersection;
 			int[] typeIntersection = new int[] { 0 };
 			iterateIntersection(parent, token, (parentIndx, atom,  indxAtom) -> { 
+				if (token.deletedAtoms.contains(indxAtom)) {
+					return;
+				}
 				int level = Math.max(atom.nearbyRadius, parent.nearbyResult(parentIndx));
 				if (level > limitIntersection) {
 					return;
@@ -589,6 +596,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			if ((pa.buildingInd >= 0) && a.isStreetBuilding()) {
 				return false;
 			} else if ((a.buildingInd >= 0) && pa.isStreetBuilding()) {
+				return false;
+			}
+			// if poi doesn't have bbox don't intersect or add bbox!
+			if ((pa.buildingInd >= 0) && a.isPOI() && a.coords.bbox31 == null) {
+				return false;
+			} else if ((a.buildingInd >= 0) && pa.isPOI() && pa.coords.bbox31 == null) {
 				return false;
 			}
 			

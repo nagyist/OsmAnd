@@ -1,6 +1,7 @@
 package net.osmand.search.core.spatial;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -45,6 +46,7 @@ public class SpatialSearchToken {
 	TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
 	HashQuadTree<Integer> quadTree = new HashQuadTree<>(16);
 	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
+	Set<Integer> deletedAtoms = new HashSet<Integer>();
 
 	CollatorStringMatcher collatorMain;
 	// cache for popular split
@@ -133,6 +135,15 @@ public class SpatialSearchToken {
 		};
 	}
 
+	
+	void removeAtom(NameIndexAtom atom) {
+		NameIndexAtom na = index.get(atom.id);
+		int indexOf = atoms.indexOf(na);
+		if (indexOf != -1) {
+			deletedAtoms.add(indexOf);
+		}
+	}
+	
 	void addAtom(NameIndexAtom atom) {
 		// mostly not used as disabled
 		if (atom.object != null && !(atom.object instanceof Street) && 
@@ -268,6 +279,21 @@ public class SpatialSearchToken {
 			}
 		}
 		
+		public boolean contains(NameIndexAtomXY a) {
+			if (bbox31 == null || a.bbox31 == null) {
+				int z1 = bboxTileZoom, z2 = a.bboxTileZoom;
+				long tid1 = bboxTileId, tid2 = a.bboxTileId;
+				while (z2 > z1) {
+					tid2 >>= 2;
+					z2--;
+				}
+				return tid1 == tid2 && z2 == z1;
+			}
+			// if exists [xleft, ytop, xright, ybottom]
+			return this.bbox31[0] <= a.bbox31[0] && this.bbox31[2] >= a.bbox31[2] && this.bbox31[1] <= a.bbox31[1]
+					&& this.bbox31[3] >= a.bbox31[3];
+		}
+		
 		public String tileIdString() {
 			return this.bboxTileZoom + " "
 					+ MapUtils.deinterleaveX(bboxTileId) + " "
@@ -312,6 +338,8 @@ public class SpatialSearchToken {
 			bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16, y16);
 			decodeBBox(poi.hasBbox() ? poi.getBbox() : null);
 		}
+
+		
 
 	}
 
@@ -368,6 +396,14 @@ public class SpatialSearchToken {
 		
 		public boolean isBoundary() {
 			return type == CityBlocks.BOUNDARY_TYPE.index;
+		}
+		
+		public boolean isCityVillage() {
+			return type == CityBlocks.CITY_TOWN_TYPE.index || type == CityBlocks.VILLAGES_TYPE.index;
+		}
+		
+		public boolean isCity() {
+			return type == CityBlocks.CITY_TOWN_TYPE.index;
 		}
 		
 		public boolean isStreet() {

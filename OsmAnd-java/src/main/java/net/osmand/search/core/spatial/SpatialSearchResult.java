@@ -246,7 +246,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		key = addCompareKey(key, 6, -o.parent.tCount); // 6 bit - 64
 		key = addCompareKey(key, 6, o.objs.size()); // 6 bit - 64
 		key = addCompareKey(key, 3, -o.surplusWords); // 3 bit - 8
-		key = addCompareKey(key, 5, o.sumOther()); // 5 bit - 32
+		key = addCompareKey(key, 2, Math.min(o.sumOther(), 3)); // 3 bit - 3
 		key = addCompareKey(key, 6, o.getRating() / 64); // 6 bit - 64 - group by 64 bucket
 		key = addCompareKey(key, 12, o.sumTypeOrder()); // 12 bit - 4096
 		// total 6+6+3+5+6+12 = 35

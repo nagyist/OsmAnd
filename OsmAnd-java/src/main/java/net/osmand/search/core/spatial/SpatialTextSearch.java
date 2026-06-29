@@ -41,8 +41,6 @@ import net.osmand.util.SearchAlgorithms;
 
 public class SpatialTextSearch {
 
-	private static final int LIMIT_PRINT = 1000;
-
 	public static class SpatialTextSearchSettings {
 
 		public boolean SEARCH_ADDR = true;
@@ -53,9 +51,13 @@ public class SpatialTextSearch {
 		// no intersection recorded but streets are nearby
 		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
 		
-		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 30_000, 100_000}; // 
+		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 20_000, 80_000}; // 
 //		public int[] OPTIM_LIMIT_RADIUS = new int[] {}; 
-		public int OPTIM_LIMIT_INTERSECTIONS = 20_000; // 20K or 50K
+		public int OPTIM_LIMIT_INTERSECTIONS = 15_000; // 20K or 50K
+		
+		// produces x10 less intersection and maintains x2-x4 ratio for DEDUPLICATE_RES
+		// by deleting embedded or duplicate boundaries in each other
+		public boolean OPTIM_DELETE_EMBEDDED_BOUNDARIES = true;
 		
 		// max prefixes for each name reader
 		public int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
@@ -357,6 +359,7 @@ public class SpatialTextSearch {
 							lind++;
 						}
 					}
+//					System.out.println(nextKey + " " + r);
 					cKey = nextKey;
 				}
 				r.visibleLevel = level;
@@ -378,14 +381,13 @@ public class SpatialTextSearch {
 		return tokens;
 	}
 
-	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx) throws IOException {
+	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx, int limitPrint) throws IOException {
 		ctx.stats.requestTime.start();
 		SpatialSearchResults res = searchAPI(input, ctx);
 		ctx.stats.requestTime.finish();
 		if (res.mainResults != null && res.mainResults.size() > 0) {
 			System.out.println("--------");
 			System.out.println("Main: " + res.combinations.get(0));
-			int limit = LIMIT_PRINT;
 			int all = res.mainResults.size();
 			int level = 0;
 			for (SpatialSearchResult r : res.mainResults) {
@@ -393,7 +395,7 @@ public class SpatialTextSearch {
 					level++;
 					System.out.println("### LEVEL " + level);
 				}
-				if (limit-- < 0) {
+				if (limitPrint-- < 0) {
 					System.out.println(".............");
 					break;
 				}
@@ -455,7 +457,7 @@ public class SpatialTextSearch {
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 		SpatialTextSearch a = new SpatialTextSearch();
 		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, null);
-		a.searchTest(query, searchContext);
+		a.searchTest(query, searchContext, 1000);
 	}
 
 }

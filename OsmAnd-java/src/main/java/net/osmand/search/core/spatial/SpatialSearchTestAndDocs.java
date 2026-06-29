@@ -36,22 +36,21 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING 'LangeStraße' (Data 'Lange Straße'), 'Daimler strasse' (Data 'daimlerstraße')
 // TESTING Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k) - OPTIMAL 
 // TESTING 11-nuon leons, Húns Huns 39a-MLN 8832kd, 
-
 // TESTING Filter results boundaries, <Salt Lake City>
 // TESTING Sokak 2 Show more
+// TESTING Ignore same embedded boundary city / county - deduplicate on the fly (new york x4)
+
 ////////// IN PROGRESS //////////
-
-
-// FIXME Ignore same embedded boundary city / county - deduplicate on the fly (new york x10)
 // TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique)
-// TODO ? in the end recheck bbox boundary (full?) after load coordinates 31 (not 15) - chernihiv sport life
 
 // FIXME Combine by osmid (poi type internet) & wikidata id ? osm id for routes (?)
 // FIXME Combine regions.ocbf (boundary)?
 // FIXME POI Categories + top poi categories
 // TODO POI Categories translations / synonyms
 // TODO specific Healthcare specialties - https://github.com/osmandapp/OsmAnd/issues/24941
+
 // TODO Bratislava Billa - too many POI intersection results
+// TODO Filter Public transport stops, City&Bike - New york - how?
 
 // TEST IDEAS
 // TODO test: merge boundaries bbox - extend incomplete boundary same id...
@@ -63,11 +62,11 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Progress / cancel
 // TODO Not forget to include regions.ocbf on client
 // TODO Test memory on Android device for slowest query
+// TODO Store and test conscription number for some cities - issue
 
 // ------------------------------------- ///
 // EXTRA FEATURES
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
-// TODO Test non partial numbers housenumers / housenames - conscription number - 
 // TODO Japan test, housename, block_number + housenumber, neighbourhood + quarter - street + India assign houses to suburbs / neighbourhood / blocks
 // TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
 // TODO Search near key objects (subway station artificial bbox)
@@ -76,6 +75,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Add flats: https://www.openstreetmap.org/node/5843642738
 // TODO Sugggestion-correction
 // TODO English postcodes
+// TODO Precise Boundary 'Chernihiv sport life' mostly Kyiv - check precise boundary for filter
 
 public class SpatialSearchTestAndDocs {
 
@@ -140,8 +140,7 @@ public class SpatialSearchTestAndDocs {
 	 *    Possible solution is to prepare 2 variation during indexing 
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
-//		SpatialTextSearchSettings.DEDUPLICATE_RES = true;
-//		SpatialTextSearchSettings.SEARCH_BUILDINGS = false;
+		SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
 		File folder = new File(System.getProperty("maps.dir"));
 		LatLon location = null;
 		String pattern = "Germany_b";
@@ -196,12 +195,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
 		query = "11-NUON leons";
 		
-		pattern = "Turkey_";
+//		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // OK
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
 		// ALL - Search Stats 1569.2 ms - 554.0 ms 59,656 atoms (read 318.8, match 134.1), 985.8 ms compute 693,139 (loadBld 396.2, read 149.5)
         // NO INTER - Search Stats 871.5 ms - 546.4 ms 59,656 atoms (read 313.7, match 135.6), 299.9 ms compute 4,735 (loadBld 54.1, read 37.2)
-		query = "Sokak 2";// 380657094 2.Sokak
+//		query = "Sokak 2";// 380657094 2.Sokak
 //		location = new LatLon(40.7627, 29.8454);  
 //		query = "2/1 21038 Sokak"; // 1380369156
 		
@@ -249,16 +248,18 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby Melbourne 18B";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-//		pattern = "Us_new-"; 
+		pattern = "Us_new-"; 
 		
-//		location = new LatLon(41.10566, -73.89009); // new york avenue 4
-//		location = new LatLon(40.64946, -74.00682); // loaded
+//		location = new LatLon(40.78035, -73.96572); // central park
+		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
 //		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
-//		query = "New York 4 av"; // unit test '4th av', '4 ave', '4th avenue' 241843204 brooklyn - not 48
-//		query = "New York 4 av 8"; // 160947243
+		// 40.64946, -74.00682 - unit test '4th av', '4 ave', '4th avenue' 241843204, 247910224, 85393997 (..) brooklyn - not 48
+		// 40.78035, -73.96572 - unit test '4th av', '4 ave', '4th avenue'  - 85393997 Park avenue
+		query = "New York 4 av"; 
+		query = "New York 4 av 8"; // 160947243
 //		query = "4th ave"; //  unit '4 ave'   
 //		query = "4th ave 8 paterson"; //  wrong city...
 		// Result 4 - 40.8407, -74.0954 [[4th, 8] Building 2 4th Street (26238417818) 40.8441 -74.0910 , [ave, paterson] STREET_TYPE Paterson Avenue (651531238) 40.8374 -74.0997 ]
@@ -309,8 +310,9 @@ public class SpatialSearchTestAndDocs {
 		SpatialTextSearch a = new SpatialTextSearch();
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 
-		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, location);
-		SpatialSearchResults rs = a.searchTest(query, searchContext);
+		settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES = false;
+		SpatialSearchContext searchContext = new SpatialSearchContext(settings, ls, location);
+		SpatialSearchResults rs = a.searchTest(query, searchContext, 10);
 		SpatialSearchResult mainResult = rs.getFirstResult();
 		if (mainResult != null && mainResult.matchedTokens() < rs.tokens.size() - 2) {
 			// another way to check to check to get mainResult - boundary object
@@ -326,10 +328,10 @@ public class SpatialSearchTestAndDocs {
 				System.out.println("Suggest search other region - " + bbox);
 			}
 		}
-		SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
-		settings.ALWAYS_READ_COMMON_WORDS_ATOMS = true;
+		settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES = true;
+		settings.DEDUPLICATE_RES = true;
 		searchContext = new SpatialSearchContext(settings, ls, location);
-		a.searchTest(query, searchContext);
+		a.searchTest(query, searchContext, 1000);
 	}
 	
 }
