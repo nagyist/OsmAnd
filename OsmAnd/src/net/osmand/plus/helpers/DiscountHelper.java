@@ -101,7 +101,8 @@ public class DiscountHelper {
 	public static void checkAndDisplay(MapActivity mapActivity) {
 		OsmandApplication app = mapActivity.getApp();
 		OsmandSettings settings = app.getSettings();
-		if (!settings.INAPPS_READ.get()) {
+		boolean forceShowDiscountBottomSheet = settings.SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET.get();
+		if (!settings.INAPPS_READ.get() && !(Version.isDeveloperVersion(app) && forceShowDiscountBottomSheet)) {
 			return;
 		}
 		if (mBannerVisible) {
@@ -144,23 +145,27 @@ public class DiscountHelper {
 
 			@Override
 			protected void onPostExecute(String response) {
-				if (!Algorithms.isEmpty(response)) {
-					processDiscountResponse(response, mapActivity);
-				} else if (settings.SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET.get()) {
-					processDiscountResponse(app.getString(R.string.test_discount_response), mapActivity);
+				try {
+					JSONObject obj = null;
+					if (settings.SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET.get()) {
+						obj = new JSONObject(app.getString(R.string.test_discount_response));
+					} else if (!Algorithms.isEmpty(response)) {
+						obj = new JSONObject(response);
+					}
+					if (obj != null && obj.length() > 0) {
+						processDiscountResponse(obj, mapActivity);
+					}
+				} catch (JSONException e) {
+					logError("JSON parsing error: ", e);
 				}
 			}
 		});
 	}
 
 	@SuppressLint("SimpleDateFormat")
-	private static void processDiscountResponse(String response, MapActivity mapActivity) {
+	private static void processDiscountResponse(@NonNull JSONObject obj, MapActivity mapActivity) {
 		try {
 			OsmandApplication app = mapActivity.getApp();
-			JSONObject obj = new JSONObject(response);
-			if (obj.length() == 0) {
-				return;
-			}
 			ControllerData data = ControllerData.parse(app, obj);
 			SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm");
 			Date start = df.parse(obj.getString("start"));

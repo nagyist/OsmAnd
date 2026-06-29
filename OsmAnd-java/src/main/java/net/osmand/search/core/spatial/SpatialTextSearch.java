@@ -21,51 +21,7 @@ import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
 import net.osmand.util.SearchAlgorithms;
 
-//////////// OTHER TASKS ///////
-// Check file sizes: 
-// 1. FILE SIZE: REVIEW ADD_TOP_X_FREQ_WORDS (many common?)
-// 2. FILE SIZE: REVIEW added bbox31 size
-// 3. REVIEW SPLIT: if POI / Address is searched correctly - split Words - splitAndNormalizeSearchQuery(SearchPhrase.ALLDELIMITERS_WITH_HYPHEN);
-//    - 2-га Нова (2 Нова), Бульварно-Кудрявська
-// 4. TEST / REVIEW duplicate words in query Pennsylvania Street in Pennsylvania +
-// 6. TEST / REVIEW - TOKENIZER (split) - COLLATOR: '#3', 'str.', 'U.S. Bank' ,'2-st' vs '2'  (Unit tests)
-// 7. TEST / REVIEW - Numbers - isNumber2Letters '#3', and other
-// 8. DATA: English postcodes
-// 9. TEST / REVIEW - Unit test (<common_word> <almost_number>) -('№25', '25') -- +('школа', 'школа №25',  'школа 25')
-
-//////////// TESTING //////////
-// - EMPTY_SUFFIX_DICTIONARY_SENTINEL used only on client?
-// - don't compute all combinations... (!) and do it in the right order 2^7
-
-// CACHE
-// TODO Evict - NameIndexReader in caches ( > 200 - indexByRef, matchedKeys) full clear
-
-// BUILDINGS
-// TODO Ignore same embedded boundary city / county - deduplicate on the fly
-// TODO [[2, нова, вулиця] STREET_TYPE 2-га Нова вулиця (-2626) 50.5006 30.3798 ]
-// TODO Search Buildings (to search buildings most complete street is needed (largest city sort?))
-
-// FEATURES
-// TODO Read all top poi categories for files
-// TODO POI Categories implement categories
-// TODO World basemap ! POI  
-// TODO Street intersection match
-// TODO Abbreviations Phase
-// TODO Sugggestion-correction
-
-// ISSUES
-// TODO Progress / cancel
-// TODO read poi tag groups ! Refactor MAP_HAS_TAG_GROUPS
-// TODO Combine by wikidata id ?
-
-// TEST
-// TODO test: merge boundaries bbox - extend incomplete boundary same id...
-// TODO ? review settings: read objects after some intersections (but not too early)
-//      - Results 5 tokens 1,949 (139 unique) - compact objects during combinations?
-// TODO ? in the end recheck bbox boundary after load coordinates 31 (not 15)
-
-
-//////////////// SEARCH ALGORITHM /////////////////
+//////////////// SEARCH ALGORITHM //////////////////
 // 1. Init files + read caches
 // 2. Split tokens
 // 3. Read tokens -> atoms (
@@ -74,46 +30,71 @@ import net.osmand.util.SearchAlgorithms;
 // 6. Sort results, filter results
 // 7. Expand poi categories if needed
 
-////////////// TODO THINK OPTIMIZATIONS /////////////
+////////////// FUTURE OPTIMIZATIONS ////////////////
 // 1. PARTIAL SEARCH. Perform equals search and then with '.'
 // 2. MAPS. Do search first with closest maps and then with others
 // 3. ALL COMBINATIONS. Stop on one combination or find all
-// 4. POI CATEGORIES. ? 
-// 5. READ_ALL. Switch ALWAYS_READ_COMMON_WORDS_ATOMS=true 
-//    It couldn't give any new complete result but could give partial results
+// 4. POI CATEGORIES. -? 
+// 5. READ_ALL. Switch ALWAYS_READ_COMMON_WORDS_ATOMS=true (new results + school intersections)
 // 6. OPTIMIZE POI READ. Read only 1 POI in block
+////////////////////////////////////////////////////
+
 public class SpatialTextSearch {
 
-	private static final int LIMIT_PRINT = 300;
+	private static final int LIMIT_PRINT = 1000;
 
 	public static class SpatialTextSearchSettings {
 
-		public static boolean SEARCH_ADDR = true;
-		public static boolean SEARCH_POI = true;
+		public boolean SEARCH_ADDR = true;
+		public boolean SEARCH_POI = true;
+		public boolean SEARCH_BUILDINGS = true;
+		public boolean SEARCH_STREET_INTERSECTIONS = true;
+		public boolean SEARCH_POI_INTERSECTIONS = true;
+		// no intersection recorded but streets are nearby
+		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
+		
+		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 30_000, 100_000}; // 
+//		public int[] OPTIM_LIMIT_RADIUS = new int[] {}; 
+		public int OPTIM_LIMIT_INTERSECTIONS = 20_000; // 20K or 50K
+		
+		// max prefixes for each name reader
+		public int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
 
-		// Deduplicate results in the end by checking osm id of the first object in
-		// combination
-		public static boolean DEDUPLICATE_RES = true;
+		// Deduplicate results in the end by checking osm id of the first object in combination
+		public boolean DEDUPLICATE_RES = true;
 
 		// READ OBJECTS before intersection to reduce number of duplicates from
-		// different maps by osm id
-		// - needs to be tested performance mostly slows down
-		public static boolean READ_ADDR_OBJECTS = false;
-		public static boolean READ_POI_OBJECTS = false;
+		// different maps by osm id - needs to be tested performance mostly slows down
+		// ! Potential issue READ_ADDR_OBJECTS could deduplicate streets and 
+		//  building won't be found in case same street in cities
+		public boolean DEV_READ_ADDR_OBJECTS = false;
+		public boolean DEV_READ_POI_OBJECTS = false;
 
 		// no need to find 3 street intersection or 3 POI intersection
-		public static int LIMIT_ATOMIC_OBJECTS = 2;
+		public int LIMIT_ATOMIC_OBJECTS = 2;
 
+		// Very good optimization but breaks some scenarios
 		// Performance improvement assuming for rare words we don't read common atoms
-		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = false;
-		public static boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
+		// Problem search: New york plaza, New York 45 Avenue, School 40 on Specific Street.  
+		public boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
+		public boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
 
 		// Limit evaluation intersection for unique objects
-		public static int LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS = 1000;
+		public int LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS = 1000;
 		// if there are >= 10 results matching 5 words, 4 words match won't be considered
-		public static int LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS = 5;
+		public int LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS = 1; // could be 3
 		// don't go level-2 if there are on level matching results
-		public static int LIMIT_GOAL_LEVEL_2 = 1;
+		public int LIMIT_GOAL_LEVEL_2 = 1;
+		
+		// Filter within same matched words but different number of objects [3 matched tokens - 1 single object]
+		public int[] FILTER_MIN_WORDS_COUNT = new int[] {3, 10};
+//		public int[] FILTER_MIN_WORDS_COUNT = new int[] {};
+		
+		// only do incomplete search with 2+ chars
+		public int MIN_CHARACTERS_INCOMPLETE = 2;
+		
+		public int MIN_ELO_RATING = 1400; // see SearchResult.MIN_ELO_RATING
+//		public int MAX_ELO_RATING = 4300; // not used now
 		
 	}
 
@@ -158,6 +139,11 @@ public class SpatialTextSearch {
 		public List<SpatialSearchResult> mainResults;
 
 		public List<SpatialSearchResultsList> combinations;
+		
+		public SpatialSearchResult getFirstResult() {
+			return mainResults == null || mainResults.size() == 0 ? null : 
+				mainResults.get(0);
+		}
 	}
 
 	SpatialSearchGlobalCache cache = new SpatialSearchGlobalCache(); // reusable between sessions
@@ -182,13 +168,15 @@ public class SpatialTextSearch {
 	}
 
 	/**
-	 * For [1, 2, 3, 4] Tokens evaluate with cache (- no cache, +in cache) longest
-	 * chain 1. Goal [1, 2, 3, 4]: -[1, 2], -[1, 2, 3], -[1, 2, 3, 4] 2. Goal [1, 2,
-	 * 3]: +[1, 2], +[1, 2, 3] 3. Goal [1, 2, 4]: +[1, 2], -[1, 2, 4] 4. Goal [1, 3,
-	 * 4]: -[1, 3], -[1, 3, 4] 5. Goal [2, 3, 4]: -[2, 3], -[1, 3, 4] 6. Goal [1,
-	 * 2]: +[1, 2] 7. Goal [1, 3]: -[1, 3] ... Once goal has enough results whole
-	 * iteration stopped
-	 * 
+	 * For [1, 2, 3, 4] Tokens evaluate with cache (- no cache, +in cache) longest chain 
+	 * 1. Goal [1, 2, 3, 4]: -[1, 2], -[1, 2, 3], -[1, 2, 3, 4] 
+	 * 2. Goal [1, 2, 3]: +[1, 2], +[1, 2, 3] 
+	 * 3. Goal [1, 2, 4]: +[1, 2], -[1, 2, 4] 
+	 * 4. Goal [1, 3, 4]: -[1, 3], -[1, 3, 4] 
+	 * 5. Goal [2, 3, 4]: -[2, 3], -[1, 3, 4] 
+	 * 6. Goal [1, 2]: +[1, 2] 
+	 * 7. Goal [1, 3]: -[1, 3] ... 
+	 * Once goal has enough results whole iteration stopped
 	 * @param ctx
 	 * @return
 	 */
@@ -206,7 +194,8 @@ public class SpatialTextSearch {
 		for (SpatialSearchToken t : tokens) {
 			BitSet b = new BitSet();
 			b.set(ind++);
-			cache.put(b, new SpatialSearchResultsList(t, root));
+			cache.put(b, new SpatialSearchResultsList(ctx, t, root));
+			ctx.stats.tokenObjs += t.atoms.size();
 		}
 
 		LinkedList<BitSet> goals = new LinkedList<>();
@@ -223,7 +212,7 @@ public class SpatialTextSearch {
 			}
 			// stop on level - 2
 			if (maxDepth == 0) {
-				if (uniqueObjects >= SpatialTextSearchSettings.LIMIT_GOAL_LEVEL_2) {
+				if (uniqueObjects >= ctx.settings.LIMIT_GOAL_LEVEL_2) {
 					maxDepth = depth;
 				}
 			} else if (goal.length() <= maxDepth - 2) {
@@ -231,8 +220,8 @@ public class SpatialTextSearch {
 			}
 			// stop with condition on level - 1
 			if (goal.length() < depth) {
-				if (SpatialTextSearchSettings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS > 0
-						&& uniqueObjects >= SpatialTextSearchSettings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS) {
+				if (ctx.settings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS > 0
+						&& uniqueObjects >= ctx.settings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS) {
 					break;
 				}
 				depth = goal.length();
@@ -247,7 +236,8 @@ public class SpatialTextSearch {
 					SpatialSearchToken token = tokens.get(i);
 					eval.set(i);
 					if (!cache.containsKey(eval)) {
-						goalRes = new SpatialSearchResultsList(token, goalRes);
+						goalRes = new SpatialSearchResultsList(ctx, token, goalRes);
+						ctx.stats.maxCombinations = Math.max(ctx.stats.maxCombinations, goalRes.getCombinations()); 
 //						System.out.println("  EVALUATE STEP " + eval + " " + goalRes);
 						cache.put((BitSet) eval.clone(), goalRes);
 					} else {
@@ -257,15 +247,12 @@ public class SpatialTextSearch {
 				}
 			}
 			if (goalRes.getCombinations() > 0) {
-				ctx.stats.atoms -= System.nanoTime();
-				goalRes.loadObjects(ctx);
-				ctx.stats.atoms += System.nanoTime();
-				List<SpatialSearchResult> res = goalRes.sortResults(true);
+				goalRes.loadObjectsAndCalcBuildings(ctx);
+				List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
 				uniqueObjects += res.size();
-				System.out.println(goalRes);
 				fullResult.add(goalRes);
-				if (SpatialTextSearchSettings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0
-						&& uniqueObjects >= SpatialTextSearchSettings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS) {
+				if (ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0
+						&& uniqueObjects >= ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS) {
 					break;
 				}
 			}
@@ -282,7 +269,7 @@ public class SpatialTextSearch {
 		return fullResult;
 	}
 
-	List<SpatialSearchResultsList> findObjCombinationsSimpleIteration(List<SpatialSearchToken> tokens) {
+	List<SpatialSearchResultsList> findObjCombinationsSimpleIteration(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
 		LinkedList<SpatialSearchResultsList> candidates = new LinkedList<>();
 		candidates.add(new SpatialSearchResultsList());
 		List<SpatialSearchResultsList> result = new ArrayList<>();
@@ -297,7 +284,7 @@ public class SpatialTextSearch {
 //			for (SpatialSearchToken token : tokens) {
 				SpatialSearchToken token = tokens.get(k);
 				if (parent.getTokenCount() == 0 || token.sortedOrder < parent.getFirstToken().sortedOrder) {
-					SpatialSearchResultsList next = new SpatialSearchResultsList(token, parent);
+					SpatialSearchResultsList next = new SpatialSearchResultsList(ctx, token, parent);
 //					next.calculateIntersection(token, parent);
 //					System.out.printf("ITERATION Token [%s] + {%s} = {%s}\n", token, parent, next);
 					candidates.push(next);
@@ -313,64 +300,96 @@ public class SpatialTextSearch {
 		ctx.initFiles(cache);
 		res.input = input;
 		// 1. prepare tokens
-		res.tokens = splitWords(input);
+		res.tokens = splitWords(ctx, input);
 
 		// 2. read atoms
-		ctx.stats.atoms -= System.nanoTime();
+		ctx.stats.stepAtoms -= System.nanoTime();
 		ctx.readAtoms(res.tokens);
-		ctx.stats.atoms += System.nanoTime();
+		ctx.stats.stepAtoms += System.nanoTime();
 
 		// 3. sort tokens
 		sortTokens(res.tokens);
 
 		// 4. find combinations
-		ctx.stats.computeTime -= System.nanoTime();
+		ctx.stats.stepCompute -= System.nanoTime();
 //		res.combinations = findObjCombinationsSimpleIteration(res.tokens);
 		res.combinations = findLongestCombinations(ctx, res.tokens);
-		ctx.stats.computeTime += System.nanoTime();
+		ctx.stats.stepCompute += System.nanoTime();
 		// 5. sort combinations, load objects, objects and filter duplicate
+		res.mainResults = new ArrayList<>();
+		ctx.stats.stepSort -= System.nanoTime();
 		if (res.combinations.size() > 0) {
-			res.mainResults = new ArrayList<>();
-			SpatialSearchResultsList main = res.combinations.get(0);
-			for (SpatialSearchResultsList m : res.combinations) {
-				List<SpatialSearchResult> lst = m.getFinalResult();
-				if (lst == null) {
-					lst = m.sortResults(true);
-				}
-				res.mainResults.addAll(lst);
-			}
-			res.mainResults = main.sortResults(res.mainResults, SpatialTextSearchSettings.DEDUPLICATE_RES);
+			combineSortFilterResults(ctx, res);
 		}
+		ctx.stats.stepSort += System.nanoTime();
 		return res;
 	}
 
-	public List<SpatialSearchToken> splitWords(String input) {
+	private void combineSortFilterResults(SpatialSearchContext ctx, SpatialSearchResults res) {
+		SpatialSearchResultsList main = res.combinations.get(0);
+		for (SpatialSearchResultsList m : res.combinations) {
+			List<SpatialSearchResult> lst = m.getFinalResult();
+			if (lst == null) {
+				lst = m.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+			}
+			res.mainResults.addAll(lst);
+		}
+		res.mainResults = main.sortResults(ctx, res.mainResults, ctx.settings.DEDUPLICATE_RES);
+		if (res.mainResults.size() > 0) {
+			int[] limits = ctx.settings.FILTER_MIN_WORDS_COUNT.clone();
+			int sz = res.mainResults.get(0).getObjectsSize(), ind = 0, lind = 0;
+			int level = 0; 
+			for (SpatialSearchResult r : res.mainResults) {
+				if (sz != r.getObjectsSize()) {
+					if (level == 0) {
+						if (lind < limits.length && ind >= limits[lind]) {
+							level++;
+						} else if (lind < limits.length - 1) {
+							lind++;
+						}
+					} else {
+						level++;
+					}
+					sz = r.getObjectsSize();
+				}
+				r.level = level;
+				ind++;
+			}
+		}
+	}
+
+	public List<SpatialSearchToken> splitWords(SpatialSearchContext ctx, String input) {
 		List<String> owords = new ArrayList<String>();
 		// split by hyphen as we supposed to index them separately
 		List<String> words = SearchAlgorithms.splitAndNormalize(input, owords, false);
 		List<SpatialSearchToken> tokens = new ArrayList<>();
 		for (int order = 0; order < words.size(); order++) {
 			String w = words.get(order);
-			SpatialSearchToken token = new SpatialSearchToken(w, owords.get(order), order);
+			SpatialSearchToken token = new SpatialSearchToken(ctx.settings.MIN_CHARACTERS_INCOMPLETE, w, owords.get(order), order);
 			tokens.add(token);
 		}
 		return tokens;
 	}
 
-	public void searchTest(String input, SpatialSearchContext ctx) throws IOException {
+	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = searchAPI(input, ctx);
 		ctx.stats.finish();
-		if (res.mainResults != null) {
+		if (res.mainResults != null && res.mainResults.size() > 0) {
 			System.out.println("--------");
 			System.out.println("Main: " + res.combinations.get(0));
 			int limit = LIMIT_PRINT;
 			int all = res.mainResults.size();
+			int level = 0;
 			for (SpatialSearchResult r : res.mainResults) {
+				if (r.level != level) {
+					level++;
+					System.out.println("### LEVEL " + level);
+				}
 				if (limit-- < 0) {
 					System.out.println(".............");
 					break;
 				}
-				System.out.println(r.matchedTokens() + " " + r);
+				System.out.printf("Result %d - %s\n", r.matchedTokens(), r);
 			}
 			System.out.printf("------ ALL %d results ------- \n ", all);
 			System.out.println("---------------------------------------");
@@ -380,7 +399,7 @@ public class SpatialTextSearch {
 		System.out.printf("All Combinations - %d: \n", res.combinations.size());
 		for (SpatialSearchResultsList s : res.combinations) {
 			if (s.getTokenCount() >= 2) {
-				s.sortResults(true);
+				s.sortResults(ctx, true);
 				System.out.println("  " + s.toString(false));
 //				int limit = LIMIT_PRINT;
 //				for (SpatialSearchResult r : s.getResult()) {
@@ -395,73 +414,16 @@ public class SpatialTextSearch {
 
 		System.out.println(ctx.stats);
 		System.out.println();
+		return res;
 	}
 
-	private static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {
+	static void initFile(List<BinaryMapIndexReader> ls, File f) throws IOException, FileNotFoundException {
 		if (f.exists() && (f.getName().endsWith(".obf") || f.getName().equals(OsmandRegions.REGIONS_OCBF))) {
 			BinaryMapIndexReader bir = new BinaryMapIndexReader(new RandomAccessFile(f, "r"), f);
 			ls.add(bir);
 		}
 	}
 
-	public static void main(String[] args) throws IOException, InterruptedException {
-		SpatialTextSearchSettings.DEDUPLICATE_RES = true;
-		File folder = new File("/Users/victorshcherb/osmand/maps/");
-		String pattern = "Germany_b";
-		String query = "Berlin hauptstrasse"; // slow
-		query = "Kelterstraße Kernen im Remstal";
-		query = "Germany Kelter. Kernen im Remstal";
-
-		pattern = "Us_";
-		query = "Salt Lake City Pennsylvania Place UT USA";
-//		query = "Salt Lake City Lake";
-//		query = "Salt Lake City Pennsylvania Street";
-//		query = "Salt Lake City";
-//		query = "USA Salt Lake City Pennsylvania Street 41";
-//		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
-//		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; 
-//		query = "Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA";
-//		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
-//		query ="Township";
-
-		pattern = "Liechtenstein_europe.obf";
-		query = "Vaduz Lettstrasse";
-		query = "Vaduz ";
-		query = "Jugendheim Malbun";
-
-		pattern = "Ukraine_";
-//		pattern = "Map";
-		query = "нова пошта Бульварно Кудрявська";
-//		query = "Бульварно-кудрявс.";
-//		query = "Ukraine kyiv saks.";
-		query = "пузата хата mcdonal.";
-		query = "Нова пошта 53";
-//		query = "2-га Нова вулиця"; // unit test
-//		query = "2 Нова вулиця"; // unit test
-//		query = "саксаг.";
-//		query = "школа 25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
-
-//		pattern = "Spain_aragon_europe_";
-//		query = "Basílica de Nuestra Señora del Pilar";
-//		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
-
-		long t = System.nanoTime();
-
-		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
-		for (File f : folder.listFiles()) {
-			if (f.getName().startsWith(pattern) || f.getName().equals(OsmandRegions.REGIONS_OCBF)) {
-				initFile(ls, f);
-			}
-		}
-		SpatialTextSearch a = new SpatialTextSearch();
-		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
-
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
-		a.searchTest(query, searchContext);
-
-		searchContext = new SpatialSearchContext(ls);
-		a.searchTest(query, searchContext);
-	}
 
 	public static void mainTest(String[] subArgsArray) throws FileNotFoundException, IOException {
 		long t = System.nanoTime();
@@ -473,7 +435,9 @@ public class SpatialTextSearch {
 				if (i == 1) {
 					initFile(ls, new File(fl.getParentFile(), OsmandRegions.REGIONS_OCBF));
 				}
-				initFile(ls, fl);
+				if (!fl.getName().equals(OsmandRegions.REGIONS_OCBF)) {
+					initFile(ls, fl);
+				}
 			} else {
 				for (File f : fl.listFiles()) {
 					initFile(ls, f);
@@ -482,7 +446,7 @@ public class SpatialTextSearch {
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 		SpatialTextSearch a = new SpatialTextSearch();
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls);
+		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, null);
 		a.searchTest(query, searchContext);
 	}
 

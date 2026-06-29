@@ -45,6 +45,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvider, AisObjectListener {
 
 	public static final int START_ZOOM = 6;
+	public static final int START_ZOOM_SHOW_SHAPE = 16;
+	public static final int START_ZOOM_SHOW_DIRECTION = 10;
+
+	private static final long AIS_RENDER_REFRESH_INTERVAL_MS = 1000L;
 
 	private final AisTrackerPlugin plugin = PluginsHelper.requirePlugin(AisTrackerPlugin.class);
 	private final Paint bitmapPaint = new Paint();
@@ -55,6 +59,8 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 	private Bitmap aisRestBitmap;
 	private SingleSkImage aisRestImage;
 	private float textScale = 1f;
+	private int lastRenderZoom = -1;
+	private long lastRenderRefreshTimeMs;
 
 	public AisTrackerLayer(@NonNull Context context) {
 		super(context);
@@ -86,16 +92,30 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			aisRestImage = null;
 		}
 		objectDrawables.clear();
+		lastRenderZoom = -1;
+		lastRenderRefreshTimeMs = 0;
 	}
 
 	@Override
 	public void onAisObjectReceived(@NonNull AisObject ais) {
-		AisObjectDrawable drawable = objectDrawables.get(ais.getMmsi());
+		int mmsi = ais.getMmsi();
+		boolean own = isOwnObject(ais);
+		AisObjectDrawable drawable = objectDrawables.get(mmsi);
 		if (drawable == null) {
+			if (isOwnObjectHidden(ais)) {
+				return; // exclude own AIS object from list
+			}
 			drawable = new AisObjectDrawable(plugin, ais);
+			drawable.setOwnObject(own);
 			objectDrawables.put(ais.getMmsi(), drawable);
 		} else {
-			drawable.set(ais);
+			if (isOwnObjectHidden(ais)) {
+				this.onAisObjectRemoved(ais);
+				return;
+			} else {
+				drawable.setOwnObject(own);
+				drawable.set(ais);
+			}
 		}
 		if (getMapRenderer() != null && !drawable.hasAisRenderData() && aisRestImage != null
 				&& markersCollection != null && vectorLinesCollection != null) {
@@ -113,6 +133,30 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			}
 		}
 		objectDrawables.remove(ais.getMmsi());
+	}
+
+	private boolean isOwnObject(@NonNull AisObject ais) {
+		return ais.getMmsi() == plugin.AIS_OWN_MMSI.get();
+	}
+
+	private boolean isOwnObjectHidden(@NonNull AisObject ais) {
+		return isOwnObject(ais) && !plugin.AIS_DISPLAY_OWN_POSITION.get();
+	}
+
+	public void refreshOwnObjectVisibility() {
+		for (AisObject ais : plugin.getAisObjects()) {
+			AisObjectDrawable drawable = objectDrawables.get(ais.getMmsi());
+			if (isOwnObjectHidden(ais)) {
+				if (drawable != null) {
+					onAisObjectRemoved(ais);
+				}
+			} else if (drawable != null) {
+				drawable.setOwnObject(isOwnObject(ais));
+				drawable.updateAisRenderData(getTileView(), bitmapPaint);
+			} else {
+				onAisObjectReceived(ais);
+			}
+		}
 	}
 
 	public boolean isLocationVisible(RotatedTileBox tileBox, double lat, double lon) {
@@ -154,23 +198,19 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 				mapRenderer.addSymbolsProvider(vectorLinesCollection);
 
 				for (AisObject ais : plugin.getAisObjects()) {
+					if (isOwnObjectHidden(ais)) {
+						continue;
+					}
 					AisObjectDrawable drawable = new AisObjectDrawable(plugin, ais);
+					drawable.setOwnObject(isOwnObject(ais));
 					objectDrawables.put(ais.getMmsi(), drawable);
 					drawable.createAisRenderData(getBaseOrder(), bitmapPaint,
 							markersCollection, vectorLinesCollection, aisRestImage);
 					drawable.updateAisRenderData(getTileView(), bitmapPaint);
 				}
-			} else {
-				for (AisObject ais : aisObjects) {
-					// Calling updateAisRenderData in onPrepareBufferImage is overhead
-					// but it is needed to update directional line points
-					// also there is no zoom animation for directional line depending on zoom
-					// TODO: SUPPORT THIS IN ENGINE
-					AisObjectDrawable drawable = objectDrawables.get(ais.getMmsi());
-					if (drawable != null) {
-						drawable.updateAisRenderData(getTileView(), bitmapPaint);
-					}
-				}
+				updateNativeRenderRefreshState();
+			} else if (shouldRefreshNativeRenderData()) {
+				refreshNativeRenderData(aisObjects);
 			}
 			mapActivityInvalidated = false;
 			mapRendererChanged = false;
@@ -182,6 +222,32 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 				}
 			}
 		}
+	}
+
+	private boolean shouldRefreshNativeRenderData() {
+		OsmandMapTileView tileView = getTileView();
+		if (getMapRenderer() == null || tileView == null || objectDrawables.isEmpty()) {
+			return false;
+		}
+		long now = System.currentTimeMillis();
+		return tileView.getZoom() != lastRenderZoom
+				|| now - lastRenderRefreshTimeMs >= AIS_RENDER_REFRESH_INTERVAL_MS;
+	}
+
+	private void refreshNativeRenderData(@NonNull List<AisObject> aisObjects) {
+		for (AisObject ais : aisObjects) {
+			AisObjectDrawable drawable = objectDrawables.get(ais.getMmsi());
+			if (drawable != null) {
+				drawable.updateAisRenderData(getTileView(), bitmapPaint);
+			}
+		}
+		updateNativeRenderRefreshState();
+	}
+
+	private void updateNativeRenderRefreshState() {
+		OsmandMapTileView tileView = getTileView();
+		lastRenderZoom = tileView != null ? tileView.getZoom() : -1;
+		lastRenderRefreshTimeMs = System.currentTimeMillis();
 	}
 
 	@Override
@@ -207,6 +273,9 @@ public class AisTrackerLayer extends OsmandMapLayer implements IContextMenuProvi
 			}
 		}
 		for (AisObject object : aisObjects) {
+			if (isOwnObjectHidden(object)) {
+				continue;
+			}
 			AisLatLon latLon = object.getPosition();
 			if (latLon != null) {
 				double lat = latLon.getLatitude();

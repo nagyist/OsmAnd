@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import gnu.trove.map.hash.TLongObjectHashMap;
+import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
+import net.osmand.binary.Abbreviations;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.binary.NameIndexReader.PrefixNameValue;
@@ -15,12 +17,14 @@ import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.Amenity;
 import net.osmand.data.City;
+import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtomXY;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchFileCache;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchGlobalCache;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
+import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 public class SpatialSearchContext {
@@ -29,24 +33,36 @@ public class SpatialSearchContext {
 	private static int SHIFT_POI_IND = 10; // maximum poi 1024
 
 	final List<BinaryMapIndexReader> files;
-
 	final List<SpatialSearchFileCache> internalFile = new ArrayList<>();
+	final LatLon location; // could be null
+	final int[][] limitLocationBboxes;
 
+	List<SpatialSearchToken> tokens;
 	SpatialSearchStats stats = new SpatialSearchStats();
+	SpatialTextSearchSettings settings;
 
 	public static class SpatialSearchStats {
-		long time = System.nanoTime();
-		long readTokensTime = 0;
-		long readObjTime = 0;
-		long computeTime = 0;
-		long matchTime = 0;
-		long atoms = 0;
-
+		public long time = System.nanoTime();
+		public long stepAtoms = 0;
+		public long fileAtomsTime = 0;
+		public long matchTime = 0;
+		public int tokenObjs;
+		
+		public long stepCompute = 0;
+		public long loadObjectsBld = 0;
+		public long readObjTime = 0;
+		public int maxCombinations = 0;
+		
+		public long stepSort = 0;
+		
+		
 		@Override
 		public String toString() {
 			return String.format(
-					"Search Stats %.1f ms - read %.1f ms atoms (tokens %.1f ms, obj %.1f ms), match %.1f ms, comp %.1f ms",
-					time / 1e6, atoms / 1e6, readTokensTime / 1e6, readObjTime / 1e6, matchTime / 1e6, computeTime / 1e6);
+					"Search Stats %.1f ms - %.1f ms %,d atoms (read %.1f, match %.1f), "
+					+ "%.1f ms compute %,d (loadBld %.1f, read %.1f)",
+					time / 1e6, stepAtoms / 1e6, tokenObjs,  fileAtomsTime / 1e6, matchTime / 1e6,
+					stepCompute / 1e6, maxCombinations, loadObjectsBld / 1e6, readObjTime / 1e6);
 		}
 
 		public void finish() {
@@ -54,8 +70,49 @@ public class SpatialSearchContext {
 		}
 	}
 
-	public SpatialSearchContext(List<BinaryMapIndexReader> files) {
+	public SpatialSearchContext(SpatialTextSearchSettings settings, List<BinaryMapIndexReader> files, LatLon location) {
 		this.files = files;
+		this.location = location;
+		this.settings = new SpatialTextSearchSettings();
+		limitLocationBboxes = new int[settings.OPTIM_LIMIT_RADIUS.length][];
+		LatLon loc = getLimitLocationFromFiles(files, location);
+		for (int k = 0; k < limitLocationBboxes.length; k++) {
+			limitLocationBboxes[k] = calculateBbox(settings.OPTIM_LIMIT_RADIUS[k], loc);
+		}
+	}
+	
+	private LatLon getLimitLocationFromFiles(List<BinaryMapIndexReader> files, LatLon limitLocation) {
+		if (limitLocation == null) {
+			for (BinaryMapIndexReader f : files) {
+				limitLocation = f.getRegionCenter();
+				if (limitLocation != null) {
+					break;
+				}
+			}
+			if (limitLocation == null) {
+				limitLocation = new LatLon(0, 0);
+			}
+		}
+		return limitLocation;
+	}
+	
+	public static int[] calculateBbox(int radiusMeters, LatLon l) {
+		LatLon northWest = MapUtils.rhumbDestinationPoint(l.getLatitude(), l.getLongitude(), radiusMeters, 315);
+		LatLon southEast = MapUtils.rhumbDestinationPoint(l.getLatitude(), l.getLongitude(), radiusMeters, 135);
+		int[] bbox31 = new int[4];
+//		System.out.printf("Bbox limit: %.4f %.4f - %.4f %.4f\n", northWest.getLatitude(), northWest.getLongitude(),
+//				southEast.getLatitude(), southEast.getLongitude());
+//		int xleft = bbox31[0], xright = bbox31[2];
+//		int ytop = bbox31[1], ybottom = bbox31[3];
+		bbox31[1]= MapUtils.get31TileNumberY(northWest.getLatitude());
+		bbox31[0] = MapUtils.get31TileNumberX(northWest.getLongitude());
+		bbox31[3]= MapUtils.get31TileNumberY(southEast.getLatitude());
+		bbox31[2] = MapUtils.get31TileNumberX(southEast.getLongitude());
+		return bbox31;
+	}
+	
+	public SpatialSearchStats getStats() {
+		return stats;
 	}
 
 	public void initFiles(SpatialSearchGlobalCache cache) {
@@ -72,11 +129,15 @@ public class SpatialSearchContext {
 			this.internalFile.add(fc);
 			indexInd += fc.indexReaders.size();
 			fileInd++;
+			for (NameIndexReader r : fc.indexReaders) {
+				r.gcPrefixes(settings.AUTO_CLEAR_PREFIX_CACHE_LIMIT);
+			}
 		}
 	}
 
 	void readAtoms(List<SpatialSearchToken> tokens) throws IOException {
 		int indxInd = 0;
+		this.tokens = tokens;
 		for (int fileInd = 0; fileInd < files.size(); fileInd++) {
 			SpatialSearchFileCache iCache = internalFile.get(fileInd);
 			BinaryMapIndexReader b = files.get(fileInd);
@@ -85,6 +146,23 @@ public class SpatialSearchContext {
 				indxInd++;
 			}
 		}
+		System.out.println(tokenStats(tokens).toString());
+	}
+
+	private StringBuilder tokenStats(List<SpatialSearchToken> tokens) {
+		StringBuilder s = new StringBuilder("Token stats: ");
+		TLongHashSet ids = new TLongHashSet();
+		for (SpatialSearchToken t : tokens) {
+			int level0 = 0;
+			for (NameIndexAtom at : t.atoms) {
+				ids.add(at.id);
+				if (at.nearbyRadius <= 1) {
+					level0++;
+				}
+			}
+			s.append(String.format("'%s' (all %,d, 0-1th %,d), ", t.word, t.atoms.size(), level0));
+		}
+		return s;
 	}
 	
 	private record ReadTokens(boolean init, boolean readCommonTokens, boolean readFreqTokens) {
@@ -105,17 +183,17 @@ public class SpatialSearchContext {
 				if (freqWord == null) {
 					// special case token "2" could match "2-nd" atom
 					// rare word
-					if (!SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
+					if (!settings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
 						readCommonTokens = false;
 					}
-					if (!SpatialTextSearchSettings.ALWAYS_READ_FREQ_WORDS_ATOMS) {
+					if (!settings.ALWAYS_READ_FREQ_WORDS_ATOMS) {
 						readFreqTokens = false;
 					}
 				} else {
 					int nonIndexed = (int) (freqWord.freq - freqWord.extra);
 					if (nonIndexed == 0) {
 						// frequent word is ok to specialize
-						if (!SpatialTextSearchSettings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
+						if (!settings.ALWAYS_READ_COMMON_WORDS_ATOMS) {
 							readCommonTokens = false;
 						}
 					}
@@ -149,10 +227,10 @@ public class SpatialSearchContext {
 			}
 			List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
 			if (matchedPrefixes == null) {
-				stats.readTokensTime -= System.nanoTime();
-				b.readFullNameIndex(indx, t.word);
-				matchedPrefixes = indx.getMatchedPrefixes(t.word);
-				stats.readTokensTime += System.nanoTime();
+				stats.fileAtomsTime -= System.nanoTime();
+				matchedPrefixes = b.readFullNameIndex(indx.setQuery(t.word, t.getPrefixMatcher(stats)));
+//				matchedPrefixes = indx.getMatchedPrefixes(t.word);
+				stats.fileAtomsTime += System.nanoTime();
 			}
 			for (PrefixNameValue prefix : matchedPrefixes) {
 				parseAtomSuffixes(t, indxInd, indx, prefix, tokens);
@@ -193,7 +271,7 @@ public class SpatialSearchContext {
 				: prefix.poi.getSuffixesCommonDictionaryList()) {
 			commonSuffixes.add(indx.getCommonIndexed(i));
 		}
-		if (addr && SpatialTextSearchSettings.SEARCH_ADDR) {
+		if (addr && settings.SEARCH_ADDR) {
 			for (AddressNameIndexDataAtom a : prefix.addr.getAtomList()) {
 				long lid = makeAddrId(indInd, prefix.shift - a.getShiftToIndex(0));
 				long pid = 0;
@@ -204,12 +282,12 @@ public class SpatialSearchContext {
 					continue;
 				}
 				MapObject obj = null;
-				if (SpatialTextSearchSettings.READ_ADDR_OBJECTS) {
+				if (settings.DEV_READ_ADDR_OBJECTS) {
 					obj = readAddrObject(lid, pid, null);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, a, null, lid, pid, obj, allTokens);
 			}
-		} else if (!addr && SpatialTextSearchSettings.SEARCH_POI) {
+		} else if (!addr && settings.SEARCH_POI) {
 			for (OsmAndPoiNameIndexDataAtom a : prefix.poi.getAtomsList()) {
 				if (a.getPoiIndInBlockCount() == 0) {
 					// intermediate version ignore
@@ -218,7 +296,7 @@ public class SpatialSearchContext {
 				long lid = makePoiId(indInd, BinaryMapIndexReader.convertFixed32ToRef(a.getShiftTo()),
 						a.getPoiIndInBlock(0));
 				MapObject amenity = null;
-				if (SpatialTextSearchSettings.READ_POI_OBJECTS) {
+				if (settings.DEV_READ_POI_OBJECTS) {
 					amenity = readPoiObject(lid, null);
 				}
 				parseSuffixes(t, suffixes, commonSuffixes, null, a, lid, 0, amenity, allTokens);
@@ -226,6 +304,27 @@ public class SpatialSearchContext {
 		}
 	}
 	
+	
+	public void readPOIBboxes(int indInd, TLongHashSet tiles) throws IOException {
+		NameIndexReader nameIndex = null;
+		SpatialSearchFileCache c = null;
+		for (int k = 0; k < internalFile.size(); k++) {
+			c = internalFile.get(k);
+			if (indInd < c.indexInd + c.indexReaders.size()) {
+				nameIndex = c.indexReaders.get(indInd - c.indexInd);
+				break;
+			}
+		}
+		stats.readObjTime -= System.nanoTime();
+		files.get(c.fileInd).readAmenityBboxes(nameIndex.poiRegion, tiles);
+		stats.readObjTime += System.nanoTime();
+	}
+	
+	public int getFileInd(long id) {
+		int indInd = (int) (id & ((1l << SHIFT_FILE_IND) - 1));
+		return indInd;
+	}
+
 	public MapObject readPoiObject(long id, TLongObjectHashMap<MapObject> cache) throws IOException {
 		if (cache != null) {
 			MapObject mapObject = cache.get(id);
@@ -314,23 +413,28 @@ public class SpatialSearchContext {
 			List<SpatialSearchToken> allTokens) {
 		int cnt = a != null ? a.getSuffixesBitsetIndexCount() : b.getSuffixesBitsetIndexCount();
 		String name = "";
-		int wInd = 0;
+		int wordInd = 0;
 		int type = a != null ? a.getType() : SpatialSearchToken.POI_TYPE;
 		for (int i = 0; i < cnt; i++) {
 			int suffBit = a != null ? a.getSuffixesBitsetIndex(i) : b.getSuffixesBitsetIndex(i);
 			if (suffBit % 2 == 0) {
 				int ind = suffBit / 2 - 1;
 				if (ind == -1) {
-					if (acceptName(t, name)) {
+					if (a != null && wordInd < a.getExtraSuffixCount()) {
+						name += a.getExtraSuffix(wordInd);
+					} else if(b != null && wordInd < b.getExtraSuffixCount()) {
+						name += b.getExtraSuffix(wordInd);
+					}
+					if (matchName(t, name) || (name = matchPartName(t, name, allTokens)) != null) {
 						int other;
 						if (a != null) {
-							other = wInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wInd) : 0;
+							other = wordInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wordInd) : 0;
 						} else {
-							other = wInd < b.getOtherWordsCountCount() ? b.getOtherWordsCount(wInd) : 0;
+							other = wordInd < b.getOtherWordsCountCount() ? b.getOtherWordsCount(wordInd) : 0;
 						}
 						addObject(t, name, type, cid, pid, obj, other, new NameIndexAtomXY(a, b), allTokens);
 					}
-					wInd++;
+					wordInd++;
 					name = "";
 				} else if (ind < suffixes.size()) {
 					name += suffixes.get(ind);
@@ -348,33 +452,74 @@ public class SpatialSearchContext {
 				}
 			}
 		}
-		if (name.length() != 0 && acceptName(t, name)) {
+		if (a != null && wordInd < a.getExtraSuffixCount()) {
+			name += a.getExtraSuffix(wordInd);
+		} else if (b != null && wordInd < b.getExtraSuffixCount()) {
+			name += b.getExtraSuffix(wordInd);
+		}
+		if (name.length() != 0 && (matchName(t, name) || (name = matchPartName(t, name, allTokens)) != null)) {
 			int other;
 			if (a != null) {
-				other = wInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wInd) : 0;
+				other = wordInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wordInd) : 0;
 			} else {
-				other = wInd < b.getOtherWordsCountCount() ? b.getOtherWordsCount(wInd) : 0;
+				other = wordInd < b.getOtherWordsCountCount() ? b.getOtherWordsCount(wordInd) : 0;
 			}
 			addObject(t, name, type, cid, pid, obj, other, new NameIndexAtomXY(a, b), allTokens);
 		}
 	}
 
-	private boolean acceptName(SpatialSearchToken t, String name) {
+	private boolean matchName(SpatialSearchToken t, String name) {
 		stats.matchTime -= System.nanoTime();
-		boolean acceptName = t.acceptName(name);
+		boolean acceptName = t.matchName(name);
 		stats.matchTime += System.nanoTime();
 		return acceptName;
+	}
+	
+	private String matchPartName(SpatialSearchToken t, String name, List<SpatialSearchToken> allTokens) {
+		stats.matchTime -= System.nanoTime();
+		String[] res = t.matchSplitName(name);
+		String resName = null;
+		if (res != null) {
+			for (SpatialSearchToken st : allTokens) {
+				if (st != t && st.matchName(res[1])) {
+//					System.out.printf("%s -> '%s %s'\n", name, res[0], res[1]);
+					resName = res[0] + " " + res[1];
+					break;
+				}
+			}
+		}
+		stats.matchTime += System.nanoTime();
+		return resName;
 	}
 
 	private void addObject(SpatialSearchToken t, String name, int type, long lid, long pid, MapObject obj, int other,
 			NameIndexAtomXY coords, List<SpatialSearchToken> allTokens) {
 		List<SpatialSearchToken> otherTokens = null;
-		if (name.indexOf(' ') != -1) {
+		boolean streetCity = false;
+		boolean numericNotMatch = false;
+		boolean possiblyMultiword = name.indexOf(' ') != -1;
+		// split '-' to allow search 'M-42' as 'M 42'
+		if (name.indexOf('-') != -1) {
+			possiblyMultiword = true;
+			name = name.replace('-', ' ');
+		}
+		// 2.Sokak
+		if (name.indexOf('.') != -1) {
+			possiblyMultiword = true;
+			name = name.replace('.', ' ');
+		}
+		if (possiblyMultiword) {
 			List<String> split = SearchAlgorithms.splitAndNormalize(name, false);
 			for (int k = 1; k < split.size(); k++) {
+				String otherName = split.get(k);
+				boolean numeric = SearchAlgorithms.isNumber2Letters(otherName);
+				if (otherName.equalsIgnoreCase(NameIndexReader.CITY_AS_STREET_COMMON)) {
+					streetCity = true;
+					continue;
+				}
 				boolean matched = false;
 				for (SpatialSearchToken token : allTokens) {
-					if (t != token && acceptName(token, name)
+					if (t != token && matchName(token, otherName)
 							&& (otherTokens == null || !otherTokens.contains(token))) {
 						if (otherTokens == null) {
 							otherTokens = new ArrayList<>();
@@ -385,18 +530,40 @@ public class SpatialSearchContext {
 					}
 				}
 				if (!matched) {
+					if (numeric) {
+						numericNotMatch = true;
+					}
 					other++;
 				}
 			}
 		}
-		if (otherTokens != null) {
-			other += otherTokens.size();
+		int otherFound = otherTokens == null ? 0 : otherTokens.size();
+		int nearByType = 0;
+		for (; nearByType < limitLocationBboxes.length; nearByType++) {
+			if (coords.intersects(limitLocationBboxes[nearByType])) {
+				break;
+			}
 		}
-		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, other, coords);
+//		if(nearByType > 0) {return; }
+		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, streetCity, other, otherFound, coords,
+				nearByType);
 		t.addAtom(atom);
 		if (otherTokens != null) {
 			for (SpatialSearchToken token : otherTokens) {
 				token.addAtom(atom);
+			}
+		}
+		boolean street = type == SpatialSearchToken.STREET_TYPE;
+		// numericNotMatch - require full street match to assign buildings 
+		if (!numericNotMatch && street && settings.SEARCH_BUILDINGS) {
+			for (SpatialSearchToken token : allTokens) {
+				// assign building to wordsor isNumber2Letters (number + 1 char) + possible buildings
+				if (t != token && Abbreviations.likelyPartOfBuilding(token.word, token.getWordSplitAsBuidingName())
+						&& (otherTokens == null || !otherTokens.contains(token))) {
+					NameIndexAtom atomB = new NameIndexAtom(name, SpatialSearchToken.BUILDING_TYPE, lid, pid, obj,
+							streetCity, other, otherFound, coords, nearByType, t.originalOrder);
+					token.addAtom(atomB);
+				}
 			}
 		}
 

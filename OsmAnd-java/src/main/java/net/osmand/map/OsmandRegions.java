@@ -34,7 +34,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
 
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.array.TIntArrayList;
@@ -1034,6 +1033,10 @@ public class OsmandRegions {
 		if (reader != null) {
 			reader.close();
 		}
+	}
+
+	public BinaryMapIndexReader getFile() {
+		return reader;
 	}
 
 }
