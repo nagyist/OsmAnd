@@ -15,22 +15,9 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSetting
 import net.osmand.util.SearchAlgorithms;
 
 
-//////////// UNIT TESTS ///////
-// - Unit test: duplicate words in query Pennsylvania Street in Pennsylvania, Find More
-// - Unit test: (<common_word> <almost_number>) -('№25', '25', '#25' - no search) -- OK ('школа', 'школа №25', 'школа 25', 'школа #25')
-// - Unit test: Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
-// - Tests: Harderwijk estrado,
-
-//////////// SLOWEST /////////
-// - QUERY: 'New York 4 av' - 7.5s (2M), 'New York st' - 2s (700k),
-//   OTHER: 'New York s. ' 0.5s (100k), 'Sokak 2' - 0.5s (500K), 'Lima Calle 2' - 0.5s (25K)
-// ANALYSIS:   0. york - 1897 atoms, 1. new - 2159 atoms, 2. 4 - 5776 atoms, 3. av - 8067 atoms
-// ALL Stats 9525.7 ms - 54.6 ms 17,899 atoms (read 0.0, match 30.7), 9168.0 ms compute 2,357,716 (loadBld 924.3, read 335.8)
-// NO STREET 1737.2 ms - 264.1 ms 17,899 atoms (read 162.5, match 84.2), 1445.2 ms compute 95,842 (loadBld 177.3, read 95.8)
-// NO INTERS 1108.2 ms - 257.5 ms 17,899 atoms (read 148.5, match 93.6), 824.5 ms compute 22,690 (loadBld 92.4, read 74.0)
-//------------------------------------------- //
-
 //////////// TESTING //////////
+// SLOW QUERY: 'New York 4 av' - 7.5s (2M), 'New York st' - 2s (700k),
+// SLOW OTHER: 'New York s. ' 0.5s (100k), 'Sokak 2' - 0.5s (500K), 'Lima Calle 2' - 0.5s (25K)
 // REVIEW UI FILTER_MIN_WORDS_COUNT - 'New york plaza' ('the'), Issues Nova poshta Kharkiv 
 // TESTING Building interpolation, Street intersection match, bis matching
 // TESTING 'LangeStraße' (Data 'Lange Straße'), 'Daimler strasse' (Data 'daimlerstraße')
@@ -39,34 +26,35 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING Filter results boundaries, <Salt Lake City>
 // TESTING Sokak 2 Show more
 // TESTING Ignore same embedded boundary city / county - deduplicate on the fly (new york x4)
+// NOT FIXED Combine regions.ocbf (boundary)? - will be wikidata id not combined for now
 
 ////////// IN PROGRESS //////////
-// TODO ? review settings: read objects in between - Results 5 tokens 1,949 (139 unique)
 
-// FIXME Combine by osmid (poi type internet) & wikidata id ? 
-// FIXME Combine regions.ocbf (boundary)?
 // FIXME POI Categories + top poi categories
+// FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
-// TODO specific Healthcare specialties - https://github.com/osmandapp/OsmAnd/issues/24941
 
 // TODO Bratislava Billa - too many POI intersection results
-// TODO Filter Public transport stops, City&Bike - New york - how?
+// TODO Filter Public transport stops, City&Bike - New york - analyze poi name consists of street name?
 
-// TEST IDEAS
-// TODO test: merge boundaries bbox - extend incomplete boundary same id...
-// TODO ? Store wikidata id for boundaries (regions.ocbf) & display them - place=county, place=state ? 
+// TODO ? test: merge boundaries bbox - extend incomplete boundary same id...
 // TODO Inspector stats index_words_dashboard.html
 
+// TO DO Ivan
+// TODO Review / implement similarity radius - similarityRadius = 50000 ... Route Id
+// TODO Unite RouteArticle, POI by wikidata id ? - DEPTH_TO_CHECK_SAME_SEARCH_RESULTS = 20;...
+// TODO Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them
+// TODO Unit / Slow analysis tests (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
+
 // TO DO - RZR
-// TODO review osm route id  combine by?
 // TODO WEB Add url / coordinates parsing
 // TODO Progress / cancel
 // TODO Not forget to include regions.ocbf on client
 // TODO Test memory on Android device for slowest query
+// TODO review osm route id  combine by?
 // TODO Store and test conscription number for some cities - issue
 
-// ------------------------------------- ///
-// EXTRA FEATURES
+/////////////// EXTRA FEATURES ///////////////
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Japan test, housename, block_number + housenumber, neighbourhood + quarter - street + India assign houses to suburbs / neighbourhood / blocks
 // TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
@@ -255,12 +243,12 @@ public class SpatialSearchTestAndDocs {
 		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
-//		query = "New York plaza";
+		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 		// 40.64946, -74.00682 - unit test '4th av', '4 ave', '4th avenue' 241843204, 247910224, 85393997 (..) brooklyn - not 48
 		// 40.78035, -73.96572 - unit test '4th av', '4 ave', '4th avenue'  - 85393997 Park avenue
-		query = "New York 4 av"; 
-		query = "New York 4 av 8"; // 160947243
+//		query = "New York 4 av"; 
+//		query = "New York 4 av 8"; // 160947243
 //		query = "4th ave"; //  unit '4 ave'   
 //		query = "4th ave 8 paterson"; //  wrong city...
 		// Result 4 - 40.8407, -74.0954 [[4th, 8] Building 2 4th Street (26238417818) 40.8441 -74.0910 , [ave, paterson] STREET_TYPE Paterson Avenue (651531238) 40.8374 -74.0997 ]
@@ -311,7 +299,8 @@ public class SpatialSearchTestAndDocs {
 		SpatialTextSearch a = new SpatialTextSearch();
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 
-		settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES = false;
+//		settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES = false;
+//		settings.DEDUPLICATE_RES = false;
 		SpatialSearchContext searchContext = new SpatialSearchContext(settings, ls, location);
 		SpatialSearchResults rs = a.searchTest(query, searchContext, 10);
 		SpatialSearchResult mainResult = rs.getFirstResult();
@@ -329,8 +318,8 @@ public class SpatialSearchTestAndDocs {
 				System.out.println("Suggest search other region - " + bbox);
 			}
 		}
-		settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES = true;
-		settings.DEDUPLICATE_RES = true;
+//		settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES = true;
+//		settings.DEDUPLICATE_RES = true;
 		searchContext = new SpatialSearchContext(settings, ls, location);
 		a.searchTest(query, searchContext, 1000);
 	}

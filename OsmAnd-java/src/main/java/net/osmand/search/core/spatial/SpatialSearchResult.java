@@ -1,6 +1,7 @@
 package net.osmand.search.core.spatial;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,6 +21,9 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	final LatLon preciseLatlon; 
 	final int surplusWords; // negative some building numbers not found, positive some extra tokens matched
 	int visibleLevel;
+	
+	private static final List<String> FILTER_DUPLICATE_POI_SUBTYPE = new ArrayList<String>(
+			Arrays.asList("building", "internet_access_yes"));
 	
 	SpatialSearchResult(SpatialSearchResultsList parentList, int parentInd, LatLon preciseLatlon) {
 		this.parentInd = parentInd;
@@ -79,6 +83,17 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 
 	
+	public MapObject getFirstObject() {
+		if (objs.size() > 0) {
+			SpatialSearchResultRef o = objs.get(0);
+			if (o.atom.bldObject != null) {
+				return o.atom.bldObject;
+			}
+			return o.atom.object;
+		}
+		return null;
+	}
+	
 	public List<MapObject> getObjects() {
 		List<MapObject> o = new ArrayList<>();
 		for (SpatialSearchResultRef r : objs) {
@@ -130,7 +145,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
 	@Override
 	public String toString() {
-		if(preciseLatlon != null) {
+		if (preciseLatlon != null) {
 			return String.format("%.4f, %.4f %s", preciseLatlon.getLatitude(), preciseLatlon.getLongitude(),
 					objs.toString());
 		}
@@ -181,6 +196,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 					if (a.getTravelEloNumber() > Amenity.DEFAULT_ELO) {
 						add += " elo " + a.getTravelEloNumber() + " " + a.getCityFromTagGroups("");
 					}
+					add += " " + a.getSubTypeStr();
 				} else if (parent != null) {
 					add += " " + parent.object.getName();
 				}
@@ -283,6 +299,15 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			double d2 = o2.getLatLon() == null ? 0 : MapUtils.getDistance(center, o2.getLatLon());
 			res = Double.compare(d1, d2);
 		}
+		if (o1.getFirstObject() instanceof Amenity a1 && o2.getFirstObject() instanceof Amenity a2) {
+			int i1 = FILTER_DUPLICATE_POI_SUBTYPE.indexOf(a1.getSubType());
+			int i2 = FILTER_DUPLICATE_POI_SUBTYPE.indexOf(a2.getSubType());
+			res = Integer.compare(i1, i2);
+			if (res != 0) {
+				return res;
+			}
+		}
+		
 		if (res != 0) {
 			return res;
 		}
