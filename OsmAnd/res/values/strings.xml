@@ -3422,6 +3422,12 @@ You need to activate the sensor so OsmAnd can find it.</string>
     <string name="routing_attr_avoid_subway_description">Avoids subways and lightweight rail transport</string>
     <string name="routing_attr_avoid_ferry_name">No ferries</string>
     <string name="routing_attr_avoid_ferry_description">Avoids ferries</string>
+    <!-- string name="release_3_3_7">
+    • Display the time between transfers in public transport\n\n
+    • Corrected UI for the Route Details\n\n
+    • Fixed dark theme in the \'Direction menu\' and \'Route Details\'\n\n
+    • Display azimuth in \'Measure Distance\'\n\n
+    </string -->
     <string name="shared_string_degrees">Degrees</string>
     <string name="shared_string_milliradians">Milliradians</string>
     <string name="angular_measeurement">Angular unit</string>
@@ -3486,6 +3492,16 @@ You need to activate the sensor so OsmAnd can find it.</string>
 	<string name="rendering_attr_highway_class_track_grade3_name">Grade 3</string>
 	<string name="rendering_attr_highway_class_track_grade4_name">Grade 4</string>
 	<string name="rendering_attr_highway_class_track_grade5_name">Grade 5</string>
+    <!-- string name="release_3_3">
+    • New \'Directions\' screen: Displays Home and Work destination buttons, \'previous route\' shortcut, list of active GPX tracks and markers, search history\n\n
+    • Additional info under \'Route details\': road types, surface, steepness, smoothness\n\n
+    • Public transport navigation supporting all kinds of transportation: metro, bus, tram, etc.\n\n
+    • New Quick action for show/hide tracks and day/night modes\n\n
+    • Fixed areas displayed as flooded in Germany, South Africa, Quebec\n\n
+    • Additional support for KML and KMZ import\n\n
+    • Fixed crashes on opening some public transport stops\n\n
+    • Removed Facebook and Firebase analytics from the free version (OsmAnd+ doesn\'t include it)\n\n
+    </string -->
     <string name="use_osm_live_public_transport_description">Enable public transport for OsmAnd Live changes.</string>
     <string name="time_of_day">Time of day</string>
     <string name="by_transport_type">By %1$s</string>
@@ -3541,6 +3557,24 @@ You need to activate the sensor so OsmAnd can find it.</string>
     <string name="thank_you_for_feedback">Thank you for your feedback</string>
     <string name="poi_cannot_be_found">Could not find node or way.</string>
     <string name="search_no_results_feedback">No search results?\nProvide feedback</string>
+    <!-- string name="release_3_2_pre">
+    • Fixed crash on startup that occurred on some devices\n\n
+    • New Markers feature: Display already traversed markers\n\n
+    • Search history now shows previously searched categories\n\n
+    • Fixed crash on startup that occurred with non-latin maps\n\n
+    • Improved rendering speed issues on Android 8.0 devices\n\n
+    • Support for polygon (non-amenity) objects editing\n\n
+    • Measure distance: Add \"Measure\" button to Actions in the context menu\n\n
+    </string -->
+    <!-- string name="release_3_1">
+    • Navigation: Fix progress bar, fast swapping of the start and end point of the route\n\n
+    • Map markers: Fix turning on/off groups, ability to hide markers from the map\n\n
+    • OSM Edit: Ability to edit tags for non-point objects and ways, fix missing comments on notes, backup of edits\n\n
+    • Improved Wikipedia and Wikivoyage parsing, updated files are already available\n\n
+    • Context menu: Fix transport shields color in the night mode, fix additional menu sizes\n\n
+    • Boat navigation: Support for waterway fairway\n\n
+    • Other bugfixes\n\n
+    </string -->
     <string name="increase_search_radius_to">Extend search radius to %1$s</string>
     <string name="send_search_query_description">Your search query will be sent to: \"%1$s\", along with your location.\n\n
         Personal info is not collected, only search data needed to improve the search.</string>
@@ -3667,6 +3701,13 @@ You need to activate the sensor so OsmAnd can find it.</string>
     <string name="additional_actions">Additional actions</string>
     <string name="av_locations_selected_desc">GPX file with coordinates and data of the selected notes.</string>
     <string name="av_locations_all_desc">GPX file with coordinates and data of all notes.</string>
+    <!-- string name="release_3_0">
+• New: Support for global offline travel guides. Referenced locations are linked to the map. Initial data from Wikivoyage.\n\n
+• Wikipedia: New look, active links, images now supported\n\n
+• Open Track UI: Support for waypoint groups\n\n
+• Map markers: Import of selected groups from GPX files, coordinate input, new look\n\n
+• OsmAnd Live subscription now supports all OsmAnd features\n\n
+    </string -->
     <string name="modify_the_search_query">Change your search.</string>
     <string name="shared_string_actions">Actions</string>
     <string name="shared_string_marker">Marker</string>
@@ -3892,6 +3933,42 @@ You need to activate the sensor so OsmAnd can find it.</string>
     <string name="routing_attr_height_obstacles_name">Use elevation data</string>
     <string name="rendering_attr_depthContours_description">Show depth contours and points.</string>
     <string name="rendering_attr_depthContours_name">Nautical depth contours</string>
+    <!-- string name="release_2_6">
+	\u2022 New feature: Quick action button\n\n
+	\u2022 Improved touch screen gesture response (e.g. concurrent panning and zooming)\n\n
+	\u2022 New map fonts covering more locales\n\n
+	\u2022 Support text-to-speech for regional language variants (and accents)\n\n
+	\u2022 Visibility enhancements in several map styles and Wikipedia\n\n
+	\u2022 Support Open Location Code (OLC)\n\n
+	\u2022 Display elevation, slope, and speed profile for recorded GPX tracks and calculated routes\n\n
+	\u2022 \"Riding style\" setting and logic improvements for bicycle routing\n\n
+	\u2022 Altitude data settings for bicycle routing\n\n
+	\u2022 Several other improvements and bug fixes\n\n
+	and more…
+	</string -->
+    <!-- string name="release_2_7">
+	\u2022 Mapillary plugin with street-level imagery\n\n
+	\u2022 Ruler widget for distance measurement\n\n
+	\u2022 GPX split intervals with detailed info about your track\n\n
+	\u2022 Other improvements and bug fixes\n\n
+	</string -->
+    <!-- string name="release_2_8">
+	\u2022 Completely reworked map markers with directional lines and route planning\n\n
+	\u2022 Measure distance tool offering snap to road feature and saving points as track\n\n
+	\u2022 OsmAnd Live: Bug fixes, fresh data on the server every 30 minutes, updates implemented into the navigation\n\n
+	</string -->
+    <!-- string name="release_2_9">
+	\u2022 Updated the context menu: Show when the POI opens / closes\n\n
+	\u2022 Transport menu: all available routes are now at the top\n\n
+	\u2022 Wikipedia: added the button to open the original article, updated the appearance of articles\n\n
+	\u2022 Route: added possibility to swap start and end points in one tap\n\n
+	\u2022 OSM notes: Added sorting by type and date\n\n
+	\u2022 OSM edits: Show an icon and a name of the POI category, display completed actions\n\n
+	\u2022 New quick coordinate input screen for quick markers creation\n\n
+    \u2022 Detection of stop signs now considers driving direction\n\n
+	\u2022 New algorithm providing meaningful ascent/descent values for GPX tracks\n\n
+	\u2022 Terrain (ascent) aware hiking time (Naismith\'s rule)\n\n
+	</string -->
     <string name="auto_split_recording_title">Auto-split recordings after gap</string>
     <string name="auto_split_recording_descr">Start new segment after gap of 6 min, new track after gap of 2 h, or new file after a longer gap if the date has changed.</string>
     <string name="rendering_attr_contourDensity_description">Contour line density</string>
@@ -3922,6 +3999,15 @@ You need to activate the sensor so OsmAnd can find it.</string>
     <string name="shared_string_recorded">Recorded</string>
     <string name="shared_string_record">Record</string>
     <string name="gpx_logging_no_data">No data</string>
+    <!-- string name="release_2_5">
+	\u2022 Tappable icons on the map\n\n
+	\u2022 Powerful POI filter search: Search, e.g. restaurants by cuisine, or campgrounds with specific facilities\n\n
+	\u2022 New Topo Map style for cyclists and hikers\n\n
+	\u2022 Enhanced trip recording\n\n
+	\u2022 Improved navigation notifications (Android Wear)\n\n
+	\u2022 Many other improvements and bug fixes\n\n
+	and more…
+    </string -->
     <string name="rendering_attr_contourColorScheme_description">Contour lines color scheme</string>
     <string name="save_track_min_speed">Logging minimum speed</string>
     <string name="save_track_min_distance">Logging minimum displacement</string>
@@ -3965,6 +4051,15 @@ You need to activate the sensor so OsmAnd can find it.</string>
     <string name="back_to_search">Back to search</string>
     <string name="confirmation_to_delete_history_items">Remove selected items from \'History\'?</string>
     <string name="show_something_on_map">Show %1$s on the map</string>
+    <!-- string name="release_2_4">
+	\u2022 New very powerful free text search\n\n
+	\u2022 Car audio system / speaker phone integration via Bluetooth\n\n
+	\u2022 Improved route guidance, voice prompting, and turn lane indication\n\n
+	\u2022 Improved transport layer with route rendering\n\n
+	\u2022 Added more locales and now support regional locales\n\n
+	\u2022 Many other improvements and bugfixes\n\n
+	and more…
+    </string -->
     <string name="dist_away_from_my_location">Search %1$s away</string>
     <string name="share_history_subject"> shared via OsmAnd</string>
     <string name="search_categories">Categories</string>
@@ -4007,6 +4102,14 @@ You need to activate the sensor so OsmAnd can find it.</string>
     <string name="rendering_value_bold_name">Bold</string>
     <string name="report">Report</string>
     <string name="storage_permission_restart_is_required">The app is now allowed to write to external storage, but needs to be started again to do so.</string>
+    <!-- string name="release_2_3">
+	\u2022 OSM Live. Support map contributors and developers and get hourly map updates. \n\n
+	\u2022 Map markers. A new way to quickly select places on the map.\n\n
+	\u2022 More detailed OSM maps with country specific road shields and lots of new map features.\n\n
+	\u2022 Improved Look and Feel of Route preparation. \n\n
+	\u2022 Many improvements in the map context menu such as contextual address lookup.\n\n
+	and more…
+        </string -->
     <string name="shared_string_move_up">Move ↑</string>
     <string name="shared_string_move_down">Move ↓</string>
     <string name="finish_navigation">Finish navigation</string>
@@ -4095,6 +4198,17 @@ You need to activate the sensor so OsmAnd can find it.</string>
     <string name="show_on_start_description">\'Off\' launches the map directly.</string>
     <string name="show_on_start">Show on start</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
+    <!-- string name="release_2_2">
+	\u2022 New context-sensitive UI for tapping locations on the map and on other screens\n\n
+	\u2022 Map screen is now launched directly unless \'Show dashboard on app start\' is selected\n\n
+	\u2022 Set up which and how cards are displayed on the dashboard\n\n
+	\u2022 Bypass the dashboard if you like menu-based app control\n\n
+	\u2022 To download maps, regions can be directly selected by tapping on the world map\n\n
+	\u2022 POI Search now supports more specific queries\n\n
+	\u2022 Improved POI and OSM editing functionality\n\n
+	\u2022 Map data download structure and interface reworked\n\n
+	and more…
+        </string -->
     <string name="osm_edit_modified_poi">Modified OSM POI</string>
     <string name="osm_edit_deleted_poi">Deleted OSM POI</string>
     <string name="context_menu_item_open_note">Open OSM Note</string>
