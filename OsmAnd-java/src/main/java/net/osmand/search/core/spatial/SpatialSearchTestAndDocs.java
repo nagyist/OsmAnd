@@ -167,6 +167,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Pennsylvania Avenue Philadelphia PA USA"; 
 //		query = "Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA";
 //		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
+		query = "173 Liberty Valley Road Danville";
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
 //		query = "PA 75 27193"; // Data 'PA-75', 27193  4472676432
@@ -178,11 +179,11 @@ public class SpatialSearchTestAndDocs {
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 
-		pattern = "Netherlands_";
+//		pattern = "Netherlands_";
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
-		query = "11-NUON leons";
+//		query = "11-NUON leons";
 		
 //		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // OK
@@ -237,13 +238,13 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby Melbourne 18B";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-		pattern = "Us_new-"; 
+//		pattern = "Us_new-"; 
 		
 //		location = new LatLon(40.78035, -73.96572); // central park
 		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
-		query = "New York plaza";
+//		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 		// 40.64946, -74.00682 - unit test '4th av', '4 ave', '4th avenue' 241843204, 247910224, 85393997 (..) brooklyn - not 48
 		// 40.78035, -73.96572 - unit test '4th av', '4 ave', '4th avenue'  - 85393997 Park avenue
@@ -262,8 +263,8 @@ public class SpatialSearchTestAndDocs {
 		// TODO Venezia sort
 		// +[Venezia, Cannaregio, 359D, Campo Saffa], +[Venezia Cannaregio 359D] -[Venezia 359D Campo Saffa] - expected
 		
-		pattern = "Slovakia";
-		query = "Bratislava Billa";
+//		pattern = "Slovakia";
+//		query = "Bratislava Billa";
 		
 //		pattern = "France_ile-de-france_eu";
 //		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'

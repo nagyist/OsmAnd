@@ -295,7 +295,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					for (int i = 0; i < tCount; i++) {
 						NameIndexAtom bld = linearResults.get(indx * tCount + i);
 						if (bld.buildingInd >= 0 && str.id == bld.id) {
-							bld.object = bldObj;
+							bld.bldObject = bldObj;
 							// bld.name = bldObj.getName();
 						} else if(noBuildings  && str.id == bld.id) {
 							bld.bldObject = bldObj;
