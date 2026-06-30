@@ -6083,7 +6083,6 @@
     <string name="coordinate_format_discard_changes">Módosítások elvetése</string>
     <string name="coordinate_format_last_item_warning">Legalább egy koordinátaformátum megadása kötelező.</string>
     <string name="coordinate_format_select_other">Más formátum kiválasztása</string>
-    <string name="coordinate_format_recent">Legutóbbi</string>
     <string name="coordinate_format_primary">Elsődleges</string>
     <string name="gallery_media_playback_error">Nem sikerült lejátszani a médiát.</string>
     <string name="gallery_open_in">Megnyitás ezzel:</string>

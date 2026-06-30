@@ -396,8 +396,11 @@ public class SearchAlgorithms {
 		return startsWithDigit && letters(name) < 2;
 	}	
 	
-	// Split '18B', '18/B', '18-B', '18 B' -> ['18', 'B']
-	public static Set<String> getBuildingCompareSet(String name) {
+	// Split '18B', '18/B', '18-B', '18 B' -> ['18', 'B'] - for duplicates list filled in (check list.size() > set)
+	public static Set<String> getBuildingCompareSet(String name, List<String> inCaseDuplicates) {
+		if (inCaseDuplicates != null) {
+			inCaseDuplicates.clear();
+		}
 		Set<String> resultSet = null;
 		StringBuilder currentToken = new StringBuilder();
 		int lastType = 0;
@@ -412,7 +415,11 @@ public class SearchAlgorithms {
 				if (resultSet == null) {
 					resultSet = new TreeSet<String>();
 				}
-				resultSet.add(currentToken.toString().toLowerCase());
+				String toAdd = currentToken.toString().toLowerCase();
+				if (inCaseDuplicates != null) {
+					inCaseDuplicates.add(toAdd);
+				}
+				resultSet.add(toAdd);
 				currentToken.setLength(0); // Clear buffer
 			}
 			if (type > 0) {
@@ -424,7 +431,11 @@ public class SearchAlgorithms {
 			if (resultSet == null) {
 				return Collections.singleton(currentToken.toString().toLowerCase());
 			}
-			resultSet.add(currentToken.toString().toLowerCase());
+			String toAdd = currentToken.toString().toLowerCase();
+			if (inCaseDuplicates != null) {
+				inCaseDuplicates.add(toAdd);
+			}
+			resultSet.add(toAdd);
 		}
 		if (resultSet == null) {
 			return Collections.singleton(name.toLowerCase());

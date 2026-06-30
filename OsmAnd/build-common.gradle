@@ -383,14 +383,19 @@ dependencies {
 	implementation("androidx.sqlite:sqlite-framework:2.3.1")
 
 	implementation 'androidx.multidex:multidex:2.0.1'
-	implementation 'androidx.gridlayout:gridlayout:1.0.0'
+	implementation 'androidx.gridlayout:gridlayout:1.1.0'
 	implementation 'androidx.cardview:cardview:1.0.0'
-	implementation 'androidx.appcompat:appcompat:1.6.1'
-	implementation 'com.google.android.material:material:1.13.0'
+	implementation 'androidx.appcompat:appcompat:1.7.1'
+	implementation 'com.google.android.material:material:1.14.0'
 	implementation 'androidx.browser:browser:1.0.0'
 	implementation 'androidx.preference:preference:1.1.0'
 	implementation 'androidx.lifecycle:lifecycle-process:2.6.0'
 	implementation "androidx.activity:activity:1.10.1"
+	implementation platform('androidx.compose:compose-bom:2026.06.00')
+	implementation 'androidx.compose.ui:ui'
+	implementation 'androidx.compose.ui:ui-tooling-preview'
+	implementation 'androidx.compose.material3:material3'
+	debugImplementation 'androidx.compose.ui:ui-tooling'
 //	implementation "androidx.core:core:1.16.0"
 	implementation fileTree(include: ['gnu-trove-osmand.jar', 'icu4j-49_1_patched.jar'], dir: 'libs')
 
@@ -418,7 +423,7 @@ dependencies {
 
 	legacyImplementation "net.osmand:OsmAndCore_android:master-snapshot@jar"
 
-	implementation("com.getkeepsafe.taptargetview:taptargetview:1.13.2") {
+	implementation("com.getkeepsafe.taptargetview:taptargetview:1.15.0") {
 		exclude group: 'com.android.support'
 	}
 
@@ -431,7 +436,7 @@ dependencies {
 	implementation('com.github.scribejava:scribejava-apis:7.1.1')
 	implementation 'com.jaredrummler:colorpicker:1.1.0'
 	implementation 'org.bouncycastle:bcpkix-jdk15on:1.56'
-	implementation 'com.google.android.play:review:2.0.1'
+	implementation 'com.google.android.play:review:2.0.2'
 
 	implementation "androidx.car.app:app:1.7.0"
 	implementation "androidx.car.app:app-projected:1.7.0"

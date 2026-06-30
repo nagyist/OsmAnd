@@ -35,12 +35,23 @@ public class HashQuadTree<T> {
 		}
 		list.add(value);
 	}
+	
+	public void delete(int z, long tileId, T value) {
+		if (indexByTileId[z] != null) {
+			List<T> list = indexByTileId[z].get(tileId);
+			if (list != null) {
+				list.remove(value);
+			}
+		}
+	}
 
 	public void forEachMatchHigherZoom(int startZoom, long tileId, Consumer<List<T>> action) {
 		startZoom--;
 		tileId >>= 2;
 		forEachMatch(startZoom, tileId, action);
 	}
+	
+	
 
 	public void forEachMatch(int startZoom, long tileId, Consumer<List<T>> action) {
 		forEachMatch(startZoom, 0, tileId, action);

@@ -150,6 +150,22 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 		}
 	}
 
+	public static void bindFullSearchResult(@NonNull View view, @NonNull QuickSearchListItem item) {
+		TextView title = view.findViewById(R.id.title);
+		TextView subtitle = view.findViewById(R.id.subtitle);
+		ImageView imageView = view.findViewById(R.id.imageView);
+
+		imageView.setImageDrawable(item.getIcon());
+		title.setText(item.getSpannableName());
+		String typeName = item.getTypeName();
+		subtitle.setText(typeName);
+		AndroidUiHelper.updateVisibility(subtitle, !Algorithms.isEmpty(typeName));
+		AndroidUiHelper.updateVisibility(view.findViewById(R.id.address), false);
+		AndroidUiHelper.updateVisibility(view.findViewById(R.id.time_layout), false);
+		AndroidUiHelper.updateVisibility(view.findViewById(R.id.description), false);
+		AndroidUiHelper.updateVisibility(view.findViewById(R.id.shieldSign), false);
+	}
+
 	public static void bindPOISearchResult(@NonNull View view, @NonNull QuickSearchListItem item,
 	                                       boolean nightMode, Calendar calendar) {
 		OsmandApplication app = (OsmandApplication) view.getContext().getApplicationContext();

@@ -1,6 +1,7 @@
 package net.osmand.search.core.spatial;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -45,6 +46,7 @@ public class SpatialSearchToken {
 	TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
 	HashQuadTree<Integer> quadTree = new HashQuadTree<>(16);
 	TLongObjectHashMap<NameIndexAtom> indexByOsmIds = new TLongObjectHashMap<>();
+	Set<Integer> deletedAtoms = new HashSet<Integer>();
 
 	CollatorStringMatcher collatorMain;
 	// cache for popular split
@@ -59,7 +61,7 @@ public class SpatialSearchToken {
 		originalWord = original;
 		word = w;
 		wordAligned = CollatorStringMatcher.alignChars(word);
-		bldWordSplit = SearchAlgorithms.getBuildingCompareSet(word);
+		bldWordSplit = SearchAlgorithms.getBuildingCompareSet(word, null);
 		originalOrder = order;
 		String noDot = w;
 		if (w.endsWith(DOT_INCOMPLETE_STRING)) {
@@ -111,7 +113,7 @@ public class SpatialSearchToken {
 			
 			@Override
 			public boolean matchKey(String key) {
-				stats.matchTime -= System.nanoTime();
+				stats.sub1MatchTime.start();
 				String alignedKey = CollatorStringMatcher.alignChars(key);
 				// could be empty after align so match = true! ("''" -> "")
 				boolean matched = matchAlignedKey(alignedKey);
@@ -127,12 +129,21 @@ public class SpatialSearchToken {
 //						System.out.println(alignedKey + " ??? " + matched + " " + o.getPart());
 					}
 				}
-				stats.matchTime += System.nanoTime();
+				stats.sub1MatchTime.finish();
 				return matched;
 			}
 		};
 	}
 
+	
+	void removeAtom(NameIndexAtom atom) {
+		NameIndexAtom na = index.get(atom.id);
+		int indexOf = atoms.indexOf(na);
+		if (indexOf != -1) {
+			deletedAtoms.add(indexOf);
+		}
+	}
+	
 	void addAtom(NameIndexAtom atom) {
 		// mostly not used as disabled
 		if (atom.object != null && !(atom.object instanceof Street) && 
@@ -148,9 +159,11 @@ public class SpatialSearchToken {
 		NameIndexAtom aa = index.get(atom.id);
 		if (aa != null) {
 			if (aa != atom) {
-				// select shortest avaiable version
-				aa.otherWordsCnt = Math.min(aa.otherWordsCnt, atom.otherWordsCnt);
-//				System.out.println(aa.name + " != " + atom.name  + " " + aa + " " + aa.object.getLocation());
+				// select shortest available version
+				if (atom.otherWordsCnt < aa.otherWordsCnt) {
+					aa.otherWordsCnt = atom.otherWordsCnt;
+					aa.otherFoundCnt = atom.otherFoundCnt;
+				}
 			}
 			return;
 		}
@@ -266,6 +279,21 @@ public class SpatialSearchToken {
 			}
 		}
 		
+		public boolean contains(NameIndexAtomXY a) {
+			if (bbox31 == null || a.bbox31 == null) {
+				int z1 = bboxTileZoom, z2 = a.bboxTileZoom;
+				long tid1 = bboxTileId, tid2 = a.bboxTileId;
+				while (z2 > z1) {
+					tid2 >>= 2;
+					z2--;
+				}
+				return tid1 == tid2 && z2 == z1;
+			}
+			// if exists [xleft, ytop, xright, ybottom]
+			return this.bbox31[0] <= a.bbox31[0] && this.bbox31[2] >= a.bbox31[2] && this.bbox31[1] <= a.bbox31[1]
+					&& this.bbox31[3] >= a.bbox31[3];
+		}
+		
 		public String tileIdString() {
 			return this.bboxTileZoom + " "
 					+ MapUtils.deinterleaveX(bboxTileId) + " "
@@ -311,6 +339,8 @@ public class SpatialSearchToken {
 			decodeBBox(poi.hasBbox() ? poi.getBbox() : null);
 		}
 
+		
+
 	}
 
 	
@@ -322,9 +352,10 @@ public class SpatialSearchToken {
 		final long id; // used to read object
 		final long parentid; // used to read object
 		MapObject object; // same for all
+		MapObject bldObject; // same for all
 		int otherWordsCnt; // added before intersection
+		int otherFoundCnt;
 		final boolean cityAsStreet;
-		final int otherFoundCnt;
 		final NameIndexAtomXY coords; 
 		final int buildingInd; // added before intersection
 		final int nearbyRadius;
@@ -355,8 +386,24 @@ public class SpatialSearchToken {
 			return cityAsStreet;
 		}
 		
-		public boolean streetBuilding() {
+		public boolean isStreetBuilding() {
 			return type == STREET_TYPE || type == BUILDING_TYPE;
+		}
+		
+		public boolean isPostcode() {
+			return type == CityBlocks.POSTCODES_TYPE.index;
+		}
+		
+		public boolean isBoundary() {
+			return type == CityBlocks.BOUNDARY_TYPE.index;
+		}
+		
+		public boolean isCityVillage() {
+			return type == CityBlocks.CITY_TOWN_TYPE.index || type == CityBlocks.VILLAGES_TYPE.index;
+		}
+		
+		public boolean isCity() {
+			return type == CityBlocks.CITY_TOWN_TYPE.index;
 		}
 		
 		public boolean isStreet() {
@@ -366,12 +413,20 @@ public class SpatialSearchToken {
 		public boolean atomicObject() {
 			return type == STREET_TYPE || type == POI_TYPE || type == BUILDING_TYPE;
 		}
+		
+		public boolean isBuilding() {
+			return type == BUILDING_TYPE || (type == STREET_TYPE && bldObject != null);
+		}
+		
+		public boolean isPOI() {
+			return type == POI_TYPE;
+		}
 
 		String typeStr() {
 			String typeS = "";
-			if (type == POI_TYPE) {
+			if (isPOI()) {
 				typeS = "POI";
-			} else if (type == BUILDING_TYPE) {
+			} else if (isBuilding()) {
 				typeS = "Building";
 			} else {
 				typeS = CityBlocks.getByType(type).toString();
@@ -385,6 +440,9 @@ public class SpatialSearchToken {
 		}
 		
 		public LatLon getResultLocation() {
+			if (bldObject != null) {
+				return bldObject.getLocation();
+			}
 			if (object != null) {
 				return object.getLocation();
 			}

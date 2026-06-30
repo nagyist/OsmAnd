@@ -5956,7 +5956,6 @@
     <string name="coordinate_format_cancel_changes_title">Μη αποθηκευμένες αλλαγές</string>
     <string name="coordinate_format_discard_changes">Απόρριψη αλλαγών</string>
     <string name="coordinate_format_select_other">Επιλέξτε άλλη μορφή</string>
-    <string name="coordinate_format_recent">Πρόσφατη</string>
     <string name="coordinate_format_primary">Κύρια</string>
     <string name="coordinate_format_add_empty_title">Ψάχνετε κάποια συγκεκριμένη μορφή;</string>
     <string name="coordinate_format_add_search_hint">Αναζητήστε κωδικό EPSG ή όνομα μορφής</string>

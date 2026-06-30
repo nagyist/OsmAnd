@@ -6551,7 +6551,6 @@
     <string name="coordinate_format_discard_changes">Descartar mudanças</string>
     <string name="coordinate_format_last_item_warning">É necessário indicar pelo menos um formato de coordenadas.</string>
     <string name="coordinate_format_select_other">Selecione outro formato</string>
-    <string name="coordinate_format_recent">Recente</string>
     <string name="coordinate_format_primary">Primário</string>
     <string name="gallery_seek_back_seconds">−%1$ds</string>
     <string name="gallery_seek_forward_seconds">+%1$ds</string>
