@@ -40,8 +40,6 @@ import net.osmand.util.SearchAlgorithms;
 // FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
 
-
-
 // TODO ? test: merge boundaries bbox - extend incomplete boundary same id...
 // TODO Inspector stats index_words_dashboard.html
 
