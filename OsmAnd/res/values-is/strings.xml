@@ -3954,7 +3954,7 @@
     <string name="shared_string_purchased">Keypt</string>
     <string name="explore_wikipedia_offline">Skoðaðu Wikipediu ónettengt.</string>
     <string name="on_hold_since">Í biðstöðu síðan %1$s</string>
-    <string name="active_till">Virk til %1$s</string>
+    <string name="active_till">Virkt til %1$s</string>
     <string name="promo_subscription">Kynningaráskrift</string>
     <string name="track_has_no_needed_data">Ferillinn inniheldur ekki viðkomandi gögn.</string>
     <string name="routes_color_by_type">Lita leiðir eftir…</string>
@@ -5428,7 +5428,7 @@
     <string name="quick_action_navigation_view_desc">Víxlhnappur til að opna eða loka leiðsagnarsýn.</string>
     <string name="add_widget_above">Bæta viðmótshluta fyrir ofan</string>
     <string name="add_widget_to_the_right">Bæta viðmótshluta til hægri</string>
-    <string name="delete_widget">Eyða viðmótshluta?</string>
+    <string name="delete_widget">Fjarlægja viðmótshluta?</string>
     <string name="compass_click_north_is_up">Til að breyta stefnuham skaltu smella og halda</string>
     <string name="type_of_activity">Gerð athafnar</string>
     <string name="clear_all_key_shortcuts_summary">Allar úthlutanir lykla fyrir valda tegund verða fjarlægðar.</string>
@@ -5484,7 +5484,7 @@
     <string name="obd_fuel_type_bifuel_methanol">Tveggja eldsneytistegunda farartæki sem keyrir á metanóli</string>
     <string name="obd_fuel_type_hybrid_regenerative">Tvinnbifreið með endurnýttri bremsuorku</string>
     <string name="obd_fuel_type_bifuel_hydrogen">Tveggja eldsneytistegunda farartæki sem keyrir á vetni</string>
-    <string name="delete_widget_description">Þessu viðmótshluta verður eytt. Þú getur endurheimt hann síðar í \'Stilla skjá\'.</string>
+    <string name="delete_widget_description">Þessi viðmótshluti verður fjarlægður. Þú getur endurheimt hann síðar í \'Stilla skjá\'.</string>
     <string name="fix_north_up_descr">Ekki snúa korti með bendingum þegar norður er stillt upp á korti</string>
     <string name="no_assigned_keys_desc">Veldu aðgerð og úthlutaðu lykli með því að ýta á hnappinn \'Bæta við\'.</string>
     <string name="missing_maps_description">Einhver ónettengd kort sem nauðsynleg eru fyrir þessa leið vantar eða eru úrelt. Sæktu eða uppfærðu þessi kort.</string>
