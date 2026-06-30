@@ -141,7 +141,7 @@ public class SpatialSearchTestAndDocs {
 		
 		// Grainau Am Eibsee 1 36799292
 		// Grainau Seehäuser Eibsee 2 - 242903848 //  Seehäuser Grainau 2, Seehäuser Eibsee 2  
-		
+		// TODO 
 		// Weberstraße (33164748) 49.2041 10.7035,  Von-Weber-Straße (4648613942) 49.5609 10.8685
 //		query = "Weber Straße"; // +4648613942, +33164748
 //		query = "WeberStraße";  // +33164748, +4648613942
@@ -258,9 +258,12 @@ public class SpatialSearchTestAndDocs {
 		// Japan addr:quarter, addr:neighbourhood, addr:block_number
 		// See test - [8-8 Kinshi 3 Kinshi Sumida Tokyo], Rivière Tsumura
 		// India - Satyam node/2296788005#map=18/17.805646/83.356818
+		// TODO Cannaregio 359D Campo Saffa
+		// TODO Venezia sort
+		// +[Venezia, Cannaregio, 359D, Campo Saffa], +[Venezia Cannaregio 359D] -[Venezia 359D Campo Saffa] - expected
 		
-		// Venezia
-		// +[Venezia, Cannaregio, 359D, Campo Saffa], +[Venezia Cannaregio 359D] -[Venezia 359D Campo Saffa] - expected 
+		pattern = "Slovakia";
+		query = "Bratislava Billa";
 		
 //		pattern = "France_ile-de-france_eu";
 //		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
