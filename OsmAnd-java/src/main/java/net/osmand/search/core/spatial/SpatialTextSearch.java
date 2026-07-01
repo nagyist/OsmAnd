@@ -255,12 +255,14 @@ public class SpatialTextSearch {
 					}
 				}
 			}
-			if (goal.equals(mainGoal) && goalRes.getCombinations() == 0) {
+			goalRes.loadObjectsAndCalcBuildings(ctx);
+			List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+			if (goal.equals(mainGoal) && res.size() == 0) {
 				goalRes = reevalWithExtendedBoundary(ctx, goal, tokens);
-			}
-			if (goalRes.getCombinations() > 0) {
 				goalRes.loadObjectsAndCalcBuildings(ctx);
-				List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+				res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+			}
+			if (res.size() > 0) {
 				uniqueObjects += res.size();
 				fullResult.add(goalRes);
 				if (ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0

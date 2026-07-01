@@ -42,12 +42,13 @@ import net.osmand.util.SearchAlgorithms;
 // FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
 
-// TO DO Ivan
+// TO DO Ivan / Gateway
 // TODO Review / implement similarity radius - similarityRadius = 50000 ... Route Id
 // TODO Unite RouteArticle, POI by wikidata id ? - DEPTH_TO_CHECK_SAME_SEARCH_RESULTS = 20;...
 // TODO Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 // TODO Unit tests (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
 // TODO Auto tests - Slow analysis
+// TODO Analyze synonyms (abbrevations 1st=first) list make a list
 
 // TO DO - RZR
 // TODO WEB Add url / coordinates parsing
@@ -177,7 +178,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
 //		query = "173 Liberty Valley Road Danville";
 //		query = "151 Molleystown Road Pine Grove";
-		query = "36 Wilson Drive  Pine City"; 
+//		query = "6 Kent Road Pine City";
+//		query = "36 Wilson Drive  Pine City"; 
+//		query = "301 East Second Street Corning"; // "301 East 2nd Street Corning"
+//		query = "763 Ro-Ki Boulevard Nichols"; // TODO
 		
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
