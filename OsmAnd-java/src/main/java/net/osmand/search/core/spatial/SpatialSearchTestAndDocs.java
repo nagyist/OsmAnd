@@ -143,6 +143,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Germany Kelter. Kernen im Remstal";
 		query = "3 Hofäckerstraße Kernen im Remstal";
 		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
+		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
+		query = "21 Heilbronner Straße Stuttgart";
 		
 		// Grainau Am Eibsee 1 36799292
 		// Grainau Seehäuser Eibsee 2 - 242903848 //  Seehäuser Grainau 2, Seehäuser Eibsee 2  
