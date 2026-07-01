@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
-import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.Abbreviations;
+import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.binary.NameIndexReader.NameIndexReaderBytes;
@@ -659,7 +659,9 @@ public class SpatialSearchContext {
 					if (numeric) {
 						numericNotMatch = true;
 					}
-					other++;
+					if (!Abbreviations.isConjunction(otherName) && !Abbreviations.isCommonSkipOtherCnt(otherName)) {
+						other++;
+					}
 				}
 			}
 		}
