@@ -10,15 +10,19 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
+import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.util.SearchAlgorithms;
 
 //////////////// SEARCH ALGORITHM //////////////////
@@ -41,8 +45,6 @@ import net.osmand.util.SearchAlgorithms;
 
 public class SpatialTextSearch {
 
-	private static final int LIMIT_PRINT = 1000;
-
 	public static class SpatialTextSearchSettings {
 
 		public boolean SEARCH_ADDR = true;
@@ -53,9 +55,13 @@ public class SpatialTextSearch {
 		// no intersection recorded but streets are nearby
 		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
 		
-		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 30_000, 100_000}; // 
+		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 30_000, 80_000}; // 
 //		public int[] OPTIM_LIMIT_RADIUS = new int[] {}; 
-		public int OPTIM_LIMIT_INTERSECTIONS = 20_000; // 20K or 50K
+		public int OPTIM_LIMIT_INTERSECTIONS = 30_000; // 10K (fast enough) or 50K (slow) - in new york  26,630 (3) -> 2,502 unique
+		
+		// produces x10 less intersection and maintains x2-x4 ratio for DEDUPLICATE_RES
+		// by deleting embedded or duplicate boundaries in each other
+		public boolean OPTIM_DELETE_EMBEDDED_BOUNDARIES = true;
 		
 		// max prefixes for each name reader
 		public int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
@@ -94,6 +100,10 @@ public class SpatialTextSearch {
 		
 		public int MIN_ELO_RATING = 1400; // see SearchResult.MIN_ELO_RATING
 //		public int MAX_ELO_RATING = 4300; // not used now
+		
+		// > 300 km - x0, for 50km-300km - x0.5, 10-50km - x1.5, 10km - x3sorted!
+		public Map<Integer, Double> ENLARGE_BOUNDARIES = new TreeMap<Integer, Double>(
+				Map.of(-300_000, 0.5, -100_000, 1.5, -10_000, 3.0));
 		
 	}
 
@@ -245,9 +255,14 @@ public class SpatialTextSearch {
 					}
 				}
 			}
-			if (goalRes.getCombinations() > 0) {
+			goalRes.loadObjectsAndCalcBuildings(ctx);
+			List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+			if (goal.equals(mainGoal) && res.size() == 0) {
+				goalRes = reevalWithExtendedBoundary(ctx, goal, tokens);
 				goalRes.loadObjectsAndCalcBuildings(ctx);
-				List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+				res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+			}
+			if (res.size() > 0) {
 				uniqueObjects += res.size();
 				fullResult.add(goalRes);
 				if (ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0
@@ -266,6 +281,37 @@ public class SpatialTextSearch {
 			}
 		}
 		return fullResult;
+	}
+
+	private SpatialSearchResultsList reevalWithExtendedBoundary(SpatialSearchContext ctx, BitSet goal, List<SpatialSearchToken> tokens) throws IOException {
+		// Extend boundary for united states addresses (use 50 km radius)
+		for (SpatialSearchToken t : tokens) {
+			for (NameIndexAtom a : t.atoms) {
+				if (a.isBoundary() || a.isCityVillage()) {
+					double dim = a.coords.dimensionInM();
+					Iterator<Entry<Integer, Double>> it = ctx.settings.ENLARGE_BOUNDARIES.entrySet().iterator();
+					double val = 0;
+					while (it.hasNext()) {
+						Entry<Integer, Double> e = it.next();
+						if (dim > -e.getKey()) {
+							break;
+						}
+						val = e.getValue();
+					}
+					if (val > 0) {
+//						System.out.println("Enlarge " + a.name + " " + a.type + " x" + val);
+						t.enlargeBbox(a, val);
+					}
+				}
+			}
+		}
+		
+		SpatialSearchResultsList goalRes = new SpatialSearchResultsList();
+		for (int i = goal.nextSetBit(0); i >= 0; i = goal.nextSetBit(i + 1)) {
+			SpatialSearchToken token = tokens.get(i);
+			goalRes = new SpatialSearchResultsList(ctx, token, goalRes);
+		}
+		return goalRes;
 	}
 
 	List<SpatialSearchResultsList> findObjCombinationsSimpleIteration(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
@@ -357,6 +403,7 @@ public class SpatialTextSearch {
 							lind++;
 						}
 					}
+//					System.out.println(nextKey + " " + r);
 					cKey = nextKey;
 				}
 				r.visibleLevel = level;
@@ -378,26 +425,30 @@ public class SpatialTextSearch {
 		return tokens;
 	}
 
-	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx) throws IOException {
+	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx, int limitPrint) throws IOException {
 		ctx.stats.requestTime.start();
 		SpatialSearchResults res = searchAPI(input, ctx);
 		ctx.stats.requestTime.finish();
 		if (res.mainResults != null && res.mainResults.size() > 0) {
 			System.out.println("--------");
-			System.out.println("Main: " + res.combinations.get(0));
-			int limit = LIMIT_PRINT;
+			System.out.printf("Main: %s\n", res.combinations.get(0));
 			int all = res.mainResults.size();
 			int level = 0;
+			int sz = 0;
 			for (SpatialSearchResult r : res.mainResults) {
+				sz++;
 				if (r.visibleLevel != level) {
 					level++;
-					System.out.println("### LEVEL " + level);
+					System.out.printf("### %d - NEXT LEVEL %d (%s). "
+							+ " Format - 75(words) 02(objects) 0(surplus) 1(sum other) 52(rating) 72(sum types)\n",
+							sz, level, Long.toOctalString(r.compareKey()));
+					sz = 0;
 				}
-				if (limit-- < 0) {
+				if (limitPrint-- < 0) {
 					System.out.println(".............");
 					break;
 				}
-				System.out.printf("Result %d - %s\n", r.matchedTokens(), r);
+				System.out.printf("Result %d (%s) - %s\n", r.matchedTokens(), Long.toOctalString(r.compareKey()), r);
 			}
 			System.out.printf("------ ALL %d results ------- \n ", all);
 			System.out.println("---------------------------------------");
@@ -455,7 +506,7 @@ public class SpatialTextSearch {
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 		SpatialTextSearch a = new SpatialTextSearch();
 		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, null);
-		a.searchTest(query, searchContext);
+		a.searchTest(query, searchContext, 1000);
 	}
 
 }

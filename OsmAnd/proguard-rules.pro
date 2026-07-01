@@ -21,6 +21,18 @@
 -keep class com.google.gson.reflect.TypeToken { *; }
 -keep class * extends com.google.gson.reflect.TypeToken
 
+# Rhino loads several runtime classes by class name while initializing voice scripts.
+-keep class org.mozilla.javascript.VMBridge { *; }
+-keep class org.mozilla.javascript.Interpreter { *; }
+-keep class org.mozilla.javascript.Interpreter$* { *; }
+-keep class org.mozilla.javascript.NativeContinuation { *; }
+-keep class org.mozilla.javascript.JavaAdapter { *; }
+-keep class org.mozilla.javascript.jdk15.** { *; }
+-keep class org.mozilla.javascript.jdk18.** { *; }
+-keep class org.mozilla.javascript.regexp.** { *; }
+-keep class org.mozilla.javascript.typedarrays.** { *; }
+-keep class org.mozilla.javascript.xmlimpl.** { *; }
+
 # Java classes called from Qt/OsmAndCore native code must keep their JNI-visible names and members.
 -keep class org.qtproject.qt5.android.** { *; }
 
