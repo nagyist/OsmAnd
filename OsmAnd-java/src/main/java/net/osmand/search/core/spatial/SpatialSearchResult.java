@@ -201,7 +201,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				}
 				LatLon resLoc = atom.getResultLocation();
 				return String.format("%s %s (%s) %.4f %.4f ", words, atom.typeStr() + " " + atom.object.getName() + add,
-						"" + ObfConstants.getOsmObjectId(idObject), 
+						"" + ObfConstants.getOsmObjectId(idObject), //+ " " + atom.id, 
 						resLoc.getLatitude(), resLoc.getLongitude());
 			}
 			return atom.simpleName(words.toString()); 

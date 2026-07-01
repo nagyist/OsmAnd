@@ -243,8 +243,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					searchKey += " " + tokens[i].word;
 				}
 				bldCheckMap.put(str, searchKey);
-			} else {
-				if (noBldStreet == null && bld.isStreet()) {
+			} else if (bld.isStreet()) {
+				if (noBldStreet == null) {
 					noBldStreet = bld;
 				}
 			}
@@ -283,7 +283,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				} else {
 					bldObj = checkBuilding((Street) str.object, bldName);
 					if (bldObj == null) {
-//						System.out.printf("No building '%s': %s\n", bldName, str.object);
+//						System.out.printf("No building '%s': %s\n", bldName, str.object + " " + ((Street) str.object).getBuildings());
 					} else {
 //						System.out.printf("Building found '%s' -'%s': %s\n", bldObj, bldName, str.object);
 						if (surplus > 0) {

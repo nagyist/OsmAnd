@@ -2,6 +2,7 @@ package net.osmand.search.core.spatial;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -247,7 +248,8 @@ public class SpatialSearchContext {
 						continue;
 					}
 					BoundaryTokens bBoundary = collection.get(l);
-					if (bBoundary.obj.coords.contains(aBoundary.obj.coords)) {
+					if (bBoundary.obj.coords.contains(aBoundary.obj.coords)
+							&& bBoundary.obj.otherWordsCnt <= aBoundary.obj.otherWordsCnt) {
 						toDelete = aBoundary;
 //						reason = bBoundary;
 						break;
@@ -324,6 +326,17 @@ public class SpatialSearchContext {
 	private void readAtoms(List<SpatialSearchToken> tokens, BinaryMapIndexReader b, NameIndexReader indx, int indxInd)
 			throws IOException {
 		ReadTokens read = computeReadTokens(tokens, indx);
+		// sort to assign tokens to '2nd street 2' first instead '2 2nd street'
+		tokens.sort(new Comparator<SpatialSearchToken>() {
+			@Override
+			public int compare(SpatialSearchToken o1, SpatialSearchToken o2) {
+				int cm = Boolean.compare(SearchAlgorithms.isNumber2Letters(o1.word), SearchAlgorithms.isNumber2Letters(o2.word));
+				if (cm != 0) {
+					return cm;
+				}
+				return Integer.compare(o1.originalOrder, o2.originalOrder);
+			}
+		});
 		for (SpatialSearchToken t : tokens) {
 			Map<String, ValueFreq> frequentWords = indx.getCommonWordsStats();
 			if (!read.init && frequentWords != null) {
@@ -534,9 +547,8 @@ public class SpatialSearchContext {
 		return obj;
 	}
 
-	private void parseSuffixes(SpatialSearchToken t, List<String> suffixes, List<String> commonSuffixes,
-			AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b, long cid, long pid, MapObject obj,
-			List<SpatialSearchToken> allTokens) {
+	private void parseSuffixes(SpatialSearchToken t, List<String> suffixes, List<String> commonSuffixes, AddressNameIndexDataAtom a, 
+			OsmAndPoiNameIndexDataAtom b, long cid, long pid, MapObject obj, List<SpatialSearchToken> allTokens) {
 		int cnt = a != null ? a.getSuffixesBitsetIndexCount() : b.getSuffixesBitsetIndexCount();
 		String name = "";
 		int wordInd = 0;

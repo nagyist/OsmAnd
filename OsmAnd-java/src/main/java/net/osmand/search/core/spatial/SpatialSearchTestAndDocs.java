@@ -27,10 +27,12 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING test: merge boundaries bbox - extend incomplete boundary same id ... - npt fixed as we anyway enlarge
 // TESTING Cannaregio 539D Campo Saffa - Double 539D
 // TESTING Manhattan 57th street
+// TESTING Regierungsbezirk Stuttgart
+// TESTING "2 South 2nd Street Saint Clair";  street matched twice
 
 ////////// IN PROGRESS //////////
 
-// TODO "2 South 2nd Street Saint Clair";  street matched twice
+
 // TODO Bratislava Billa - too many POI intersection results
 // TODO Filter Public transport stops, City&Bike - New york - analyze poi name consists of street name?
 
@@ -60,6 +62,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Store and test conscription number for some cities - issue
 
 /////////////// EXTRA FEATURES ///////////////
+// TODO Review Abbrevations ( synonyms / direction words) other languages?
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Japan test, housename, block_number + housenumber, neighbourhood + quarter - street + India assign houses to suburbs / neighbourhood / blocks
 // TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
@@ -147,7 +150,7 @@ public class SpatialSearchTestAndDocs {
 		query = "3 Hofäckerstraße Kernen im Remstal";
 		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
 		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
-		query = "21 Heilbronner Straße Stuttgart";
+//		query = "23 Schillerstraße Stuttgart"; // FIXME
 		
 		// Grainau Am Eibsee 1 36799292
 		// Grainau Seehäuser Eibsee 2 - 242903848 //  Seehäuser Grainau 2, Seehäuser Eibsee 2  
@@ -183,7 +186,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "36 Wilson Drive  Pine City"; 
 //		query = "301 East Second Street Corning"; // "301 East 2nd Street Corning"
 //		query = "763 Ro-Ki Boulevard Nichols"; // NO FIX yet: Roki is very short to be fixed same as Weber-Strasse
-//		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice
+		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // FIXME
+		query = "South 2nd Street 2 Saint Clair"; // to fix street matched twice
+		
 //		query = "151 Weber Way Selinsgrove"; // Fixed: 2 word - addr:unit 
 //		query = "1544 PA-61 Pottsville"; // NO FIX: as pa-61 street not a house number leave as it ison 4th place
 //		query = "17815 PA-35 Port Royal"; // CHECK!
@@ -259,9 +264,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby Melbourne 18B";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-		pattern = "Us_new-"; 
+//		pattern = "Us_new-"; 
 		
-		location = new LatLon(40.78035, -73.96572); // central park
+//		location = new LatLon(40.78035, -73.96572); // central park
 //		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
