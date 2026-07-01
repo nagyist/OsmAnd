@@ -34,12 +34,13 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Bratislava Billa - too many POI intersection results
 // TODO Filter Public transport stops, City&Bike - New york - analyze poi name consists of street name?
 
+// TODO ? test: merge boundaries bbox - extend incomplete boundary same id...
+// TODO Inspector stats index_words_dashboard.html
+
+// TO DO POI Categories 
 // FIXME POI Categories + top poi categories
 // FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
-
-// TODO ? test: merge boundaries bbox - extend incomplete boundary same id...
-// TODO Inspector stats index_words_dashboard.html
 
 // TO DO Ivan
 // TODO Review / implement similarity radius - similarityRadius = 50000 ... Route Id
@@ -160,7 +161,8 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
-//		pattern = "Us_";
+		pattern = "Us_penn";
+		pattern2 = "Us_new-york_syracuse";
 //		pattern = "Map";
 //		query = "Salt Lake City Pennsylvania Place 123 UT USA";
 //		query = "Salt Lake City Elephant";
@@ -175,7 +177,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
 //		query = "173 Liberty Valley Road Danville";
 //		query = "151 Molleystown Road Pine Grove";
-//		query = "36 Wilson Drive"; // Pine City
+		query = "36 Wilson Drive  Pine City"; 
 		
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)

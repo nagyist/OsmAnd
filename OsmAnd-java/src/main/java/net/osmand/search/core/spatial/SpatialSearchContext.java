@@ -670,11 +670,11 @@ public class SpatialSearchContext {
 				break;
 			}
 		}
-		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, streetCity, other, otherFound, coords,
-				nearByType);
+		NameIndexAtom atom = new NameIndexAtom(name, type, lid, pid, obj, streetCity, other, otherFound, coords, nearByType);
 		t.addAtom(atom);
 		if (otherTokens != null) {
 			for (SpatialSearchToken token : otherTokens) {
+				atom = new NameIndexAtom(name, type, lid, pid, obj, streetCity, other, otherFound, coords, nearByType);
 				token.addAtom(atom);
 			}
 		}
