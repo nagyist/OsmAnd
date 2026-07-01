@@ -337,8 +337,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 						return b;
 					}
 				}
-				if (bldSet.size() == query.size() + 1) {
-					// case data only 18-B present, 18 searched
+				if (bldSet.size() == query.size() + 1 || bldSet.size() == query.size() + 2) {
+					// case data only 18-B present, 18 searched (151 + unit Upper level)
 					if (bldSet.containsAll(query)) {
 						partial1 = b;
 					}
