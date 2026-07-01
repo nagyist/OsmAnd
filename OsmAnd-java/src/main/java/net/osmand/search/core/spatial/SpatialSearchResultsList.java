@@ -36,6 +36,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	
 	int MIN_ELO_RATING = Amenity.DEFAULT_ELO;
 	
+	public static long DEFAULT_BLD_ID = -0; // special flag for building partial match
 	public static long PARTIAL_ID_MATCH = -4; // special flag for building partial match
 	public static long SURPLUS_ID_MATCH = -16; // special flag for building partial match (11-NUON)
 
@@ -332,6 +333,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 							&& !tempBuildNames2.equals(tempBuildNames1)) {
 						partial1 = b;
 					} else {
+						b.setId(DEFAULT_BLD_ID);
 						return b;
 					}
 				}
@@ -349,12 +351,14 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		if (partial1 != null) {
+			partial1.setId(DEFAULT_BLD_ID);
 			if (tempBuildNames1.size() > query.size()) {
 				partial1.setId(PARTIAL_ID_MATCH);
 			}
 			return partial1;
 		}
 		if (interpolation != null) {
+			interpolation.setId(DEFAULT_BLD_ID);
 			return interpolation;
 		}
 		if (partial2 != null) {

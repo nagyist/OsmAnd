@@ -70,6 +70,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Sugggestion-correction
 // TODO English postcodes
 // TODO Precise Boundary 'Chernihiv sport life' mostly Kyiv - check precise boundary for filter
+// TODO Short word split "Ro-ki" vs "Roki" 
 
 public class SpatialSearchTestAndDocs {
 
@@ -181,8 +182,13 @@ public class SpatialSearchTestAndDocs {
 //		query = "6 Kent Road Pine City";
 //		query = "36 Wilson Drive  Pine City"; 
 //		query = "301 East Second Street Corning"; // "301 East 2nd Street Corning"
-//		query = "763 Ro-Ki Boulevard Nichols"; // TODO
-		
+//		query = "763 Ro-Ki Boulevard Nichols"; // NO FIX yet: Roki is very short to be fixed same as Weber-Strasse
+//		query = "2 South 2nd Street Saint Clair"; // TODO
+		query = "151 Weber Way Selinsgrove"; // TODO 151 Weber Way Selinsgrove
+//		query = "1544 PA-61 Pottsville"; // NO FIX: as pa-61 street not a house number leave as it ison 4th place
+//		query = "17815 PA-35 Port Royal"; // CHECK!
+//		location = new LatLon(42.101486, -76.669075); // order of results based on location
+//		query = "2032 Ridge Road Lowman";
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
 //		query = "PA 75 27193"; // Data 'PA-75', 27193  4472676432
