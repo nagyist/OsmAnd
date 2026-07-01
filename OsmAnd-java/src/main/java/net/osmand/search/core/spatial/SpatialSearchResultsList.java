@@ -614,6 +614,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				int indexOf = a.name.indexOf(tokens[0].word, pindx);
 				if (indexOf != -1 && a.name.indexOf(tokens[0].word, indexOf + 1) >= 0) {
 					// duplicate name in object
+//					System.out.println("Duplicate word  " + a.name);
 				} else {
 					return false;
 				}
