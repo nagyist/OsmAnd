@@ -727,7 +727,7 @@ public class SpatialSearchContext {
 				}
 				if (!matched) {
 					if (numeric) {
-						numericNotMatch = true;
+						numericNotMatch = !t.word.contains(otherName); // "us 15" data, "us-15" token
 					}
 					if (!Abbreviations.isConjunction(otherName) && !Abbreviations.isCommonSkipOtherCnt(otherName)) {
 						other++;

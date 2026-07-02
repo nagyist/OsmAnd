@@ -189,13 +189,16 @@ public class SpatialSearchTestAndDocs {
 //		query = "36 Wilson Drive  Pine City"; 
 //		query = "301 East Second Street Corning"; // "301 East 2nd Street Corning"
 //		query = "763 Ro-Ki Boulevard Nichols"; // NO FIX yet: Roki is very short to be fixed same as Weber-Strasse
+//		query = "276 East End Centre Wilkes-Barre"; // NO FIX broken data 2888
 //		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // FIXME
 //		query = "South 2nd Street 2 Saint Clair"; // to fix street matched twice
 //		query = "226 Wilkes-Barre Township Boulevard Wilkes-Barre"; // fixed type order
-		query = "138 138 Scott Avenue Bellefonte";
+//		query = "5676 US-15 Montgomery"; // Test 3 matched (not 2)
+//		location = new LatLon(42.0061257, -76.5464141);
+//		query = "38 Orange Street Waverly";
 		
 //		query = "151 Weber Way Selinsgrove"; // Fixed: 2 word - addr:unit 
-//		query = "1544 PA-61 Pottsville"; // NO FIX: as pa-61 street not a house number leave as it ison 4th place
+//		query = "1544 PA-61 Pottsville"; // FIXED
 //		query = "17815 PA-35 Port Royal"; // CHECK!
 //		location = new LatLon(42.101486, -76.669075); // order of results based on location
 //		query = "2032 Ridge Road Lowman";
@@ -272,7 +275,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Bratislava Billa";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-		pattern = "Us_new-"; 
+//		pattern = "Us_new-"; 
 		
 //		location = new LatLon(40.78035, -73.96572); // central park
 //		location = new LatLon(40.64946, -74.00682); // brooklyn
