@@ -169,7 +169,7 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
-//		pattern = "Us_penn";
+		pattern = "Us_penn";
 		pattern2 = "Us_new-york_syracuse";
 //		pattern = "Map";
 //		query = "Salt Lake City Pennsylvania Place 123 UT USA";
@@ -201,9 +201,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "1544 PA-61 Pottsville"; // FIXED
 //		query = "138 138 Scott Avenue Bellefonte";
 //		query = "17815 PA-35 Port Royal"; // CHECK!
-		location = new LatLon(42.10469, -76.67088); // order of results based on location
-		query = "2032 Ridge Road Lowman"; // extend bbox hamlet // 822981342 45734
-//		query = "1503 Stewart Road Addison";
+//		query = "2032 Ridge Road Lowman"; // extend bbox hamlet // 822981342 45734
+//		query = "1503 Stewart Road Addison"; // test default enlarge
+		query = "76 North Street Waverly"; // same
+//		query = "312 East 14th Street Elmira"; // no fix locations too close
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
 //		query = "PA 75 27193"; // Data 'PA-75', 27193  4472676432
