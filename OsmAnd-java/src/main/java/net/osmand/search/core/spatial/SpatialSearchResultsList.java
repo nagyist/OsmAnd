@@ -496,7 +496,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 			int originalLimit = limitIntersection;
 			int[] typeIntersection = new int[] { 0 };
-			iterateIntersection(parent, token, (parentIndx, atom,  indxAtom) -> { 
+			iterateIntersection(parent, token, (parentIndx, atom,  indxAtom) -> {
 				if (token.deletedAtoms.contains(indxAtom)) {
 					return;
 				}
@@ -504,8 +504,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				if (level > limitIntersection) {
 					return;
 				}
-//				System.out.println(atom + " " + parent.getRawAtoms(parentIndx));
 				boolean acceptIntersection = acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
+//				System.out.println(atom + " " + parent.getRawAtoms(parentIndx) + " == " + acceptIntersection);
 				if (acceptIntersection) {
 					TIntArrayList c = intersections[level];
 					if (typeIntersection[0] == 2) {

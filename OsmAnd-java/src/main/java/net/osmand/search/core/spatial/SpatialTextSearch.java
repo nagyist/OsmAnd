@@ -108,7 +108,7 @@ public class SpatialTextSearch {
 		
 		// > 300 km - x0, for 50km-300km - x0.5, 10-50km - x1.5, 10km - x3sorted!
 		public Map<Integer, Double> ENLARGE_BOUNDARIES = new TreeMap<Integer, Double>(
-				Map.of(-300_000, 0.5, -100_000, 1.5, -10_000, 3.0));
+				Map.of(-300_000, 0.5, -100_000, 1.5, -10_000, 3.0, -1_000, 20.0));
 		
 	}
 
@@ -290,6 +290,7 @@ public class SpatialTextSearch {
 
 	private SpatialSearchResultsList reevalWithExtendedBoundary(SpatialSearchContext ctx, BitSet goal, List<SpatialSearchToken> tokens) throws IOException {
 		// Extend boundary for united states addresses (use 50 km radius)
+		int enlarge = 0;
 		for (SpatialSearchToken t : tokens) {
 			for (NameIndexAtom a : t.atoms) {
 				if (a.isBoundary() || a.isCityVillage()) {
@@ -306,11 +307,14 @@ public class SpatialTextSearch {
 					if (val > 0) {
 //						System.out.println("Enlarge " + a.name + " " + a.type + " x" + val);
 						t.enlargeBbox(a, val);
+						enlarge++;
 					}
 				}
 			}
 		}
-		
+		if (ctx.stats.printLogs) { 
+			System.out.println("Enlarged boundaries " + enlarge);
+		}
 		SpatialSearchResultsList goalRes = new SpatialSearchResultsList();
 		for (int i = goal.nextSetBit(0); i >= 0; i = goal.nextSetBit(i + 1)) {
 			SpatialSearchToken token = tokens.get(i);
