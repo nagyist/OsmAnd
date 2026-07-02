@@ -321,9 +321,10 @@ public class SpatialSearchToken {
 				bboxTileZoom = 15;
 				bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16 / 2, y16 / 2);
 				decodeBBox(addr.hasBbox() ? addr.getBbox() : null);
-				double val = settings.evalEnlargeBoundary(settings.DEF_ENLARGE_BOUNDARIES, 
-						dimensionInM());
-				enlargeBbox31(val);
+				if (addr.hasType() && addr.getType() != CityBlocks.STREET_TYPE.index) {
+					double val = settings.evalEnlargeBoundary(settings.DEF_ENLARGE_BOUNDARIES, dimensionInM());
+					enlargeBbox31(val);
+				}
 			}
 		}
 		
