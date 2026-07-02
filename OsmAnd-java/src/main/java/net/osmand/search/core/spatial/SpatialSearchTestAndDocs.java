@@ -180,7 +180,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Pennsylvania Avenue Philadelphia PA USA"; 
 //		query = "Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA";
 //		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
-//		query = "173 Liberty Valley Road Danville";
+		query = "173 Liberty Valley Road Danville"; // enlarged
 //		query = "151 Molleystown Road Pine Grove";
 //		query = "6 Kent Road Pine City";
 //		query = "36 Wilson Drive  Pine City"; 
