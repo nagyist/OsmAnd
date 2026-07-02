@@ -48,12 +48,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 					// building-street
 					if (existing.atom.type > atom.type) {
 						// existing street - swap
-						existing.parent = existing.atom;
 						existing.atom = atom;
-						break;
-					} else if (existing.atom.type < atom.type) {
-						// existing building - swap
-						existing.parent = atom;
 						break;
 					}
 				}
@@ -73,7 +68,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			Collections.sort(r.tokens, (o1, o2) -> Integer.compare(o1.originalOrder, o2.originalOrder));
 		}
 		Collections.sort(objs, (o1, o2) -> {
-			int r = Integer.compare(o1.typeOrder(), o2.typeOrder());
+			int r = Integer.compare(o1.typeOrder(SpatialSearchResultRef.MAX_TYPE_ORDER), o2.typeOrder(SpatialSearchResultRef.MAX_TYPE_ORDER));
 			if (r != 0) {
 				return r;
 			}
@@ -99,9 +94,8 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			if (r.atom.bldObject != null) {
 				o.add(r.atom.bldObject);
 			}
-			o.add(r.atom.object);
-			if (r.parent != null && r.parent.object != null) {
-				o.add(r.parent.object);
+			if (!o.contains(r.atom.object)) {
+				o.add(r.atom.object);
 			}
 		}
 		return o;
@@ -124,10 +118,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	public long getIdDeduplication() {
 		if (objs.size() > 0) {
 			SpatialSearchResultRef first = objs.get(0);
-			if (first.parent != null && first.parent.object != null) {
-				return ObfConstants.getOsmObjectId(first.parent.object);
-			}
-			// street intersection (!) or possibly building
+			// street intersection (!) or building interpolation
 			if (preciseLatlon != null) {
 				int y31 = MapUtils.get31TileNumberY(preciseLatlon.getLatitude());
 				int x31 = MapUtils.get31TileNumberX(preciseLatlon.getLongitude());
@@ -153,15 +144,15 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	
 	
 	public static class SpatialSearchResultRef {
+		static final int MAX_TYPE_ORDER = 5;
 		NameIndexAtom atom;
-		NameIndexAtom parent; // street for building
 		List<SpatialSearchToken> tokens = new ArrayList<>();
 		
 		public SpatialSearchResultRef(NameIndexAtom atom) {
 			this.atom = atom;
 		}
 		
-		public int typeOrder() {
+		public int typeOrder(int min) {
 			if (atom.isBuilding()) {
 				return -1;
 			} else if (atom.isPOI()) {
@@ -171,7 +162,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			} else if(atom.isPostcode()) {
 				return 2;
 			} else if(atom.isBoundary()) {
-				return 5;
+				return min < 3 ? 3 : MAX_TYPE_ORDER;
 			}
 			// all cities, villages, hamlets
 			return 3;
@@ -185,9 +176,6 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			}
 			if (atom.object != null) {
 				MapObject idObject = atom.object;
-				if (parent != null && parent.object != null) {
-					idObject = parent.object;
-				}
 				String add = "";
 				if (atom.bldObject != null) {
 					add += " " + atom.bldObject.getName();
@@ -196,8 +184,6 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 						add += " elo " + a.getTravelEloNumber() + " " + a.getCityFromTagGroups("");
 					}
 					add += " " + a.getSubTypeStr();
-				} else if (parent != null) {
-					add += " " + parent.object.getName();
 				}
 				LatLon resLoc = atom.getResultLocation();
 				return String.format("%s %s (%s) %.4f %.4f ", words, atom.typeStr() + " " + atom.object.getName() + add,
@@ -230,8 +216,12 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	
 	public int sumTypeOrder() {
 		int s1 = 0;
+		int min = SpatialSearchResultRef.MAX_TYPE_ORDER;
 		for (SpatialSearchResultRef r : objs) {
-			s1 += r.typeOrder();
+			min = Math.min(r.typeOrder(min), min);
+		}
+		for (SpatialSearchResultRef r : objs) {
+			s1 += r.typeOrder(min);
 		}
 		return s1;
 	}

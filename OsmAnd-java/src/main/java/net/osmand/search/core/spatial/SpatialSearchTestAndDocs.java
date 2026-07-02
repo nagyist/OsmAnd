@@ -150,7 +150,7 @@ public class SpatialSearchTestAndDocs {
 		query = "3 Hofäckerstraße Kernen im Remstal";
 		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
 		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
-//		query = "23 Schillerstraße Stuttgart"; // FIXME
+		
 		
 		// Grainau Am Eibsee 1 36799292
 		// Grainau Seehäuser Eibsee 2 - 242903848 //  Seehäuser Grainau 2, Seehäuser Eibsee 2  
@@ -186,8 +186,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "36 Wilson Drive  Pine City"; 
 //		query = "301 East Second Street Corning"; // "301 East 2nd Street Corning"
 //		query = "763 Ro-Ki Boulevard Nichols"; // NO FIX yet: Roki is very short to be fixed same as Weber-Strasse
-		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // FIXME
-		query = "South 2nd Street 2 Saint Clair"; // to fix street matched twice
+//		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // FIXME
+//		query = "South 2nd Street 2 Saint Clair"; // to fix street matched twice
+		query = "226 Wilkes-Barre Township Boulevard Wilkes-Barre";
 		
 //		query = "151 Weber Way Selinsgrove"; // Fixed: 2 word - addr:unit 
 //		query = "1544 PA-61 Pottsville"; // NO FIX: as pa-61 street not a house number leave as it ison 4th place
