@@ -34,9 +34,6 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////// IN PROGRESS //////////
 
-
-// 
-// TO DO Victor POI Categories 
 // FIXME POI Categories + top poi categories
 // FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
@@ -202,8 +199,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "138 138 Scott Avenue Bellefonte";
 //		query = "17815 PA-35 Port Royal"; // CHECK!
 //		query = "2032 Ridge Road Lowman"; // extend bbox hamlet // 822981342 45734
-//		query = "1503 Stewart Road Addison"; // test default enlarge
-		query = "76 North Street Waverly"; // same
+		// test default enlarge 1 -> 2.5
+//		query = "1503 Stewart Road Addison"; // 
+//		query = "76 North Street Waverly"; // same
+//		query = "1098 Long Run Road Pine Grove"; // 2.5 enlarge 40.5943782, -76.2609811
 //		query = "312 East 14th Street Elmira"; // no fix locations too close
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
