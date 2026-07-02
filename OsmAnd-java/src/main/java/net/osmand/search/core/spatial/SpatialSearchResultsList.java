@@ -684,13 +684,19 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			Iterator<NameIndexAtom> it = objects.values().iterator();
 			NameIndexAtom a1 = it.next();
 			NameIndexAtom a2 = it.next();
+			// if one object is same as city name don't intersect with street poi...
+			if (a1.sameNameAreaObj != null || a2.sameNameAreaObj != null) {
+				return false;
+			}
 			if ((a1.isStreetBuilding() != a2.isStreetBuilding()) && !it.hasNext()) {
 				typeIntersection[0] = 1;
 			} else {
 				typeIntersection[0] = 2;
-				if (!settings.SEARCH_STREET_INTERSECTIONS && a1.isStreetBuilding() && a2.isStreetBuilding()) {
+				boolean twoStreets = a1.isStreetBuilding() && a2.isStreetBuilding();
+				boolean twoPOIs = !a1.isStreetBuilding() && !a2.isStreetBuilding();
+				if (!settings.SEARCH_STREET_INTERSECTIONS && twoStreets) {
 					return false;
-				} else if (!settings.SEARCH_POI_INTERSECTIONS && !a1.isStreetBuilding() && !a2.isStreetBuilding()) {
+				} else if (!settings.SEARCH_POI_INTERSECTIONS && twoPOIs) {
 					return false;
 				}
 			}

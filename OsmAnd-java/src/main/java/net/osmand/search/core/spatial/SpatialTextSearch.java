@@ -63,6 +63,11 @@ public class SpatialTextSearch {
 		// by deleting embedded or duplicate boundaries in each other
 		public boolean OPTIM_DELETE_EMBEDDED_BOUNDARIES = true;
 		
+		// In case POI is called 'Bratislava' it will be restricted to be searched as POIxPOI, POIxStreet
+		// Related frequent POIs like "City&Bike 4th Street..." or public transport stops
+		public boolean OPTIM_FLAG_POI_SAME_AS_CITY_STREET = true;
+		public boolean OPTIM_DELETE_POI_SAME_AS_CITY_STREET = false; // not correct for new york the plaza
+		
 		// max prefixes for each name reader
 		public int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
 

@@ -136,6 +136,10 @@ public class SpatialSearchToken {
 	}
 
 	
+	NameIndexAtom getAtomToken(NameIndexAtom atom) {
+		return index.get(atom.id);
+	}
+	
 	void removeAtom(NameIndexAtom atom) {
 		NameIndexAtom na = index.get(atom.id);
 		deletedAtoms.add(na.indexInToken);
@@ -406,6 +410,8 @@ public class SpatialSearchToken {
 		final NameIndexAtomXY coords; 
 		final int buildingInd; // added before intersection
 		final int nearbyRadius;
+		
+		NameIndexAtom sameNameAreaObj;
 
 
 		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, boolean cityAsStreet, int otherWordsCnt,

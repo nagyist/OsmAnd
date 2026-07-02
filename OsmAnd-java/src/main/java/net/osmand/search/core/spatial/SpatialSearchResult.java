@@ -170,24 +170,25 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		
 		@Override
 		public String toString() {
-			List<String> words = new ArrayList<String>();
+			StringBuilder words = new StringBuilder();
 			for (SpatialSearchToken s : tokens) {
-				words.add(s.word);
+				words.append(" ") .append(s.word);
 			}
 			if (atom.object != null) {
 				MapObject idObject = atom.object;
-				String add = "";
+				String name = atom.object.getName();
+				String type = atom.typeStr();
 				if (atom.bldObject != null) {
-					add += " " + atom.bldObject.getName();
+					name = atom.bldObject.getName() + " " + name;
 				} else if (atom.object instanceof Amenity a) {
+					type += " " + a.getSubTypeStr();
 					if (a.getTravelEloNumber() > Amenity.DEFAULT_ELO) {
-						add += " elo " + a.getTravelEloNumber() + " " + a.getCityFromTagGroups("");
+						type += " " + a.getTravelEloNumber() ;//" " + a.getCityFromTagGroups("");
 					}
-					add += " " + a.getSubTypeStr();
 				}
 				LatLon resLoc = atom.getResultLocation();
-				return String.format("%s %s (%s) %.4f %.4f ", words, atom.typeStr() + " " + atom.object.getName() + add,
-						"" + ObfConstants.getOsmObjectId(idObject), //+ " " + atom.id, 
+				return String.format("\"%s\" [%s] '%s' %s (%.4f %.4f)", words.toString().trim(), type, name,  
+						"" + ObfConstants.getOsmObjectId(idObject) + " " + (atom.id % 0xffff), 
 						resLoc.getLatitude(), resLoc.getLongitude());
 			}
 			return atom.simpleName(words.toString()); 

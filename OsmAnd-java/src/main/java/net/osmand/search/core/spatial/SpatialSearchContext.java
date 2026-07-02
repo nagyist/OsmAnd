@@ -8,7 +8,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 
+import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
@@ -170,8 +172,7 @@ public class SpatialSearchContext {
 		}
 	}
 	
-	record BoundaryTokens(NameIndexAtom obj, TIntArrayList lstTokens) {
-	}
+	
 
 	void readAtoms(List<SpatialSearchToken> tokens) throws IOException {
 		int indxInd = 0;
@@ -194,60 +195,88 @@ public class SpatialSearchContext {
 			System.out.println(tokenStats(tokens).toString());
  		}
 		if (settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES) {
-			filterEmbeddedBoundaries(tokens);
+			long nt = System.nanoTime();
+			Map<TIntArrayList, List<AtomByTokens>> boundaries = filterEmbeddedBoundaries(tokens);
+			if (settings.OPTIM_FLAG_POI_SAME_AS_CITY_STREET || settings.OPTIM_DELETE_POI_SAME_AS_CITY_STREET) {
+				assignPoiFlagGeo(boundaries, tokens);
+			}
+			// FIXME
+			System.out.printf("Optimize name by boundaries - %.1f ms\n", (System.nanoTime() - nt) / 1e6);
 		}
+		
 	}
 
-	private void filterEmbeddedBoundaries(List<SpatialSearchToken> tokens) {
-		TLongObjectHashMap<BoundaryTokens> boundaries = new TLongObjectHashMap<>();
-		// 1. idnex boundaries by tokens 
-		for (int tokenOrder = 0; tokenOrder < tokens.size(); tokenOrder++) {
-			SpatialSearchToken token = tokens.get(tokenOrder);
-			for (NameIndexAtom a : token.atoms) {
-				if (a.isCity() || a.isBoundary()) {
-					if (!boundaries.containsKey(a.id)) {
-						boundaries.put(a.id, new BoundaryTokens(a, new TIntArrayList(5)));
-					}
-					boundaries.get(a.id).lstTokens.add(tokenOrder);
+	private void assignPoiFlagGeo(Map<TIntArrayList, List<AtomByTokens>> cities, List<SpatialSearchToken> tokens) {
+		Map<TIntArrayList, List<AtomByTokens>> streets = groupAtomsByTokens(tokens, t -> t.isStreet()); // check performance
+		Map<TIntArrayList, List<AtomByTokens>> pois = groupAtomsByTokens(tokens, t -> t.isPOI());
+		Iterator<Entry<TIntArrayList, List<AtomByTokens>>> it = pois.entrySet().iterator();
+		while (it.hasNext()) {
+			Entry<TIntArrayList, List<AtomByTokens>> e = it.next();
+			TIntArrayList lst = e.getKey();
+			List<AtomByTokens> cityNames = cities.get(lst);
+			if (cityNames != null) {
+				for (AtomByTokens poi : e.getValue()) {
+					markPOIAsArea(poi, cityNames, lst, tokens);
+				}
+			}
+			List<AtomByTokens> streetNames = streets.get(lst);
+			if (streetNames != null) {
+				for (AtomByTokens poi : e.getValue()) {
+					markPOIAsArea(poi, streetNames, lst, tokens);
 				}
 			}
 		}
-//		System.out.println("Boundaries " + boundaries.size());
-		// 2. combine boundaries by same tokens to find the largest boundary
-		Map<TIntArrayList, List<BoundaryTokens>> regroup = new HashMap<>();
-		for(BoundaryTokens b : boundaries.valueCollection()) {
-			List<BoundaryTokens> list = regroup.get(b.lstTokens);
-			if (list == null) {
-				list = new ArrayList<>();
-				regroup.put(b.lstTokens, list);
+	}
+
+	private void markPOIAsArea(AtomByTokens poi, List<AtomByTokens> cityNames, TIntArrayList indxs,
+			List<SpatialSearchToken> tokens) {
+		for (AtomByTokens largeArea : cityNames) {
+			if (largeArea.obj.coords.contains(poi.obj.coords)) {
+				TIntIterator it = indxs.iterator();
+				while (it.hasNext()) {
+					int indx = it.next();
+					if (settings.OPTIM_DELETE_POI_SAME_AS_CITY_STREET) {
+						// delete completely no clear use case for improvement yet found
+						tokens.get(indx).removeAtom(poi.obj);
+					} else {
+						// mark to not intersect
+						NameIndexAtom atomSet = tokens.get(indx).getAtomToken(poi.obj);
+						atomSet.sameNameAreaObj = largeArea.obj;
+					}
+				}
+				return;
 			}
-			list.add(b);
 		}
+
+	}
+
+	record AtomByTokens(NameIndexAtom obj, TIntArrayList lstTokens) {
+	}
+	
+	
+	
+	private Map<TIntArrayList, List<AtomByTokens>> filterEmbeddedBoundaries(List<SpatialSearchToken> tokens) {
+		Map<TIntArrayList, List<AtomByTokens>> group = groupAtomsByTokens(tokens, t -> t.isCityVillage() || t.isBoundary());
 		// 3. find the largest boundary and delete embedded
-		Iterator<Entry<TIntArrayList, List<BoundaryTokens>>> it = regroup.entrySet().iterator();
+		Iterator<Entry<TIntArrayList, List<AtomByTokens>>> it = group.entrySet().iterator();
 		while (it.hasNext()) {
-			Entry<TIntArrayList, List<BoundaryTokens>> e = it.next();
+			Entry<TIntArrayList, List<AtomByTokens>> e = it.next();
 			TIntArrayList lst = e.getKey();
 //			if (lst.size() == tokens.size()) {
 			if (lst.size() >= tokens.size() - 1) {
 				// do not delete full match tokens
 				continue;
 			}
-			StringBuilder words = new StringBuilder();
-			for (int i : lst.toArray()) {
-				words.append(tokens.get(i).word + " ");
-			}
-			List<BoundaryTokens> collection = e.getValue();
-//			int sz = collection.size();
+			List<AtomByTokens> collection = e.getValue();
 			for (int k = 0; k < collection.size();) {
-				BoundaryTokens aBoundary = collection.get(k);
-				BoundaryTokens toDelete = null;
+				AtomByTokens aBoundary = collection.get(k);
+				AtomByTokens toDelete = null;
 //				BoundaryTokens reason = null;
 				for (int l = 0; l < collection.size(); l++) {
 					if (k == l) {
 						continue;
 					}
-					BoundaryTokens bBoundary = collection.get(l);
+					AtomByTokens bBoundary = collection.get(l);
 					if (bBoundary.obj.coords.contains(aBoundary.obj.coords)
 							&& bBoundary.obj.otherWordsCnt <= aBoundary.obj.otherWordsCnt) {
 						toDelete = aBoundary;
@@ -267,6 +296,35 @@ public class SpatialSearchContext {
 			}
 //			System.out.printf("Boundaries clean up '%s' %d -> %d: %s \n", words, sz, collection.size(), collection);
 		}
+		return group;
+	}
+
+	private Map<TIntArrayList, List<AtomByTokens>> groupAtomsByTokens(List<SpatialSearchToken> tokens, Predicate<NameIndexAtom> filter) {
+		TLongObjectHashMap<AtomByTokens> boundaries = new TLongObjectHashMap<>();
+		// 1. index boundaries by tokens 
+		for (int tokenOrder = 0; tokenOrder < tokens.size(); tokenOrder++) {
+			SpatialSearchToken token = tokens.get(tokenOrder);
+			for (NameIndexAtom a : token.atoms) {
+				if (filter.test(a)) {
+					if (!boundaries.containsKey(a.id)) {
+						boundaries.put(a.id, new AtomByTokens(a, new TIntArrayList(5)));
+					}
+					boundaries.get(a.id).lstTokens.add(tokenOrder);
+				}
+			}
+		}
+//		System.out.println("Boundaries " + boundaries.size());
+		// 2. combine boundaries by same tokens to find the largest boundary
+		Map<TIntArrayList, List<AtomByTokens>> regroup = new HashMap<>();
+		for(AtomByTokens b : boundaries.valueCollection()) {
+			List<AtomByTokens> list = regroup.get(b.lstTokens);
+			if (list == null) {
+				list = new ArrayList<>();
+				regroup.put(b.lstTokens, list);
+			}
+			list.add(b);
+		}
+		return regroup;
 	}
 
 	private StringBuilder tokenStats(List<SpatialSearchToken> tokens) {
