@@ -199,6 +199,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		query = "151 Weber Way Selinsgrove"; // Fixed: 2 word - addr:unit 
 //		query = "1544 PA-61 Pottsville"; // FIXED
+		query = "138 138 Scott Avenue Bellefonte";
 //		query = "17815 PA-35 Port Royal"; // CHECK!
 //		location = new LatLon(42.101486, -76.669075); // order of results based on location
 //		query = "2032 Ridge Road Lowman";

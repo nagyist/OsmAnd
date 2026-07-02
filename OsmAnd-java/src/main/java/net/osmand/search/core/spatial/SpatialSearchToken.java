@@ -415,12 +415,12 @@ public class SpatialSearchToken {
 
 
 		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, boolean cityAsStreet, int otherWordsCnt,
-				int otherFooundCnt, NameIndexAtomXY coords, int nearbyRadius) {
-			this(name, type, id, pid, obj, cityAsStreet, otherWordsCnt, otherFooundCnt, coords, nearbyRadius, -1);
+				int otherFoundCnt, NameIndexAtomXY coords, int nearbyRadius) {
+			this(name, type, id, pid, obj, cityAsStreet, otherWordsCnt, otherFoundCnt, coords, nearbyRadius, -1);
 		}
 
 		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, boolean cityAsStreet, int otherWordsCnt,
-				int otherFooundCnt, NameIndexAtomXY coords, int nearbyRadius, int buildingInd) {
+				int otherFoundCnt, NameIndexAtomXY coords, int nearbyRadius, int buildingInd) {
 			this.name = name;
 			this.id = id;
 			this.parentid = pid;
@@ -428,7 +428,7 @@ public class SpatialSearchToken {
 			this.type = type;
 			this.cityAsStreet = cityAsStreet;
 			this.otherWordsCnt = otherWordsCnt;
-			this.otherFoundCnt = otherFooundCnt;
+			this.otherFoundCnt = otherFoundCnt;
 			this.coords = coords;
 			this.nearbyRadius = nearbyRadius;
 			this.buildingInd = buildingInd;

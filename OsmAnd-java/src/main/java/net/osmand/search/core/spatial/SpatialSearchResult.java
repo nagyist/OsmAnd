@@ -210,7 +210,8 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	public int sumOther() {
 		int s1 = 0;
 		for (SpatialSearchResultRef r : objs) {
-			s1 += r.atom.otherWordsCnt + r.atom.otherFoundCnt;
+			s1 += r.atom.otherWordsCnt; 
+//			 Math.max(0, r.atom.otherWordsCnt + r.atom.otherFoundCnt - r.tokens.size());
 		}
 		return s1;
 	}
