@@ -34,13 +34,14 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////// IN PROGRESS //////////
 
-// TODO Inspector stats index_words_dashboard.html
 
-// TO DO POI Categories 
+// 
+// TO DO Victor POI Categories 
 // FIXME POI Categories + top poi categories
 // FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
-
+// TODO Analyze stats slow queries
+// TODO Inspector stats index_words_dashboard.html
 
 // TO DO Ivan / Gateway
 // TODO DEDUPLICATE: Review / implement similarity radius - similarityRadius = 50000 ... Route Id

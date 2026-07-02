@@ -56,6 +56,7 @@ public class SpatialSearchContext {
 		public Timer step1Atoms = new Timer();
 		public Timer sub1FileAtomsTime = new Timer();
 		public Timer sub1MatchTime = new Timer();
+		public Timer sub1PoiNameBoundaryTime = new Timer();
 		public int tokenObjs;
 		
 		public Timer step2Compute = new Timer();
@@ -98,10 +99,10 @@ public class SpatialSearchContext {
 		@Override
 		public String toString() {
 			return String.format(
-					"Search Stats %.1f ms (read %,d KB) - %.1f ms %,d atoms (read %.1f, match %.1f), "
+					"Search Stats %.1f ms (read %,d KB) - %.1f ms %,d atoms (read %.1f, match %.1f, poi %.1f), "
 					+ "%.1f ms compute %,d (loadBld %.1f, read %.1f)",
 					requestTime.ms(), (readTableBytes + readAtomsBytes + readObjsBytes) / 1024,
-					step1Atoms.ms(), tokenObjs,  sub1FileAtomsTime.ms(), sub1MatchTime.ms(),
+					step1Atoms.ms(), tokenObjs,  sub1FileAtomsTime.ms(), sub1MatchTime.ms(), sub1PoiNameBoundaryTime.ms(),
 					step2Compute.ms(), maxCombinations, sub2LoadObjectsBldTime.ms(), sub2ReadObjTime.ms());
 		}
 
@@ -195,13 +196,12 @@ public class SpatialSearchContext {
 			System.out.println(tokenStats(tokens).toString());
  		}
 		if (settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES) {
-			long nt = System.nanoTime();
+			stats.sub1PoiNameBoundaryTime.start();
 			Map<TIntArrayList, List<AtomByTokens>> boundaries = filterEmbeddedBoundaries(tokens);
 			if (settings.OPTIM_FLAG_POI_SAME_AS_CITY_STREET || settings.OPTIM_DELETE_POI_SAME_AS_CITY_STREET) {
 				assignPoiFlagGeo(boundaries, tokens);
 			}
-			// FIXME
-			System.out.printf("Optimize name by boundaries - %.1f ms\n", (System.nanoTime() - nt) / 1e6);
+			stats.sub1PoiNameBoundaryTime.finish();
 		}
 		
 	}
