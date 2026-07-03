@@ -31,6 +31,8 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING "2 South 2nd Street Saint Clair";  street matched twice
 // TESTING Bratislava Billa - too many POI intersection results
 // TESTING Filter / group some categories: Public transport stops, City&Bike - New york?
+// TESTING 25 Школа владим.
+// TESTING 25 Садова вулиця! 2 Нова вулиця! 2 га Нова вулиця ! 25 та садова вулиця, 25 вулиця 2 вулиця
 
 ////////// IN PROGRESS //////////
 
@@ -238,7 +240,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-		pattern = "Ukraine_kyiv-c";
+//		pattern = "Ukraine_";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
@@ -246,10 +248,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 3 харків";
 //		query = "Нова пошта харків";
-		// TODO
-		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
+//		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
 //		query = "2га Нова вулиця"; 
-		query = "25 та садова вулиця"; // '"25-та вулиця", "25та вулиця", "25 та вулиця", "25 вулиця" (NOT FIRST) - '25-та Садова вулиця' 150768561
+//		query = "2 нова вулиця"; // '"25-та вулиця", "25та вулиця", "25 та вулиця", "25 вулиця" (NOT FIRST) - '25-та Садова вулиця' 150768561
 //		query = "саксаг. 63 28"; // 129-Б, 129б 63/28, 63, 63-28  +'саксаг. 63 28'
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
@@ -257,8 +258,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "саксаг. тарас."; // intersection
 //		query = "54-та Садова вулиця 8"; // interpolation
 //		query = "Яр. вал 29-г";
-		location = new LatLon(50.4631,30.4553);
-		query = "Школа 25 Володимирська вулиця"; // Школа 25 Володимирська вулиця ALWAYS_READ_COMMON_WORDS_ATOMS = true 
+//		query = "Школа 25 Володимирська вулиця"; // Школа 25 Володимирська вулиця ALWAYS_READ_COMMON_WORDS_ATOMS = true 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа А+";
 //		location = new LatLon(50.4631,30.4553);

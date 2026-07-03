@@ -37,7 +37,7 @@ import net.osmand.util.SearchAlgorithms;
 
 public class SpatialSearchContext {
 
-	private static int SHIFT_FILE_IND = 12; // maximum files 4096
+	private static int SHIFT_FILE_IND = 12; // maxism files 4096
 	private static int SHIFT_POI_IND = 10; // maximum poi 1024
 
 	final List<BinaryMapIndexReader> files;
