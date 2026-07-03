@@ -37,6 +37,8 @@ import net.osmand.util.SearchAlgorithms;
 // FIXME POI Categories + top poi categories
 // FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
+
+// TODO delete default enlarge and enlarge data
 // TODO Analyze stats slow queries
 // TODO Inspector stats index_words_dashboard.html
 
@@ -158,7 +160,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Weber Straße"; // +4648613942, +33164748
 //		query = "WeberStraße";  // +33164748, +4648613942
 //		query = "Von Weberstraße"; // +4648613942
-//		query = "53 Langestraße Waiblingen"; // OK - 48.8315 9.3155 !
+		location = new LatLon(48.8315, 9.3155 );
+		query = "53 Langestraße Waiblingen"; // OK - 48.8315 9.3155 !
 //		query = "69 Daimler Straße Stuttgart"; //  (Daimlerstraße) 107868593 48.8015 9.2224 // 69
 		
 
@@ -193,6 +196,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "5676 US-15 Montgomery"; // Test 3 matched (not 2)
 //		location = new LatLon(42.0061257, -76.5464141);
 //		query = "38 Orange Street Waverly";
+		query = "441 Cook Road Addison";
 		
 //		query = "151 Weber Way Selinsgrove"; // Fixed: 2 word - addr:unit 
 //		query = "1544 PA-61 Pottsville"; // FIXED
@@ -204,7 +208,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "76 North Street Waverly"; // same
 //		query = "1098 Long Run Road Pine Grove"; // 2.5 enlarge 40.5943782, -76.2609811
 //		query = "312 East 14th Street Elmira"; // no fix locations too close
-		query = "3374 Lower Maple Avenue Elmira";
+//		query = "3374 Lower Maple Avenue Elmira";
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
 //		query = "PA 75 27193"; //'PA75'  Data 'PA-75', 27193  4472676432
@@ -234,8 +238,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-//		pattern = "Ukraine_";
-//		pattern = "Map";
+		pattern = "Ukraine_kyiv-c";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
@@ -243,8 +246,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 3 харків";
 //		query = "Нова пошта харків";
-//		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
+		// TODO
+		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
 //		query = "2га Нова вулиця"; 
+		query = "25 та садова вулиця"; // '"25-та вулиця", "25та вулиця", "25 та вулиця", "25 вулиця" (NOT FIRST) - '25-та Садова вулиця' 150768561
 //		query = "саксаг. 63 28"; // 129-Б, 129б 63/28, 63, 63-28  +'саксаг. 63 28'
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
@@ -252,10 +257,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "саксаг. тарас."; // intersection
 //		query = "54-та Садова вулиця 8"; // interpolation
 //		query = "Яр. вал 29-г";
-//		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
+		location = new LatLon(50.4631,30.4553);
+		query = "Школа 25 Володимирська вулиця"; // Школа 25 Володимирська вулиця ALWAYS_READ_COMMON_WORDS_ATOMS = true 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа А+";
-//		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
+//		location = new LatLon(50.4631,30.4553);
+//		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25' // 63112526
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
 		// 'M 2' variations data: 'M-2', 'M 2' and '2 M' 

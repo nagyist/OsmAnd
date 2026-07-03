@@ -665,8 +665,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			if (pa.id == a.id) {
 				continue;
 			}
-			if (parent.tokens[i].index.containsKey(a.id) && !tokens[0].word.equals(parent.tokens[i].word)) {
-				// ignore every object that has this name already (except duplicate words)
+			NameIndexAtom existing = parent.tokens[i].index.get(a.id);
+			if (existing != null && !existing.isBuilding() && !tokens[0].word.equals(parent.tokens[i].word)) {
+				// ignore every object that has this name already (except duplicate words && numbers assigned to building)
 				return false;
 			}
 			if (pa.atomicObject()) {
