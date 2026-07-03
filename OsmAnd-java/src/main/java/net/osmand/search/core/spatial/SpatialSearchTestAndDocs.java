@@ -35,12 +35,12 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING 25 Садова вулиця! 2 Нова вулиця! 2 га Нова вулиця ! 25 та садова вулиця, 25 вулиця 2 вулиця
 
 ////////// IN PROGRESS //////////
+// TODO delete default enlarge and enlarge data
 
 // FIXME POI Categories + top poi categories
 // FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
 
-// TODO delete default enlarge and enlarge data
 // TODO Analyze stats slow queries
 // TODO Inspector stats index_words_dashboard.html
 
@@ -171,9 +171,9 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
-		pattern = "Us_penn";
-		pattern2 = "Us_new-york_syracuse";
-//		pattern = "Map";
+//		pattern = "Us_penn";
+//		pattern2 = "Us_new-york_syracuse";
+		pattern = "Map";
 //		query = "Salt Lake City Pennsylvania Place 123 UT USA";
 //		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
@@ -199,8 +199,9 @@ public class SpatialSearchTestAndDocs {
 //		location = new LatLon(42.0061257, -76.5464141);
 //		query = "38 Orange Street Waverly";
 //		query = "441 Cook Road Addison";
-		location = new LatLon(42.0258945, -77.2365078);
-		query = "7910 County Route 5 Addison";
+//		location = new LatLon(42.0258945, -77.2365078);
+		query = "7910 County Route 5 Addison"; // Addison too far away from town
+//		query = "1000 Fillmore Road State College"; // default enlarge 
 		
 //		query = "151 Weber Way Selinsgrove"; // Fixed: 2 word - addr:unit 
 //		query = "1544 PA-61 Pottsville"; // FIXED
