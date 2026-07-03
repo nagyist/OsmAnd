@@ -50,7 +50,8 @@ import net.osmand.util.SearchAlgorithms;
 // TODO DEDUPLICATE: Venezia - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO DEDUPLICATE: review osm route id  combine by?
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
-// TODO DEDUPLICATE: Test wiki / travel maps, seamarks map 
+// TODO DEDUPLICATE: Test wiki / travel maps, seamarks map
+// TODO DEDUPLICATE: same location (5-10m) 2 streets different cities 
 // TODO UNIT TESTS: (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
 // TODO UNIT TESTS: Auto tests - Slow analysis (Auto test New york)
 // TODO UNIT TESTS: Analyze Abbrefvations / common skip (abbrevations 1st=first) 
@@ -78,6 +79,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO English postcodes
 // TODO Precise Boundary 'Chernihiv sport life' mostly Kyiv - check precise boundary for filter
 // TODO Short word split "Ro-ki" vs "Roki" 
+// TODO Support postcode search - 14871 Pennsylvania Avenue Pine City
 
 public class SpatialSearchTestAndDocs {
 
@@ -171,9 +173,9 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
-//		pattern = "Us_penn";
-//		pattern2 = "Us_new-york_syracuse";
-		pattern = "Map";
+		pattern = "Us_penn";
+		pattern2 = "Us_new-york_syracuse";
+//		pattern = "Map";
 //		query = "Salt Lake City Pennsylvania Place 123 UT USA";
 //		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
@@ -191,8 +193,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "36 Wilson Drive  Pine City"; 
 //		query = "301 East Second Street Corning"; // "301 East 2nd Street Corning"
 //		query = "763 Ro-Ki Boulevard Nichols"; // NO FIX yet: Roki is very short to be fixed same as Weber-Strasse
-//		query = "276 East End Centre Wilkes-Barre"; // NO FIX broken data 2888
-//		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // FIXME
+		// Important unit test
+		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
 //		query = "South 2nd Street 2 Saint Clair"; // to fix street matched twice
 //		query = "226 Wilkes-Barre Township Boulevard Wilkes-Barre"; // fixed type order
 //		query = "5676 US-15 Montgomery"; // Test 3 matched (not 2)
@@ -200,20 +202,21 @@ public class SpatialSearchTestAndDocs {
 //		query = "38 Orange Street Waverly";
 //		query = "441 Cook Road Addison";
 //		location = new LatLon(42.0258945, -77.2365078);
-		query = "7910 County Route 5 Addison"; // Addison too far away from town
+//		query = "7910 County Route 5 Addison"; // Addison too far away from town
 //		query = "1000 Fillmore Road State College"; // default enlarge 
 		
 //		query = "151 Weber Way Selinsgrove"; // Fixed: 2 word - addr:unit 
 //		query = "1544 PA-61 Pottsville"; // FIXED
 //		query = "138 138 Scott Avenue Bellefonte";
 //		query = "17815 PA-35 Port Royal"; // CHECK!
-//		query = "2032 Ridge Road Lowman"; // extend bbox hamlet // 822981342 45734
+//		query = "2039 Ridge Road Lowman"; // extend bbox hamlet // 822981342  -- unit test!
 		// test default enlarge 1 -> 2.5
 //		query = "1503 Stewart Road Addison"; // 
 //		query = "76 North Street Waverly"; // same
 //		query = "1098 Long Run Road Pine Grove"; // 2.5 enlarge 40.5943782, -76.2609811
 //		query = "312 East 14th Street Elmira"; // no fix locations too close
 //		query = "3374 Lower Maple Avenue Elmira";
+//		query = "3760 State Route 225 Dornsife"; // red cross? unit test
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
 //		query = "PA 75 27193"; //'PA75'  Data 'PA-75', 27193  4472676432
@@ -254,6 +257,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
 //		query = "2га Нова вулиця"; 
 //		query = "2 нова вулиця"; // '"25-та вулиця", "25та вулиця", "25 та вулиця", "25 вулиця" (NOT FIRST) - '25-та Садова вулиця' 150768561
+//		query = "25 садова вулиця";
 //		query = "саксаг. 63 28"; // 129-Б, 129б 63/28, 63, 63-28  +'саксаг. 63 28'
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
