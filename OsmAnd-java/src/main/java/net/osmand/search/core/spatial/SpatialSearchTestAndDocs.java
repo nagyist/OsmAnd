@@ -198,7 +198,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "5676 US-15 Montgomery"; // Test 3 matched (not 2)
 //		location = new LatLon(42.0061257, -76.5464141);
 //		query = "38 Orange Street Waverly";
-		query = "441 Cook Road Addison";
+//		query = "441 Cook Road Addison";
+		location = new LatLon(42.0258945, -77.2365078);
+		query = "7910 County Route 5 Addison";
 		
 //		query = "151 Weber Way Selinsgrove"; // Fixed: 2 word - addr:unit 
 //		query = "1544 PA-61 Pottsville"; // FIXED
@@ -311,6 +313,7 @@ public class SpatialSearchTestAndDocs {
 //		pattern = "Italy_ven";
 //		pattern2 = "World_basemap_2";
 //		query = "Cannaregio 539D Campo Saffa "; // no double 539d (no intersectoin)
+		
 		
 		
 //		pattern = "France_ile-de-france_eu";
