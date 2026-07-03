@@ -174,10 +174,12 @@ public class SpatialSearchToken {
 						|| (atom.otherWordsCnt == aa.otherWordsCnt && aa.otherFoundCnt > atom.otherFoundCnt)) {
 					replace = true;
 				}
-				// '2 south 2nd street' vs '25 садова вулиця' (25-та)
-				if (aa.isBuilding() && !atom.isBuilding()) {
+				// '2 south 2nd street' vs '25 садова вулиця' (25-та) -
+				if (aa.isBuilding() && !atom.isBuilding() 
+						&& atom.otherWordsCnt <= aa.otherWordsCnt
+						&& aa.otherFoundCnt < atom.otherFoundCnt) {
+					// replace street (has number in name) with building
 					replace = true;
-				System.out.println(aa + " " + atom);
 				}
 				if (replace) {
 					atom.indexInToken = aa.indexInToken;
