@@ -204,6 +204,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "76 North Street Waverly"; // same
 //		query = "1098 Long Run Road Pine Grove"; // 2.5 enlarge 40.5943782, -76.2609811
 //		query = "312 East 14th Street Elmira"; // no fix locations too close
+		query = "3374 Lower Maple Avenue Elmira";
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
 //		query = "PA 75 27193"; //'PA75'  Data 'PA-75', 27193  4472676432
