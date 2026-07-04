@@ -11,6 +11,15 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
 
+/**
+ * Lightweight journal for favorite deletions.
+ *
+ * Favorites are saved asynchronously, so the app may be killed before deleted items are
+ * removed from all GPX files. This journal stores pending point/group deletions and applies
+ * them on the next load, preventing deleted favorites from being restored from stale files.
+ *
+ * The journal is cleared only after a successful full save if it was not changed meanwhile.
+ */
 object FavoriteDeletionsJournal {
 
 	private val log = PlatformUtil.getLog(FavoriteDeletionsJournal::class.java)
