@@ -1,6 +1,7 @@
 package net.osmand.plus.myplaces.favorites
 
 import net.osmand.util.Algorithms
+import java.util.LinkedHashSet
 import java.util.concurrent.CountDownLatch
 
 class SaveBatch(
@@ -13,7 +14,7 @@ class SaveBatch(
 	var groups: MutableList<FavoriteGroup> = ArrayList(groups)
 		private set
 
-	val listeners: MutableList<FavoritesListener> = ArrayList()
+	val listeners: MutableSet<FavoritesListener> = LinkedHashSet()
 	val waiters: MutableList<CountDownLatch> = ArrayList()
 
 	init {
@@ -45,7 +46,6 @@ class SaveBatch(
 	}
 
 	private companion object {
-
 		fun mergeGroups(destination: MutableList<FavoriteGroup>, source: List<FavoriteGroup>) {
 			for (sourceGroup in source) {
 				var replaced = false
