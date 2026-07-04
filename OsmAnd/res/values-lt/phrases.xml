@@ -5161,4 +5161,16 @@
     <string name="poi_rapids_grade_6">6 (ekstremalus)</string>
     <string name="poi_rapids_grade_x">X (nepraplaukiamas)</string>
     <string name="poi_water_lake">Ežeras</string>
+    <string name="poi_boules">Petankė</string>
+    <string name="poi_chalet">Kalnų namelis;Prieglobstis</string>
+    <string name="poi_lean_to">Pastogė;Prieglobstis</string>
+    <string name="poi_denomination_latter_day_saints">Pastarųjų dienų šventieji</string>
+    <string name="poi_denomination_scientist">Scientologai</string>
+    <string name="poi_denomination_foursquare">Foursquare</string>
+    <string name="poi_denomination_conservative">Konservatyvusis judaizmas</string>
+    <string name="poi_service_times">Pamaldų laikas</string>
+    <string name="poi_deadlock">Aklavietė</string>
+    <string name="poi_piste_grooming_mogul">Kauburiuota trasa</string>
+    <string name="poi_recycling_printer_toner_cartridges">Spausdintuvų dažų kasetės</string>
+    <string name="poi_barrier_coupure">Coupure užtvaras</string>
 </resources>
