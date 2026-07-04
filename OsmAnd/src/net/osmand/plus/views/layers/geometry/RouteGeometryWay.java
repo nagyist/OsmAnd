@@ -1,5 +1,7 @@
 package net.osmand.plus.views.layers.geometry;
 
+import static net.osmand.util.MapUtils.VECTOR_LINE_EARTH_RADIUS_METERS;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -39,7 +41,6 @@ import gnu.trove.list.array.TByteArrayList;
 public class RouteGeometryWay extends
 		MultiColoringGeometryWay<RouteGeometryWayContext, MultiColoringGeometryWayDrawer<RouteGeometryWayContext>> {
 
-	private static final double VECTOR_LINE_EARTH_RADIUS = 6371000.0;
 	public static final int MIN_COLOR_SQUARE_DISTANCE = 15_000;
 
 	private final RoutingHelper helper;
@@ -286,16 +287,7 @@ public class RouteGeometryWay extends
 
 	private static double calculateNativeVectorLineDistance(double lat1, double lon1, double lat2, double lon2) {
 		// Keep startingDistance in the same metric as OsmAnd-core VectorLine_P::calculateShortestPath().
-		double dLat = Math.toRadians(lat2 - lat1);
-		double dLon = Math.toRadians(lon2 - lon1);
-		double sinHalfLat = Math.sin(dLat / 2.0);
-		double sinHalfLon = Math.sin(dLon / 2.0);
-		double a = sinHalfLat * sinHalfLat
-				+ Math.cos(Math.toRadians(lat1))
-				* Math.cos(Math.toRadians(lat2))
-				* sinHalfLon
-				* sinHalfLon;
-		return 2.0 * VECTOR_LINE_EARTH_RADIUS * Math.asin(Math.sqrt(a));
+		return MapUtils.getDistance(lat1, lon1, lat2, lon2, VECTOR_LINE_EARTH_RADIUS_METERS);
 	}
 
 	public void clearRoute() {
