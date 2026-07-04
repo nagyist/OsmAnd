@@ -34,12 +34,14 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING 25 Школа владим.
 // TESTING 25 Садова вулиця! 2 Нова вулиця! 2 га Нова вулиця ! 25 та садова вулиця, 25 вулиця 2 вулиця
 // TESTING delete default enlarge and enlarge data
+// TESTING TODO Venezia city Street / Place  -  <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street') 
 
 ////////// IN PROGRESS //////////
 
 // FIXME POI Categories + top poi categories
 // FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
+// TODO query = "Catedral-Basílica de Nuestra Señora del Pilar"; - poi category
 
 // TODO Analyze stats slow queries
 // TODO Inspector stats index_words_dashboard.html
@@ -47,7 +49,7 @@ import net.osmand.util.SearchAlgorithms;
 // TO DO Ivan / Gateway
 // TODO DEDUPLICATE: Review / implement similarity radius - similarityRadius = 50000 ... Route Id
 // TODO DEDUPLICATE: Unite RouteArticle, POI by wikidata id ? - DEPTH_TO_CHECK_SAME_SEARCH_RESULTS = 20;...
-// TODO DEDUPLICATE: Venezia - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
+// TODO DEDUPLICATE: Venezia ? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO DEDUPLICATE: review osm route id  combine by?
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 // TODO DEDUPLICATE: Test wiki / travel maps, seamarks map
@@ -56,6 +58,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO UNIT TESTS: Auto tests - Slow analysis (Auto test New york)
 // TODO UNIT TESTS: Analyze Abbrefvations / common skip (abbrevations 1st=first) 
 // TODO UNIT TESTS: Add test on show more '2 sokak' - Show more 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak
+// TODO inspector doesn't show suffixes
 
 // TO DO - RZR
 // TODO WEB PRODUCTION: display results std way: house, interpolation results, poi...
@@ -317,11 +320,12 @@ public class SpatialSearchTestAndDocs {
 		// See test - [8-8 Kinshi 3 Kinshi Sumida Tokyo], Rivière Tsumura
 		// India - Satyam node/2296788005#map=18/17.805646/83.356818
 		// +[Venezia, Cannaregio, 539D , Campo Saffa], +[Venezia Cannaregio 539D ] -[Venezia 539D  Campo Saffa] - expected
-//		pattern = "Italy_ven";
+		pattern = "Italy_ven";
+		pattern = "Map";
 //		pattern2 = "World_basemap_2";
-//		query = "Cannaregio 539D Campo Saffa "; // no double 539d (no intersectoin)
-		
-		
+		// ! unit test - search full address ! no double 539d (no intersectoin)
+		query = "Cannaregio 539D Campo Saffa ";
+//		query = "Saffa";
 		
 //		pattern = "France_ile-de-france_eu";
 //		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
@@ -340,6 +344,7 @@ public class SpatialSearchTestAndDocs {
 //		query  = "Rio de Janeiro";
 //		location = new LatLon(44.0194, 10.2025);
 //		query = "Venezia"; // no place - city
+//		query = "Венец."; 
 
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";
