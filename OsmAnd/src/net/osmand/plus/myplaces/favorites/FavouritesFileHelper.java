@@ -180,7 +180,7 @@ public class FavouritesFileHelper {
 
 	private void startSave(@NonNull SaveBatch batch) {
 		SaveFavoritesTask task = new SaveFavoritesTask(app, this,
-				batch.groups, batch.saveAllGroups,
+				batch.getGroups(), batch.getSaveAllGroups(),
 				(success, journalState) -> onSaveFinished(batch, success, journalState));
 		OsmAndTaskManager.executeTask(task, singleThreadExecutor);
 	}
@@ -195,14 +195,14 @@ public class FavouritesFileHelper {
 				saveRunning = false;
 			}
 		}
-		if (success && completedBatch.saveAllGroups && journalState != null) {
+		if (success && completedBatch.getSaveAllGroups() && journalState != null) {
 			FavoriteDeletionsJournal.clearIfUnchanged(app, journalState);
 		}
-		for (CountDownLatch waiter : completedBatch.waiters) {
+		for (CountDownLatch waiter : completedBatch.getWaiters()) {
 			waiter.countDown();
 		}
 		if (success) {
-			for (FavoritesListener listener : completedBatch.listeners) {
+			for (FavoritesListener listener : completedBatch.getListeners()) {
 				app.runInUIThread(listener::onSavingFavoritesFinished);
 			}
 		}
@@ -399,59 +399,5 @@ public class FavouritesFileHelper {
 			return fileName.replaceAll(XML_COLON, ":");
 		}
 		return fileName;
-	}
-
-	private static class SaveBatch {
-		@NonNull
-		private List<FavoriteGroup> groups;
-		private boolean saveAllGroups;
-		@NonNull
-		private final List<FavoritesListener> listeners = new ArrayList<>();
-		@NonNull
-		private final List<CountDownLatch> waiters = new ArrayList<>();
-
-		SaveBatch(@NonNull List<FavoriteGroup> groups, boolean saveAllGroups,
-				@Nullable FavoritesListener listener, @Nullable CountDownLatch waiter) {
-			this.groups = new ArrayList<>(groups);
-			this.saveAllGroups = saveAllGroups;
-			addRequest(listener, waiter);
-		}
-
-		void merge(@NonNull List<FavoriteGroup> groups, boolean saveAllGroups,
-				@Nullable FavoritesListener listener, @Nullable CountDownLatch waiter) {
-			if (saveAllGroups) {
-				this.groups = new ArrayList<>(groups);
-				this.saveAllGroups = true;
-			} else {
-				mergeGroups(this.groups, groups);
-			}
-			addRequest(listener, waiter);
-		}
-
-		private void addRequest(@Nullable FavoritesListener listener, @Nullable CountDownLatch waiter) {
-			if (listener != null) {
-				listeners.add(listener);
-			}
-			if (waiter != null) {
-				waiters.add(waiter);
-			}
-		}
-
-		private static void mergeGroups(@NonNull List<FavoriteGroup> destination,
-				@NonNull List<FavoriteGroup> source) {
-			for (FavoriteGroup sourceGroup : source) {
-				boolean replaced = false;
-				for (int i = 0; i < destination.size(); i++) {
-					if (Algorithms.stringsEqual(destination.get(i).getName(), sourceGroup.getName())) {
-						destination.set(i, sourceGroup);
-						replaced = true;
-						break;
-					}
-				}
-				if (!replaced) {
-					destination.add(sourceGroup);
-				}
-			}
-		}
 	}
 }
