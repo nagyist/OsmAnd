@@ -179,13 +179,14 @@ public class FavouritesFileHelper {
 	}
 
 	private void startSave(@NonNull SaveBatch batch) {
-		SaveFavoritesTask task = new SaveFavoritesTask(
-				this, batch.groups, batch.saveAllGroups,
-				success -> onSaveFinished(batch, success));
+		SaveFavoritesTask task = new SaveFavoritesTask(app, this,
+				batch.groups, batch.saveAllGroups,
+				(success, journalState) -> onSaveFinished(batch, success, journalState));
 		OsmAndTaskManager.executeTask(task, singleThreadExecutor);
 	}
 
-	private void onSaveFinished(@NonNull SaveBatch completedBatch, boolean success) {
+	private void onSaveFinished(@NonNull SaveBatch completedBatch, boolean success,
+	                            @Nullable FavoriteDeletionsJournal.JournalState journalState) {
 		SaveBatch batchToStart;
 		synchronized (saveLock) {
 			batchToStart = pendingSave;
@@ -193,6 +194,9 @@ public class FavouritesFileHelper {
 			if (batchToStart == null) {
 				saveRunning = false;
 			}
+		}
+		if (success && completedBatch.saveAllGroups && journalState != null) {
+			FavoriteDeletionsJournal.clearIfUnchanged(app, journalState);
 		}
 		for (CountDownLatch waiter : completedBatch.waiters) {
 			waiter.countDown();

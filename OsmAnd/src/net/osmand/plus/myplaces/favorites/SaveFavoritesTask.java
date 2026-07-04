@@ -1,14 +1,15 @@
 package net.osmand.plus.myplaces.favorites;
 
 import static net.osmand.IndexConstants.ZIP_EXT;
-import static net.osmand.plus.myplaces.favorites.FavouritesHelper.getPointsFromGroups;
 
 import android.os.AsyncTask;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import net.osmand.PlatformUtil;
 import net.osmand.data.FavouritePoint;
+import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.shared.SharedUtil;
 import net.osmand.shared.gpx.GpxFile;
 import net.osmand.util.Algorithms;
@@ -34,17 +35,21 @@ final class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 
 	private static final Log log = PlatformUtil.getLog(SaveFavoritesTask.class);
 
+	private final OsmandApplication app;
 	private final FavouritesFileHelper helper;
 	private final List<FavoriteGroup> groups;
 	private final CompletionListener completionListener;
+	@Nullable
+	private FavoriteDeletionsJournal.JournalState journalState;
 	private final boolean saveAllGroups;
 
-	SaveFavoritesTask(@NonNull FavouritesFileHelper helper,
-			@NonNull List<FavoriteGroup> groups, boolean saveAllGroups,
-			@NonNull CompletionListener completionListener) {
-		this.saveAllGroups = saveAllGroups;
+	SaveFavoritesTask(@NonNull OsmandApplication app, @NonNull FavouritesFileHelper helper,
+	                  @NonNull List<FavoriteGroup> groups, boolean saveAllGroups,
+	                  @NonNull CompletionListener completionListener) {
+		this.app = app;
 		this.helper = helper;
 		this.groups = groups;
+		this.saveAllGroups = saveAllGroups;
 		this.completionListener = completionListener;
 	}
 
@@ -59,47 +64,34 @@ final class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 			log.error(e.getMessage(), e);
 			success = false;
 		}
-		completionListener.onSaveFinished(success);
+		completionListener.onSaveFinished(success, journalState);
 		return null;
 	}
 
 	private boolean saveAllGroups(@NonNull List<FavoriteGroup> groups) {
 		try {
-			Map<String, FavoriteGroup> deletedGroups = new LinkedHashMap<>();
-			Map<String, FavouritePoint> deletedPoints = new LinkedHashMap<>();
+			FavoriteDeletionsJournal.ReadResult journalRead = FavoriteDeletionsJournal.read(app);
+			journalState = journalRead.getState();
+
+			if (journalRead.getReadFailed()) {
+				log.error("Favorite deletions journal could not be read. Favorites save will continue, but journal will not be cleared.");
+			}
+
+			Set<String> deletedPointKeys = journalRead.getDeletions().getPointKeys();
+
+			boolean success = saveExternalFiles(groups, deletedPointKeys);
+			if (!success) {
+				return false;
+			}
 
 			File internalFile = helper.getInternalFile();
-			GpxFile gpxFile = SharedUtil.loadGpxFile(internalFile);
-			if (gpxFile.getError() == null) {
-				helper.collectFavoriteGroups(gpxFile, deletedGroups);
-			}
-			// Get all points from internal file to filter later
-			for (FavoriteGroup group : deletedGroups.values()) {
-				for (FavouritePoint point : group.getPoints()) {
-					deletedPoints.put(point.getKey(), point);
-				}
-			}
-			// Hold only deleted points in map
-			for (FavouritePoint point : getPointsFromGroups(groups)) {
-				deletedPoints.remove(point.getKey());
-			}
-			// Hold only deleted groups in map
-			for (FavoriteGroup group : groups) {
-				deletedGroups.remove(group.getName());
-			}
-			// Save groups to internal file
 			Exception internalError = helper.saveFileAtomic(groups, internalFile);
 			if (internalError != null) {
 				log.error(internalError.getMessage(), internalError);
 				return false;
 			}
-			// Save groups to external files
-			if (!saveExternalFiles(groups, deletedPoints.keySet())) {
-				return false;
-			}
-			// Save groups to backup file
-			// backup(groups, getBackupFile()); // creates new, but does not zip
-			backup(helper.getBackupFile(), internalFile); // simply backs up internal file, hence internal name is reflected in gpx <name> metadata
+
+			backup(helper.getBackupFile(), internalFile);
 			return true;
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
@@ -136,7 +128,7 @@ final class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 	}
 
 	private boolean saveExternalFiles(@NonNull List<FavoriteGroup> localGroups,
-			@NonNull Set<String> deleted) {
+	                                  @NonNull Set<String> deleted) {
 		Map<String, FavoriteGroup> fileGroups = new LinkedHashMap<>();
 		loadGPXFiles(fileGroups);
 		if (!saveLocalGroups(localGroups, fileGroups, deleted)) {
@@ -147,7 +139,7 @@ final class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 	}
 
 	private void cleanupOrphanedGroupFiles(@NonNull List<FavoriteGroup> localGroups,
-			@NonNull Map<String, FavoriteGroup> fileGroups) {
+	                                       @NonNull Map<String, FavoriteGroup> fileGroups) {
 		for (FavoriteGroup fileGroup : fileGroups.values()) {
 			// Search corresponding group in memory
 			boolean hasLocalGroup = false;
@@ -232,6 +224,7 @@ final class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 	}
 
 	interface CompletionListener {
-		void onSaveFinished(boolean success);
+		void onSaveFinished(boolean success,
+		                    @Nullable FavoriteDeletionsJournal.JournalState journalState);
 	}
 }
