@@ -33,9 +33,9 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING Filter / group some categories: Public transport stops, City&Bike - New york?
 // TESTING 25 Школа владим.
 // TESTING 25 Садова вулиця! 2 Нова вулиця! 2 га Нова вулиця ! 25 та садова вулиця, 25 вулиця 2 вулиця
+// TESTING delete default enlarge and enlarge data
 
 ////////// IN PROGRESS //////////
-// TODO delete default enlarge and enlarge data
 
 // FIXME POI Categories + top poi categories
 // FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941

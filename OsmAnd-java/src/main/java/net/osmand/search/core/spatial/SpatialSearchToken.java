@@ -330,20 +330,21 @@ public class SpatialSearchToken {
 				this.x16 = (xy16 >>> 16);
 				this.y16 = (xy16 & ((1 << 16) - 1));
 				decodeBBox(addr.hasBbox() ? addr.getBbox() : null);
-				if(bbox31 == null) {
-					if (addr.getType() != CityBlocks.STREET_TYPE.index) {
-						// possibly needs to be calculated on server 
-						int shift = (1 << (16 - 12)) ; // extend 12th tile
-						bbox31 = new int[4];
-						bbox31[0] = (x16 - shift) << 15;
-						bbox31[2] = (x16 + shift) << 15;
-						bbox31[1] = (y16 - shift) << 15;
-						bbox31[3] = (y16 + shift) << 15;
-						calcTileFromBbox();
-					} else {
+				if (bbox31 == null) {
+					// not needed as we calculate on server for all cities
+//					if (addr.getType() != CityBlocks.STREET_TYPE.index) {
+//						// possibly needs to be calculated on server
+//						int shift = (1 << (16 - 12)); // extend 12th tile
+//						bbox31 = new int[4];
+//						bbox31[0] = (x16 - shift) << 15;
+//						bbox31[2] = (x16 + shift) << 15;
+//						bbox31[1] = (y16 - shift) << 15;
+//						bbox31[3] = (y16 + shift) << 15;
+//						calcTileFromBbox();
+//					} else {
 						bboxTileZoom = 15;
 						bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16 / 2, y16 / 2);
-					}
+//					}
 				}
 			}
 		}
