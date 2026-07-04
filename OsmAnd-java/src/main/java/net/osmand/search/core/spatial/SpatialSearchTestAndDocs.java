@@ -174,8 +174,9 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
 		pattern = "Us_penn";
-		pattern2 = "Us_new-york_syracuse";
-//		pattern = "Map";
+//		pattern2 = "Us_new-york_syracuse";
+		pattern2 = "Us_virg";
+		pattern = "Map";
 //		query = "Salt Lake City Pennsylvania Place 123 UT USA";
 //		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
@@ -217,6 +218,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "312 East 14th Street Elmira"; // no fix locations too close
 //		query = "3374 Lower Maple Avenue Elmira";
 //		query = "3760 State Route 225 Dornsife"; // red cross? unit test
+		query = "11954 East Hill Road Pine City";
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
 //		query = "PA 75 27193"; //'PA75'  Data 'PA-75', 27193  4472676432
