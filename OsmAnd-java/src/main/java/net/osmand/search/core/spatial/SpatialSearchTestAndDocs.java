@@ -34,7 +34,8 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING 25 Школа владим.
 // TESTING 25 Садова вулиця! 2 Нова вулиця! 2 га Нова вулиця ! 25 та садова вулиця, 25 вулиця 2 вулиця
 // TESTING delete default enlarge and enlarge data
-// TESTING TODO Venezia city Street / Place  -  <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street') 
+// TESTING Venezia city Street / Place  -  <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street') 
+// TESTING find check that token is reused in parent - and ignore intersection for complete mattch
 
 ////////// IN PROGRESS //////////
 
@@ -167,8 +168,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Weber Straße"; // +4648613942, +33164748
 //		query = "WeberStraße";  // +33164748, +4648613942
 //		query = "Von Weberstraße"; // +4648613942
-		location = new LatLon(48.8315, 9.3155 );
-		query = "53 Langestraße Waiblingen"; // OK - 48.8315 9.3155 !
+//		location = new LatLon(48.8315, 9.3155 );
+//		query = "53 Langestraße Waiblingen"; // OK - 48.8315 9.3155 !
 //		query = "69 Daimler Straße Stuttgart"; //  (Daimlerstraße) 107868593 48.8015 9.2224 // 69
 		
 
@@ -176,11 +177,12 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
-		pattern = "Us_penn";
+		pattern = "Us_utah";
+//		pattern = "Us_penn";
 //		pattern2 = "Us_new-york_syracuse";
 		pattern2 = "Us_virg";
-		pattern = "Map";
-//		query = "Salt Lake City Pennsylvania Place 123 UT USA";
+//		pattern = "Map";
+		query = "Salt Lake City Pennsylvania Place UT USA";
 //		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
 //		query = "Salt Lake City Pennsylvania Street";
@@ -198,7 +200,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "301 East Second Street Corning"; // "301 East 2nd Street Corning"
 //		query = "763 Ro-Ki Boulevard Nichols"; // NO FIX yet: Roki is very short to be fixed same as Weber-Strasse
 		// Important unit test
-		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
+//		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
 //		query = "South 2nd Street 2 Saint Clair"; // to fix street matched twice
 //		query = "226 Wilkes-Barre Township Boulevard Wilkes-Barre"; // fixed type order
 //		query = "5676 US-15 Montgomery"; // Test 3 matched (not 2)
@@ -221,7 +223,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "312 East 14th Street Elmira"; // no fix locations too close
 //		query = "3374 Lower Maple Avenue Elmira";
 //		query = "3760 State Route 225 Dornsife"; // red cross? unit test
-		query = "11954 East Hill Road Pine City";
+//		query = "11954 East Hill Road Pine City";
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
 //		query = "PA 75 27193"; //'PA75'  Data 'PA-75', 27193  4472676432
@@ -321,11 +323,11 @@ public class SpatialSearchTestAndDocs {
 		// India - Satyam node/2296788005#map=18/17.805646/83.356818
 		// +[Venezia, Cannaregio, 539D , Campo Saffa], +[Venezia Cannaregio 539D ] -[Venezia 539D  Campo Saffa] - expected
 		pattern = "Italy_ven";
-		pattern = "Map";
+//		pattern = "Map";
 //		pattern2 = "World_basemap_2";
 		// ! unit test - search full address ! no double 539d (no intersectoin)
 		query = "Cannaregio 539D Campo Saffa ";
-//		query = "Saffa";
+//		query = "Campo Saffa";
 		
 //		pattern = "France_ile-de-france_eu";
 //		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
