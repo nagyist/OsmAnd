@@ -4587,7 +4587,7 @@
     <string name="ais_object_lost_timeout_description">Définir un délai d\'expiration pour la visibilité des objets AIS : si aucun signal n\'est reçu dans le délai spécifié, l\'objet sera automatiquement supprimé de l\'affichage.</string>
     <string name="ais_cpa_warning_time">Délai d\'alerte avant le point d\'approche le plus proche (CPA)</string>
     <string name="ais_cpa_warning_distance_description">Les navires sont surlignés en rouge si le CPA (Point d\'approche le plus proche) est inférieur au seuil défini et si le TCPA (Temps jusqu\'au CPA) se situe dans le délai d\'avertissement défini dans le paramètre « Délai d\'avertissement pour atteindre le CPA ».</string>
-    <string name="plugin_ais_tracker_disclaimer">AVERTISSEMENT\n\nCe plugin est un projet amateur et n\'est pas destiné à être utilisé dans des applications critiques. Il n\'offre aucune garantie quant à sa fiabilité ou à sa précision. Ne vous fiez pas à ce logiciel pour la navigation, la sécurité des personnes ou toute autre opération essentielle.</string>
+    <string name="plugin_ais_tracker_disclaimer">AVERTISSEMENT\n\nCette extension est un projet amateur et n\'est pas destinée à un usage critique. Elle ne garantit ni sa fiabilité ni sa précision. Ne vous fiez pas à ce logiciel pour la navigation, la sécurité des personnes ou toute autre opération essentielle.</string>
     <string name="ais_ship_lost_timeout_description">Définir le délai d\'expiration de la visibilité d\'un navire obsolète : passé ce délai sans réception de signal, le symbole du navire sera barré.</string>
     <string name="ais_cpa_settings">Paramètres liés au CPA</string>
     <string name="ais_cpa_warning_distance">Distance d\'avertissement pour le point d\'approche le plus proche (CPA)</string>
