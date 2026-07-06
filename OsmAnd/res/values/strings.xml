@@ -11,6 +11,8 @@
 	Strings for OsmAnd core
 	Thx - Hardy
 -->
+	<string name="android_auto_missing_maps_desc">Download missing maps for the route to continue.</string>
+	<string name="android_auto_possible_missing_maps_desc">Possible missing maps. Try using existing maps to continue.</string>
 	<string name="route_calculation_calculating_route">Calculating route...</string>
 	<string name="route_calculation_calculating_fast_route">Calculating fast route...</string>
 	<string name="route_calculation_using_fast_algorithm">Using Fast routing algorithm.</string>
