@@ -21,6 +21,7 @@ import net.osmand.data.MapObject;
 import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchContext.SpatialSearchStats;
+import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.Algorithms;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
@@ -136,12 +137,20 @@ public class SpatialSearchToken {
 	}
 
 	
+	NameIndexAtom getAtomToken(NameIndexAtom atom) {
+		return index.get(atom.id);
+	}
+	
 	void removeAtom(NameIndexAtom atom) {
 		NameIndexAtom na = index.get(atom.id);
-		int indexOf = atoms.indexOf(na);
-		if (indexOf != -1) {
-			deletedAtoms.add(indexOf);
-		}
+		deletedAtoms.add(na.indexInToken);
+	}
+
+	void enlargeBbox(NameIndexAtom atom, double mult) {
+		NameIndexAtom na = index.get(atom.id);
+		quadTree.delete(atom.coords.bboxTileZoom, atom.coords.bboxTileId, na.indexInToken);
+		atom.coords.enlargeBbox31(mult);
+		quadTree.put(atom.coords.bboxTileZoom, atom.coords.bboxTileId, na.indexInToken);
 	}
 	
 	void addAtom(NameIndexAtom atom) {
@@ -160,9 +169,22 @@ public class SpatialSearchToken {
 		if (aa != null) {
 			if (aa != atom) {
 				// select shortest available version
-				if (atom.otherWordsCnt < aa.otherWordsCnt) {
-					aa.otherWordsCnt = atom.otherWordsCnt;
-					aa.otherFoundCnt = atom.otherFoundCnt;
+				boolean replace = false;
+				if (atom.otherWordsCnt < aa.otherWordsCnt
+						|| (atom.otherWordsCnt == aa.otherWordsCnt && aa.otherFoundCnt > atom.otherFoundCnt)) {
+					replace = true;
+				}
+				// '2 south 2nd street' vs '25 садова вулиця' (25-та) -
+				if (aa.isBuilding() && !atom.isBuilding() 
+						&& atom.otherWordsCnt <= aa.otherWordsCnt
+						&& aa.otherFoundCnt < atom.otherFoundCnt) {
+					// replace street (has number in name) with building
+					replace = true;
+				}
+				if (replace) {
+					atom.indexInToken = aa.indexInToken;
+					index.put(atom.id, atom);
+					atoms.set(atom.indexInToken, atom);
 				}
 			}
 			return;
@@ -170,6 +192,7 @@ public class SpatialSearchToken {
 		index.put(atom.id, atom);
 		atoms.add(atom);
 		int indx = atoms.size() - 1;
+		atom.indexInToken = indx;
 		quadTree.put(atom.coords.bboxTileZoom, atom.coords.bboxTileId, indx);
 	}
 
@@ -234,9 +257,10 @@ public class SpatialSearchToken {
 		int bboxTileZoom;
 		int x16, y16;
 		
-		public NameIndexAtomXY(AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b) {
+		public NameIndexAtomXY(AddressNameIndexDataAtom a, OsmAndPoiNameIndexDataAtom b, 
+				SpatialTextSearchSettings settings) {
 			if (a != null) {
-				init(a);
+				init(a, settings);
 			} else {
 				init(b);
 			}
@@ -300,34 +324,54 @@ public class SpatialSearchToken {
 					+ MapUtils.deinterleaveY(bboxTileId);
 		}
 
-		private void init(AddressNameIndexDataAtom addr) {
+		private void init(AddressNameIndexDataAtom addr, SpatialTextSearchSettings settings) {
 			if (addr.getXy16Count() >= 1) {
 				int xy16 = addr.getXy16(0);
 				this.x16 = (xy16 >>> 16);
 				this.y16 = (xy16 & ((1 << 16) - 1));
-				bboxTileZoom = 15;
-				bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16 / 2, y16 / 2);
 				decodeBBox(addr.hasBbox() ? addr.getBbox() : null);
+				if (bbox31 == null) {
+					// not needed as we calculate on server for all cities
+//					if (addr.getType() != CityBlocks.STREET_TYPE.index) {
+//						// possibly needs to be calculated on server
+//						int shift = (1 << (16 - 12)); // extend 12th tile
+//						bbox31 = new int[4];
+//						bbox31[0] = (x16 - shift) << 15;
+//						bbox31[2] = (x16 + shift) << 15;
+//						bbox31[1] = (y16 - shift) << 15;
+//						bbox31[3] = (y16 + shift) << 15;
+//						calcTileFromBbox();
+//					} else {
+						bboxTileZoom = 15;
+						bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16 / 2, y16 / 2);
+//					}
+				}
 			}
 		}
+		
 
 		private void decodeBBox(ByteString bbox) {
 			if (bbox != null) {
 				bbox31 = SearchAlgorithms.decodeBboxForNameAtomsBytes(bbox, x16, y16);
-				if (bbox31 != null) {
-					int z = 31;
-					int xleft = bbox31[0], xright = Math.max(bbox31[2], bbox31[0]);
-					int ytop = bbox31[1], ybottom = Math.max(bbox31[3], bbox31[3]);;
-					while (xleft != xright || ytop != ybottom) {
-						z--;
-						xleft >>= 1;
-						xright >>= 1;
-						ytop >>= 1;
-						ybottom >>= 1;
-					}
-					bboxTileZoom = z;
-					bboxTileId = HashQuadTree.encodeTileId(z, xleft, ytop);
+				calcTileFromBbox();
+			}
+		}
+
+		private void calcTileFromBbox() {
+			if (bbox31 != null) {
+				int z = 31;
+				// for 180 lat check max  
+				int xleft = bbox31[0], xright = Math.max(bbox31[2], bbox31[0]);
+				int ytop = bbox31[1], ybottom = Math.max(bbox31[3], bbox31[1]);
+				while (xleft != xright || ytop != ybottom) {
+					z--;
+					xleft >>= 1;
+					xright >>= 1;
+					ytop >>= 1;
+					ybottom >>= 1;
 				}
+				bboxTileZoom = z;
+				bboxTileId = HashQuadTree.encodeTileId(z, xleft, ytop);
 			}
 		}
 
@@ -337,6 +381,41 @@ public class SpatialSearchToken {
 			bboxTileZoom = 16;
 			bboxTileId = HashQuadTree.encodeTileId(bboxTileZoom, x16, y16);
 			decodeBBox(poi.hasBbox() ? poi.getBbox() : null);
+		}
+		
+		public void enlargeBbox31(double mult) {
+			if (mult == 0) {
+				return;
+			}
+			if (bbox31 != null) {
+				int w = (int) ((bbox31[2] - bbox31[0]) * mult), h = (int) ((bbox31[3] - bbox31[1]) * mult);
+				bbox31[0] = Math.max(Math.min(bbox31[0], bbox31[0] - w), 0); // xleft
+				bbox31[2] = Math.max(bbox31[2] + w, bbox31[0]); // xright
+				bbox31[1] = Math.max(Math.min(bbox31[1], bbox31[1] - h), 0); // ytop
+				bbox31[3] = Math.max(bbox31[3] + h, bbox31[1]); // ybottom
+			} else {
+				int w = (int) Math.ceil(mult);
+				bbox31 = new int[4];
+				bbox31[0] = Math.max((x16 - w) << 15, 0); // xleft
+				bbox31[2] = Math.max((x16 + w) << 15, bbox31[0]); // xright
+				bbox31[1] = Math.max((y16 - w) << 15, 0); // ytop
+				bbox31[3] = Math.max((y16 + w) << 15, bbox31[1]); // ybottom
+			}
+			calcTileFromBbox();
+		}
+
+		public double dimensionInM() {
+			int xleft = x16 << 15, xright = (x16 + 1) << 15;
+			int ytop = y16 << 15, ybottom = (y16 + 1) << 15;
+			if (bbox31 != null) {
+				xleft = bbox31[0];
+				xright = bbox31[2];
+				ytop = bbox31[1];
+				ybottom = bbox31[3];
+			}
+			return MapUtils.getDistance(MapUtils.get31LatitudeY(ytop), MapUtils.get31LongitudeX(xleft),
+					MapUtils.get31LatitudeY(Math.max(ytop, ybottom)),
+					MapUtils.get31LongitudeX(Math.max(xleft, xright)));
 		}
 
 		
@@ -351,23 +430,29 @@ public class SpatialSearchToken {
 		final int type; //
 		final long id; // used to read object
 		final long parentid; // used to read object
+		
 		MapObject object; // same for all
 		MapObject bldObject; // same for all
+		
 		int otherWordsCnt; // added before intersection
 		int otherFoundCnt;
+		
+		int indexInToken;
 		final boolean cityAsStreet;
 		final NameIndexAtomXY coords; 
 		final int buildingInd; // added before intersection
 		final int nearbyRadius;
+		
+		NameIndexAtom sameNameAreaObj;
 
 
 		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, boolean cityAsStreet, int otherWordsCnt,
-				int otherFooundCnt, NameIndexAtomXY coords, int nearbyRadius) {
-			this(name, type, id, pid, obj, cityAsStreet, otherWordsCnt, otherFooundCnt, coords, nearbyRadius, -1);
+				int otherFoundCnt, NameIndexAtomXY coords, int nearbyRadius) {
+			this(name, type, id, pid, obj, cityAsStreet, otherWordsCnt, otherFoundCnt, coords, nearbyRadius, -1);
 		}
 
 		NameIndexAtom(String name, int type, long id, long pid, MapObject obj, boolean cityAsStreet, int otherWordsCnt,
-				int otherFooundCnt, NameIndexAtomXY coords, int nearbyRadius, int buildingInd) {
+				int otherFoundCnt, NameIndexAtomXY coords, int nearbyRadius, int buildingInd) {
 			this.name = name;
 			this.id = id;
 			this.parentid = pid;
@@ -375,7 +460,7 @@ public class SpatialSearchToken {
 			this.type = type;
 			this.cityAsStreet = cityAsStreet;
 			this.otherWordsCnt = otherWordsCnt;
-			this.otherFoundCnt = otherFooundCnt;
+			this.otherFoundCnt = otherFoundCnt;
 			this.coords = coords;
 			this.nearbyRadius = nearbyRadius;
 			this.buildingInd = buildingInd;
@@ -458,6 +543,7 @@ public class SpatialSearchToken {
 
 
 	}
+
 
 
 }

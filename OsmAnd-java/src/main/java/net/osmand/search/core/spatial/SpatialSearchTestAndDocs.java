@@ -16,45 +16,62 @@ import net.osmand.util.SearchAlgorithms;
 
 
 //////////// TESTING //////////
-// SLOW QUERY: 'New York 4 av' - 7.5s (2M), 'New York st' - 2s (700k),
-// SLOW OTHER: 'New York s. ' 0.5s (100k), 'Sokak 2' - 0.5s (500K), 'Lima Calle 2' - 0.5s (25K)
 // REVIEW UI FILTER_MIN_WORDS_COUNT - 'New york plaza' ('the'), Issues Nova poshta Kharkiv 
 // TESTING Building interpolation, Street intersection match, bis matching
-// TESTING 'LangeStraße' (Data 'Lange Straße'), 'Daimler strasse' (Data 'daimlerstraße')
 // TESTING Slow 'New York 4 av' - 7.5s (1M), 'New York st' - 2s (700k) - OPTIMAL 
 // TESTING 11-nuon leons, Húns Huns 39a-MLN 8832kd, 
 // TESTING Filter results boundaries, <Salt Lake City>
-// TESTING Sokak 2 Show more
 // TESTING Ignore same embedded boundary city / county - deduplicate on the fly (new york x4)
-// NOT FIXED Combine regions.ocbf (boundary)? - will be wikidata id not combined for now
+// TESTING Duplicate words W&W
+// TESTING enlarge USA search boxes
+// TESTING test: merge boundaries bbox - extend incomplete boundary same id ... - npt fixed as we anyway enlarge
+// TESTING Cannaregio 539D Campo Saffa - Double 539D
+// TESTING Manhattan 57th street
+// TESTING Regierungsbezirk Stuttgart
+// TESTING "2 South 2nd Street Saint Clair";  street matched twice
+// TESTING Bratislava Billa - too many POI intersection results
+// TESTING Filter / group some categories: Public transport stops, City&Bike - New york?
+// TESTING 25 Школа владим.
+// TESTING 25 Садова вулиця! 2 Нова вулиця! 2 га Нова вулиця ! 25 та садова вулиця, 25 вулиця 2 вулиця
+// TESTING delete default enlarge and enlarge data
+// TESTING Venezia city Street / Place  -  <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street') 
+// TESTING find check that token is reused in parent - and ignore intersection for complete mattch
 
 ////////// IN PROGRESS //////////
 
 // FIXME POI Categories + top poi categories
 // FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
+// TODO query = "Catedral-Basílica de Nuestra Señora del Pilar"; - poi category
 
-// TODO Bratislava Billa - too many POI intersection results
-// TODO Filter Public transport stops, City&Bike - New york - analyze poi name consists of street name?
-
-// TODO ? test: merge boundaries bbox - extend incomplete boundary same id...
+// TODO Analyze stats slow queries
 // TODO Inspector stats index_words_dashboard.html
 
-// TO DO Ivan
-// TODO Review / implement similarity radius - similarityRadius = 50000 ... Route Id
-// TODO Unite RouteArticle, POI by wikidata id ? - DEPTH_TO_CHECK_SAME_SEARCH_RESULTS = 20;...
-// TODO Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them
-// TODO Unit / Slow analysis tests (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
+// TO DO Ivan / Gateway
+// TODO DEDUPLICATE: Review / implement similarity radius - similarityRadius = 50000 ... Route Id
+// TODO DEDUPLICATE: Unite RouteArticle, POI by wikidata id ? - DEPTH_TO_CHECK_SAME_SEARCH_RESULTS = 20;...
+// TODO DEDUPLICATE: Venezia ? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
+// TODO DEDUPLICATE: review osm route id  combine by?
+// TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
+// TODO DEDUPLICATE: Test wiki / travel maps, seamarks map
+// TODO DEDUPLICATE: same location (5-10m) 2 streets different cities 
+// TODO UNIT TESTS: (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
+// TODO UNIT TESTS: Auto tests - Slow analysis (Auto test New york)
+// TODO UNIT TESTS: Analyze Abbrefvations / common skip (abbrevations 1st=first) 
+// TODO UNIT TESTS: Add test on show more '2 sokak' - Show more 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak
+// TODO inspector doesn't show suffixes
 
 // TO DO - RZR
-// TODO WEB Add url / coordinates parsing
-// TODO Progress / cancel
-// TODO Not forget to include regions.ocbf on client
-// TODO Test memory on Android device for slowest query
-// TODO review osm route id  combine by?
-// TODO Store and test conscription number for some cities - issue
+// TODO WEB PRODUCTION: display results std way: house, interpolation results, poi...
+// TODO WEB Production: Multithread pool, Monitor / time & memory optimize memory?
+// TODO ANDROID: Integrate (include regions.ocbf) on client
+// TODO ANDROID: Progress / cancel
+// TODO ANDROID: memory performance 
+// 
 
 /////////////// EXTRA FEATURES ///////////////
+// TODO Review Abbrevations (synonyms / direction words) other languages?
+// TODO Store and test conscription number for some cities - issue (RZR)
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Japan test, housename, block_number + housenumber, neighbourhood + quarter - street + India assign houses to suburbs / neighbourhood / blocks
 // TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
@@ -65,6 +82,8 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Sugggestion-correction
 // TODO English postcodes
 // TODO Precise Boundary 'Chernihiv sport life' mostly Kyiv - check precise boundary for filter
+// TODO Short word split "Ro-ki" vs "Roki" 
+// TODO Support postcode search - 14871 Pennsylvania Avenue Pine City
 
 public class SpatialSearchTestAndDocs {
 
@@ -133,19 +152,23 @@ public class SpatialSearchTestAndDocs {
 		File folder = new File(System.getProperty("maps.dir"));
 		LatLon location = null;
 		String pattern = "Germany_b";
+//		pattern = "Map";
 		String pattern2 = ".....";
 		String query = "Berlin hauptstrasse"; // slow
 //		query = "Kelterstraße Kernen im Remstal";
 //		query = "Germany Kelter. Kernen im Remstal";
 		query = "3 Hofäckerstraße Kernen im Remstal";
+		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
+		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
+		
 		
 		// Grainau Am Eibsee 1 36799292
 		// Grainau Seehäuser Eibsee 2 - 242903848 //  Seehäuser Grainau 2, Seehäuser Eibsee 2  
-		
 		// Weberstraße (33164748) 49.2041 10.7035,  Von-Weber-Straße (4648613942) 49.5609 10.8685
 //		query = "Weber Straße"; // +4648613942, +33164748
 //		query = "WeberStraße";  // +33164748, +4648613942
 //		query = "Von Weberstraße"; // +4648613942
+//		location = new LatLon(48.8315, 9.3155 );
 //		query = "53 Langestraße Waiblingen"; // OK - 48.8315 9.3155 !
 //		query = "69 Daimler Straße Stuttgart"; //  (Daimlerstraße) 107868593 48.8015 9.2224 // 69
 		
@@ -154,9 +177,12 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 778.5 ms - read 754.6 ms atoms (tokens 442.4 ms, obj 1.8 ms), match 281.5 ms, comp 26.4 ms
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
-		pattern = "Us_";
+		pattern = "Us_utah";
+//		pattern = "Us_penn";
+//		pattern2 = "Us_new-york_syracuse";
+		pattern2 = "Us_virg";
 //		pattern = "Map";
-//		query = "Salt Lake City Pennsylvania Place 123 UT USA";
+		query = "Salt Lake City Pennsylvania Place UT USA";
 //		query = "Salt Lake City Elephant";
 //		query = "Salt Lake City Lake";
 //		query = "Salt Lake City Pennsylvania Street";
@@ -167,10 +193,41 @@ public class SpatialSearchTestAndDocs {
 //		query = "Pennsylvania Avenue Philadelphia PA USA"; 
 //		query = "Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA";
 //		query = "Pennsylvania Avenue White Oak Allegheny County Pennsylvania USA"; // 11947214
+//		query = "173 Liberty Valley Road Danville"; // enlarged
+//		query = "151 Molleystown Road Pine Grove";
+//		query = "6 Kent Road Pine City";
+//		query = "36 Wilson Drive  Pine City"; 
+//		query = "301 East Second Street Corning"; // "301 East 2nd Street Corning"
+//		query = "763 Ro-Ki Boulevard Nichols"; // NO FIX yet: Roki is very short to be fixed same as Weber-Strasse
+		// Important unit test
+//		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
+//		query = "South 2nd Street 2 Saint Clair"; // to fix street matched twice
+//		query = "226 Wilkes-Barre Township Boulevard Wilkes-Barre"; // fixed type order
+//		query = "5676 US-15 Montgomery"; // Test 3 matched (not 2)
+//		location = new LatLon(42.0061257, -76.5464141);
+//		query = "38 Orange Street Waverly";
+//		query = "441 Cook Road Addison";
+//		location = new LatLon(42.0258945, -77.2365078);
+//		query = "7910 County Route 5 Addison"; // Addison too far away from town
+//		query = "1000 Fillmore Road State College"; // default enlarge 
+		
+//		query = "151 Weber Way Selinsgrove"; // Fixed: 2 word - addr:unit 
+//		query = "1544 PA-61 Pottsville"; // FIXED
+//		query = "138 138 Scott Avenue Bellefonte";
+//		query = "17815 PA-35 Port Royal"; // CHECK!
+//		query = "2039 Ridge Road Lowman"; // extend bbox hamlet // 822981342  -- unit test!
+		// test default enlarge 1 -> 2.5
+//		query = "1503 Stewart Road Addison"; // 
+//		query = "76 North Street Waverly"; // same
+//		query = "1098 Long Run Road Pine Grove"; // 2.5 enlarge 40.5943782, -76.2609811
+//		query = "312 East 14th Street Elmira"; // no fix locations too close
+//		query = "3374 Lower Maple Avenue Elmira";
+//		query = "3760 State Route 225 Dornsife"; // red cross? unit test
+//		query = "11954 East Hill Road Pine City";
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
-//		query = "PA 75 27193"; // Data 'PA-75', 27193  4472676432
-//		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), no - 'PA75' 
+//		query = "PA 75 27193"; //'PA75'  Data 'PA-75', 27193  4472676432
+//		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75' 
 		// data "PA 75" - see "M-2, 2 M" example
 
 //		pattern = "Liechtenstein_europe.obf";
@@ -178,11 +235,11 @@ public class SpatialSearchTestAndDocs {
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 
-		pattern = "Netherlands_";
+//		pattern = "Netherlands_";
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
-		query = "11-NUON leons";
+//		query = "11-NUON leons";
 		
 //		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // OK
@@ -197,7 +254,6 @@ public class SpatialSearchTestAndDocs {
 //		pattern = "regions.ocbf" ;
 		
 //		pattern = "Ukraine_";
-//		pattern = "Map";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
@@ -207,6 +263,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Нова пошта харків";
 //		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
 //		query = "2га Нова вулиця"; 
+//		query = "2 нова вулиця"; // '"25-та вулиця", "25та вулиця", "25 та вулиця", "25 вулиця" (NOT FIRST) - '25-та Садова вулиця' 150768561
+//		query = "25 садова вулиця";
 //		query = "саксаг. 63 28"; // 129-Б, 129б 63/28, 63, 63-28  +'саксаг. 63 28'
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
@@ -214,10 +272,11 @@ public class SpatialSearchTestAndDocs {
 //		query = "саксаг. тарас."; // intersection
 //		query = "54-та Садова вулиця 8"; // interpolation
 //		query = "Яр. вал 29-г";
-//		query = "25 Школа володимирська вулиця"; // ALWAYS_READ_COMMON_WORDS_ATOMS = true or show category (centre ?) ! 
+//		query = "Школа 25 Володимирська вулиця"; // Школа 25 Володимирська вулиця ALWAYS_READ_COMMON_WORDS_ATOMS = true 
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа А+";
-//		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25'
+//		location = new LatLon(50.4631,30.4553);
+//		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25' // 63112526
 //		query = "ВЕЛОwatt";
 //		query = "O128894."; // FIX Osm id getOsmIdFromMapObjectId
 		// 'M 2' variations data: 'M-2', 'M 2' and '2 M' 
@@ -236,19 +295,23 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
+//		pattern = "Slovakia";
+//		query = "Bratislava Billa";
+		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-		pattern = "Us_new-"; 
+//		pattern = "Us_new-"; 
 		
 //		location = new LatLon(40.78035, -73.96572); // central park
-		location = new LatLon(40.64946, -74.00682); // brooklyn
+//		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
-		query = "New York plaza";
+//		query = "New York plaza";
 //		query = "New York st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 		// 40.64946, -74.00682 - unit test '4th av', '4 ave', '4th avenue' 241843204, 247910224, 85393997 (..) brooklyn - not 48
 		// 40.78035, -73.96572 - unit test '4th av', '4 ave', '4th avenue'  - 85393997 Park avenue
-//		query = "New York 4 av"; 
+//		query = "New York 4 av 8"; 
 //		query = "New York 4 av 8"; // 160947243
+//		query = "57th street"; // central park - 265345338 east, 86216906 west, ()66926268 (west)?), 
 //		query = "4th ave"; //  unit '4 ave'   
 //		query = "4th ave 8 paterson"; //  wrong city...
 		// Result 4 - 40.8407, -74.0954 [[4th, 8] Building 2 4th Street (26238417818) 40.8441 -74.0910 , [ave, paterson] STREET_TYPE Paterson Avenue (651531238) 40.8374 -74.0997 ]
@@ -258,9 +321,14 @@ public class SpatialSearchTestAndDocs {
 		// Japan addr:quarter, addr:neighbourhood, addr:block_number
 		// See test - [8-8 Kinshi 3 Kinshi Sumida Tokyo], Rivière Tsumura
 		// India - Satyam node/2296788005#map=18/17.805646/83.356818
-		
-		// Venezia
-		// +[Venezia, Cannaregio, 359D, Campo Saffa], +[Venezia Cannaregio 359D] -[Venezia 359D Campo Saffa] - expected 
+		// +[Venezia, Cannaregio, 539D , Campo Saffa], +[Venezia Cannaregio 539D ] -[Venezia 539D  Campo Saffa] - expected
+		pattern = "Italy_ven";
+//		pattern = "Map";
+//		pattern2 = "World_basemap_2";
+		// ! unit test - search full address ! no double 539d (no intersectoin)
+		// Cannaregio 539D Campo Saffa, Venezia Cannaregio Campo Saffa  , 
+		query = "Venezia Cannaregio Campo Saffa ";
+//		query = "Campo Saffa";
 		
 //		pattern = "France_ile-de-france_eu";
 //		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
@@ -270,12 +338,16 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "World_basemap_2";
 //		pattern2 = "Ukraine";
+//		pattern = "Italy_";
 //		query = "о. Пасхи"; // o
 //		query = "остров Пасхи"; // o. -> остров - not supported data need to be updated
 //		query = "New york";
 //		query  = "Madeira"; // short_name	Madeira
 //		query  = "Everest";
 //		query  = "Rio de Janeiro";
+//		location = new LatLon(44.0194, 10.2025);
+//		query = "Venezia"; // no place - city
+//		query = "Венец."; 
 
 //		pattern = "Spain_aragon_europe_";
 //		query = "Basílica de Nuestra Señora del Pilar";
@@ -318,10 +390,10 @@ public class SpatialSearchTestAndDocs {
 				System.out.println("Suggest search other region - " + bbox);
 			}
 		}
-//		settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES = true;
+		settings.OPTIM_DELETE_POI_SAME_AS_CITY_STREET = false;
 //		settings.DEDUPLICATE_RES = true;
 		searchContext = new SpatialSearchContext(settings, ls, location);
-		a.searchTest(query, searchContext, 1000);
+		a.searchTest(query, searchContext, 8000);
 	}
 	
 }

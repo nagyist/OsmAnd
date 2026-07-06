@@ -10,15 +10,19 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
+import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.util.SearchAlgorithms;
 
 //////////////// SEARCH ALGORITHM //////////////////
@@ -59,6 +63,11 @@ public class SpatialTextSearch {
 		// by deleting embedded or duplicate boundaries in each other
 		public boolean OPTIM_DELETE_EMBEDDED_BOUNDARIES = true;
 		
+		// In case POI is called 'Bratislava' it will be restricted to be searched as POIxPOI, POIxStreet
+		// Related frequent POIs like "City&Bike 4th Street..." or public transport stops
+		public boolean OPTIM_FLAG_POI_SAME_AS_CITY_STREET = true;
+		public boolean OPTIM_DELETE_POI_SAME_AS_CITY_STREET = false; // not correct for new york the plaza
+		
 		// max prefixes for each name reader
 		public int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
 
@@ -96,6 +105,23 @@ public class SpatialTextSearch {
 		
 		public int MIN_ELO_RATING = 1400; // see SearchResult.MIN_ELO_RATING
 //		public int MAX_ELO_RATING = 4300; // not used now
+		
+		// > 300 km - x0, for 50km-300km - x0.5, 10-50km - x1.5, 10km - x3sorted!
+		public Map<Integer, Double> ENLARGE_BOUNDARIES = new TreeMap<Integer, Double>(
+				Map.of(-300_000, 0.2, -100_000, 0.5, -10_000, 1.0, -1_000, 20.0));
+		
+		public double evalEnlargeBoundary(Map<Integer, Double> mp, double dim) {
+			Iterator<Entry<Integer, Double>> it = mp.entrySet().iterator();
+			double val = 0;
+			while (it.hasNext()) {
+				Entry<Integer, Double> e = it.next();
+				if (dim > -e.getKey()) {
+					break;
+				}
+				val = e.getValue();
+			}
+			return val;
+		}
 		
 	}
 
@@ -247,9 +273,14 @@ public class SpatialTextSearch {
 					}
 				}
 			}
-			if (goalRes.getCombinations() > 0) {
+			goalRes.loadObjectsAndCalcBuildings(ctx);
+			List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+			if (goal.equals(mainGoal) && res.size() == 0) {
+				goalRes = reevalWithExtendedBoundary(ctx, goal, tokens);
 				goalRes.loadObjectsAndCalcBuildings(ctx);
-				List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+				res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+			}
+			if (res.size() > 0) {
 				uniqueObjects += res.size();
 				fullResult.add(goalRes);
 				if (ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0
@@ -268,6 +299,33 @@ public class SpatialTextSearch {
 			}
 		}
 		return fullResult;
+	}
+
+	private SpatialSearchResultsList reevalWithExtendedBoundary(SpatialSearchContext ctx, BitSet goal, List<SpatialSearchToken> tokens) throws IOException {
+		// Extend boundary for united states addresses (use 50 km radius)
+		int enlarge = 0;
+		for (SpatialSearchToken t : tokens) {
+			for (NameIndexAtom a : t.atoms) {
+				if (a.isBoundary() || a.isCityVillage()) {
+					double val = ctx.settings.evalEnlargeBoundary(ctx.settings.ENLARGE_BOUNDARIES, 
+							a.coords.dimensionInM());
+					if (val > 0) {
+//						System.out.println("Enlarge " + a.name + " " + a.type + " x" + val);
+						t.enlargeBbox(a, val);
+						enlarge++;
+					}
+				}
+			}
+		}
+		if (ctx.stats.printLogs) { 
+			System.out.println("Enlarged boundaries " + enlarge);
+		}
+		SpatialSearchResultsList goalRes = new SpatialSearchResultsList();
+		for (int i = goal.nextSetBit(0); i >= 0; i = goal.nextSetBit(i + 1)) {
+			SpatialSearchToken token = tokens.get(i);
+			goalRes = new SpatialSearchResultsList(ctx, token, goalRes);
+		}
+		return goalRes;
 	}
 
 	List<SpatialSearchResultsList> findObjCombinationsSimpleIteration(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
@@ -387,19 +445,24 @@ public class SpatialTextSearch {
 		ctx.stats.requestTime.finish();
 		if (res.mainResults != null && res.mainResults.size() > 0) {
 			System.out.println("--------");
-			System.out.println("Main: " + res.combinations.get(0));
+			System.out.printf("Main: %s\n", res.combinations.get(0));
 			int all = res.mainResults.size();
 			int level = 0;
+			int sz = 0;
 			for (SpatialSearchResult r : res.mainResults) {
+				sz++;
 				if (r.visibleLevel != level) {
 					level++;
-					System.out.println("### LEVEL " + level);
+					System.out.printf("### %d - NEXT LEVEL %d (%s). "
+							+ " Format - 75(words) 02(objects) 0(surplus) 1(sum other) 52(rating) 72(sum types)\n",
+							sz, level, SpatialSearchResult.compareKeyString(r));
+					sz = 0;
 				}
 				if (limitPrint-- < 0) {
 					System.out.println(".............");
 					break;
 				}
-				System.out.printf("Result %d - %s\n", r.matchedTokens(), r);
+				System.out.printf("Result %d (%s) - %s\n", r.matchedTokens(), SpatialSearchResult.compareKeyString(r), r);
 			}
 			System.out.printf("------ ALL %d results ------- \n ", all);
 			System.out.println("---------------------------------------");

@@ -27,6 +27,7 @@ import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
+import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 
@@ -36,8 +37,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	
 	int MIN_ELO_RATING = Amenity.DEFAULT_ELO;
 	
+	public static long DEFAULT_BLD_ID = -0; // special flag for building partial match
 	public static long PARTIAL_ID_MATCH = -4; // special flag for building partial match
-	public static long SURPLUS_ID_MATCH = -16; // special flag for building partial match
+	public static long SURPLUS_ID_MATCH = -16; // special flag for building partial match (11-NUON)
 
 	// NameIndexAtom[][] -- should be double array to store list of combinations
 	List<NameIndexAtom> linearResults = new ArrayList<>();
@@ -145,13 +147,19 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		if (ctx.settings.SEARCH_BUILDINGS) {
 			Map<String, Building> bldCheckCache = new HashMap<>();
 			for (int indx = 0; indx < getCombinations(); indx++) {
-				calcBuilding(ctx, indx, bldCheckCache);
-//				System.out.println(getRawAtoms(indx) + " " + skipResults.contains(indx));
+				if (!skipResults.contains(indx)) {
+					calcBuilding(ctx, indx, bldCheckCache);
+				}
+//				if (!skipResults.contains(indx)) {
+//					System.out.println(indx + " " + getRawAtoms(indx) + " " + skipResults.contains(indx));
+//				}
 			}
 		}
 		if (ctx.settings.SEARCH_STREET_INTERSECTIONS) {
 			for (int indx = 0; indx < getCombinations(); indx++) {
-				calcStreetIntersections(ctx, indx);
+				if (!skipResults.contains(indx)) {
+					calcStreetIntersections(ctx, indx);
+				}
 			}
 		}
 		
@@ -163,20 +171,20 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		NameIndexAtom second = null;
 		for (int i = 0; i < tCount; i++) {
 			NameIndexAtom atom = linearResults.get(indx * tCount + i);
-			if (atom.object instanceof Street) {
+			if (atom.object instanceof Street && !atom.isCityStreetName()) {
 				if (first == null || first.object.getId().equals(atom.object.getId())) {
 					first = atom;
 				} else {
 					second = atom;
-					break;
 				}
 			}
 		}
-		if (first != null && second != null) {
+		if (first != null && first.object instanceof Street s1 && second != null
+				&& second.object instanceof Street s2) {
 			LatLon insLoc = null; 
 			if (insLoc == null) {
-				for (Street ins : ((Street) first.object).getIntersectedStreets()) {
-					if (ins.getName().equals(second.object.getName())) {
+				for (Street ins : s1.getIntersectedStreets()) {
+					if (ins.getName().equals(s2.getName())) {
 						insLoc = ins.getLocation();
 //						System.out.printf("INTERSECTION x1 %.4f, %.4f %s (%s) x %s\n", insLoc.getLatitude(),
 //								insLoc.getLongitude(), second.toString(), ins.getName(), first.toString());
@@ -185,8 +193,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 			}
 			if (insLoc == null) {
-				for (Street ins : ((Street) second.object).getIntersectedStreets()) {
-					if (ins.getName().equals(first.object.getName())) {
+				for (Street ins : s2.getIntersectedStreets()) {
+					if (ins.getName().equals(s1.getName())) {
 						insLoc = ins.getLocation();
 //						System.out.printf("INTERSECTION x2 %.4f, %.4f %s (%s) x %s\n", ins.getLocation().getLatitude(),
 //								ins.getLocation().getLongitude(), first.toString(), ins.getName(), second.toString());
@@ -194,14 +202,19 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					}
 				}
 			}
-			if (insLoc == null && ctx.settings.ALLOW_VIRTUAL_STREET_INTERSECTIONS) {
-				LatLon l1 = first.object.getLocation();
-				LatLon l2 = second.object.getLocation();
+			if (insLoc == null && ctx.settings.ALLOW_VIRTUAL_STREET_INTERSECTIONS && 
+					s2.getIntersectedStreets().size() > 0 && s1.getIntersectedStreets().size() > 0) {
+				// some virtual streets from addr:place end up without names and with 0 intersected streets Venezia
+				LatLon l1 = s1.getLocation();
+				LatLon l2 = s2.getLocation();
 				insLoc = new LatLon(l1.getLatitude() / 2 + l2.getLatitude() / 2, l1.getLongitude() / 2 + l2.getLongitude() / 2);
 // 				System.out.printf("INTERSECTION NO %.4f %.4f %s x %s\n", insLoc.getLatitude(),
 //						insLoc.getLongitude(), first.toString(), second.toString());
 			}
-			if (insLoc != null) {
+			if (insLoc != null && !first.isCityStreetName() && !second.isCityStreetName()) {
+				if (second.object.getName().equals("Cannaregio")) {
+					System.out.println(first + " " + second + " " + insLoc);
+				}
 				preciseLocations.put(indx, insLoc);
 			} else {
 				skipResults.put(indx, true);
@@ -210,7 +223,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	private void calcBuilding(SpatialSearchContext ctx, int indx, Map<String, Building> bldCheckCache) {
-		Map<NameIndexAtom, String> bldCheckMap = null;
+		Map<NameIndexAtom, String> bldCheckMap = null; // mostly single key-value map, value accumulated
 		boolean noBuildings = true;
 		NameIndexAtom noBldStreet = null; 
 		for (int i = 0; i < tCount; i++) {
@@ -236,8 +249,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					searchKey += " " + tokens[i].word;
 				}
 				bldCheckMap.put(str, searchKey);
-			} else {
-				if (noBldStreet == null && bld.isStreet()) {
+			} else if (bld.isStreet()) {
+				if (noBldStreet == null || bld.isCityStreetName()) {
 					noBldStreet = bld;
 				}
 			}
@@ -274,9 +287,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				if (bldCheckCache.containsKey(cacheKey)) {
 					bldObj = bldCheckCache.get(cacheKey);
 				} else {
-					bldObj = checkBuilding((Street) str.object, bldName);
+					bldObj = checkBuilding(ctx, (Street) str.object, bldName);
 					if (bldObj == null) {
-//						System.out.printf("No building '%s': %s\n", bldName, str.object);
+//						System.out.printf("No building '%s': %s\n", bldName, str.object + " " + ((Street) str.object).getBuildings());
 					} else {
 //						System.out.printf("Building found '%s' -'%s': %s\n", bldObj, bldName, str.object);
 						if (surplus > 0) {
@@ -295,7 +308,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					for (int i = 0; i < tCount; i++) {
 						NameIndexAtom bld = linearResults.get(indx * tCount + i);
 						if (bld.buildingInd >= 0 && str.id == bld.id) {
-							bld.object = bldObj;
+							bld.bldObject = bldObj;
 							// bld.name = bldObj.getName();
 						} else if(noBuildings  && str.id == bld.id) {
 							bld.bldObject = bldObj;
@@ -311,11 +324,13 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	
-	
-	private Building checkBuilding(Street street, String bld) {
+	private Building checkBuilding(SpatialSearchContext ctx, Street street, String bld) {
 		Building interpolation = null;
 		Building partial2 = null;
+		double distPartial1 = 0;
 		Building partial1 = null;
+		double distExact = 0;
+		Building exact = null;
 		Set<String> query = SearchAlgorithms.getBuildingCompareSet(bld, tempBuildNames1);
 		for (Building b : street.getBuildings()) {
 			if (b.isInterpolation()) {
@@ -328,16 +343,35 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 //				System.out.println(street + " " + original + " ?= " + cmp);
 				if (bldSet.equals(query)) {
 					// exact match but could be duplicates 8-8
-					if (tempBuildNames2.size() > bldSet.size() && !tempBuildNames2.equals(tempBuildNames1)) {
-						partial1 = b;
+					// duplicate could be in query or in house number
+					if ((tempBuildNames2.size() > bldSet.size() || tempBuildNames1.size() > query.size()) 
+							&& !tempBuildNames2.equals(tempBuildNames1)) {
+						double d = ctx.location == null ? 0 : MapUtils.getDistance(ctx.location, b.getLocation());
+						// just for tests makes sense
+						if (distPartial1 == 0 || d < distPartial1) {
+							partial1 = b;
+							distPartial1 = d;
+						}
 					} else {
-						return b;
+						b.setId(DEFAULT_BLD_ID);
+						// just for tests makes sense
+						double d = ctx.location == null ? 0 : MapUtils.getDistance(ctx.location, b.getLocation());
+						if (distExact == 0 || d < distExact) {
+							exact = b;
+							distExact = d;
+						}
+//						return b;
 					}
 				}
-				if (bldSet.size() == query.size() + 1) {
-					// case data only 18-B present, 18 searched
+				if (bldSet.size() == query.size() + 1 || bldSet.size() == query.size() + 2) {
+					// case data only 18-B present, 18 searched (151 + unit Upper level)
 					if (bldSet.containsAll(query)) {
-						partial1 = b;
+						double d = ctx.location == null ? 0 : MapUtils.getDistance(ctx.location, b.getLocation());
+						// just for tests makes sense
+						if (distPartial1 == 0 || d < distPartial1) {
+							partial1 = b;
+							distPartial1 = d;
+						}
 					}
 				} else if (bldSet.size() + 1 == query.size()) {
 					// case data only 18 present, 18-B searched 
@@ -347,10 +381,18 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 			}
 		}
+		if (exact != null) {
+			return exact;
+		}
 		if (partial1 != null) {
+			partial1.setId(DEFAULT_BLD_ID);
+			if (tempBuildNames1.size() > query.size()) {
+				partial1.setId(PARTIAL_ID_MATCH);
+			}
 			return partial1;
 		}
 		if (interpolation != null) {
+			interpolation.setId(DEFAULT_BLD_ID);
 			return interpolation;
 		}
 		if (partial2 != null) {
@@ -383,7 +425,15 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	public List<NameIndexAtom> getRawAtoms(int ind) {
-		return linearResults.subList(ind * tCount, (ind +1)* tCount);
+		return linearResults.subList(ind * tCount, (ind + 1) * tCount);
+	}
+	
+	public long getRawAtomsSumId(int ind) {
+		long l = 0;
+		for(NameIndexAtom a : linearResults.subList(ind * tCount, (ind + 1) * tCount)) {
+			l += a.id; 
+		}
+		return l;
 	}
 
 	public int getCombinations() {
@@ -482,7 +532,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 			int originalLimit = limitIntersection;
 			int[] typeIntersection = new int[] { 0 };
-			iterateIntersection(parent, token, (parentIndx, atom,  indxAtom) -> { 
+			iterateIntersection(parent, token, (parentIndx, atom,  indxAtom) -> {
 				if (token.deletedAtoms.contains(indxAtom)) {
 					return;
 				}
@@ -491,6 +541,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					return;
 				}
 				boolean acceptIntersection = acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
+//				long intId = atom.id + parent.getRawAtomsSumId(parentIndx);
+//				System.out.println(intId + " " + atom + " " + parent.getRawAtoms(parentIndx) + " == " + acceptIntersection);
 				if (acceptIntersection) {
 					TIntArrayList c = intersections[level];
 					if (typeIntersection[0] == 2) {
@@ -583,7 +635,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 			if (pa.id == a.id) {
-				typeIntersection[0] = parent.typeIntersections.get(i);
+				typeIntersection[0] = parent.typeIntersections.get(pindx);
 				continue;
 			}
 			// pa and a using same tokens for street & house but different streets / poi same as below
@@ -592,11 +644,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			} else if (pa.buildingInd == token.originalOrder) {
 				return false;
 			}
-			// don't intersect building with other street
-			if ((pa.buildingInd >= 0) && a.isStreetBuilding()) {
+			// don't intersect building with other street except if street-building is city
+			if ((pa.buildingInd >= 0) && a.isStreetBuilding() && !pa.isCityStreetName()) {
 				return false;
-			} else if ((a.buildingInd >= 0) && pa.isStreetBuilding()) {
-				return false;
+			} else if ((a.buildingInd >= 0) && pa.isStreetBuilding() && !a.isCityStreetName()) {
+				return false; 
 			}
 			// if poi doesn't have bbox don't intersect or add bbox!
 			if ((pa.buildingInd >= 0) && a.isPOI() && a.coords.bbox31 == null) {
@@ -609,17 +661,19 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		// 2. Duplicate words in query
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
-			if (pa.id == a.id && tokens[0].word.equals(tokens[i + 1].word)) {
+			if (pa.id == a.id && tokens[0].word.equals(tokens[i + 1].word) && 
+					!pa.isBuilding() && !a.isBuilding()) {
 				// NameIndexAtom supports "<word> <...> <word>" but it's not present in DATA now
 				int indexOf = a.name.indexOf(tokens[0].word, pindx);
 				if (indexOf != -1 && a.name.indexOf(tokens[0].word, indexOf + 1) >= 0) {
 					// duplicate name in object
+//					System.out.println("Duplicate word  " + a.name);
 				} else {
 					return false;
 				}
 			}
 		}
-		// speed up for sme id checks
+		// speed up for same id checks
 		if (typeIntersection[0] >= 0) {
 			return true;
 		}
@@ -648,9 +702,17 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			if (pa.id == a.id) {
 				continue;
 			}
-			if (parent.tokens[i].index.containsKey(a.id) && !tokens[0].word.equals(parent.tokens[i].word)) {
-				// ignore every object that has this name already (except duplicate words)
-				return false;
+			// check that token is reused in parent
+			// ignore every object that has this name already (except duplicate words && numbers assigned to building)
+			if (!tokens[0].word.equals(parent.tokens[i].word)) {
+				NameIndexAtom existing = parent.tokens[i].index.get(a.id);
+				if (existing != null && !existing.isBuilding()) {
+					return false;
+				}
+				existing = tokens[0].index.get(pa.id);
+				if (existing != null && !existing.isBuilding()) {
+					return false;
+				}
 			}
 			if (pa.atomicObject()) {
 				objects.put(pa.id, pa);
@@ -658,22 +720,29 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			if (objects.size() > settings.LIMIT_ATOMIC_OBJECTS) {
 				return false;
 			}
-			//    Don't intersect <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street')
-			if ((a.isCityStreetName() && pa.id != a.id) || (pa.isCityStreetName() && a.id != pa.id)) {
-				return false;
-			}
+			// allow intersection for Buildings associated with place
+			// Don't intersect <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street')
+//			if ((a.isCityStreetName() && pa.id != a.id) || (pa.isCityStreetName() && a.id != pa.id)) {
+//				return false;
+//			}
 		}
 		if (objects.size() > 1) {
 			Iterator<NameIndexAtom> it = objects.values().iterator();
 			NameIndexAtom a1 = it.next();
 			NameIndexAtom a2 = it.next();
+			// if one object is same as city name don't intersect with street poi...
+			if (a1.sameNameAreaObj != null || a2.sameNameAreaObj != null) {
+				return false;
+			}
 			if ((a1.isStreetBuilding() != a2.isStreetBuilding()) && !it.hasNext()) {
 				typeIntersection[0] = 1;
 			} else {
 				typeIntersection[0] = 2;
-				if (!settings.SEARCH_STREET_INTERSECTIONS && a1.isStreetBuilding() && a2.isStreetBuilding()) {
+				boolean twoStreets = a1.isStreetBuilding() && a2.isStreetBuilding();
+				boolean twoPOIs = !a1.isStreetBuilding() && !a2.isStreetBuilding();
+				if (!settings.SEARCH_STREET_INTERSECTIONS && twoStreets) {
 					return false;
-				} else if (!settings.SEARCH_POI_INTERSECTIONS && !a1.isStreetBuilding() && !a2.isStreetBuilding()) {
+				} else if (!settings.SEARCH_POI_INTERSECTIONS && twoPOIs) {
 					return false;
 				}
 			}
