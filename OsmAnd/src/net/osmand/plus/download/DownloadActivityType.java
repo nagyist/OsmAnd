@@ -146,11 +146,13 @@ public class DownloadActivityType {
 	}
 
 	public boolean isAccepted(String fileName) {
-		if (NORMAL_FILE == this || DEPRECATED_MAP == this) {
-			return fileName.endsWith(addVersionToExt(IndexConstants.BINARY_MAP_INDEX_EXT_ZIP, IndexConstants.BINARY_MAP_VERSION))
-					|| fileName.endsWith(IndexConstants.EXTRA_ZIP_EXT)
-					|| fileName.endsWith(IndexConstants.SQLITE_EXT);
-		} else if (ROADS_FILE == this) {
+		if ((NORMAL_FILE == this || DEPRECATED_MAP == this) &&
+				(fileName.endsWith(
+						addVersionToExt(IndexConstants.BINARY_MAP_INDEX_EXT_ZIP, IndexConstants.BINARY_MAP_VERSION))
+						|| fileName.endsWith(IndexConstants.EXTRA_ZIP_EXT)
+						|| fileName.endsWith(IndexConstants.SQLITE_EXT))) {
+			return true;
+		} else if (ROADS_FILE == this || DEPRECATED_MAP == this) {
 			return fileName.endsWith(addVersionToExt(IndexConstants.BINARY_ROAD_MAP_INDEX_EXT_ZIP, IndexConstants.BINARY_MAP_VERSION));
 		} else if (VOICE_FILE == this) {
 			return fileName.endsWith(addVersionToExt(IndexConstants.VOICE_INDEX_EXT_ZIP, IndexConstants.VOICE_VERSION));
@@ -200,7 +202,11 @@ public class DownloadActivityType {
 
 	@NonNull
 	public File getDefaultDownloadFolder(OsmandApplication app, IndexItem indexItem) {
-		if (NORMAL_FILE == this || DEPRECATED_MAP == this) {
+		if (ROADS_FILE == this ||
+				(DEPRECATED_MAP == this &&
+						indexItem.fileName.endsWith(IndexConstants.BINARY_ROAD_MAP_INDEX_EXT_ZIP))) {
+			return app.getAppPath(IndexConstants.ROADS_INDEX_DIR);
+		} else if (NORMAL_FILE == this || DEPRECATED_MAP == this) {
 			if (indexItem.fileName.endsWith(IndexConstants.SQLITE_EXT)) {
 				return app.getAppPath(IndexConstants.TILES_INDEX_DIR);
 			}
@@ -209,8 +215,6 @@ public class DownloadActivityType {
 			return app.getAppPath(IndexConstants.VOICE_INDEX_DIR);
 		} else if (FONT_FILE == this) {
 			return app.getAppPath(IndexConstants.FONT_INDEX_DIR);
-		} else if (ROADS_FILE == this) {
-			return app.getAppPath(IndexConstants.ROADS_INDEX_DIR);
 		} else if (SRTM_COUNTRY_FILE == this) {
 			return app.getAppPath(IndexConstants.SRTM_INDEX_DIR);
 		} else if (WIKIPEDIA_FILE == this) {
@@ -259,7 +263,11 @@ public class DownloadActivityType {
 	}
 
 	public String getUnzipExtension(OsmandApplication ctx, IndexItem indexItem) {
-		if (NORMAL_FILE == this || DEPRECATED_MAP == this) {
+		if (NORMAL_FILE == this || DEPRECATED_MAP == this || ROADS_FILE == this) {
+			if (ROADS_FILE == this
+					|| indexItem.fileName.endsWith(IndexConstants.BINARY_ROAD_MAP_INDEX_EXT_ZIP)) {
+				return IndexConstants.BINARY_ROAD_MAP_INDEX_EXT;
+			}
 			if (indexItem.fileName.endsWith(IndexConstants.BINARY_MAP_INDEX_EXT_ZIP)) {
 				return BINARY_MAP_INDEX_EXT;
 			} else if (indexItem.fileName.endsWith(IndexConstants.BINARY_MAP_INDEX_EXT)) {
@@ -271,8 +279,6 @@ public class DownloadActivityType {
 			} else if (indexItem.fileName.endsWith(IndexConstants.ANYVOICE_INDEX_EXT_ZIP)) {
 				return "";
 			}
-		} else if (ROADS_FILE == this) {
-			return IndexConstants.BINARY_ROAD_MAP_INDEX_EXT;
 		} else if (VOICE_FILE == this) {
 			return "";
 		} else if (FONT_FILE == this) {
@@ -539,6 +545,12 @@ public class DownloadActivityType {
 			}
 			if (this == DEPTH_MAP_FILE) {
 				return baseNameWithoutVersion + IndexConstants.BINARY_DEPTH_MAP_INDEX_EXT;
+			}
+			if (this == DEPRECATED_MAP) {
+				return baseNameWithoutVersion +
+						(fileName.endsWith(IndexConstants.BINARY_ROAD_MAP_INDEX_EXT_ZIP)
+								? IndexConstants.BINARY_ROAD_MAP_INDEX_EXT
+								: IndexConstants.BINARY_MAP_INDEX_EXT);
 			}
 			baseNameWithoutVersion += IndexConstants.BINARY_MAP_INDEX_EXT;
 			return baseNameWithoutVersion;
