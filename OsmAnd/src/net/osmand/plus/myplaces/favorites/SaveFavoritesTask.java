@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +78,7 @@ final class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 				log.error("Favorite deletions journal could not be read. Favorites save will continue, but journal will not be cleared.");
 			}
 
-			Set<String> deletedPointKeys = journalRead.getDeletions().getPointKeys();
+			Set<String> deletedPointKeys = collectStalePointKeys(groups, journalRead.getDeletions().getPointKeys());
 
 			boolean success = saveExternalFiles(groups, deletedPointKeys);
 			if (!success) {
@@ -97,6 +98,38 @@ final class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 			log.error(e.getMessage(), e);
 			return false;
 		}
+	}
+
+	@NonNull
+	private Set<String> collectStalePointKeys(@NonNull List<FavoriteGroup> groups, @NonNull Set<String> journalDeletedKeys) {
+		Set<String> staleKeys = new HashSet<>(journalDeletedKeys);
+		File internalFile = helper.getInternalFile();
+		if (!internalFile.exists()) {
+			return staleKeys;
+		}
+
+		GpxFile gpxFile = SharedUtil.loadGpxFile(internalFile);
+		if (gpxFile.getError() != null) {
+			return staleKeys;
+		}
+
+		Map<String, FavoriteGroup> previousGroups = new LinkedHashMap<>();
+		helper.collectFavoriteGroups(gpxFile, previousGroups);
+
+		Set<String> currentKeys = new HashSet<>();
+		for (FavoriteGroup group : groups) {
+			for (FavouritePoint point : group.getPoints()) {
+				currentKeys.add(point.getKey());
+			}
+		}
+		for (FavoriteGroup group : previousGroups.values()) {
+			for (FavouritePoint point : group.getPoints()) {
+				if (!currentKeys.contains(point.getKey())) {
+					staleKeys.add(point.getKey());
+				}
+			}
+		}
+		return staleKeys;
 	}
 
 	private boolean saveSelectedGroupsOnly(@NonNull List<FavoriteGroup> groupsToSave) {
@@ -131,15 +164,11 @@ final class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 	                                  @NonNull Set<String> deleted) {
 		Map<String, FavoriteGroup> fileGroups = new LinkedHashMap<>();
 		loadGPXFiles(fileGroups);
-		if (!saveLocalGroups(localGroups, fileGroups, deleted)) {
-			return false;
-		}
-		cleanupOrphanedGroupFiles(localGroups, fileGroups);
-		return true;
+		return saveLocalGroups(localGroups, fileGroups, deleted) && cleanupOrphanedGroupFiles(localGroups, fileGroups);
 	}
 
-	private void cleanupOrphanedGroupFiles(@NonNull List<FavoriteGroup> localGroups,
-	                                       @NonNull Map<String, FavoriteGroup> fileGroups) {
+	private boolean cleanupOrphanedGroupFiles(@NonNull List<FavoriteGroup> localGroups,
+	                                          @NonNull Map<String, FavoriteGroup> fileGroups) {
 		for (FavoriteGroup fileGroup : fileGroups.values()) {
 			// Search corresponding group in memory
 			boolean hasLocalGroup = false;
@@ -151,9 +180,14 @@ final class SaveFavoritesTask extends AsyncTask<Void, String, Void> {
 			}
 			// Delete external group file if it does not exist in local groups
 			if (!hasLocalGroup) {
-				helper.getExternalFile(fileGroup).delete();
+				File file = helper.getExternalFile(fileGroup);
+				if (file.exists() && !file.delete()) {
+					log.warn("Failed to delete orphaned favorites file: " + file.getAbsolutePath());
+					return false;
+				}
 			}
 		}
+		return true;
 	}
 
 	private boolean saveLocalGroups(@NonNull List<FavoriteGroup> localGroups,

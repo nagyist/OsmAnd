@@ -125,14 +125,14 @@ public abstract class SettingsHelper {
 	public static void writeJson(@NonNull JSONObject json, @NonNull OutputStream outputStream,
 	                             @Nullable IProgress progress) throws IOException, JSONException {
 		String jsonString = json.toString(2);
+		OutputStream targetStream = outputStream;
 		if (progress != null) {
 			long work = Utf8.size(jsonString) / BUFFER;
 			progress.startWork((int) Math.min(work, Integer.MAX_VALUE));
+			targetStream = new ProgressOutputStream(outputStream, progress, BUFFER);
 		}
 		try {
-			OutputStream progressStream = new ProgressOutputStream(outputStream, progress, BUFFER);
-			Writer writer = new BufferedWriter(
-					new OutputStreamWriter(progressStream, StandardCharsets.UTF_8), JSON_BUFFER_SIZE);
+			Writer writer = new BufferedWriter(new OutputStreamWriter(targetStream, StandardCharsets.UTF_8), JSON_BUFFER_SIZE);
 			writer.write(jsonString);
 			writer.flush();
 		} finally {

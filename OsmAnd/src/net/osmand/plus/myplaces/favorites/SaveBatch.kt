@@ -45,20 +45,13 @@ class SaveBatch(
 		}
 	}
 
-	private companion object {
-		fun mergeGroups(destination: MutableList<FavoriteGroup>, source: List<FavoriteGroup>) {
-			for (sourceGroup in source) {
-				var replaced = false
-				for (i in destination.indices) {
-					if (Algorithms.stringsEqual(destination[i].name, sourceGroup.name)) {
-						destination[i] = sourceGroup
-						replaced = true
-						break
-					}
-				}
-				if (!replaced) {
-					destination.add(sourceGroup)
-				}
+	private fun mergeGroups(destination: MutableList<FavoriteGroup>, source: List<FavoriteGroup>) {
+		for (sourceGroup in source) {
+			val index = destination.indexOfFirst { Algorithms.stringsEqual(it.name, sourceGroup.name) }
+			if (index == -1) {
+				destination.add(sourceGroup)
+			} else {
+				destination[index] = sourceGroup
 			}
 		}
 	}

@@ -74,8 +74,8 @@ public class FavouritesHelper {
 	private final Map<FavouritePoint, AddressLookupRequest> addressRequestMap = new ConcurrentHashMap<>();
 	private final FavoritesListener saveFavoritesListener = new FavoritesListener() {
 		@Override
-		public void onSavingFavoritesFinished() {
-			notifySavingFavoritesFinished(null);
+		public void onSavingFavoritesFinished(boolean success) {
+			notifySavingFavoritesFinished(null, success);
 		}
 	};
 
@@ -799,8 +799,8 @@ public class FavouritesHelper {
 		updateLastModifiedTime();
 		FavoritesListener saveListener = listener == null ? saveFavoritesListener : new FavoritesListener() {
 			@Override
-			public void onSavingFavoritesFinished() {
-				notifySavingFavoritesFinished(listener);
+			public void onSavingFavoritesFinished(boolean success) {
+				notifySavingFavoritesFinished(listener, success);
 			}
 		};
 		if (async) {
@@ -1271,13 +1271,15 @@ public class FavouritesHelper {
 		}
 	}
 
-	private void notifySavingFavoritesFinished(@Nullable FavoritesListener saveListener) {
-		invalidateFavoriteFolderCache();
+	private void notifySavingFavoritesFinished(@Nullable FavoritesListener saveListener, boolean success) {
+		if (success) {
+			invalidateFavoriteFolderCache();
+		}
 		for (FavoritesListener listener : listeners) {
-			listener.onSavingFavoritesFinished();
+			listener.onSavingFavoritesFinished(success);
 		}
 		if (saveListener != null) {
-			saveListener.onSavingFavoritesFinished();
+			saveListener.onSavingFavoritesFinished(success);
 		}
 	}
 

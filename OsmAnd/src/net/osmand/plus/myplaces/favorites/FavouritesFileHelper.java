@@ -179,10 +179,14 @@ public class FavouritesFileHelper {
 	}
 
 	private void startSave(@NonNull SaveBatch batch) {
-		SaveFavoritesTask task = new SaveFavoritesTask(app, this,
-				batch.getGroups(), batch.getSaveAllGroups(),
-				(success, journalState) -> onSaveFinished(batch, success, journalState));
-		OsmAndTaskManager.executeTask(task, singleThreadExecutor);
+		try {
+			SaveFavoritesTask task = new SaveFavoritesTask(app, this, batch.getGroups(), batch.getSaveAllGroups(),
+					(success, journalState) -> onSaveFinished(batch, success, journalState));
+			OsmAndTaskManager.executeTask(task, singleThreadExecutor);
+		} catch (RuntimeException e) {
+			log.error("Failed to start favorites save", e);
+			onSaveFinished(batch, false, null);
+		}
 	}
 
 	private void onSaveFinished(@NonNull SaveBatch completedBatch, boolean success,
@@ -201,10 +205,8 @@ public class FavouritesFileHelper {
 		for (CountDownLatch waiter : completedBatch.getWaiters()) {
 			waiter.countDown();
 		}
-		if (success) {
-			for (FavoritesListener listener : completedBatch.getListeners()) {
-				app.runInUIThread(listener::onSavingFavoritesFinished);
-			}
+		for (FavoritesListener listener : completedBatch.getListeners()) {
+			app.runInUIThread(() -> listener.onSavingFavoritesFinished(success));
 		}
 		if (batchToStart != null) {
 			startSave(batchToStart);

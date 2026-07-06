@@ -60,13 +60,8 @@ object FavoriteDeletionsJournal {
 		points: Collection<FavouritePoint>?,
 		groups: Collection<FavoriteGroup>?
 	) {
-		val lines = buildList {
-			points?.forEach { add(serializePoint(it.key)) }
-			groups?.forEach { add(serializeGroup(it.name)) }
-		}
-
-		if (lines.isNotEmpty()) {
-			appendPendingDeletionLines(app, lines)
+		if (!points.isNullOrEmpty() || !groups.isNullOrEmpty()) {
+			appendPendingDeletionLines(app, points, groups)
 		}
 	}
 
@@ -87,19 +82,11 @@ object FavoriteDeletionsJournal {
 					}
 				} catch (e: IOException) {
 					log.error("Failed to read favorite deletions journal", e)
-					return ReadResult(
-						deletions = deletions,
-						state = null,
-						readFailed = true
-					)
+					return ReadResult(deletions, null, readFailed = true)
 				}
 			}
 
-			return ReadResult(
-				deletions = deletions,
-				state = getState(file),
-				readFailed = false
-			)
+			return ReadResult(deletions, getState(file), readFailed = false)
 		}
 	}
 
@@ -121,15 +108,19 @@ object FavoriteDeletionsJournal {
 		}
 	}
 
-	private fun appendPendingDeletionLines(app: OsmandApplication, lines: Collection<String>) {
+	private fun appendPendingDeletionLines(app: OsmandApplication, points: Collection<FavouritePoint>?, groups: Collection<FavoriteGroup>?) {
 		synchronized(lock) {
 			val file = getFile(app)
 
 			try {
 				FileOutputStream(file, true).use { fos ->
 					BufferedWriter(OutputStreamWriter(fos, Charsets.UTF_8), 8192).use { writer ->
-						for (line in lines) {
-							writer.write(line)
+						points?.forEach {
+							writer.write(serializePoint(it.key))
+							writer.newLine()
+						}
+						groups?.forEach {
+							writer.write(serializeGroup(it.name))
 							writer.newLine()
 						}
 						writer.flush()
@@ -161,19 +152,7 @@ object FavoriteDeletionsJournal {
 		}
 	}
 
-	private fun getState(file: File): JournalState {
-		return if (file.exists()) {
-			JournalState(
-				length = file.length(),
-				timestamp = file.lastModified()
-			)
-		} else {
-			JournalState(
-				length = 0L,
-				timestamp = 0L
-			)
-		}
-	}
+	private fun getState(file: File): JournalState = if (file.exists()) JournalState(file.length(), file.lastModified()) else JournalState(0L, 0L)
 
 	data class ReadResult(
 		val deletions: FavoritePendingDeletions,

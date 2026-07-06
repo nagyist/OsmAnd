@@ -1,7 +1,7 @@
 package net.osmand.shared.xml
 
 import net.osmand.shared.io.KFile
-import net.osmand.shared.io.SinkStringWriter
+import net.osmand.shared.io.SinkOutputStream
 import okio.IOException
 import okio.Sink
 import java.io.BufferedWriter
@@ -44,7 +44,7 @@ actual class XmlSerializer actual constructor() {
 	@Throws(IOException::class, IllegalArgumentException::class, IllegalStateException::class)
 	actual fun setOutput(output: Sink) {
 		stringWriter?.close()
-		stringWriter = BufferedWriter(SinkStringWriter(output), BUFFER_SIZE)
+		stringWriter = BufferedWriter(OutputStreamWriter(SinkOutputStream(output, false), Charsets.UTF_8), BUFFER_SIZE)
 		serializer.setOutput(stringWriter)
 	}
 

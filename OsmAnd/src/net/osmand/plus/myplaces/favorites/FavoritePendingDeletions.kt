@@ -15,8 +15,6 @@ class FavoritePendingDeletions {
 	}
 
 	fun addGroup(groupName: String) {
-		if (groupName.isNotEmpty()) {
-			groupNames.add(groupName)
-		}
+		groupNames.add(groupName)
 	}
 }
