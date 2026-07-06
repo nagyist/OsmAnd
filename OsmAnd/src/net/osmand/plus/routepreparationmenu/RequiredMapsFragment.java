@@ -215,7 +215,7 @@ public class RequiredMapsFragment extends BaseFullScreenDialogFragment implement
 		DownloadItem downloadItem = mapItem.downloadItem();
 		ImageView icon = view.findViewById(R.id.icon);
 		icon.setImageResource(mapItem.type() == RequiredMapType.OUTDATED
-				? R.drawable.ic_action_map_update : R.drawable.ic_action_map_update);
+				? R.drawable.ic_action_map_update : R.drawable.ic_action_map_missing);
 
 		TextView tvTitle = view.findViewById(R.id.title);
 		tvTitle.setText(getMapTitle(downloadItem));
@@ -274,6 +274,8 @@ public class RequiredMapsFragment extends BaseFullScreenDialogFragment implement
 
 		updateVisibility(view.findViewById(R.id.route_overview_actions_divider),
 				showOnlineAction || showUseExistingAction);
+		updateVisibility(view.findViewById(R.id.route_overview_actions_middle_divider),
+				showOnlineAction && showUseExistingAction);
 	}
 
 	@NonNull
@@ -293,17 +295,18 @@ public class RequiredMapsFragment extends BaseFullScreenDialogFragment implement
 				? ColorUtilities.getSecondaryTextColor(app, nightMode)
 				: ColorUtilities.getPrimaryTextColor(app, nightMode);
 		int start = builder.length();
-		builder.append(getRouteOverviewPrefix(item.type()));
+		builder.append(getRouteOverviewIcon(item.type()));
+		builder.append(" ");
 		builder.append(getMapTitle(item.downloadItem()));
 		builder.setSpan(new ForegroundColorSpan(color), start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	}
 
 	@NonNull
-	private String getRouteOverviewPrefix(@NonNull RequiredMapType type) {
+	private String getRouteOverviewIcon(@NonNull RequiredMapType type) {
 		return switch (type) {
-			case OUTDATED -> "🔄 ";
-			case MISSING -> "❌ ";
-			default -> "✅ ";
+			case OUTDATED -> "🔄";
+			case MISSING -> "❌";
+			default -> "✅";
 		};
 	}
 
