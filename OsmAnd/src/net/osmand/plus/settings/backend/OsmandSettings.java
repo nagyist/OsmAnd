@@ -90,6 +90,7 @@ import net.osmand.plus.profiles.ProfileIconColors;
 import net.osmand.plus.render.RendererRegistry;
 import net.osmand.plus.resources.SQLiteTileSource;
 import net.osmand.plus.routing.RouteService;
+import net.osmand.plus.search.history.SearchHistoryHelper;
 import net.osmand.plus.settings.backend.menuitems.ContextMenuItemsSettings;
 import net.osmand.plus.settings.backend.menuitems.DrawerMenuItemsSettings;
 import net.osmand.plus.settings.backend.menuitems.MainContextMenuItemsSettings;
@@ -2552,6 +2553,10 @@ public class OsmandSettings {
 
 	public void setMapLocationToShow(double latitude, double longitude, int zoom, PointDescription pointDescription,
 	                                 boolean addToHistory, Object toShow) {
+		Object objectToAddToHistory = toShow;
+		if (toShow instanceof SearchHistoryHelper.HistoryObject historyObject) {
+			toShow = historyObject.getObject();
+		}
 		SettingsEditor edit = settingsAPI.edit(globalPreferences);
 		edit.putFloat(MAP_LAT_TO_SHOW, (float) latitude);
 		edit.putFloat(MAP_LON_TO_SHOW, (float) longitude);
@@ -2564,7 +2569,8 @@ public class OsmandSettings {
 		edit.commit();
 		objectToShow = toShow;
 		if (addToHistory && pointDescription != null) {
-			ctx.getSearchHistoryHelper().addNewItemToHistory(latitude, longitude, pointDescription, HistorySource.SEARCH);
+			ctx.getSearchHistoryHelper().addNewItemToHistory(latitude, longitude,
+					pointDescription, HistorySource.SEARCH, objectToAddToHistory);
 		}
 	}
 

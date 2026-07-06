@@ -666,7 +666,8 @@ public class AnimateDraggingMapThread implements TouchListener {
 		int targetIntZoom = this.targetIntZoom;
 		double targetFloatZoom = this.targetFloatZoom;
 
-		PointI initFlatTarget31 = mapRenderer.getState().getTarget31();
+		MapState mapState = mapRenderer.getState();
+		PointI initFlatTarget31 = mapState.getTarget31();
 		int initFlatTarget31X = initFlatTarget31.getX();
 		int initFlatTarget31Y = initFlatTarget31.getY();
 		float initZoom = mapRenderer.getZoom();
