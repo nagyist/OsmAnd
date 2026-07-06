@@ -9,14 +9,12 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -87,7 +85,6 @@ import net.osmand.plus.settings.fragments.BaseSettingsFragment;
 import net.osmand.plus.settings.fragments.OnPreferenceChanged;
 import net.osmand.plus.settings.fragments.SettingsScreenType;
 import net.osmand.plus.utils.AndroidUtils;
-import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.plus.utils.InsetTarget;
 import net.osmand.plus.utils.InsetTargetsCollection;
 import net.osmand.plus.utils.OsmAndFormatter;
@@ -134,6 +131,9 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private static final String QUICK_SEARCH_TYPE_KEY = "quick_search_type_key";
 	private static final String NEAREST_POIS_FILTER_ID = "nearest_pois";
 	private static final String NEAREST_POIS_UI_FILTER_ID = PoiUIFilter.STD_PREFIX + "null";
+	private static final String FILTER_CHIP_ID = "filter";
+	private static final String SORT_CHIP_ID = "sort";
+	private static final String SEARCH_AROUND_CHIP_ID = "search_around";
 	private static final double MIN_COMPASS_DEGREES_TO_UPDATE_CONTENT = 5.0;
 	private static final int EXPLORE_HISTORY_CARD_ITEMS_LIMIT = 25;
 
@@ -144,18 +144,15 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private View searchView;
 	private View buttonToolbarView;
 	private View sendEmptySearchView;
-	private View filterChip;
-	private View sortChip;
-	private View searchAroundChip;
+	private ChipsLayout filterChips;
+	private ChipsLayout searchResultPoiTypesChips;
+	private ChipsLayout.ChipData filterChip;
+	private ChipsLayout.DropDownChipData sortChip;
+	private ChipsLayout.DropDownChipData searchAroundChip;
+	private final List<ChipsLayout.ChipData> filterChipItems = new ArrayList<>();
 	private View advancedCoordinatesCard;
-	private View searchResultChipsScroll;
-	private View topFiltersChipScroll;
-	private LinearLayout topFiltersChipContainer;
 	private SearchResultCollection unfilteredResultCollection;
-	private TextView filterChipCount;
-	private TextView sortChipTitle;
-	private ImageView searchAroundChipIcon;
-	private TextView searchAroundChipTitle;
+	private final Map<String, PoiUIFilter> currentTopFilterChips = new HashMap<>();
 	private TextView sendEmptySearchText;
 	private FrameLayout sendEmptySearchButton;
 	private QuickSearchMainListFragment mainSearchFragment;
@@ -282,6 +279,8 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		FragmentActivity activity = requireActivity();
 		navigationInfo = new NavigationInfo(app);
 		accessibilityAssistant = new AccessibilityAssistant(activity);
+		searchHelper = app.getSearchUICore();
+		searchUICore = searchHelper.getCore();
 	}
 
 	@Override
@@ -336,64 +335,11 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		searchView = view.findViewById(R.id.search_view);
 
 		buttonToolbarView = view.findViewById(R.id.button_toolbar_layout);
-		filterChip = view.findViewById(R.id.filter_chip);
-		filterChipCount = view.findViewById(R.id.filter_chip_count);
-		ImageView filterChipIcon = view.findViewById(R.id.filter_chip_icon);
-		filterChipIcon.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_filter));
-		filterChip.setOnClickListener(v -> {
-			SearchPhrase searchPhrase = searchUICore.getPhrase();
-			if (searchPhrase.isLastWord(POI_TYPE)) {
-				String filterId = null;
-				String filterByName = searchPhrase.getUnknownSearchPhrase().trim();
-				Object object = searchPhrase.getLastSelectedWord().getResult().object;
-				if (object instanceof PoiUIFilter model) {
-					if (!Algorithms.isEmpty(model.getSavedFilterByName())) {
-						model.setFilterByName(model.getSavedFilterByName());
-					}
-					filterId = model.getFilterId();
-				} else if (object instanceof AbstractPoiType abstractPoiType) {
-					PoiUIFilter custom = app.getPoiFilters().getFilterById(PoiUIFilter.STD_PREFIX + abstractPoiType.getKeyName());
-					if (custom != null) {
-						custom.setFilterByName(null);
-						custom.clearFilter();
-						custom.updateTypesToAccept(abstractPoiType);
-						filterId = custom.getFilterId();
-					}
-				} else if (object instanceof TopIndexFilter topIndexFilter) {
-					PoiUIFilter poiUIFilter = initPoiUIFilter(topIndexFilter, ProcessTopIndex.FILTER);
-					if (poiUIFilter != null) {
-						filterId = poiUIFilter.getFilterId();
-						filterByName = topIndexFilter.getValue();
-					}
-				}
-				if (filterId != null) {
-					QuickSearchPoiFilterFragment.showInstance(QuickSearchDialogFragment.this, filterByName, filterId);
-				}
-			}
-		});
-		sortChip = view.findViewById(R.id.sort_chip);
-		sortChipTitle = view.findViewById(R.id.sort_chip_title);
-		ImageView sortChipIcon = view.findViewById(R.id.sort_chip_icon);
-		sortChipIcon.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_sort));
-		ImageView sortChipArrow = view.findViewById(R.id.sort_chip_arrow);
-		sortChipArrow.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_arrow_drop_down));
-		sortChip.setOnClickListener(v -> {
-			sortChip.setSelected(true);
-			showSortPopupMenu();
-		});
-		updateSortChip();
-		searchAroundChip = view.findViewById(R.id.search_around_chip);
-		searchAroundChipIcon = view.findViewById(R.id.search_around_chip_icon);
-		searchAroundChipTitle = view.findViewById(R.id.search_around_chip_title);
-		ImageView searchAroundChipArrow = view.findViewById(R.id.search_around_chip_arrow);
-		searchAroundChipArrow.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_action_arrow_drop_down));
-		searchAroundChip.setOnClickListener(v -> {
-			searchAroundChip.setSelected(true);
-			showSearchAroundPopupMenu();
-		});
-		searchResultChipsScroll = view.findViewById(R.id.search_result_chips_scroll);
-		topFiltersChipScroll = view.findViewById(R.id.top_filters_chip_scroll);
-		topFiltersChipContainer = view.findViewById(R.id.top_filters_chip_container);
+		filterChips = view.findViewById(R.id.search_result_filter_chips);
+		searchResultPoiTypesChips = view.findViewById(R.id.search_result_poi_types_chips);
+		searchResultPoiTypesChips.setOnChipClickListener(this::onPoiTypeChipClick);
+		initFilterChipItems();
+		updateChipsState();
 		advancedCoordinatesCard = view.findViewById(R.id.advanced_coordinates_card);
 		ImageView advancedCoordinatesIcon = view.findViewById(R.id.advanced_coordinates_icon);
 		int advancedCoordinatesIconColorId = nightMode ? R.color.osmand_orange_dark : R.color.osmand_orange;
@@ -947,52 +893,131 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private void updateToolbarButton() {
 		SearchWord word = searchUICore.getPhrase().getLastSelectedWord();
 		updateDefaultSortOption(word);
-		boolean filterButtonVisible = word != null && word.getType() != null && word.getType().equals(POI_TYPE);
-		filterChip.setVisibility(filterButtonVisible ? View.VISIBLE : View.GONE);
-		if (filterButtonVisible) {
-			updateFilterChipCount(word);
-		} else {
-			filterChip.setSelected(false);
-			filterChipCount.setVisibility(View.GONE);
-		}
-		updateSearchAroundChip();
-		updateSortChip();
-		updateTopFilterChipsSelection();
+		updateChipsState();
 		updateAdvancedCoordinatesCard();
 	}
 
 	private void updateTopFilterChips() {
-		if (searchUICore == null || searchUICore.getPhrase() == null || topFiltersChipScroll == null || topFiltersChipContainer == null) {
+		updateChipsState();
+	}
+
+	private void initFilterChipItems() {
+		filterChip = new ChipsLayout.ChipData(
+				FILTER_CHIP_ID,
+				R.drawable.ic_action_filter,
+				null,
+				false,
+				false,
+				true,
+				false,
+				ChipsLayout.TextColorStyle.PRIMARY,
+				ChipsLayout.IconColorStyle.DEFAULT,
+				0,
+				new ArrayList<>(),
+				false,
+				chipId -> onFilterChipClick());
+		sortChip = new ChipsLayout.DropDownChipData(
+				SORT_CHIP_ID,
+				R.drawable.ic_action_sort,
+				null,
+				false,
+				false,
+				true,
+				ChipsLayout.TextColorStyle.PRIMARY,
+				ChipsLayout.IconColorStyle.ACTIVE,
+				R.string.sort_by,
+				new ArrayList<>(),
+				false,
+				this::onDropdownItemClick);
+		searchAroundChip = new ChipsLayout.DropDownChipData(
+				SEARCH_AROUND_CHIP_ID,
+				R.drawable.ic_show_on_map_outlined,
+				null,
+				false,
+				false,
+				true,
+				ChipsLayout.TextColorStyle.PRIMARY,
+				ChipsLayout.IconColorStyle.ACTIVE,
+				R.string.search_around,
+				new ArrayList<>(),
+				false,
+				this::onDropdownItemClick);
+		filterChipItems.clear();
+		filterChipItems.add(filterChip);
+		filterChipItems.add(sortChip);
+		filterChipItems.add(searchAroundChip);
+	}
+
+	private void updateChipsState() {
+		if (searchUICore == null || searchUICore.getPhrase() == null
+				|| filterChips == null || searchResultPoiTypesChips == null) {
 			return;
 		}
-		topFiltersChipContainer.removeAllViews();
+		SearchWord word = searchUICore.getPhrase().getLastSelectedWord();
+		boolean searchVisible = isSearchViewVisible();
+		List<ChipsLayout.ChipData> topChips = new ArrayList<>();
+
+		boolean filterButtonVisible = word != null && word.getType() != null && word.getType().equals(POI_TYPE);
+		int appliedFiltersCount = filterButtonVisible ? getAppliedFiltersCount(word) : 0;
+		filterChip.title = appliedFiltersCount > 0 ? String.valueOf(appliedFiltersCount) : null;
+		filterChip.selected = appliedFiltersCount > 0;
+		filterChip.visible = searchVisible && filterButtonVisible;
+
+		sortChip.title = getString(selectedSortByOption.titleId);
+		sortChip.visible = searchVisible;
+		sortChip.dropdownItems = getSortOptions();
+
+		SearchAroundOption searchAroundOption = getSelectedSearchAroundOption();
+		searchAroundChip.iconId = searchAroundOption.iconId;
+		searchAroundChip.title = getString(searchAroundOption.titleId);
+		searchAroundChip.visible = searchVisible && isSearchAroundChipVisible();
+		searchAroundChip.dropdownItems = getSearchAroundOptions();
+
 		topFilterChipsForResultCategories = isResultCategoryFilterMode();
 		List<PoiUIFilter> topFilters = getTopFilterChipsSource();
 		moveSelectedTopFilterFirst(topFilters);
+		currentTopFilterChips.clear();
+		String selectedFilterId = getSelectedCategorySearchFilterId();
 		for (PoiUIFilter filter : topFilters) {
 			if (!NEAREST_POIS_UI_FILTER_ID.equals(filter.getFilterId())) {
-				topFiltersChipContainer.addView(createTopFilterChip(filter));
+				currentTopFilterChips.put(filter.getFilterId(), filter);
+				boolean selected = topFilterChipsForResultCategories
+						? selectedResultCategoryFilterIds.contains(filter.getFilterId())
+						: Algorithms.objectEquals(filter.getFilterId(), selectedFilterId);
+				topChips.add(new ChipsLayout.ChipData(
+						filter.getFilterId(),
+						0,
+						filter.getName(),
+						selected,
+						searchVisible,
+						true,
+						false,
+						ChipsLayout.TextColorStyle.PRIMARY,
+						ChipsLayout.IconColorStyle.DEFAULT));
 			}
 		}
-		boolean searchVisible = isSearchViewVisible();
-		boolean topRowVisible = topFiltersChipContainer.getChildCount() > 0 && searchVisible;
-		topFiltersChipScroll.setVisibility(topRowVisible ? View.VISIBLE : View.GONE);
-		ViewGroup.LayoutParams layoutParams = topFiltersChipScroll.getLayoutParams();
-		if (layoutParams instanceof ViewGroup.MarginLayoutParams marginLayoutParams) {
-			int topMargin = topRowVisible && searchVisible ? getDimensionPixelSize(R.dimen.content_padding_small) : 0;
-			if (marginLayoutParams.topMargin != topMargin) {
-				marginLayoutParams.topMargin = topMargin;
-				topFiltersChipScroll.setLayoutParams(marginLayoutParams);
-			}
-		}
-		if (searchResultChipsScroll != null) {
-			searchResultChipsScroll.setVisibility(searchVisible ? View.VISIBLE : View.GONE);
+		filterChips.updateContent(filterChipItems);
+		searchResultPoiTypesChips.updateContent(topChips);
+		boolean filterChipsVisible = searchVisible && hasVisibleChip(filterChipItems);
+		filterChips.setVisibility(filterChipsVisible ? View.VISIBLE : View.GONE);
+		boolean poiTypesChipsVisible = searchVisible && !topChips.isEmpty();
+		searchResultPoiTypesChips.setVisibility(poiTypesChipsVisible ? View.VISIBLE : View.GONE);
+		if (filterChipsVisible || poiTypesChipsVisible) {
+			buttonToolbarView.setVisibility(View.VISIBLE);
 		}
 		if (!searchVisible) {
-			buttonToolbarView.setVisibility(topRowVisible ? View.VISIBLE : View.GONE);
+			buttonToolbarView.setVisibility(View.GONE);
 			updateShowOnMapFab();
 		}
-		updateTopFilterChipsSelection();
+	}
+
+	private boolean hasVisibleChip(@NonNull List<ChipsLayout.ChipData> chips) {
+		for (ChipsLayout.ChipData chip : chips) {
+			if (chip.visible) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@NonNull
@@ -1090,42 +1115,18 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		}
 	}
 
-	@NonNull
-	private View createTopFilterChip(@NonNull PoiUIFilter filter) {
-		boolean resultCategoryFilterChip = topFilterChipsForResultCategories;
-		LinearLayout chip = new LinearLayout(requireContext());
-		chip.setGravity(Gravity.CENTER);
-		chip.setOrientation(LinearLayout.HORIZONTAL);
-		chip.setBackgroundResource(R.drawable.bg_search_toolbar_chip);
-		chip.setClickable(true);
-		chip.setFocusable(true);
-		chip.setMinimumWidth(AndroidUtils.dpToPx(requireContext(), 68));
-		chip.setPadding(AndroidUtils.dpToPx(requireContext(), 12), 0,
-				AndroidUtils.dpToPx(requireContext(), 12), 0);
-		chip.setTag(filter.getFilterId());
-		LinearLayout.LayoutParams chipParams = new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, AndroidUtils.dpToPx(requireContext(), 36));
-		chipParams.setMarginEnd(getDimensionPixelSize(R.dimen.content_padding_half));
-		chip.setLayoutParams(chipParams);
-
-		TextView title = new TextView(requireContext());
-		title.setText(filter.getName());
-		title.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
-		title.setTextSize(14);
-		title.setSingleLine(true);
-		title.setEllipsize(TextUtils.TruncateAt.END);
-		title.setGravity(Gravity.CENTER);
-		chip.addView(title, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		chip.setOnClickListener(v -> {
-			if (resultCategoryFilterChip && !isCategorySearch()) {
-				toggleResultCategoryFilter(filter.getFilterId());
-			} else {
-				showFilter(filter);
-			}
-		});
-		return chip;
+	private void onPoiTypeChipClick(@NonNull String filterId) {
+		if (topFilterChipsForResultCategories && !isCategorySearch()) {
+			toggleResultCategoryFilter(filterId);
+			return;
+		}
+		PoiUIFilter filter = currentTopFilterChips.get(filterId);
+		if (filter == null) {
+			filter = app.getPoiFilters().getFilterById(filterId);
+		}
+		if (filter != null) {
+			showFilter(filter);
+		}
 	}
 
 	private void toggleResultCategoryFilter(@NonNull String filterId) {
@@ -1164,17 +1165,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	private void updateTopFilterChipsSelection() {
-		if (topFiltersChipContainer == null) {
-			return;
-		}
-		String selectedFilterId = getSelectedCategorySearchFilterId();
-		for (int i = 0; i < topFiltersChipContainer.getChildCount(); i++) {
-			View child = topFiltersChipContainer.getChildAt(i);
-			boolean selected = topFilterChipsForResultCategories
-					? selectedResultCategoryFilterIds.contains(child.getTag())
-					: Algorithms.objectEquals(child.getTag(), selectedFilterId);
-			child.setSelected(selected);
-		}
+		updateChipsState();
 	}
 
 	@Nullable
@@ -1213,13 +1204,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		return null;
 	}
 
-	private void updateSearchAroundChip() {
-		if (searchAroundChip != null) {
-			searchAroundChip.setVisibility(isSearchAroundChipVisible() ? View.VISIBLE : View.GONE);
-			updateSearchAroundChipContent();
-		}
-	}
-
 	private boolean isSearchAroundChipVisible() {
 		if (location == null) {
 			return false;
@@ -1232,24 +1216,54 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		return distance >= DISTANCE_THRESHOLD;
 	}
 
-	private void updateSearchAroundChipContent() {
-		if (searchAroundChipIcon == null || searchAroundChipTitle == null) {
-			return;
-		}
-		SearchAroundOption option = getSelectedSearchAroundOption();
-		searchAroundChipIcon.setImageDrawable(iconsCache.getThemedIcon(option.iconId));
-		searchAroundChipTitle.setText(option.titleId);
-	}
-
 	private SearchAroundOption getSelectedSearchAroundOption() {
 		return useMapCenter ? SearchAroundOption.MAP_CENTER : SearchAroundOption.MY_LOCATION;
 	}
 
-	private void updateFilterChipCount(@Nullable SearchWord word) {
-		int appliedFiltersCount = getAppliedFiltersCount(word);
-		filterChip.setSelected(appliedFiltersCount > 0);
-		filterChipCount.setVisibility(appliedFiltersCount > 0 ? View.VISIBLE : View.GONE);
-		filterChipCount.setText(String.valueOf(appliedFiltersCount));
+	private void onDropdownItemClick(@NonNull String chipId, int itemId) {
+		if (SORT_CHIP_ID.equals(chipId)) {
+			SortByOption[] options = SortByOption.values();
+			if (itemId >= 0 && itemId < options.length) {
+				onSortOptionSelected(options[itemId]);
+			}
+		} else if (SEARCH_AROUND_CHIP_ID.equals(chipId)) {
+			SearchAroundOption[] options = SearchAroundOption.values();
+			if (itemId >= 0 && itemId < options.length) {
+				onSearchAroundOptionSelected(options[itemId]);
+			}
+		}
+	}
+
+	private void onFilterChipClick() {
+		SearchPhrase searchPhrase = searchUICore.getPhrase();
+		if (searchPhrase.isLastWord(POI_TYPE)) {
+			String filterId = null;
+			String filterByName = searchPhrase.getUnknownSearchPhrase().trim();
+			Object object = searchPhrase.getLastSelectedWord().getResult().object;
+			if (object instanceof PoiUIFilter model) {
+				if (!Algorithms.isEmpty(model.getSavedFilterByName())) {
+					model.setFilterByName(model.getSavedFilterByName());
+				}
+				filterId = model.getFilterId();
+			} else if (object instanceof AbstractPoiType abstractPoiType) {
+				PoiUIFilter custom = app.getPoiFilters().getFilterById(PoiUIFilter.STD_PREFIX + abstractPoiType.getKeyName());
+				if (custom != null) {
+					custom.setFilterByName(null);
+					custom.clearFilter();
+					custom.updateTypesToAccept(abstractPoiType);
+					filterId = custom.getFilterId();
+				}
+			} else if (object instanceof TopIndexFilter topIndexFilter) {
+				PoiUIFilter poiUIFilter = initPoiUIFilter(topIndexFilter, ProcessTopIndex.FILTER);
+				if (poiUIFilter != null) {
+					filterId = poiUIFilter.getFilterId();
+					filterByName = topIndexFilter.getValue();
+				}
+			}
+			if (filterId != null) {
+				QuickSearchPoiFilterFragment.showInstance(QuickSearchDialogFragment.this, filterByName, filterId);
+			}
+		}
 	}
 
 	private int getAppliedFiltersCount(@Nullable SearchWord word) {
@@ -1290,122 +1304,31 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		return param.equals(open) || param.equals(open24);
 	}
 
-	private void showSortPopupMenu() {
-		LinearLayout content = new LinearLayout(requireContext());
-		content.setOrientation(LinearLayout.VERTICAL);
-		content.setPadding(0, AndroidUtils.dpToPx(requireContext(), 8), 0, AndroidUtils.dpToPx(requireContext(), 8));
-
-		GradientDrawable background = new GradientDrawable();
-		background.setColor(ColorUtilities.getListBgColor(requireContext(), nightMode));
-		background.setCornerRadius(AndroidUtils.dpToPx(requireContext(), 4));
-
-		TextView title = new TextView(requireContext());
-		title.setText(R.string.sort_by);
-		title.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorSecondary));
-		title.setTextSize(16);
-		title.setPadding(AndroidUtils.dpToPx(requireContext(), 24), AndroidUtils.dpToPx(requireContext(), 12),
-				AndroidUtils.dpToPx(requireContext(), 24), AndroidUtils.dpToPx(requireContext(), 8));
-		content.addView(title, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		PopupWindow popupWindow = new PopupWindow(content,
-				AndroidUtils.dpToPx(requireContext(), 268), LinearLayout.LayoutParams.WRAP_CONTENT, true);
-		addSortOption(content, popupWindow, SortByOption.NEAREST);
-		addSortOption(content, popupWindow, SortByOption.RELEVANCE);
-
-		popupWindow.setBackgroundDrawable(background);
-		popupWindow.setOutsideTouchable(true);
-		popupWindow.setElevation(AndroidUtils.dpToPx(requireContext(), 24));
-		popupWindow.setOnDismissListener(() -> sortChip.setSelected(false));
-		popupWindow.showAsDropDown(sortChip, 0, AndroidUtils.dpToPx(requireContext(), 4));
+	@NonNull
+	private List<ChipsLayout.DropdownItem> getSearchAroundOptions() {
+		List<ChipsLayout.DropdownItem> options = new ArrayList<>();
+		SearchAroundOption selectedOption = getSelectedSearchAroundOption();
+		options.add(new ChipsLayout.DropdownItem(
+				SearchAroundOption.MAP_CENTER.ordinal(),
+				0,
+				getString(SearchAroundOption.MAP_CENTER.titleId),
+				getMapCenterDistanceDescription(),
+				selectedOption == SearchAroundOption.MAP_CENTER));
+		options.add(new ChipsLayout.DropdownItem(
+				SearchAroundOption.MY_LOCATION.ordinal(),
+				0,
+				getString(SearchAroundOption.MY_LOCATION.titleId),
+				getString(R.string.search_around_my_location_description),
+				selectedOption == SearchAroundOption.MY_LOCATION));
+		return options;
 	}
 
-	private void showSearchAroundPopupMenu() {
-		LinearLayout content = new LinearLayout(requireContext());
-		content.setOrientation(LinearLayout.VERTICAL);
-		content.setPadding(0, AndroidUtils.dpToPx(requireContext(), 8), 0, AndroidUtils.dpToPx(requireContext(), 8));
-
-		GradientDrawable background = new GradientDrawable();
-		background.setColor(ColorUtilities.getListBgColor(requireContext(), nightMode));
-		background.setCornerRadius(AndroidUtils.dpToPx(requireContext(), 4));
-
-		TextView title = new TextView(requireContext());
-		title.setText(R.string.search_around);
-		title.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorSecondary));
-		title.setTextSize(16);
-		title.setPadding(AndroidUtils.dpToPx(requireContext(), 24), AndroidUtils.dpToPx(requireContext(), 12),
-				AndroidUtils.dpToPx(requireContext(), 24), AndroidUtils.dpToPx(requireContext(), 8));
-		content.addView(title, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		PopupWindow popupWindow = new PopupWindow(content,
-				AndroidUtils.dpToPx(requireContext(), 268), LinearLayout.LayoutParams.WRAP_CONTENT, true);
-		addSearchAroundOption(content, popupWindow, SearchAroundOption.MAP_CENTER,
-				getMapCenterDistanceDescription(), () -> {
-					popupWindow.dismiss();
-					searchAroundMapCenter();
-				});
-		addSearchAroundOption(content, popupWindow, SearchAroundOption.MY_LOCATION,
-				getString(R.string.search_around_my_location_description), () -> {
-					popupWindow.dismiss();
-					searchAroundMyLocation();
-				});
-
-		popupWindow.setBackgroundDrawable(background);
-		popupWindow.setOutsideTouchable(true);
-		popupWindow.setElevation(AndroidUtils.dpToPx(requireContext(), 24));
-		popupWindow.setOnDismissListener(() -> searchAroundChip.setSelected(false));
-		popupWindow.showAsDropDown(searchAroundChip, 0, AndroidUtils.dpToPx(requireContext(), 4));
-	}
-
-	private void addSearchAroundOption(@NonNull LinearLayout content, @NonNull PopupWindow popupWindow,
-			@NonNull SearchAroundOption option, @NonNull String description, @Nullable Runnable action) {
-		LinearLayout row = new LinearLayout(requireContext());
-		row.setGravity(Gravity.CENTER_VERTICAL);
-		row.setOrientation(LinearLayout.HORIZONTAL);
-		row.setPadding(AndroidUtils.dpToPx(requireContext(), 24), 0,
-				AndroidUtils.dpToPx(requireContext(), 24), 0);
-		row.setMinimumHeight(AndroidUtils.dpToPx(requireContext(), 72));
-		row.setBackgroundResource(AndroidUtils.resolveAttribute(requireContext(), android.R.attr.selectableItemBackground));
-
-		RadioButton radioButton = new RadioButton(requireContext());
-		radioButton.setClickable(false);
-		radioButton.setChecked(getSelectedSearchAroundOption() == option);
-		row.addView(radioButton, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		LinearLayout textContainer = new LinearLayout(requireContext());
-		textContainer.setOrientation(LinearLayout.VERTICAL);
-		textContainer.setGravity(Gravity.CENTER_VERTICAL);
-		LinearLayout.LayoutParams textContainerParams = new LinearLayout.LayoutParams(
-				0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
-		textContainerParams.setMarginStart(AndroidUtils.dpToPx(requireContext(), 16));
-		row.addView(textContainer, textContainerParams);
-
-		TextView title = new TextView(requireContext());
-		title.setText(option.titleId);
-		title.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
-		title.setTextSize(16);
-		textContainer.addView(title, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		TextView subtitle = new TextView(requireContext());
-		subtitle.setText(description);
-		subtitle.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorSecondary));
-		subtitle.setTextSize(14);
-		subtitle.setSingleLine(false);
-		textContainer.addView(subtitle, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		row.setOnClickListener(v -> {
-			if (action != null) {
-				action.run();
-			} else {
-				popupWindow.dismiss();
-			}
-		});
-		content.addView(row, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+	private void onSearchAroundOptionSelected(@NonNull SearchAroundOption option) {
+		if (option == SearchAroundOption.MAP_CENTER) {
+			searchAroundMapCenter();
+		} else {
+			searchAroundMyLocation();
+		}
 	}
 
 	@NonNull
@@ -1473,56 +1396,27 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		}
 	}
 
-	private void addSortOption(@NonNull LinearLayout content, @NonNull PopupWindow popupWindow,
-			@NonNull SortByOption option) {
-		boolean enabled = !isNearestPoiSearch() || option == SortByOption.NEAREST;
-		LinearLayout row = new LinearLayout(requireContext());
-		row.setGravity(Gravity.CENTER_VERTICAL);
-		row.setOrientation(LinearLayout.HORIZONTAL);
-		row.setPadding(AndroidUtils.dpToPx(requireContext(), 24), 0,
-				AndroidUtils.dpToPx(requireContext(), 24), 0);
-		row.setMinimumHeight(AndroidUtils.dpToPx(requireContext(), 56));
-		row.setBackgroundResource(AndroidUtils.resolveAttribute(requireContext(), android.R.attr.selectableItemBackground));
-		row.setEnabled(enabled);
-		row.setAlpha(enabled ? 1f : .5f);
-
-		RadioButton radioButton = new RadioButton(requireContext());
-		radioButton.setClickable(false);
-		radioButton.setEnabled(enabled);
-		radioButton.setChecked(selectedSortByOption == option);
-		row.addView(radioButton, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		TextView text = new TextView(requireContext());
-		text.setText(option.titleId);
-		text.setTextColor(AndroidUtils.getColorFromAttr(requireContext(), android.R.attr.textColorPrimary));
-		text.setEnabled(enabled);
-		text.setTextSize(18);
-		LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-		textParams.setMarginStart(AndroidUtils.dpToPx(requireContext(), 16));
-		row.addView(text, textParams);
-
-		row.setOnClickListener(v -> {
-			if (!enabled) {
-				return;
-			}
-			boolean changed = selectedSortByOption != option;
-			selectedSortByOption = option;
-			updateSortChip();
-			popupWindow.dismiss();
-			if (changed) {
-				applySelectedSortSetting();
-				rerunCurrentSearchQuery();
-			}
-		});
-		content.addView(row, new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+	@NonNull
+	private List<ChipsLayout.DropdownItem> getSortOptions() {
+		List<ChipsLayout.DropdownItem> options = new ArrayList<>();
+		for (SortByOption option : new SortByOption[] {SortByOption.NEAREST, SortByOption.RELEVANCE}) {
+			boolean enabled = !isNearestPoiSearch() || option == SortByOption.NEAREST;
+			options.add(new ChipsLayout.DropdownItem(
+					option.ordinal(), 0, getString(option.titleId), null, selectedSortByOption == option, enabled));
+		}
+		return options;
 	}
 
-	private void updateSortChip() {
-		if (sortChipTitle != null) {
-			sortChipTitle.setText(selectedSortByOption.titleId);
+	private void onSortOptionSelected(@NonNull SortByOption option) {
+		if (isNearestPoiSearch() && option != SortByOption.NEAREST) {
+			return;
+		}
+		boolean changed = selectedSortByOption != option;
+		selectedSortByOption = option;
+		updateChipsState();
+		if (changed) {
+			applySelectedSortSetting();
+			rerunCurrentSearchQuery();
 		}
 	}
 
@@ -2349,9 +2243,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 						showApiResults(searchApi, apiResults, phrase, hasRegionCollection, resultListener);
 						switch (processTopIndexAfterLoad) {
 							case FILTER:
-								app.runInUIThread(() -> {
-									filterChip.performClick();
-								});
+								app.runInUIThread(() -> onFilterChipClick());
 								break;
 							case MAP:
 								app.runInUIThread(() -> onShowOnMapButtonClick());
@@ -2995,7 +2887,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	private PoiUIFilter initPoiUIFilter(TopIndexFilter topIndexFilter,
-			ProcessTopIndex processAfter) {
+	                                    ProcessTopIndex processAfter) {
 		PoiUIFilter poiUIFilter = app.getPoiFilters().getFilterById(topIndexFilter.getFilterId());
 		if (poiUIFilter != null) {
 			// use saved filter

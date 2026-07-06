@@ -2,6 +2,7 @@ package net.osmand.plus.search.dialogs;
 
 import static net.osmand.search.core.ObjectType.*;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -146,6 +147,7 @@ public abstract class QuickSearchListFragment extends BaseNestedListFragment {
 	}
 
 	@Override
+	@SuppressLint("ClickableViewAccessibility")
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		dialogFragment = (QuickSearchDialogFragment) getParentFragment();

@@ -1,6 +1,8 @@
 package net.osmand.plus.search.dialogs;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
+import android.text.Editable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -59,6 +61,9 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 
 	public static final String TAG = QuickSearchHistoryFragment.class.getSimpleName();
 	private static final org.apache.commons.logging.Log LOG = PlatformUtil.getLog(QuickSearchHistoryFragment.class);
+	private static final String SORT_CHIP_ID = "sort";
+	private static final String SOURCE_CHIP_ID = "source";
+	private static final String TYPE_CHIP_ID_PREFIX = "type:";
 
 	private enum HistorySortMode {
 		RECENT(R.string.shared_string_recent, R.drawable.ic_action_sort),
@@ -96,7 +101,11 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private AppCompatEditText searchEditText;
 	private ImageButton settingsButton;
 	private ImageButton clearButton;
-	private QuickSearchChipsToolbarView chipsToolbar;
+	private ChipsLayout chipsToolbar;
+	private ChipsLayout typeChipsToolbar;
+	private ChipsLayout.DropDownChipData sortModeChip;
+	private ChipsLayout.DropDownChipData sourceFilterChip;
+	private final List<ChipsLayout.ChipData> toolbarChipItems = new ArrayList<>();
 
 	private Float heading;
 	private Location location;
@@ -107,6 +116,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private HistorySortMode selectedSortMode = HistorySortMode.RECENT;
 	private HistorySourceFilter selectedSourceFilter = HistorySourceFilter.ALL;
 	private final List<String> selectedTypeFilters = new ArrayList<>();
+	private final List<String> visibleTypeFilters = new ArrayList<>();
 
 	@ColorRes
 	@Override
@@ -123,7 +133,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-			@Nullable android.os.Bundle savedInstanceState) {
+	                         @Nullable android.os.Bundle savedInstanceState) {
 		updateNightMode();
 		View view = inflate(R.layout.quick_search_history_fragment, container, false);
 
@@ -177,37 +187,53 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 
 	private void setupChips(@NonNull View view) {
 		chipsToolbar = view.findViewById(R.id.chips_toolbar);
-		chipsToolbar.setOnSortSelectedListener(optionId -> {
-			HistorySortMode[] modes = HistorySortMode.values();
-			if (optionId >= 0 && optionId < modes.length) {
-				selectedSortMode = modes[optionId];
-				updateSortChip();
-				updateHistoryItems(searchEditText.getText().toString());
+		typeChipsToolbar = view.findViewById(R.id.type_chips_toolbar);
+		typeChipsToolbar.setOnChipClickListener(this::onTypeChipClick);
+		initToolbarChipItems();
+		updateSourceFilterFromSettings();
+		updateChipsState();
+	}
+
+	private void onTypeChipClick(@NonNull String chipId) {
+		if (chipId.startsWith(TYPE_CHIP_ID_PREFIX)) {
+			String typeName = chipId.substring(TYPE_CHIP_ID_PREFIX.length());
+			Editable searchTextEditable = searchEditText.getText();
+			if (searchTextEditable != null) {
+				if (selectedTypeFilters.remove(typeName)) {
+					updateHistoryItems(searchTextEditable.toString());
+				} else {
+					selectedTypeFilters.add(typeName);
+					updateHistoryItems(searchTextEditable.toString());
+				}
 			}
-		});
-		chipsToolbar.setOnSourceSelectedListener(optionId -> {
+		}
+	}
+
+	private void onDropdownItemClick(@NonNull String chipId, int itemId) {
+		Editable searchTextEditable = searchEditText.getText();
+		if (SORT_CHIP_ID.equals(chipId)) {
+			HistorySortMode[] modes = HistorySortMode.values();
+			if (itemId >= 0 && itemId < modes.length) {
+				selectedSortMode = modes[itemId];
+				updateChipsState();
+				if (searchTextEditable != null) {
+					updateHistoryItems(searchTextEditable.toString());
+				}
+			}
+		} else if (SOURCE_CHIP_ID.equals(chipId)) {
 			if (isSourceMenuDisabled()) {
 				return;
 			}
 			HistorySourceFilter[] filters = HistorySourceFilter.values();
-			if (optionId >= 0 && optionId < filters.length) {
-				selectedSourceFilter = filters[optionId];
+			if (itemId >= 0 && itemId < filters.length) {
+				selectedSourceFilter = filters[itemId];
 				selectedTypeFilters.clear();
-				updateSourceChip();
-				updateHistoryItems(searchEditText.getText().toString());
+				updateChipsState();
+				if (searchTextEditable != null) {
+					updateHistoryItems(searchTextEditable.toString());
+				}
 			}
-		});
-		chipsToolbar.setOnTypeChipClickListener(typeName -> {
-			if (selectedTypeFilters.remove(typeName)) {
-				updateHistoryItems(searchEditText.getText().toString());
-			} else {
-				selectedTypeFilters.add(typeName);
-				updateHistoryItems(searchEditText.getText().toString());
-			}
-		});
-		updateSourceFilterFromSettings();
-		updateSortChip();
-		updateSourceChip();
+		}
 	}
 
 	private void activateSearchField() {
@@ -225,6 +251,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		});
 	}
 
+	@SuppressLint("ClickableViewAccessibility")
 	private void setupList(@NonNull View view) {
 		MapActivity mapActivity = (MapActivity) requireActivity();
 		ListView listView = view.findViewById(R.id.list);
@@ -457,33 +484,111 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		for (String typeName : typeNames.values()) {
 			chips.add(typeName);
 		}
-		chipsToolbar.setTypeChips(chips, new ArrayList<>(selectedTypeFilters));
+		visibleTypeFilters.clear();
+		visibleTypeFilters.addAll(chips);
+		updateChipsState();
 	}
 
 	private void updateSortChip() {
-		if (chipsToolbar != null) {
-			chipsToolbar.setSortChip(selectedSortMode.titleId, selectedSortMode.iconId);
-			List<QuickSearchChipsToolbarView.Option> options = new ArrayList<>();
-			for (HistorySortMode sortMode : HistorySortMode.values()) {
-				options.add(new QuickSearchChipsToolbarView.Option(
-						sortMode.ordinal(), sortMode.titleId, selectedSortMode == sortMode));
-			}
-			chipsToolbar.setSortOptions(options);
-		}
+		updateChipsState();
 	}
 
 	private void updateSourceChip() {
-		if (chipsToolbar != null) {
-			updateSourceFilterFromSettings();
-			chipsToolbar.setSourceChip(selectedSourceFilter.titleId, selectedSourceFilter.iconId);
-			chipsToolbar.setSourceMenuEnabled(!isSourceMenuDisabled());
-			List<QuickSearchChipsToolbarView.Option> options = new ArrayList<>();
-			for (HistorySourceFilter sourceFilter : HistorySourceFilter.values()) {
-				options.add(new QuickSearchChipsToolbarView.Option(
-						sourceFilter.ordinal(), sourceFilter.titleId, selectedSourceFilter == sourceFilter));
-			}
-			chipsToolbar.setSourceOptions(options);
+		updateSourceFilterFromSettings();
+		updateChipsState();
+	}
+
+	private void initToolbarChipItems() {
+		sortModeChip = new ChipsLayout.DropDownChipData(
+				SORT_CHIP_ID,
+				HistorySortMode.RECENT.iconId,
+				null,
+				false,
+				true,
+				true,
+				ChipsLayout.TextColorStyle.PRIMARY,
+				ChipsLayout.IconColorStyle.ACTIVE,
+				R.string.sort_by,
+				new ArrayList<>(),
+				false,
+				this::onDropdownItemClick);
+		sourceFilterChip = new ChipsLayout.DropDownChipData(
+				SOURCE_CHIP_ID,
+				HistorySourceFilter.ALL.iconId,
+				null,
+				false,
+				true,
+				true,
+				ChipsLayout.TextColorStyle.PRIMARY,
+				ChipsLayout.IconColorStyle.ACTIVE,
+				R.string.shared_string_type,
+				new ArrayList<>(),
+				true,
+				this::onDropdownItemClick);
+		toolbarChipItems.clear();
+		toolbarChipItems.add(sortModeChip);
+		toolbarChipItems.add(sourceFilterChip);
+	}
+
+	private void updateChipsState() {
+		if (chipsToolbar == null || typeChipsToolbar == null) {
+			return;
 		}
+		List<ChipsLayout.ChipData> typeChips = new ArrayList<>();
+		sortModeChip.iconId = selectedSortMode.iconId;
+		sortModeChip.title = getString(selectedSortMode.titleId);
+		sortModeChip.dropdownItems = getSortOptions();
+
+		sourceFilterChip.iconId = selectedSourceFilter.iconId;
+		sourceFilterChip.title = getString(selectedSourceFilter.titleId);
+		sourceFilterChip.enabled = !isSourceMenuDisabled();
+		sourceFilterChip.iconColor = isSourceMenuDisabled()
+				? ChipsLayout.IconColorStyle.SECONDARY
+				: ChipsLayout.IconColorStyle.ACTIVE;
+		sourceFilterChip.dropdownItems = getSourceOptions();
+
+		for (String typeName : visibleTypeFilters) {
+			typeChips.add(new ChipsLayout.ChipData(
+					TYPE_CHIP_ID_PREFIX + typeName,
+					0,
+					typeName,
+					selectedTypeFilters.contains(typeName),
+					true,
+					true,
+					false,
+					ChipsLayout.TextColorStyle.PRIMARY,
+					ChipsLayout.IconColorStyle.DEFAULT));
+		}
+		chipsToolbar.updateContent(toolbarChipItems);
+		typeChipsToolbar.updateContent(typeChips);
+		typeChipsToolbar.setVisibility(typeChips.isEmpty() ? View.GONE : View.VISIBLE);
+	}
+
+	@NonNull
+	private List<ChipsLayout.DropdownItem> getSortOptions() {
+		List<ChipsLayout.DropdownItem> options = new ArrayList<>();
+		for (HistorySortMode sortMode : HistorySortMode.values()) {
+			options.add(new ChipsLayout.DropdownItem(
+					sortMode.ordinal(), 0, getString(sortMode.titleId), null, selectedSortMode == sortMode));
+		}
+		return options;
+	}
+
+	@NonNull
+	private List<ChipsLayout.DropdownItem> getSourceOptions() {
+		List<ChipsLayout.DropdownItem> options = new ArrayList<>();
+		for (HistorySourceFilter sourceFilter : HistorySourceFilter.values()) {
+			options.add(new ChipsLayout.DropdownItem(
+					sourceFilter.ordinal(),
+					0,
+					getString(sourceFilter.titleId),
+					null,
+					selectedSourceFilter == sourceFilter,
+					true,
+					false,
+					sourceFilter == HistorySourceFilter.ALL));
+		}
+		return options;
 	}
 
 	private void updateSourceFilterFromSettings() {
@@ -602,7 +707,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	public InsetTargetsCollection getInsetTargets() {
 		InsetTargetsCollection targetsCollection = super.getInsetTargets();
 		targetsCollection.replace(InsetTarget.createScrollable(R.id.list));
-		targetsCollection.add(InsetTarget.createHorizontalLandscape(R.id.chips_toolbar).build());
+		targetsCollection.add(InsetTarget.createHorizontalLandscape(R.id.chips_toolbar_container).build());
 		return targetsCollection;
 	}
 
