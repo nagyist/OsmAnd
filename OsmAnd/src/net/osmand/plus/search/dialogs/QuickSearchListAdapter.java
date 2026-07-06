@@ -14,7 +14,6 @@ import static net.osmand.search.core.ObjectType.STREET;
 import static net.osmand.search.core.ObjectType.STREET_INTERSECTION;
 import static net.osmand.search.core.ObjectType.VILLAGE;
 
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -80,6 +79,7 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 	private OnSelectionListener selectionListener;
 	private boolean selectionMode;
 	private boolean selectAll;
+	private boolean exploreHistoryCard;
 	private final List<QuickSearchListItem> selectedItems = new ArrayList<>();
 	private final UpdateLocationViewCache updateLocationViewCache;
 
@@ -122,6 +122,10 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 
 	public void setUseMapCenter(boolean useMapCenter) {
 		this.useMapCenter = useMapCenter;
+	}
+
+	public void setExploreHistoryCard(boolean exploreHistoryCard) {
+		this.exploreHistoryCard = exploreHistoryCard;
 	}
 
 	public boolean isSelectionMode() {
@@ -257,7 +261,7 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 					searchResult.objectType != ObjectType.GPX_TRACK;
 		}
 
-		setupBackground(view);
+		setupBackground(position, view, listItem);
 		setupDivider(position, view, listItem, useBigDividerMargin);
 		ViewCompat.setAccessibilityDelegate(view, accessibilityAssistant);
 		return view;
@@ -317,25 +321,21 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 	private LinearLayout bindDisabledHistoryItem(@NonNull QuickSearchListItem listItem, @Nullable View convertView) {
 		QuickSearchDisabledHistoryItem disabledHistoryItem = (QuickSearchDisabledHistoryItem) listItem;
 
-		LinearLayout view = getLinearLayout(convertView, R.layout.disabled_history_card);
+		LinearLayout view = getLinearLayout(convertView, R.layout.quick_search_disabled_history_card);
 
 		TextView title = view.findViewById(R.id.title);
-		title.setText(app.getString(R.string.is_disabled, app.getString(R.string.shared_string_search_history)));
+		title.setText(R.string.history_is_turned_off);
 
 		TextView description = view.findViewById(R.id.description);
-		description.setText(R.string.search_history_is_disabled_descr);
-
-		int color = ColorUtilities.getActivityBgColor(app, nightMode);
-		View cardContainer = view.findViewById(R.id.card_container);
-		AndroidUtils.setBackground(cardContainer, new ColorDrawable(color));
+		description.setText(R.string.search_and_navigation_history_disabled_descr);
 
 		TextView analyseButtonDescr = view.findViewById(R.id.settings_button);
 		FrameLayout analyseButton = view.findViewById(R.id.settings_button_container);
-		AndroidUtils.setBackground(app, analyseButton, nightMode, R.drawable.btn_border_light, R.drawable.btn_border_dark);
+		AndroidUtils.setBackground(app, analyseButton, nightMode, R.drawable.dlg_btn_secondary_light, R.drawable.dlg_btn_secondary_dark);
 		AndroidUtils.setBackground(app, analyseButtonDescr, nightMode, R.drawable.ripple_light, R.drawable.ripple_dark);
 		analyseButton.setOnClickListener(disabledHistoryItem.getOnClickListener());
+		analyseButtonDescr.setOnClickListener(disabledHistoryItem.getOnClickListener());
 
-		AndroidUiHelper.updateVisibility(view.findViewById(R.id.top_divider), false);
 		AndroidUiHelper.updateVisibility(view.findViewById(R.id.bottom_divider), false);
 
 		return view;
@@ -480,6 +480,11 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 			SearchResultViewHolder.bindPOISearchResult(view, listItem, nightMode, calendar);
 			setupCheckBox(position, view, listItem);
 			updateCompass(view, listItem, updateLocationViewCache, useMapCenter);
+		} else if (listItem.isDestinationHistoryItem()) {
+			view = getLinearLayout(convertView, R.layout.search_list_item_full);
+			SearchResultViewHolder.bindFullSearchResult(view, listItem);
+			updateCompass(view, listItem, updateLocationViewCache, useMapCenter);
+			setupCheckBox(position, view, listItem);
 		} else {
 			view = getLinearLayout(convertView, R.layout.search_list_item);
 			SearchResultViewHolder.bindSearchResult(view, listItem, calendar);
@@ -571,8 +576,26 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 		}
 	}
 
-	private void setupBackground(View view) {
-		view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
+	private void setupBackground(int position, @NonNull View view, @NonNull QuickSearchListItem listItem) {
+		if (exploreHistoryCard) {
+			if (listItem.getType() == QuickSearchListItemType.DISABLED_HISTORY) {
+				view.setBackgroundColor(ColorUtilities.getActivityBgColor(app, nightMode));
+			} else if (position == getCount() - 1) {
+				view.setBackgroundResource(R.drawable.bg_quick_search_explore_card_bottom);
+			} else {
+				view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
+			}
+			return;
+		}
+		if (position == 0 && getCount() == 1) {
+			view.setBackgroundResource(R.drawable.bg_quick_search_explore_card);
+		} else if (position == 0) {
+			view.setBackgroundResource(R.drawable.bg_quick_search_explore_card_top);
+		} else if (position == getCount() - 1) {
+			view.setBackgroundResource(R.drawable.bg_quick_search_explore_card_bottom);
+		} else {
+			view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
+		}
 	}
 
 	private void setupDivider(int position,

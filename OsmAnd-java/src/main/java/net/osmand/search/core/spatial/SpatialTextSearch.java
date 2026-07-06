@@ -10,15 +10,19 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
+import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.util.SearchAlgorithms;
 
 //////////////// SEARCH ALGORITHM //////////////////
@@ -41,50 +45,83 @@ import net.osmand.util.SearchAlgorithms;
 
 public class SpatialTextSearch {
 
-	private static final int LIMIT_PRINT = 300;
-
 	public static class SpatialTextSearchSettings {
 
-		public static boolean SEARCH_ADDR = true;
+		public boolean SEARCH_ADDR = true;
+		public boolean SEARCH_POI = true;
+		public boolean SEARCH_BUILDINGS = true;
+		public boolean SEARCH_STREET_INTERSECTIONS = true;
+		public boolean SEARCH_POI_INTERSECTIONS = true;
+		// no intersection recorded but streets are nearby
+		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
 		
-		public static boolean SEARCH_POI = true;
+		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 30_000, 80_000}; // 
+//		public int[] OPTIM_LIMIT_RADIUS = new int[] {}; 
+		public int OPTIM_LIMIT_INTERSECTIONS = 30_000; // 10K (fast enough) or 50K (slow) - in new york  26,630 (3) -> 2,502 unique
 		
-		public static boolean SEARCH_BUILDINGS = true;
+		// produces x10 less intersection and maintains x2-x4 ratio for DEDUPLICATE_RES
+		// by deleting embedded or duplicate boundaries in each other
+		public boolean OPTIM_DELETE_EMBEDDED_BOUNDARIES = true;
+		
+		// In case POI is called 'Bratislava' it will be restricted to be searched as POIxPOI, POIxStreet
+		// Related frequent POIs like "City&Bike 4th Street..." or public transport stops
+		public boolean OPTIM_FLAG_POI_SAME_AS_CITY_STREET = true;
+		public boolean OPTIM_DELETE_POI_SAME_AS_CITY_STREET = false; // not correct for new york the plaza
 		
 		// max prefixes for each name reader
-		public static int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
+		public int AUTO_CLEAR_PREFIX_CACHE_LIMIT = 1000;
 
 		// Deduplicate results in the end by checking osm id of the first object in combination
-		public static boolean DEDUPLICATE_RES = true;
+		public boolean DEDUPLICATE_RES = true;
 
 		// READ OBJECTS before intersection to reduce number of duplicates from
 		// different maps by osm id - needs to be tested performance mostly slows down
 		// ! Potential issue READ_ADDR_OBJECTS could deduplicate streets and 
 		//  building won't be found in case same street in cities
-		public static boolean READ_ADDR_OBJECTS = false;
-		public static boolean READ_POI_OBJECTS = false;
+		public boolean DEV_READ_ADDR_OBJECTS = false;
+		public boolean DEV_READ_POI_OBJECTS = false;
 
 		// no need to find 3 street intersection or 3 POI intersection
-		public static int LIMIT_ATOMIC_OBJECTS = 2;
+		public int LIMIT_ATOMIC_OBJECTS = 2;
 
-		// Performance improvement assuming for rare words we don't read common atoms (school on street)
-		// Problem search: New york plaza, New York 45 Avenue
-		public static boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
-		public static boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
+		// Very good optimization but breaks some scenarios
+		// Performance improvement assuming for rare words we don't read common atoms
+		// Problem search: New york plaza, New York 45 Avenue, School 40 on Specific Street.  
+		public boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
+		public boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
 
 		// Limit evaluation intersection for unique objects
-		public static int LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS = 1000;
+		public int LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS = 1000;
 		// if there are >= 10 results matching 5 words, 4 words match won't be considered
-		public static int LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS = 1; // could be 3
+		public int LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS = 1; // could be 3
 		// don't go level-2 if there are on level matching results
-		public static int LIMIT_GOAL_LEVEL_2 = 1;
+		public int LIMIT_GOAL_LEVEL_2 = 1;
 		
-		// Filter within same matched words but different number of objects [3 matched tokens - 1 single object]
-		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {3, 10};
-//		public static int[] FILTER_MIN_WORDS_COUNT = new int[] {};
+		// Hide results under SHOW MORE
+		public int[] SHOW_MORE_WORDS_COUNT = new int[] {3, 20, 100};
 		
-		// temp
-		public static boolean ATTACH_BUILDINGS = false;
+		// only do incomplete search with 2+ chars
+		public int MIN_CHARACTERS_INCOMPLETE = 2;
+		
+		public int MIN_ELO_RATING = 1400; // see SearchResult.MIN_ELO_RATING
+//		public int MAX_ELO_RATING = 4300; // not used now
+		
+		// > 300 km - x0, for 50km-300km - x0.5, 10-50km - x1.5, 10km - x3sorted!
+		public Map<Integer, Double> ENLARGE_BOUNDARIES = new TreeMap<Integer, Double>(
+				Map.of(-300_000, 0.2, -100_000, 0.5, -10_000, 1.0, -1_000, 20.0));
+		
+		public double evalEnlargeBoundary(Map<Integer, Double> mp, double dim) {
+			Iterator<Entry<Integer, Double>> it = mp.entrySet().iterator();
+			double val = 0;
+			while (it.hasNext()) {
+				Entry<Integer, Double> e = it.next();
+				if (dim > -e.getKey()) {
+					break;
+				}
+				val = e.getValue();
+			}
+			return val;
+		}
 		
 	}
 
@@ -184,7 +221,8 @@ public class SpatialTextSearch {
 		for (SpatialSearchToken t : tokens) {
 			BitSet b = new BitSet();
 			b.set(ind++);
-			cache.put(b, new SpatialSearchResultsList(t, root));
+			cache.put(b, new SpatialSearchResultsList(ctx, t, root));
+			ctx.stats.tokenObjs += t.atoms.size();
 		}
 
 		LinkedList<BitSet> goals = new LinkedList<>();
@@ -201,7 +239,7 @@ public class SpatialTextSearch {
 			}
 			// stop on level - 2
 			if (maxDepth == 0) {
-				if (uniqueObjects >= SpatialTextSearchSettings.LIMIT_GOAL_LEVEL_2) {
+				if (uniqueObjects >= ctx.settings.LIMIT_GOAL_LEVEL_2) {
 					maxDepth = depth;
 				}
 			} else if (goal.length() <= maxDepth - 2) {
@@ -209,8 +247,8 @@ public class SpatialTextSearch {
 			}
 			// stop with condition on level - 1
 			if (goal.length() < depth) {
-				if (SpatialTextSearchSettings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS > 0
-						&& uniqueObjects >= SpatialTextSearchSettings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS) {
+				if (ctx.settings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS > 0
+						&& uniqueObjects >= ctx.settings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS) {
 					break;
 				}
 				depth = goal.length();
@@ -225,7 +263,8 @@ public class SpatialTextSearch {
 					SpatialSearchToken token = tokens.get(i);
 					eval.set(i);
 					if (!cache.containsKey(eval)) {
-						goalRes = new SpatialSearchResultsList(token, goalRes);
+						goalRes = new SpatialSearchResultsList(ctx, token, goalRes);
+						ctx.stats.maxCombinations = Math.max(ctx.stats.maxCombinations, goalRes.getCombinations()); 
 //						System.out.println("  EVALUATE STEP " + eval + " " + goalRes);
 						cache.put((BitSet) eval.clone(), goalRes);
 					} else {
@@ -234,15 +273,18 @@ public class SpatialTextSearch {
 					}
 				}
 			}
-			if (goalRes.getCombinations() > 0) {
-				ctx.stats.atoms -= System.nanoTime();
+			goalRes.loadObjectsAndCalcBuildings(ctx);
+			List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+			if (goal.equals(mainGoal) && res.size() == 0) {
+				goalRes = reevalWithExtendedBoundary(ctx, goal, tokens);
 				goalRes.loadObjectsAndCalcBuildings(ctx);
-				ctx.stats.atoms += System.nanoTime();
-				List<SpatialSearchResult> res = goalRes.sortResults(ctx, SpatialTextSearchSettings.DEDUPLICATE_RES);
+				res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
+			}
+			if (res.size() > 0) {
 				uniqueObjects += res.size();
 				fullResult.add(goalRes);
-				if (SpatialTextSearchSettings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0
-						&& uniqueObjects >= SpatialTextSearchSettings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS) {
+				if (ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0
+						&& uniqueObjects >= ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS) {
 					break;
 				}
 			}
@@ -259,7 +301,34 @@ public class SpatialTextSearch {
 		return fullResult;
 	}
 
-	List<SpatialSearchResultsList> findObjCombinationsSimpleIteration(List<SpatialSearchToken> tokens) {
+	private SpatialSearchResultsList reevalWithExtendedBoundary(SpatialSearchContext ctx, BitSet goal, List<SpatialSearchToken> tokens) throws IOException {
+		// Extend boundary for united states addresses (use 50 km radius)
+		int enlarge = 0;
+		for (SpatialSearchToken t : tokens) {
+			for (NameIndexAtom a : t.atoms) {
+				if (a.isBoundary() || a.isCityVillage()) {
+					double val = ctx.settings.evalEnlargeBoundary(ctx.settings.ENLARGE_BOUNDARIES, 
+							a.coords.dimensionInM());
+					if (val > 0) {
+//						System.out.println("Enlarge " + a.name + " " + a.type + " x" + val);
+						t.enlargeBbox(a, val);
+						enlarge++;
+					}
+				}
+			}
+		}
+		if (ctx.stats.printLogs) { 
+			System.out.println("Enlarged boundaries " + enlarge);
+		}
+		SpatialSearchResultsList goalRes = new SpatialSearchResultsList();
+		for (int i = goal.nextSetBit(0); i >= 0; i = goal.nextSetBit(i + 1)) {
+			SpatialSearchToken token = tokens.get(i);
+			goalRes = new SpatialSearchResultsList(ctx, token, goalRes);
+		}
+		return goalRes;
+	}
+
+	List<SpatialSearchResultsList> findObjCombinationsSimpleIteration(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
 		LinkedList<SpatialSearchResultsList> candidates = new LinkedList<>();
 		candidates.add(new SpatialSearchResultsList());
 		List<SpatialSearchResultsList> result = new ArrayList<>();
@@ -274,7 +343,7 @@ public class SpatialTextSearch {
 //			for (SpatialSearchToken token : tokens) {
 				SpatialSearchToken token = tokens.get(k);
 				if (parent.getTokenCount() == 0 || token.sortedOrder < parent.getFirstToken().sortedOrder) {
-					SpatialSearchResultsList next = new SpatialSearchResultsList(token, parent);
+					SpatialSearchResultsList next = new SpatialSearchResultsList(ctx, token, parent);
 //					next.calculateIntersection(token, parent);
 //					System.out.printf("ITERATION Token [%s] + {%s} = {%s}\n", token, parent, next);
 					candidates.push(next);
@@ -284,32 +353,42 @@ public class SpatialTextSearch {
 		return result;
 
 	}
+	public SpatialSearchResults searchStreetAPI(String input, SpatialSearchContext ctx) throws IOException {
+		SpatialSearchResults res = new SpatialSearchResults();
+		ctx.initFiles(cache);
+		res.input = input;
+		res.tokens = splitWords(ctx, input);
+		ctx.readAtoms(res.tokens);
+		return res;
+	}
 
 	public SpatialSearchResults searchAPI(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = new SpatialSearchResults();
 		ctx.initFiles(cache);
 		res.input = input;
 		// 1. prepare tokens
-		res.tokens = splitWords(input);
+		res.tokens = splitWords(ctx, input);
 
 		// 2. read atoms
-		ctx.stats.atoms -= System.nanoTime();
+		ctx.stats.step1Atoms.start();
 		ctx.readAtoms(res.tokens);
-		ctx.stats.atoms += System.nanoTime();
+		ctx.stats.step1Atoms.finish();
 
 		// 3. sort tokens
 		sortTokens(res.tokens);
 
 		// 4. find combinations
-		ctx.stats.computeTime -= System.nanoTime();
+		ctx.stats.step2Compute.start();
 //		res.combinations = findObjCombinationsSimpleIteration(res.tokens);
 		res.combinations = findLongestCombinations(ctx, res.tokens);
-		ctx.stats.computeTime += System.nanoTime();
+		ctx.stats.step2Compute.finish();
 		// 5. sort combinations, load objects, objects and filter duplicate
 		res.mainResults = new ArrayList<>();
+		ctx.stats.step3Sort.start();
 		if (res.combinations.size() > 0) {
 			combineSortFilterResults(ctx, res);
 		}
+		ctx.stats.step3Sort.finish();
 		return res;
 	}
 
@@ -318,56 +397,72 @@ public class SpatialTextSearch {
 		for (SpatialSearchResultsList m : res.combinations) {
 			List<SpatialSearchResult> lst = m.getFinalResult();
 			if (lst == null) {
-				lst = m.sortResults(ctx, SpatialTextSearchSettings.DEDUPLICATE_RES);
+				lst = m.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
 			}
 			res.mainResults.addAll(lst);
 		}
-		res.mainResults = main.sortResults(ctx, res.mainResults, SpatialTextSearchSettings.DEDUPLICATE_RES);
+		res.mainResults = main.sortResults(ctx, res.mainResults, ctx.settings.DEDUPLICATE_RES);
 		if (res.mainResults.size() > 0) {
-			int[] limits = SpatialTextSearchSettings.FILTER_MIN_WORDS_COUNT.clone();
-			int sz = res.mainResults.get(0).getObjectsSize(), ind = 0, lind = 0;
+			int[] limits = ctx.settings.SHOW_MORE_WORDS_COUNT.clone();
+			long cKey = SpatialSearchResult.compareKey(res.mainResults.get(0));
+			int ind = 0, lind = 0;
+			int level = 0; 
 			for (SpatialSearchResult r : res.mainResults) {
-				if(sz != r.getObjectsSize()) {
-					if (lind < limits.length && limits[lind] <= ind) {
-						res.mainResults = res.mainResults.subList(0, ind);
-						break;
+				long nextKey = SpatialSearchResult.compareKey(r);
+				if (cKey != nextKey) {
+					if (lind < limits.length && ind >= limits[lind]) {
+						level++;
+						ind = 0;
+						if (lind < limits.length - 1) {
+							lind++;
+						}
 					}
-					if (lind < limits.length - 1) {
-						lind++;
-					}
+//					System.out.println(nextKey + " " + r);
+					cKey = nextKey;
 				}
+				r.visibleLevel = level;
 				ind++;
 			}
 		}
 	}
 
-	public List<SpatialSearchToken> splitWords(String input) {
+	public List<SpatialSearchToken> splitWords(SpatialSearchContext ctx, String input) {
 		List<String> owords = new ArrayList<String>();
 		// split by hyphen as we supposed to index them separately
 		List<String> words = SearchAlgorithms.splitAndNormalize(input, owords, false);
 		List<SpatialSearchToken> tokens = new ArrayList<>();
 		for (int order = 0; order < words.size(); order++) {
 			String w = words.get(order);
-			SpatialSearchToken token = new SpatialSearchToken(w, owords.get(order), order);
+			SpatialSearchToken token = new SpatialSearchToken(ctx.settings.MIN_CHARACTERS_INCOMPLETE, w, owords.get(order), order);
 			tokens.add(token);
 		}
 		return tokens;
 	}
 
-	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx) throws IOException {
+	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx, int limitPrint) throws IOException {
+		ctx.stats.requestTime.start();
 		SpatialSearchResults res = searchAPI(input, ctx);
-		ctx.stats.finish();
+		ctx.stats.requestTime.finish();
 		if (res.mainResults != null && res.mainResults.size() > 0) {
 			System.out.println("--------");
-			System.out.println("Main: " + res.combinations.get(0));
-			int limit = LIMIT_PRINT;
+			System.out.printf("Main: %s\n", res.combinations.get(0));
 			int all = res.mainResults.size();
+			int level = 0;
+			int sz = 0;
 			for (SpatialSearchResult r : res.mainResults) {
-				if (limit-- < 0) {
+				sz++;
+				if (r.visibleLevel != level) {
+					level++;
+					System.out.printf("### %d - NEXT LEVEL %d (%s). "
+							+ " Format - 75(words) 02(objects) 0(surplus) 1(sum other) 52(rating) 72(sum types)\n",
+							sz, level, SpatialSearchResult.compareKeyString(r));
+					sz = 0;
+				}
+				if (limitPrint-- < 0) {
 					System.out.println(".............");
 					break;
 				}
-				System.out.printf("Result %d - %s\n", r.matchedTokens(), r);
+				System.out.printf("Result %d (%s) - %s\n", r.matchedTokens(), SpatialSearchResult.compareKeyString(r), r);
 			}
 			System.out.printf("------ ALL %d results ------- \n ", all);
 			System.out.println("---------------------------------------");
@@ -424,8 +519,8 @@ public class SpatialTextSearch {
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 		SpatialTextSearch a = new SpatialTextSearch();
-		SpatialSearchContext searchContext = new SpatialSearchContext(ls, null);
-		a.searchTest(query, searchContext);
+		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, null);
+		a.searchTest(query, searchContext, 1000);
 	}
 
 }

@@ -71,6 +71,7 @@ import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiSubType;
 import net.osmand.binary.BinaryMapRouteReaderAdapter.RouteRegion;
 import net.osmand.binary.BinaryMapRouteReaderAdapter.RouteSubregion;
 import net.osmand.binary.BinaryMapTransportReaderAdapter.TransportIndex;
+import net.osmand.binary.NameIndexReader.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.MapDataBlock;
 import net.osmand.binary.OsmandOdb.OsmAndMapIndex.MapDataBox;
 import net.osmand.binary.OsmandOdb.OsmAndMapIndex.MapEncodingRule;
@@ -324,11 +325,20 @@ public class BinaryMapIndexReader {
 
 	private void calculateCenterPointForRegions() {
 		for (AddressRegion reg : addressIndexes) {
-			for (MapIndex map : mapIndexes) {
-				if (Algorithms.objectEquals(reg.name, map.name)) {
-					if (map.getRoots().size() > 0) {
-						reg.calculatedCenter = map.getCenterLatLon();
-						break;
+			for (HHRouteRegion h : hhIndexes) {
+				if (h.top != null) { // name null Algorithms.objectEquals(reg.name, h.name)
+					QuadRect qr = h.top.getLatLonBox();
+					reg.calculatedCenter = new LatLon(qr.centerY(), qr.centerX());
+					break;
+				}
+			}
+			if (reg.calculatedCenter == null) {
+				for (MapIndex map : mapIndexes) {
+					if (Algorithms.objectEquals(reg.name, map.name)) {
+						if (map.getRoots().size() > 0) {
+							reg.calculatedCenter = map.getCenterLatLon();
+							break;
+						}
 					}
 				}
 			}
@@ -771,14 +781,14 @@ public class BinaryMapIndexReader {
 	public boolean readAmenityBboxes(PoiRegion pr, TLongHashSet tileIds) throws IOException {
 		poiAdapter.initCategories(pr);
 		tileIds = pr.checkMissingTagGroups(tileIds);
-		if(tileIds.size() == 0) {
+		if (tileIds.size() == 0) {
 			return false;
 		}
 		SearchRequest<Amenity> sr = new SearchRequest<Amenity>();
 		codedIS.seek(pr.filePointer);
 		long oldLim = codedIS.pushLimitLong((long) pr.length);
+		pr.updReadTagGroups(tileIds); // update before as tileIds is modified
 		poiAdapter.readPoiBboxes(pr, sr, tileIds);
-		pr.updReadTagGroups(tileIds);
 		codedIS.popLimit(oldLim);
 		
 		return true;
@@ -1517,13 +1527,14 @@ public class BinaryMapIndexReader {
 		return req.getSearchResults();
 	}
 	
-	public NameIndexReader readFullNameIndex(NameIndexReader res, String prefix) throws IOException {
-		codedIS.seek(res.poiRegion != null ? res.poiRegion.filePointer : res.addressRegion.filePointer);
-		long old = codedIS.pushLimitLong(res.poiRegion != null ? res.poiRegion.length : res.addressRegion.length);
-		if (res.poiRegion != null) {
-			poiAdapter.readNameIndex(prefix, res);
+	public List<PrefixNameValue> readFullNameIndex(NameIndexReader reader) throws IOException {
+		codedIS.seek(reader.poiRegion != null ? reader.poiRegion.filePointer : reader.addressRegion.filePointer);
+		long old = codedIS.pushLimitLong(reader.poiRegion != null ? reader.poiRegion.length : reader.addressRegion.length);
+		List<PrefixNameValue> res;
+		if (reader.poiRegion != null) {
+			res = poiAdapter.readNameIndex(reader);
 		} else {
-			addressAdapter.readNameIndex(prefix, res);
+			res = addressAdapter.readNameIndex(reader);
 		}
 		codedIS.popLimit(old);
 		return res;
@@ -2162,13 +2173,13 @@ public class BinaryMapIndexReader {
 		
 
 		public LatLon getCenterLatLon() {
-			if(roots.size() == 0) {
+			if (roots.size() == 0) {
 				return null;
 			}
 			MapRoot mapRoot = roots.get(roots.size() - 1);
 			double cy = (MapUtils.get31LatitudeY(mapRoot.getBottom()) + MapUtils.get31LatitudeY(mapRoot.getTop())) / 2;
 			double cx = (MapUtils.get31LongitudeX(mapRoot.getLeft()) + MapUtils.get31LongitudeX(mapRoot.getRight())) / 2;
-			return  new LatLon(cy, cx);
+			return new LatLon(cy, cx);
 		}
 
 		public List<MapRoot> getRoots() {
@@ -2744,7 +2755,7 @@ public class BinaryMapIndexReader {
 		return result;
 	}
 	
-	void readNameIndexInspector(String prefix, NameIndexReader inspector, String query) throws InvalidProtocolBufferException, IOException {
+	void readNameIndexInspector(String prefix, NameIndexReader inspector) throws InvalidProtocolBufferException, IOException {
 		String key = null;
 		boolean match = true;
 		while (true) {
@@ -2758,21 +2769,23 @@ public class BinaryMapIndexReader {
 				if (prefix != null) {
 					key = prefix + key;
 				}
-				match = inspector.matchKey(key, query);
+				match = inspector.matchKey(key);
 				break;
 			case OsmandOdb.IndexedStringTable.VAL_FIELD_NUMBER :
 				int val = (int) readInt(); // FIXME for 64 bit support
 				if (match) {
-					inspector.putKey(key, val, prefix, query);
+					inspector.putKey(key, val, prefix);
 				}
 				break;
 			case OsmandOdb.IndexedStringTable.SUBTABLES_FIELD_NUMBER :
 				long len = codedIS.readRawVarint32();
 				long oldLim = codedIS.pushLimitLong((long) len);
 				if (match) {
-					readNameIndexInspector(key, inspector, query);
+					readNameIndexInspector(key, inspector);
 				} else {
-					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
+					long skip = codedIS.getBytesUntilLimit();
+					inspector.skipTableBytes(skip);
+					codedIS.skipRawBytes(skip);
 				}
 				codedIS.popLimit(oldLim);
 				break;

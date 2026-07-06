@@ -19,6 +19,7 @@ import net.osmand.CollatorStringMatcher;
 import net.osmand.StringMatcher;
 import net.osmand.binary.BinaryMapIndexReader.SearchRequest;
 import net.osmand.binary.BinaryMapIndexReaderStats.PoiReadMetricSet;
+import net.osmand.binary.NameIndexReader.PrefixNameValue;
 import net.osmand.binary.OsmandOdb.AddressNameIndexDataAtom;
 import net.osmand.binary.OsmandOdb.CommonIndexedStats;
 import net.osmand.binary.OsmandOdb.OsmAndAddressIndex.CitiesIndex;
@@ -906,19 +907,20 @@ public class BinaryMapAddressReaderAdapter {
 
 	}
 	
-	protected NameIndexReader readNameIndex(String prefix, NameIndexReader nameIndex) throws IOException {
+	protected List<PrefixNameValue> readNameIndex(NameIndexReader nameIndex) throws IOException {
+		List<PrefixNameValue> res = null;
 		while (true) {
 			int t = codedIS.readTag();
 			int tag = WireFormat.getTagFieldNumber(t);
 			switch (tag) {
 			case 0:
-				return nameIndex;
+				return res;
 			case OsmandOdb.OsmAndAddressIndex.NAMEINDEX_FIELD_NUMBER:
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
-				readNameIndexInternal(nameIndex, prefix);
+				res = readNameIndexInternal(nameIndex);
 				codedIS.popLimit(oldLimit);
-				break;
+				return res;
 			default:
 				skipUnknownField(t);
 				break;
@@ -926,9 +928,9 @@ public class BinaryMapAddressReaderAdapter {
 		}
 	}
 	
-	protected OsmandOdb.IndexedStringTable readNameIndexInternal(NameIndexReader pi, String query) throws IOException {
-		OsmandOdb.IndexedStringTable res = null;
-		TLongArrayList loffsets = query == null ? null : new TLongArrayList();
+	protected List<PrefixNameValue> readNameIndexInternal(NameIndexReader pi) throws IOException {
+		List<PrefixNameValue> res = null;
+		TLongArrayList loffsets = pi.readAll() ? null : new TLongArrayList();
 		int ind = -1;
 		while (true) {
 			int t = codedIS.readTag();
@@ -937,11 +939,11 @@ public class BinaryMapAddressReaderAdapter {
 			case 0:
 				return res;
 			case OsmAndAddressNameIndexData.TABLE_FIELD_NUMBER :
-				pi.resetMatchedKeys(query);
 				long length = readInt();
 				long oldLimit = codedIS.pushLimitLong((long) length);
 				pi.setTablePointer(codedIS.getTotalBytesRead());
-				map.readNameIndexInspector(null, pi, query);
+				pi.readTableBytes(length);
+				map.readNameIndexInspector(null, pi);
 				codedIS.popLimit(oldLimit);
 				break;
 			case OsmAndAddressNameIndexData.COMMONSTATS_FIELD_NUMBER:
@@ -950,6 +952,7 @@ public class BinaryMapAddressReaderAdapter {
 				if (pi.getCommonStats() != null) {
 					codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
 				} else {
+					pi.readTableBytes(length);
 					CommonIndexedStats stat = OsmandOdb.CommonIndexedStats.parseFrom(codedIS);
 					pi.setCommonIndexed(stat);
 				}
@@ -958,7 +961,7 @@ public class BinaryMapAddressReaderAdapter {
 			case OsmAndAddressNameIndexData.ATOM_FIELD_NUMBER :
 				long shift = codedIS.getTotalBytesRead();
 				if (ind == -1 && loffsets != null) {
-					pi.getAtomsToLoad(loffsets, query);
+					res = pi.getAtomsToLoad(loffsets);
 					loffsets.sort();
 					ind = 0;
 				}
@@ -967,14 +970,20 @@ public class BinaryMapAddressReaderAdapter {
 						codedIS.skipRawBytes(codedIS.getBytesUntilLimit());
 						break;
 					} else if (loffsets.get(ind) != shift) {
-						codedIS.skipRawBytes(loffsets.get(ind) - shift);
+						long skip = loffsets.get(ind) - shift;
+						pi.skipAtomsBytes(skip);
+						codedIS.skipRawBytes(skip);
 						shift = codedIS.getTotalBytesRead();
 					}
 					ind++;
 				}
 				int len = codedIS.readRawVarint32();
 				oldLimit = codedIS.pushLimitLong((long) len);
-				pi.addData(AddressNameIndexData.parseFrom(codedIS), shift);
+				pi.readAtomsBytes(len);
+				PrefixNameValue prefix = pi.addData(AddressNameIndexData.parseFrom(codedIS), shift);
+				if (res != null) {
+					res.add(prefix);
+				}
 				codedIS.popLimit(oldLimit);
 				break;
 

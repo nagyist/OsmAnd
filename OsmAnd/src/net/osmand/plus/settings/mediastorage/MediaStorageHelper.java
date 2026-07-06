@@ -232,7 +232,7 @@ public class MediaStorageHelper {
 		if (includeNonManagedMedia) {
 			return file.isFile() ? new FileMediaSource(this, href, file) : null;
 		}
-		if (file.exists() && MediaFileNameFormat.isGeneratedMediaFileName(file.getName())) {
+		if (file.exists() && MediaFileNameFormat.isManagedMediaFileName(file.getName())) {
 			return new FileMediaSource(this, href, file);
 		}
 		return null;
@@ -294,11 +294,11 @@ public class MediaStorageHelper {
 	}
 
 	private static boolean isGeneratedMediaName(@Nullable String name) {
-		return !Algorithms.isEmpty(name) && MediaFileNameFormat.isGeneratedMediaFileName(name);
+		return !Algorithms.isEmpty(name) && MediaFileNameFormat.isManagedMediaFileName(name);
 	}
 
 	private boolean isManagedMediaFile(@NonNull MediaStorageLocation location, @NonNull File file) {
-		if (!MediaFileNameFormat.isGeneratedMediaFileName(file.getName())) {
+		if (!MediaFileNameFormat.isManagedMediaFileName(file.getName())) {
 			return false;
 		}
 		if (location.getStorageType() == MAIN_STORAGE) {
@@ -325,6 +325,10 @@ public class MediaStorageHelper {
 		Uri collectionUri = MediaStorageUtils.getMediaStoreCollectionUri(dirType);
 		String relativePath = MediaStorageUtils.getMediaStoreRelativePath(storageType, dirType);
 		String type = MediaStorageUtils.getMimeType(mimeType, fileName, dirType);
+
+		if (dirType == MediaDirType.AUDIO && "audio/3gpp".equals(type) && fileName.endsWith(".3gp")) {
+			fileName = Algorithms.getFileNameWithoutExtension(fileName) + ".3ga";
+		}
 		return new MediaStoreMediaTarget(this, collectionUri, relativePath, fileName, type);
 	}
 

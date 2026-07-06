@@ -200,7 +200,7 @@ public class SearchAlgorithms {
         int nextIndex = index + Character.charCount(character);
         int previousIndex = index > 0 ? value.offsetByCodePoints(index, -1) : -1;
         
-        boolean isHyphenNearNumber = (character == '-' || character == '/')
+        boolean isHyphenNearNumber = (character == '-')
                 && ((nextIndex < value.length() && Character.isDigit(value.codePointAt(nextIndex)))
                 || (previousIndex >= 0 && Character.isDigit(value.codePointAt(previousIndex))));
         // dot belongs to word same as '''
@@ -336,17 +336,17 @@ public class SearchAlgorithms {
 	}
 	
 	// return array of x31-left, y31-top, x31-right, y31-bottom
-	public static int[] decodeBboxForNameAtoms(int[] vls, int x16, int y16) {
+	public static int[] decodeBboxForNameAtoms(int[] vls, int x16, int y16, int zDec) {
 		if (vls.length < 5) {
 			return null;
 		}
 		int zoom = vls[0];
 		int[] res = new int[((vls.length - 1) / 4) * 4];
 		for(int ind = 0; ind < res.length; ind+=4) {
-			res[ind] = ((x16 >> (16 - zoom)) - vls[ind + 1]) << (31 - zoom);
-			res[ind + 1] = ((y16 >> (16 - zoom)) - vls[ind + 3]) << (31 - zoom);
-			res[ind + 2] = (vls[ind + 2] << (31 - zoom)) + res[ind];
-			res[ind + 3] = (vls[ind + 4] << (31 - zoom)) + res[ind + 1];
+			res[ind] = ((x16 >> (16 - zoom)) - vls[ind + 1]) << (zDec - zoom);
+			res[ind + 1] = ((y16 >> (16 - zoom)) - vls[ind + 3]) << (zDec - zoom);
+			res[ind + 2] = ((vls[ind + 2] + 1) << (zDec - zoom)) - 1 + res[ind];
+			res[ind + 3] = ((vls[ind + 4] + 1) << (zDec - zoom)) - 1 + res[ind + 1];
 		}
 		return res;
 	}
@@ -364,7 +364,7 @@ public class SearchAlgorithms {
 					throw new RuntimeException(e);
 				}
 			}
-			dBbox = SearchAlgorithms.decodeBboxForNameAtoms(lst.toArray(), x16, y16);
+			dBbox = SearchAlgorithms.decodeBboxForNameAtoms(lst.toArray(), x16, y16, 31);
 		}
 		return dBbox;
 	}
@@ -395,5 +395,53 @@ public class SearchAlgorithms {
 		}
 		return startsWithDigit && letters(name) < 2;
 	}	
+	
+	// Split '18B', '18/B', '18-B', '18 B' -> ['18', 'B'] - for duplicates list filled in (check list.size() > set)
+	public static Set<String> getBuildingCompareSet(String name, List<String> inCaseDuplicates) {
+		if (inCaseDuplicates != null) {
+			inCaseDuplicates.clear();
+		}
+		Set<String> resultSet = null;
+		StringBuilder currentToken = new StringBuilder();
+		int lastType = 0;
+		for (int i = 0; i < name.length(); i++) {
+			char ch = name.charAt(i);
+			int type = Character.isDigit(ch) ? 1 : (Character.isLetter(ch) ? 2 : 0);
+			boolean addToken = false;
+			if (type != lastType) {
+				addToken = true;
+			}
+			if (addToken && currentToken.length() > 0) {
+				if (resultSet == null) {
+					resultSet = new TreeSet<String>();
+				}
+				String toAdd = currentToken.toString().toLowerCase();
+				if (inCaseDuplicates != null) {
+					inCaseDuplicates.add(toAdd);
+				}
+				resultSet.add(toAdd);
+				currentToken.setLength(0); // Clear buffer
+			}
+			if (type > 0) {
+				currentToken.append(ch);
+			}
+			lastType = type;
+		}
+		if (currentToken.length() > 0) {
+			if (resultSet == null) {
+				return Collections.singleton(currentToken.toString().toLowerCase());
+			}
+			String toAdd = currentToken.toString().toLowerCase();
+			if (inCaseDuplicates != null) {
+				inCaseDuplicates.add(toAdd);
+			}
+			resultSet.add(toAdd);
+		}
+		if (resultSet == null) {
+			return Collections.singleton(name.toLowerCase());
+		}
+		return resultSet;
+	}
+	
 }
 

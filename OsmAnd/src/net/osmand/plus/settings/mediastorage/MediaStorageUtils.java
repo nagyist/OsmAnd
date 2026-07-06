@@ -171,12 +171,12 @@ public final class MediaStorageUtils {
 
 	@NonNull
 	public static String getMimeType(@Nullable String mimeType, @NonNull String fileName, @NonNull MediaDirType dirType) {
+		String extension = Algorithms.getFileNameExtension(fileName);
+		if (dirType == MediaDirType.AUDIO && ("3gp".equals(extension) || "3gpp".equals(extension) || "3ga".equals(extension))) {
+			return "audio/3gpp";
+		}
 		if (!Algorithms.isEmpty(mimeType)) {
 			return mimeType;
-		}
-		String extension = Algorithms.getFileNameExtension(fileName);
-		if (dirType == MediaDirType.AUDIO && ("3gp".equals(extension) || "3gpp".equals(extension))) {
-			return "audio/3gpp";
 		}
 		String type = Algorithms.isEmpty(extension) ? null : MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
 		if (!Algorithms.isEmpty(type)) {

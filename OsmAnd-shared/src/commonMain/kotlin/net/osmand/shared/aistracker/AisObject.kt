@@ -203,14 +203,14 @@ class AisObject {
     private fun initObjectClass() {
         when (this.shipType) {
             INVALID_SHIP_TYPE -> {}
-            20, 21, 22, 23, 24, 40, 41, 42, 43, 44, 49 -> this.objectClass = AisObjType.AIS_VESSEL_FAST
+            20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49 -> this.objectClass = AisObjType.AIS_VESSEL_FAST
             30, 31, 32, 33, 34, 50, 52, 53, 54, 56, 57, 59 -> this.objectClass = AisObjType.AIS_VESSEL_COMMERCIAL
             35, 55 -> this.objectClass = AisObjType.AIS_VESSEL_AUTHORITIES
             51, 58 -> this.objectClass = AisObjType.AIS_VESSEL_SAR
             36, 37 -> this.objectClass = AisObjType.AIS_VESSEL_SPORT
-            60, 61, 62, 63, 64, 69 -> this.objectClass = AisObjType.AIS_VESSEL_PASSENGER
-            70, 71, 72, 73, 74, 79, 80, 81, 82, 83, 84, 89 -> this.objectClass = AisObjType.AIS_VESSEL_FREIGHT
-            90, 91, 92, 93, 94, 99 -> this.objectClass = AisObjType.AIS_VESSEL_OTHER
+            60, 61, 62, 63, 64, 65, 66, 67, 68, 69 -> this.objectClass = AisObjType.AIS_VESSEL_PASSENGER
+            70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 -> this.objectClass = AisObjType.AIS_VESSEL_FREIGHT
+            90, 91, 92, 93, 94, 95, 96, 97, 98, 99 -> this.objectClass = AisObjType.AIS_VESSEL_OTHER
             else -> this.objectClass = AisObjType.AIS_VESSEL_OTHER
         }
 
@@ -290,7 +290,7 @@ class AisObject {
     fun getShipTypeString(): String {
         return when (this.shipType) {
             INVALID_SHIP_TYPE -> "unknown"
-            20 -> "Wing in ground (WIG)"
+            20, 25, 26, 27, 28, 29 -> "Wing in ground (WIG)"
             21 -> "WIG, Hazardous category A"
             22 -> "WIG, Hazardous category B"
             23 -> "WIG, Hazardous category C"
@@ -303,12 +303,11 @@ class AisObject {
             35 -> "Military ops"
             36 -> "Sailing"
             37 -> "Pleasure Craft"
-            40 -> "High Speed Craft (HSC)"
+            40, 45, 46, 47, 48, 49 -> "High Speed Craft (HSC)"
             41 -> "HSC, Hazardous category A"
             42 -> "HSC, Hazardous category B"
             43 -> "HSC, Hazardous category C"
             44 -> "HSC, Hazardous category D"
-            49 -> "High Speed Craft (HSC)"
             50 -> "Pilot Vessel"
             51 -> "Search and Rescue vessel"
             52 -> "Tug"
@@ -324,26 +323,23 @@ class AisObject {
             62 -> "Passenger, Hazardous category B"
             63 -> "Passenger, Hazardous category C"
             64 -> "Passenger, Hazardous category D"
-            69 -> "Passenger/Cruise/Ferry"
-            70 -> "Cargo"
+            65, 66, 67, 68, 69 -> "Passenger/Cruise/Ferry"
+            70, 75, 76, 77, 78, 79 -> "Cargo"
             71 -> "Cargo, Hazardous category A"
             72 -> "Cargo, Hazardous category B"
             73 -> "Cargo, Hazardous category C"
             74 -> "Cargo, Hazardous category D"
-            79 -> "Cargo"
-            80 -> "Tanker"
+            80, 85, 86, 87, 88, 89 -> "Tanker"
             81 -> "Tanker, Hazardous category A"
             82 -> "Tanker, Hazardous category B"
             83 -> "Tanker, Hazardous category C"
             84 -> "Tanker, Hazardous category D"
-            89 -> "Tanker"
-            90 -> "Other Type"
+            90, 95, 96, 97, 98, 99 -> "Other Type"
             91 -> "Other Type, Hazardous category A"
             92 -> "Other Type, Hazardous category B"
             93 -> "Other Type, Hazardous category C"
             94 -> "Other Type, Hazardous category D"
-            99 -> "Other Type"
-            else -> shipType.toString()
+            else -> this.shipType.toString()
         }
     }
 
@@ -430,9 +426,14 @@ class AisObject {
             AisObjType.AIS_VESSEL_PASSENGER, AisObjType.AIS_VESSEL_FREIGHT, AisObjType.AIS_VESSEL_COMMERCIAL,
             AisObjType.AIS_VESSEL_AUTHORITIES, AisObjType.AIS_VESSEL_SAR, AisObjType.AIS_VESSEL_OTHER -> {
                 when (navStatus) {
-                    5 -> (cog == INVALID_COG) || (sog < 0.2)
-                    else -> (msgTypes.contains(18) || msgTypes.contains(24) || msgTypes.contains(1) || msgTypes.contains(3)) &&
-                            (cog == INVALID_COG) && (sog < 0.2)
+                    1, 5 -> (cog == INVALID_COG) || (sog < AisObjectConstants.SPEED_CONSIDERED_IN_REST)
+                    else -> {
+                        if (msgTypes.contains(18) || msgTypes.contains(24) || msgTypes.contains(1) || msgTypes.contains(3)) {
+                            (sog < AisObjectConstants.SPEED_CONSIDERED_IN_REST)
+                        } else {
+                            false
+                        }
+                    }
                 }
             }
             else -> false

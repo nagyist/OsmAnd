@@ -13,8 +13,12 @@ enum class MediaOrigin(
 	UNKNOWN
 }
 
-enum class MediaType {
-	PHOTO, VIDEO, AUDIO, UNKNOWN;
+enum class MediaType(val typeName: String) {
+
+	PHOTO("Photo"),
+	VIDEO("Video"),
+	AUDIO("Audio"),
+	UNKNOWN("Media");
 
 	companion object {
 		@JvmStatic
@@ -38,7 +42,7 @@ enum class MediaType {
 			return when (normalizeExtension(extension)) {
 				"jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "heif", "svg" -> PHOTO
 				"mp4", "m4v", "mov", "avi", "mkv", "webm" -> VIDEO
-				"3gp", "3gpp", "mp3", "m4a", "aac", "wav", "ogg", "oga", "opus", "amr" -> AUDIO
+				"3gp", "3gpp", "3ga", "mp3", "m4a", "aac", "wav", "ogg", "oga", "opus", "amr" -> AUDIO
 				else -> UNKNOWN
 			}
 		}
@@ -48,9 +52,8 @@ enum class MediaType {
 			return fromExtension(extension) != UNKNOWN
 		}
 
-		private fun normalizeExtension(extension: String?): String? {
-			val value = extension?.trim()?.substringAfterLast('.')?.lowercase()
-			return value?.takeIf { it.isNotEmpty() }
+		fun normalizeExtension(extension: String?): String {
+			return extension?.trim()?.substringAfterLast('.')?.lowercase().orEmpty()
 		}
 
 		private fun getExtension(uri: String?): String? {
