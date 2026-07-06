@@ -149,7 +149,7 @@ class AttachedMediaExportType extends AbstractExportType {
 			if (Algorithms.isEmpty(extension)) {
 				extension = source.getDirType().getExtension();
 			}
-			name = MediaFileNameFormat.createUniqueGeneratedMediaFileName(extension, usedNames::contains);
+			name = MediaFileNameFormat.createUniqueMediaFileName(extension, usedNames::contains);
 		}
 		usedNames.add(name);
 		return name;
@@ -160,7 +160,7 @@ class AttachedMediaExportType extends AbstractExportType {
 		if (isSameInternalMediaFile(app, source, name)) {
 			return false;
 		}
-		if (Algorithms.isEmpty(name) || !MediaFileNameFormat.isGeneratedMediaFileName(name)) {
+		if (Algorithms.isEmpty(name) || !MediaFileNameFormat.isManagedMediaFileName(name)) {
 			return true;
 		}
 		if (!usedNames.contains(name)) {
