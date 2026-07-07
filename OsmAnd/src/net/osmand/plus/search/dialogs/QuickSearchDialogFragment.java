@@ -48,7 +48,6 @@ import net.osmand.data.LatLon;
 import net.osmand.data.PointDescription;
 import net.osmand.osm.AbstractPoiType;
 import net.osmand.osm.PoiCategory;
-import net.osmand.osm.PoiFilter;
 import net.osmand.osm.PoiType;
 import net.osmand.plus.LockableViewPager;
 import net.osmand.plus.OsmAndLocationProvider;
@@ -1053,9 +1052,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	@NonNull
 	private List<PoiUIFilter> getTopFilterChipsSource() {
 		if (isSearchViewVisible()) {
-			return isCategorySearch()
-					? new ArrayList<>(app.getPoiFilters().getTopDefinedPoiFilters())
-					: getSearchResultCategoryFilters();
+			return getSearchResultPoiTypeFilters();
 		}
 		return new ArrayList<>();
 	}
@@ -1071,7 +1068,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	@NonNull
-	private List<PoiUIFilter> getSearchResultCategoryFilters() {
+	private List<PoiUIFilter> getSearchResultPoiTypeFilters() {
 		List<PoiUIFilter> filters = new ArrayList<>();
 		SearchResultCollection collection = unfilteredResultCollection != null ? unfilteredResultCollection : getResultCollection();
 		if (collection == null) {
@@ -1095,13 +1092,25 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private AbstractPoiType getPoiTypeForResult(@NonNull SearchResult result) {
 		Object object = result.object;
 		if (object instanceof Amenity amenity) {
-			return amenity.getType();
-		} else if (object instanceof PoiCategory category) {
-			return category;
-		} else if (object instanceof PoiFilter filter) {
-			return filter.getPoiCategory();
+			return getPoiTypeForAmenity(amenity);
 		} else if (object instanceof PoiType type) {
-			return type.getCategory();
+			return type;
+		}
+		return null;
+	}
+
+	@Nullable
+	private PoiType getPoiTypeForAmenity(@NonNull Amenity amenity) {
+		PoiCategory category = amenity.getType();
+		String subTypes = amenity.getSubType();
+		if (category == null || Algorithms.isEmpty(subTypes)) {
+			return null;
+		}
+		for (String subType : subTypes.split(";")) {
+			PoiType type = category.getPoiTypeByKeyName(subType);
+			if (type != null && !type.isAdditional()) {
+				return type;
+			}
 		}
 		return null;
 	}
