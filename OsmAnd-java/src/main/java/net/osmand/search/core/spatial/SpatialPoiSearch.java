@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiSubType;
@@ -128,10 +127,10 @@ public class SpatialPoiSearch {
 		List<TIntArrayList> subcatFreqs = poiRegion.getSubcategoryFreqs();
 		for (int i = 0; i < cats.size(); i++) {
 			List<String> lst = subcategories.get(i);
-			int f = i < categoryFreqs.size() ? categoryFreqs.get(i) : 0;
+			int f = categoryFreqs != null && i < categoryFreqs.size() ? categoryFreqs.get(i) : 0;
 			fc.poiFrequencies.put(cats.get(i), f);
 			for (int j = 0; j < lst.size(); j++) {
-				int ft = i < subcatFreqs.size() && j < subcatFreqs.get(i).size() ? subcatFreqs.get(i).get(j) : 0;
+				int ft = subcatFreqs != null && i < subcatFreqs.size() && j < subcatFreqs.get(i).size() ? subcatFreqs.get(i).get(j) : 0;
 				fc.poiFrequencies.put(lst.get(j), ft);
 			}
 		}
@@ -156,7 +155,7 @@ public class SpatialPoiSearch {
 						}
 						addToIndex(topValueName, topValue);
 					}
-					int freq = k < subType.possibleValuesFreqs.size() ? subType.possibleValuesFreqs.get(k) : 0;
+					int freq = subType.possibleValuesFreqs != null && k < subType.possibleValuesFreqs.size() ? subType.possibleValuesFreqs.get(k) : 0;
 					fc.poiFrequencies.put(topValue.key, freq);
 				}
 			}
@@ -231,6 +230,14 @@ public class SpatialPoiSearch {
 				pc.tokens.get(i).addAtom(pc.atoms.get(i));
 			}
 		}
+	}
+	
+	public SpatialPoiType getById(int id) {
+		return byId.get(id);
+	}
+	
+	public SpatialPoiType getByKey(String key) {
+		return byKey.get(key);
 	}
 
 /////////////////////////////////////////////////////////////////////////////////////////////
