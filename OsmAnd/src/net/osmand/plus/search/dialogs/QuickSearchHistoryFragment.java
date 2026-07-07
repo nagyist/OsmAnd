@@ -23,6 +23,7 @@ import androidx.fragment.app.FragmentManager;
 import net.osmand.Location;
 import net.osmand.PlatformUtil;
 import net.osmand.data.LatLon;
+import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.OsmAndLocationProvider;
 import net.osmand.plus.OsmAndLocationProvider.OsmAndCompassListener;
 import net.osmand.plus.OsmAndLocationProvider.OsmAndLocationListener;
@@ -335,7 +336,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 			SearchResult result = SearchHistoryAPI.createSearchResult(app, entry, phrase);
 			QuickSearchListItem item = new QuickSearchListItem(app, result);
 			if (Algorithms.isEmpty(normalizedQuery) || matchesQuery(item, normalizedQuery)) {
-				records.add(new HistoryRecord(entry, item));
+				records.add(new HistoryRecord(app, entry, item));
 			}
 		}
 		return records;
@@ -368,7 +369,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		}
 		List<HistoryRecord> filtered = new ArrayList<>();
 		for (HistoryRecord record : records) {
-			if (selectedTypeFilters.contains(record.typeName)) {
+			if (selectedTypeFilters.contains(record.filterTypeName)) {
 				filtered.add(record);
 			}
 		}
@@ -467,25 +468,22 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		if (chipsToolbar == null) {
 			return;
 		}
-		Map<String, String> typeNames = new LinkedHashMap<>();
+		Map<String, Integer> typeCounts = new LinkedHashMap<>();
 		for (HistoryRecord record : records) {
-			if (!Algorithms.isEmpty(record.typeName)) {
-				typeNames.put(record.typeName, record.typeName);
+			if (!Algorithms.isEmpty(record.filterTypeName)) {
+				Integer count = typeCounts.get(record.filterTypeName);
+				typeCounts.put(record.filterTypeName, count != null ? count + 1 : 1);
 			}
 		}
-		selectedTypeFilters.retainAll(typeNames.keySet());
-		List<String> chips = new ArrayList<>();
-		for (String selected : new ArrayList<>(selectedTypeFilters)) {
-			String typeName = typeNames.remove(selected);
-			if (typeName != null) {
-				chips.add(typeName);
-			}
-		}
-		for (String typeName : typeNames.values()) {
-			chips.add(typeName);
+		selectedTypeFilters.retainAll(typeCounts.keySet());
+		List<Map.Entry<String, Integer>> sortedTypes = new ArrayList<>(typeCounts.entrySet());
+		sortedTypes.sort((first, second) -> Integer.compare(second.getValue(), first.getValue()));
+		List<String> typeNames = new ArrayList<>();
+		for (Map.Entry<String, Integer> typeCount : sortedTypes) {
+			typeNames.add(typeCount.getKey());
 		}
 		visibleTypeFilters.clear();
-		visibleTypeFilters.addAll(chips);
+		visibleTypeFilters.addAll(typeNames);
 		updateChipsState();
 	}
 
@@ -614,12 +612,22 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private static class HistoryRecord {
 		final long time;
 		final QuickSearchListItem item;
-		final String typeName;
+		final String filterTypeName;
 
-		HistoryRecord(@NonNull HistoryEntry entry, @NonNull QuickSearchListItem item) {
+		HistoryRecord(@NonNull OsmandApplication app, @NonNull HistoryEntry entry, @NonNull QuickSearchListItem item) {
 			this.time = entry.getLastAccessTime();
 			this.item = item;
-			this.typeName = item.getTypeName();
+			this.filterTypeName = getFilterTypeName(app, entry, item);
+		}
+
+		@Nullable
+		private static String getFilterTypeName(@NonNull OsmandApplication app, @NonNull HistoryEntry entry,
+		                                        @NonNull QuickSearchListItem item) {
+			if (!Algorithms.isEmpty(entry.getTypeName())) {
+				return entry.getTypeName();
+			}
+			SearchResult result = item.getSearchResult();
+			return result != null ? QuickSearchListItem.getTypeName(app, result) : null;
 		}
 	}
 
