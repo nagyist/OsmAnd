@@ -83,8 +83,11 @@ public class SpatialTextSearch {
 		public boolean DEV_READ_ADDR_OBJECTS = false;
 		public boolean DEV_READ_POI_OBJECTS = false;
 
+		
 		// display only top 10
 		public int LIMIT_POI_CATEGORY_BY_FREQ = 15;
+		// print some poi cat
+		public final boolean DEV_PRINT_POI_CAT = true;
 		
 		// no need to find 3 street intersection or 3 POI intersection
 		public int LIMIT_ATOMIC_OBJECTS = 2;
@@ -395,7 +398,7 @@ public class SpatialTextSearch {
 		return res;
 	}
 
-	private void combineSortFilterResults(SpatialSearchContext ctx, SpatialSearchResults res) {
+	private void combineSortFilterResults(SpatialSearchContext ctx, SpatialSearchResults res) throws IOException {
 		SpatialSearchResultsList main = res.combinations.get(0);
 		for (SpatialSearchResultsList m : res.combinations) {
 			List<SpatialSearchResult> lst = m.getFinalResult();
@@ -405,12 +408,17 @@ public class SpatialTextSearch {
 			res.mainResults.addAll(lst);
 		}
 		res.mainResults = main.sortResults(ctx, res.mainResults, ctx.settings.DEDUPLICATE_RES);
+		boolean printPoiCat = ctx.settings.DEV_PRINT_POI_CAT;
 		if (res.mainResults.size() > 0) {
 			int[] limits = ctx.settings.SHOW_MORE_WORDS_COUNT.clone();
 			long cKey = SpatialSearchResult.compareKey(res.mainResults.get(0));
 			int ind = 0, lind = 0;
 			int level = 0; 
 			for (SpatialSearchResult r : res.mainResults) {
+				if (printPoiCat && r.getFirstRef() != null && r.getFirstRef().atom.isPoiCategory()) {
+					printPoiCat = false;
+					ctx.poiSearch.loadPOIObjects(ctx, r.getFirstRef().atom.id, r.getLatLon());
+				}
 				long nextKey = SpatialSearchResult.compareKey(r);
 				if (cKey != nextKey) {
 					if (lind < limits.length && ind >= limits[lind]) {

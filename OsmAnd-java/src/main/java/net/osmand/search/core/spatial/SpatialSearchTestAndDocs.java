@@ -49,7 +49,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO query = "Catedral-Basílica de Nuestra Señora del Pilar"; - poi category
 
 // TODO Analyze stats slow queries
-// TODO Inspector stats index_words_dashboard.html
+// TODO INSPECTOR stats index_words_dashboard.html
 
 // TO DO Ivan / Gateway
 // TODO DEDUPLICATE: Review / implement similarity radius - similarityRadius = 50000 ... Route Id
@@ -63,7 +63,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO UNIT TESTS: Auto tests - Slow analysis (Auto test New york)
 // TODO UNIT TESTS: Analyze Abbrefvations / common skip (abbrevations 1st=first) 
 // TODO UNIT TESTS: Add test on show more '2 sokak' - Show more 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak
-// TODO inspector doesn't show suffixes
+// TODO INSPECTOR : doesn't show suffixes
 
 // TO DO - RZR
 // TODO WEB PRODUCTION: display results std way: house, interpolation results, poi...
@@ -259,7 +259,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_";
 		pattern = "Ukraine_kyiv-";
-		query = "Пуз. kyiv";
+		query = "Veg.";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
@@ -303,6 +303,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Slovakia";
 //		query = "Bratislava Billa";
+//		query = "Shell";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		pattern = "Us_new-"; 

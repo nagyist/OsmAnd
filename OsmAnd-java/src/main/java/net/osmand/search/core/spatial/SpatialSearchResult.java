@@ -76,6 +76,12 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		});
 	}
 
+	public SpatialSearchResultRef getFirstRef() {
+		if (objs.size() > 0) {
+			return objs.get(0);
+		}
+		return null;
+	}
 	
 	public MapObject getFirstObject() {
 		if (objs.size() > 0) {
@@ -105,8 +111,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		if (preciseLatlon != null) {
 			return preciseLatlon;
 		}
-		if (objs.size() > 0) {
-			return objs.get(0).atom.getResultLocation();
+		for (SpatialSearchResultRef r : objs) {
+			if (!r.atom.isPoiCategory()) {
+				return r.atom.getResultLocation();
+			}
 		}
 		return null;
 	}

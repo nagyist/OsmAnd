@@ -1,5 +1,6 @@
 package net.osmand.search.core.spatial;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -7,11 +8,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import gnu.trove.list.array.TIntArrayList;
+import net.osmand.ResultMatcher;
 import net.osmand.binary.BinaryMapIndexReader;
+import net.osmand.binary.BinaryMapIndexReader.SearchPoiTypeFilter;
+import net.osmand.binary.BinaryMapIndexReader.SearchRequest;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiSubType;
+import net.osmand.data.Amenity;
+import net.osmand.data.LatLon;
 import net.osmand.osm.AbstractPoiType;
 import net.osmand.osm.MapPoiTypes;
 import net.osmand.osm.PoiCategory;
@@ -28,6 +37,7 @@ public class SpatialPoiSearch {
 
 	final MapPoiTypes poiTypes;
 	StringPrefixTree<SpatialPoiType> poiTypesIndex = new StringPrefixTree<>();
+	ReentrantReadWriteLock poiTypesIndexLock = new ReentrantReadWriteLock();
 	AtomicInteger ids = new AtomicInteger();
 	Map<String, SpatialPoiType> byKey = new ConcurrentHashMap<>();
 	Map<Integer, SpatialPoiType> byId = new ConcurrentHashMap<>();
@@ -110,13 +120,18 @@ public class SpatialPoiSearch {
 
 	private void addToIndex(String basePoiName, SpatialPoiType poiType) {
 		poiType.names.add(basePoiName);
-		for (String name : poiType.names) {
-			poiTypesIndex.put(name, poiType);
+		WriteLock wl = poiTypesIndexLock.writeLock();
+		try {
+			wl.lock();
+			SpatialSearchContext.checkPoiTypeId(poiType.id);
+			byId.put(poiType.id, poiType);
+			byKey.put(poiType.key, poiType);
+			for (String name : poiType.names) {
+				poiTypesIndex.put(name, poiType);
+			}
+		} finally {
+			wl.unlock();
 		}
-		SpatialSearchContext.checkPoiTypeId(poiType.id);
-		
-		byId.put(poiType.id, poiType);
-		byKey.put(poiType.key, poiType);
 	}
 
 	public void init(SpatialSearchGlobalCache cache, SpatialSearchFileCache fc, BinaryMapIndexReader bir,
@@ -183,7 +198,14 @@ public class SpatialPoiSearch {
 	public void processPoiCategories(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
 		Map<SpatialPoiType, PoiCatSearch> res = new LinkedHashMap<>();
 		for (SpatialSearchToken t : tokens) {
-			List<SpatialPoiType> poiTypes = poiTypesIndex.match(t.getPrefixMatcher(ctx.stats));
+			ReadLock readLock = poiTypesIndexLock.readLock();
+			List<SpatialPoiType> poiTypes;
+			try {
+				readLock.lock();
+				poiTypes = poiTypesIndex.match(t.getPrefixMatcher(ctx.stats));
+			} finally {
+				readLock.unlock();
+			}
 			for (SpatialPoiType a : poiTypes) {
 				boolean match = false;
 				for (String n : a.names) {
@@ -238,6 +260,68 @@ public class SpatialPoiSearch {
 	
 	public SpatialPoiType getByKey(String key) {
 		return byKey.get(key);
+	}
+
+
+	public void loadPOIObjects(SpatialSearchContext ctx, long id, LatLon latLon) throws IOException {
+		final SpatialPoiType spt = byId.get((int) id);
+		// not sorted & not limited 10
+		int[] limit = new int[] { 10 };
+		long nt = System.nanoTime();
+		if (spt != null && ctx.files != null) {
+			System.out.printf("Loading poi type '%s' - limit %d...\n", spt.names.get(0), limit[0]);
+			SearchPoiTypeFilter typeFilter = new SearchPoiTypeFilter() {
+
+				@Override
+				public boolean accept(PoiCategory type, String subcategory) {
+					if (spt.key.equals(type.getKeyName()) || spt.key.equals(subcategory)) {
+						return true;
+					}
+					if (spt.parentTypes != null) {
+						for (AbstractPoiType a : spt.parentTypes) {
+							if (a.getKeyName().equals(type.getKeyName()) || a.getKeyName().equals(subcategory)) {
+								return true;
+							}
+						}
+					}
+					return false;
+				}
+
+				@Override
+				public boolean isEmpty() {
+					return false;
+				}
+
+			};
+			ResultMatcher<Amenity> matcher = new ResultMatcher<Amenity>() {
+
+				@Override
+				public boolean publish(Amenity object) {
+					if (spt.parentTypes != null) {
+						boolean match = object.getAdditionalInfo(spt.key) != null;
+						if (!match) {
+							return false;
+						}
+					}
+					if (limit[0] > 0) {
+						limit[0]--;
+					}
+					System.out.printf("\t %s (%s) %s\n", object, object.getOsmId(), object.getLocation());
+					return false;
+				}
+
+				@Override
+				public boolean isCancelled() {
+					return limit[0] == 0;
+				}
+			};
+			SearchRequest<Amenity> req = BinaryMapIndexReader.buildSearchPoiRequest(0, Integer.MAX_VALUE, 0,
+					Integer.MAX_VALUE, -1, typeFilter, matcher);
+			for (BinaryMapIndexReader bir : ctx.files) {
+				bir.searchPoi(req);
+			}
+			System.out.printf("\t ... %.1f ms\n", (System.nanoTime() - nt) / 1e6);
+		}
 	}
 
 /////////////////////////////////////////////////////////////////////////////////////////////
