@@ -21,6 +21,7 @@ import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.NameIndexReader;
+import net.osmand.data.Amenity;
 import net.osmand.map.OsmandRegions;
 import net.osmand.osm.MapPoiTypes;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
@@ -87,7 +88,7 @@ public class SpatialTextSearch {
 		// display only top 10
 		public int LIMIT_POI_CATEGORY_BY_FREQ = 15;
 		// print some poi cat
-		public final boolean DEV_PRINT_POI_CAT = true;
+		public final int DEV_PRINT_POI_CAT = 0; // 10
 		
 		// no need to find 3 street intersection or 3 POI intersection
 		public int LIMIT_ATOMIC_OBJECTS = 2;
@@ -408,16 +409,23 @@ public class SpatialTextSearch {
 			res.mainResults.addAll(lst);
 		}
 		res.mainResults = main.sortResults(ctx, res.mainResults, ctx.settings.DEDUPLICATE_RES);
-		boolean printPoiCat = ctx.settings.DEV_PRINT_POI_CAT;
+		int limitPoiCat = ctx.settings.DEV_PRINT_POI_CAT;
 		if (res.mainResults.size() > 0) {
 			int[] limits = ctx.settings.SHOW_MORE_WORDS_COUNT.clone();
 			long cKey = SpatialSearchResult.compareKey(res.mainResults.get(0));
 			int ind = 0, lind = 0;
 			int level = 0; 
 			for (SpatialSearchResult r : res.mainResults) {
-				if (printPoiCat && r.getFirstRef() != null && r.getFirstRef().atom.isPoiCategory()) {
-					printPoiCat = false;
-					ctx.poiSearch.loadPOIObjects(ctx, r.getFirstRef().atom.id, r.getLatLon());
+				if (limitPoiCat > 0 && r.getFirstRef() != null && r.getFirstRef().atom.isPoiCategory()) {
+					long nt = System.nanoTime();
+					System.out.printf("Loading poi type '%s' - limit %d...\n", r.getFirstRef().atom.name, limitPoiCat);
+					List<Amenity> interRes = ctx.poiSearch.loadPOIObjects(ctx, r.getFirstRef().atom.id, r.getLatLon(),
+							limitPoiCat);
+					for (Amenity a : interRes) {
+						System.out.printf("\t %s (%s) %s\n", a, a.getOsmId(), a.getLocation());
+					}
+					System.out.printf("\t ... %.1f ms\n", (System.nanoTime() - nt) / 1e6);
+					limitPoiCat = 0;
 				}
 				long nextKey = SpatialSearchResult.compareKey(r);
 				if (cKey != nextKey) {
