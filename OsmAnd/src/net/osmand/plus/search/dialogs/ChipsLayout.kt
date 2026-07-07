@@ -419,7 +419,7 @@ private fun OsmandFilterChip(
 					painter = painterResource(chipData.iconId),
 					contentDescription = null,
 					tint = leadingIconColor.copy(alpha = if (chipData.enabled) 1f else .5f),
-					modifier = Modifier.size(24.dp)
+					modifier = Modifier.size(18.dp)
 				)
 			} else if (title != null) {
 				Text(
@@ -438,7 +438,7 @@ private fun OsmandFilterChip(
 					painter = painterResource(chipData.iconId),
 					contentDescription = null,
 					tint = leadingIconColor,
-					modifier = Modifier.size(24.dp)
+					modifier = Modifier.size(18.dp)
 				)
 			}
 		} else {
