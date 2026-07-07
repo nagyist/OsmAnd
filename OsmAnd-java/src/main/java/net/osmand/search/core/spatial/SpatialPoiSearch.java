@@ -1,25 +1,14 @@
 package net.osmand.search.core.spatial;
 
-import static net.osmand.CollatorStringMatcher.StringMatcherMode.CHECK_ONLY_STARTS_WITH;
-
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import gnu.trove.list.array.TIntArrayList;
-import net.osmand.Collator;
 import net.osmand.CollatorStringMatcher;
 import net.osmand.CollatorStringMatcher.StringMatcherMode;
-import net.osmand.OsmAndCollator;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiSubType;
@@ -28,17 +17,12 @@ import net.osmand.osm.MapPoiTypes;
 import net.osmand.osm.PoiCategory;
 import net.osmand.osm.PoiFilter;
 import net.osmand.osm.PoiType;
-import net.osmand.search.SearchUICore.SearchResultMatcher;
-import net.osmand.search.core.SearchPhrase;
-import net.osmand.search.core.SearchPhrase.NameStringMatcher;
-import net.osmand.search.core.SearchPhrase.SearchPhraseDataType;
-import net.osmand.search.core.SearchResult;
 import net.osmand.search.core.TopIndexFilter;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtomXY;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchFileCache;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchGlobalCache;
-import net.osmand.util.Algorithms;
+import net.osmand.util.SearchAlgorithms;
 
 public class SpatialPoiSearch {
 
@@ -50,6 +34,7 @@ public class SpatialPoiSearch {
 
 	public static class SpatialPoiType {
 		final AbstractPoiType singleType;
+		final String poiAdditional;
 		final List<String> names = new ArrayList<String>();
 		final String key;
 		final int id;
@@ -61,7 +46,16 @@ public class SpatialPoiSearch {
 			this.singleType = pt;
 			this.key = pt.getKeyName();
 			this.id = id;
+			this.poiAdditional = null;
 		}
+		
+		public SpatialPoiType(String additional, String key, int id) {
+			this.singleType = null;
+			this.key = key;
+			this.id = id;
+			this.poiAdditional = additional;
+		}
+		
 	}
 
 	public SpatialPoiSearch(MapPoiTypes types) {
@@ -109,9 +103,14 @@ public class SpatialPoiSearch {
 		if (!basePoiName.equals(pt.getTranslation())) {
 			String[] split = pt.getTranslation().split(";");
 			for (String tr : split) {
-				poiType.names.add(CollatorStringMatcher.alignChars(tr.trim()));
+				poiType.names.add(SearchAlgorithms.alignChars(tr.trim()));
 			}
 		}
+		addToIndex(basePoiName, poiType);
+	}
+
+
+	private void addToIndex(String basePoiName, SpatialPoiType poiType) {
 		poiType.names.add(basePoiName);
 		for (String name : poiType.names) {
 			poiTypesIndex.put(name, poiType);
@@ -144,46 +143,49 @@ public class SpatialPoiSearch {
 		}
 		
 		
-		for (PoiSubType pt : poiRegion.getSubTypes()) {
-			if(pt.text) {
+		for (PoiSubType subType : poiRegion.getSubTypes()) {
+			if (subType.text) {
 				continue;
 			}
-			SpatialPoiType spt = byKey.get(pt.name);
-			if (spt == null) {
+			if (subType.isTopIndex()) {
+				List<String> possibleValues = subType.possibleValues;
+				for (int k = 0; k < possibleValues.size(); k++) {
+					String topValueName = possibleValues.get(k);
+					String valueKey = TopIndexFilter.getValueKey(topValueName);
+					String fullKey = subType.name + "_" + valueKey;
+					SpatialPoiType topValue = byKey.get(fullKey);
+					if (topValue == null) {
+						System.out.println(fullKey);
+						String poiTranslation = poiTypes.getPoiTranslation(valueKey, false);
+						topValue = new SpatialPoiType(topValueName, fullKey, ids.getAndIncrement());
+						if (!topValueName.equalsIgnoreCase(poiTranslation) && poiTranslation != null) {
+							topValue.names.add(poiTranslation);
+						}
+						addToIndex(topValueName, topValue);
+					}
+					int freq = k < subType.possibleValuesFreqs.size() ? subType.possibleValuesFreqs.get(k) : 0;
+					topValue.total += freq;
+				}
+			}
+			SpatialPoiType indSubType = byKey.get(subType.name);
+			if (indSubType == null) {
 				// skip top level additional
 				continue;
 			}
-			spt.total += pt.frequency;
-			if (pt.isTopIndex()) {
-				List<String> possibleValues = pt.possibleValues;
-				for (int k = 0; k < possibleValues.size(); k++) {
-					String pv = possibleValues.get(k);
-					String valueKey = TopIndexFilter.getValueKey(pv);
-					String fullKey = spt.key + "_" + valueKey;
-//					int pt = spt.po
-					if(!byKey.containsKey(fullKey)) {
-						String poiTranslation = poiTypes.getPoiTranslation(valueKey);
-						
-					}
-					int freq = k < pt.possibleValuesFreqs.size() ? pt.possibleValuesFreqs.get(k) : 0;
-					SpatialPoiType topValue = byKey.get(fullKey);
-					topValue.total += freq;
-					
-					
-				}
-			}
+			indSubType.total += subType.frequency;
 		}
 	}
 
 	public void processPoiCategories(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
 		for (SpatialSearchToken t : tokens) {
-			List<SpatialPoiType> poiTypes = poiTypesIndex.match(t.getPrefixMatcherPoiType(ctx.stats));
+			List<SpatialPoiType> poiTypes = poiTypesIndex.match(t.getPrefixMatcher(ctx.stats));
 			for (SpatialPoiType a : poiTypes) {
 				boolean match = false;
 				for (String n : a.names) {
-					match = CollatorStringMatcher.cmatchesNoAlign(t.getCollator().getCollator(), n, t.wordNoDot,
-							StringMatcherMode.CHECK_STARTS_FROM_SPACE);
-					if (match) {
+//					match = CollatorStringMatcher.cmatchesNoAlign(t.getCollator().getCollator(), n, t.word,
+//							StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+					if (t.getMainCollator().matches(n)) {
+						match = true;
 						break;
 					}
 				}
@@ -195,7 +197,8 @@ public class SpatialPoiSearch {
 		}
 	}
 
-	////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
 //	public static class SearchAmenityTypesAPI extends SearchBaseAPI {
 //
 //		public final static String STD_POI_FILTER_PREFIX = "std_";
@@ -531,140 +534,138 @@ public class SpatialPoiSearch {
 
 //	}
 
-	// TODO
-	private Map<BinaryMapIndexReader, Set<String>> poiAdditionalTopIndexCache = new HashMap<>();
-
-	private void initPoiAdditionalTopIndex(BinaryMapIndexReader r) throws IOException {
-		if (poiAdditionalTopIndexCache.containsKey(r)) {
-			return;
-		}
-		List<PoiSubType> poiSubTypes = r.getTopIndexSubTypes();
-		if (poiSubTypes.size() == 0) {
-			return;
-		}
-		Set<String> names = new HashSet<>();
-		for (PoiSubType subType : poiSubTypes) {
-			if (subType.possibleValues == null) {
-				continue;
-			}
-			names.addAll(subType.possibleValues);
-		}
-		List<String> translation = new ArrayList<>();
-		for (String v : names) {
-			String translate = getTopIndexTranslation(v);
-			translation.add(translate);
-		}
-		names.addAll(translation);
-		if (names.size() > 0) {
-			poiAdditionalTopIndexCache.put(r, names);
-		}
-	}
-
-	public void searchTopIndexPoiAdditional(SearchPhrase phrase, SearchResultMatcher resultMatcher) throws IOException {
-		if (phrase.isEmpty()) {
-			return;
-		}
-		int BBOX_RADIUS = 1000;
-		Iterator<BinaryMapIndexReader> offlineIndexes = phrase.getRadiusOfflineIndexes(BBOX_RADIUS,
-				SearchPhraseDataType.POI);
-		NameStringMatcher nm = phrase.getMainUnknownNameStringMatcher();
-		Map<String, HashSet<String>> matchedValues = new HashMap<>();
-		while (offlineIndexes.hasNext()) {
-			BinaryMapIndexReader r = offlineIndexes.next();
-			initPoiAdditionalTopIndex(r);
-			if (!poiAdditionalTopIndexCache.containsKey(r)) {
-				continue;
-			}
-			if (nm.matches(poiAdditionalTopIndexCache.get(r))) {
-				TopIndexMatch match = matchTopIndex(r, phrase);
-				if (match != null) {
-					if (matchedValues.containsKey(match.subType.name)
-							&& matchedValues.get(match.subType.name).contains(match.value)) {
-						continue;
-					}
-					SearchResult res = new SearchResult(phrase);
-					res.localeName = match.translatedValue;
-					// FIXME
+//	private Map<BinaryMapIndexReader, Set<String>> poiAdditionalTopIndexCache = new HashMap<>();
+//
+//	private void initPoiAdditionalTopIndex(BinaryMapIndexReader r) throws IOException {
+//		if (poiAdditionalTopIndexCache.containsKey(r)) {
+//			return;
+//		}
+//		List<PoiSubType> poiSubTypes = r.getTopIndexSubTypes();
+//		if (poiSubTypes.size() == 0) {
+//			return;
+//		}
+//		Set<String> names = new HashSet<>();
+//		for (PoiSubType subType : poiSubTypes) {
+//			if (subType.possibleValues == null) {
+//				continue;
+//			}
+//			names.addAll(subType.possibleValues);
+//		}
+//		List<String> translation = new ArrayList<>();
+//		for (String v : names) {
+//			String translate = getTopIndexTranslation(v);
+//			translation.add(translate);
+//		}
+//		names.addAll(translation);
+//		if (names.size() > 0) {
+//			poiAdditionalTopIndexCache.put(r, names);
+//		}
+//	}
+//
+//	public void searchTopIndexPoiAdditional(SearchPhrase phrase, SearchResultMatcher resultMatcher) throws IOException {
+//		if (phrase.isEmpty()) {
+//			return;
+//		}
+//		int BBOX_RADIUS = 1000;
+//		Iterator<BinaryMapIndexReader> offlineIndexes = phrase.getRadiusOfflineIndexes(BBOX_RADIUS,
+//				SearchPhraseDataType.POI);
+//		NameStringMatcher nm = phrase.getMainUnknownNameStringMatcher();
+//		Map<String, HashSet<String>> matchedValues = new HashMap<>();
+//		while (offlineIndexes.hasNext()) {
+//			BinaryMapIndexReader r = offlineIndexes.next();
+//			initPoiAdditionalTopIndex(r);
+//			if (!poiAdditionalTopIndexCache.containsKey(r)) {
+//				continue;
+//			}
+//			if (nm.matches(poiAdditionalTopIndexCache.get(r))) {
+//				TopIndexMatch match = matchTopIndex(r, phrase);
+//				if (match != null) {
+//					if (matchedValues.containsKey(match.subType.name)
+//							&& matchedValues.get(match.subType.name).contains(match.value)) {
+//						continue;
+//					}
+//					SearchResult res = new SearchResult(phrase);
+//					res.localeName = match.translatedValue;
 //					res.object = new TopIndexFilter(match.subType, types, match.value);
 //					addPoiTypeResult(phrase, resultMatcher, false, null, res);
-					HashSet<String> values = matchedValues.computeIfAbsent(match.subType.name, s -> new HashSet<>());
-					values.add(match.value);
-				}
-			}
-		}
-	}
-
-	private TopIndexMatch matchTopIndex(BinaryMapIndexReader r, SearchPhrase phrase) throws IOException {
-		String search = phrase.getUnknownSearchPhrase();
-		boolean complete = phrase.isFirstUnknownSearchWordComplete();
-		List<PoiSubType> poiSubTypes = r.getTopIndexSubTypes();
-		String lang = phrase.getSettings().getLang();
-		List<TopIndexMatch> matches = new ArrayList<>();
-		Collator collator = OsmAndCollator.primaryCollator();
-		NameStringMatcher nm = new NameStringMatcher(search, CHECK_ONLY_STARTS_WITH);
-		for (PoiSubType subType : poiSubTypes) {
-			String topIndexValue = null;
-			String translate = null;
-			List<String> possibleValues = new ArrayList<>(subType.possibleValues);
-			Collections.sort(possibleValues);
-			for (String s : possibleValues) {
-				translate = getTopIndexTranslation(s);
-				String normalizeBrand = s.toLowerCase(Locale.ROOT);
-				if (complete) {
-					if (CollatorStringMatcher.cmatches(collator, search, normalizeBrand,
-							StringMatcherMode.CHECK_ONLY_STARTS_WITH)) {
-						topIndexValue = s;
-						break;
-					} else {
-						if (CollatorStringMatcher.cmatches(collator, search, translate,
-								StringMatcherMode.CHECK_ONLY_STARTS_WITH)) {
-							topIndexValue = s;
-							break;
-						}
-					}
-				} else if (nm.matches(s) || nm.matches(translate)) {
-					topIndexValue = s;
-					break;
-				}
-			}
-			if (topIndexValue != null) {
-				TopIndexMatch topIndexMatch = new TopIndexMatch(subType, topIndexValue, translate);
-				if (!Algorithms.isEmpty(lang) && subType.name.contains(":" + lang)) {
-					return topIndexMatch;
-				}
-				matches.add(topIndexMatch);
-			}
-		}
-		for (TopIndexMatch m : matches) {
-			if (!m.subType.name.contains(":")) {
-				return m;
-			}
-		}
-		if (matches.size() > 0) {
-			return matches.get(0);
-		}
-		return null;
-	}
-
-	private String getTopIndexTranslation(String value) {
-		String key = TopIndexFilter.getValueKey(value);
-		String translate = null; // types.getPoiTranslation(key); // TODO;
-		if (translate.toLowerCase(Locale.ROOT).equals(key)) {
-			translate = value;
-		}
-		return translate;
-	}
-
-	private static class TopIndexMatch {
-		TopIndexMatch(PoiSubType subType, String value, String translatedValue) {
-			this.subType = subType;
-			this.value = value;
-			this.translatedValue = translatedValue;
-		}
-
-		PoiSubType subType;
-		String value;
-		String translatedValue;
-	}
+//					HashSet<String> values = matchedValues.computeIfAbsent(match.subType.name, s -> new HashSet<>());
+//					values.add(match.value);
+//				}
+//			}
+//		}
+//	}
+//
+//	private TopIndexMatch matchTopIndex(BinaryMapIndexReader r, SearchPhrase phrase) throws IOException {
+//		String search = phrase.getUnknownSearchPhrase();
+//		boolean complete = phrase.isFirstUnknownSearchWordComplete();
+//		List<PoiSubType> poiSubTypes = r.getTopIndexSubTypes();
+//		String lang = phrase.getSettings().getLang();
+//		List<TopIndexMatch> matches = new ArrayList<>();
+//		Collator collator = OsmAndCollator.primaryCollator();
+//		NameStringMatcher nm = new NameStringMatcher(search, CHECK_ONLY_STARTS_WITH);
+//		for (PoiSubType subType : poiSubTypes) {
+//			String topIndexValue = null;
+//			String translate = null;
+//			List<String> possibleValues = new ArrayList<>(subType.possibleValues);
+//			Collections.sort(possibleValues);
+//			for (String s : possibleValues) {
+//				translate = getTopIndexTranslation(s);
+//				String normalizeBrand = s.toLowerCase(Locale.ROOT);
+//				if (complete) {
+//					if (CollatorStringMatcher.cmatches(collator, search, normalizeBrand,
+//							StringMatcherMode.CHECK_ONLY_STARTS_WITH)) {
+//						topIndexValue = s;
+//						break;
+//					} else {
+//						if (CollatorStringMatcher.cmatches(collator, search, translate,
+//								StringMatcherMode.CHECK_ONLY_STARTS_WITH)) {
+//							topIndexValue = s;
+//							break;
+//						}
+//					}
+//				} else if (nm.matches(s) || nm.matches(translate)) {
+//					topIndexValue = s;
+//					break;
+//				}
+//			}
+//			if (topIndexValue != null) {
+//				TopIndexMatch topIndexMatch = new TopIndexMatch(subType, topIndexValue, translate);
+//				if (!Algorithms.isEmpty(lang) && subType.name.contains(":" + lang)) {
+//					return topIndexMatch;
+//				}
+//				matches.add(topIndexMatch);
+//			}
+//		}
+//		for (TopIndexMatch m : matches) {
+//			if (!m.subType.name.contains(":")) {
+//				return m;
+//			}
+//		}
+//		if (matches.size() > 0) {
+//			return matches.get(0);
+//		}
+//		return null;
+//	}
+//
+//	private String getTopIndexTranslation(String value) {
+//		String key = TopIndexFilter.getValueKey(value);
+//		String translate = null; // types.getPoiTranslation(key); // TODO;
+//		if (translate.toLowerCase(Locale.ROOT).equals(key)) {
+//			translate = value;
+//		}
+//		return translate;
+//	}
+//
+//	private static class TopIndexMatch {
+//		TopIndexMatch(PoiSubType subType, String value, String translatedValue) {
+//			this.subType = subType;
+//			this.value = value;
+//			this.translatedValue = translatedValue;
+//		}
+//
+//		PoiSubType subType;
+//		String value;
+//		String translatedValue;
+//	}
 
 }

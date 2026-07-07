@@ -256,7 +256,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_";
 		pattern = "Ukraine_kyiv-";
-		query = "Caf";
+		query = "Пуз.";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
