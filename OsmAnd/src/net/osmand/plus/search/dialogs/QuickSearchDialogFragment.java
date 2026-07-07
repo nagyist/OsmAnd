@@ -127,6 +127,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private static final String QUICK_SEARCH_FAB_VISIBLE_KEY = "quick_search_fab_visible_key";
 	private static final String QUICK_SEARCH_CATEGORY_SEARCH_BY_FILTER_KEY = "quick_search_category_search_by_filter_key";
 	private static final String QUICK_SEARCH_CURRENT_FILTER_ID_KEY = "quick_search_current_filter_id_key";
+	private static final String QUICK_SEARCH_CURRENT_CATEGORY_FILTER_PARAMS_KEY = "quick_search_current_category_filter_params_key";
 	private static final String QUICK_SEARCH_SELECTED_RESULT_POI_TYPE_NAMES_KEY = "quick_search_selected_result_poi_type_names_key";
 
 	private static final String QUICK_SEARCH_RUN_SEARCH_FIRST_TIME_KEY = "quick_search_run_search_first_time_key";
@@ -210,6 +211,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private SortByOption selectedSortByOption = SortByOption.RELEVANCE;
 	private String selectedSortContextId;
 	private String currentSearchFilterId;
+	private String currentCategoryFilterParams;
 	private final List<String> selectedResultPoiTypeNames = new ArrayList<>();
 	private FragmentManager.OnBackStackChangedListener returnToSearchAfterHistorySettingsListener;
 	private List<SearchResult> nearestCities;
@@ -311,6 +313,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			fabVisible = savedInstanceState.getBoolean(QUICK_SEARCH_FAB_VISIBLE_KEY, false);
 			categorySearchByFilter = savedInstanceState.getBoolean(QUICK_SEARCH_CATEGORY_SEARCH_BY_FILTER_KEY, false);
 			currentSearchFilterId = savedInstanceState.getString(QUICK_SEARCH_CURRENT_FILTER_ID_KEY);
+			currentCategoryFilterParams = savedInstanceState.getString(QUICK_SEARCH_CURRENT_CATEGORY_FILTER_PARAMS_KEY);
 			ArrayList<String> selectedPoiTypeNames = savedInstanceState.getStringArrayList(
 					QUICK_SEARCH_SELECTED_RESULT_POI_TYPE_NAMES_KEY);
 			if (selectedPoiTypeNames != null) {
@@ -477,6 +480,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 				if (!searchQuery.equalsIgnoreCase(newQueryText)) {
 					categorySearchByFilter = false;
 					currentSearchFilterId = null;
+					currentCategoryFilterParams = null;
 					searchQuery = newQueryText;
 					if (Algorithms.isEmpty(searchQuery)) {
 						cancelSearch();
@@ -1169,17 +1173,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		if (word == null || word.getResult() == null || word.getType() != POI_TYPE) {
 			return null;
 		}
-		Object object = word.getResult().object;
-		if (object instanceof PoiUIFilter filter) {
-			return filter.getFilterId();
-		} else if (object instanceof CustomSearchPoiFilter filter) {
-			return filter.getFilterId();
-		} else if (object instanceof TopIndexFilter topIndexFilter) {
-			return topIndexFilter.getFilterId();
-		} else if (object instanceof AbstractPoiType abstractPoiType) {
-			return PoiUIFilter.STD_PREFIX + abstractPoiType.getKeyName();
-		}
-		return null;
+		return getSearchFilterId(word.getResult().object);
 	}
 
 	private boolean isSearchAroundChipVisible() {
@@ -1252,14 +1246,14 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		if (filter == null) {
 			return 0;
 		}
-		String filterByName = filter.getFilterByName();
+		String filterByName = currentCategoryFilterParams;
 		if (Algorithms.isBlank(filterByName)) {
 			return 0;
 		}
 		int count = 0;
 		StringBuilder nameFilter = new StringBuilder();
 		Map<String, ?> poiAdditionals = filter.getPoiAdditionals();
-		for (String param : getAppliedFilterParams(filter)) {
+		for (String param : getAppliedFilterParams(filter, filterByName)) {
 			if (isAppliedPoiAdditional(param, poiAdditionals) || isAppliedOpeningHoursFilter(param)) {
 				count++;
 			} else {
@@ -1273,9 +1267,8 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	@NonNull
-	private List<String> getAppliedFilterParams(@NonNull PoiUIFilter filter) {
+	private List<String> getAppliedFilterParams(@NonNull PoiUIFilter filter, @NonNull String filterByName) {
 		List<String> params = new ArrayList<>();
-		String filterByName = filter.getFilterByName();
 		if (!Algorithms.isBlank(filterByName)) {
 			params.addAll(Arrays.asList(filterByName.trim().split("\\s+")));
 		}
@@ -1551,6 +1544,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		outState.putBoolean(QUICK_SEARCH_CATEGORY_SEARCH_BY_FILTER_KEY,
 				categorySearchByFilter || activeCategoryFilterId != null);
 		outState.putString(QUICK_SEARCH_CURRENT_FILTER_ID_KEY, activeCategoryFilterId);
+		outState.putString(QUICK_SEARCH_CURRENT_CATEGORY_FILTER_PARAMS_KEY, currentCategoryFilterParams);
 		outState.putStringArrayList(QUICK_SEARCH_SELECTED_RESULT_POI_TYPE_NAMES_KEY,
 				new ArrayList<>(selectedResultPoiTypeNames));
 		if (centerLatLon != null) {
@@ -2400,6 +2394,9 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	public void completeQueryWithObject(@NonNull SearchResult result) {
+		if (result.object instanceof AbstractPoiType || result.object instanceof PoiUIFilter) {
+			resetFilterChipSession(result.object);
+		}
 		app.getSearchHistoryHelper().selectSearchResult(result);
 
 		if (result.object instanceof AbstractPoiType || result.object instanceof PoiUIFilter) {
@@ -2466,6 +2463,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		if (searchPhrase.isLastWord(POI_TYPE)) {
 			categorySearchByFilter = true;
 			currentSearchFilterId = filter.getFilterId();
+			currentCategoryFilterParams = filter.getFilterByName();
 			selectedResultPoiTypeNames.clear();
 			poiFilterApplied = true;
 			SearchResult sr = searchPhrase.getLastSelectedWord().getResult();
@@ -2764,9 +2762,9 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	private void showFilter(@NonNull PoiUIFilter filter) {
+		resetFilterChipSession(filter);
 		categorySearchByFilter = true;
 		currentSearchFilterId = filter.getFilterId();
-		selectedResultPoiTypeNames.clear();
 		String filterId = filter.getFilterId();
 		boolean isCustomFilter = filterId.equals(app.getPoiFilters().getCustomPOIFilter().getFilterId());
 		if (isCustomFilter) {
@@ -2803,6 +2801,26 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		}
 		applySelectedSortSetting();
 		runCoreSearch(txt, false, false);
+	}
+
+	private void resetFilterChipSession(@Nullable Object object) {
+		currentSearchFilterId = getSearchFilterId(object);
+		currentCategoryFilterParams = null;
+		selectedResultPoiTypeNames.clear();
+	}
+
+	@Nullable
+	private String getSearchFilterId(@Nullable Object object) {
+		if (object instanceof PoiUIFilter poiUIFilter) {
+			return poiUIFilter.getFilterId();
+		} else if (object instanceof CustomSearchPoiFilter customSearchPoiFilter) {
+			return customSearchPoiFilter.getFilterId();
+		} else if (object instanceof TopIndexFilter topIndexFilter) {
+			return topIndexFilter.getFilterId();
+		} else if (object instanceof AbstractPoiType abstractPoiType) {
+			return PoiUIFilter.STD_PREFIX + abstractPoiType.getKeyName();
+		}
+		return null;
 	}
 
 	private void updateFab() {
