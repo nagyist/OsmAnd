@@ -985,7 +985,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		searchAroundChip.dropdownItems = getSearchAroundOptions();
 
 		List<PoiUIFilter> topFilters = getTopFilterChipsSource();
-		moveSelectedTopFilterFirst(topFilters);
 		for (PoiUIFilter filter : topFilters) {
 			if (!NEAREST_POIS_UI_FILTER_ID.equals(filter.getFilterId())) {
 				boolean selected = selectedResultCategoryFilterIds.contains(filter.getFilterId());
@@ -1108,34 +1107,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		String filterId = PoiUIFilter.STD_PREFIX + poiType.getKeyName();
 		PoiUIFilter filter = app.getPoiFilters().getFilterById(filterId);
 		return filter != null ? filter : new PoiUIFilter(poiType, app, "");
-	}
-
-	private void moveSelectedTopFilterFirst(@NonNull List<PoiUIFilter> filters) {
-		if (searchUICore == null || searchUICore.getPhrase() == null) {
-			return;
-		}
-		if (!selectedResultCategoryFilterIds.isEmpty()) {
-			for (int selectedIndex = 0; selectedIndex < selectedResultCategoryFilterIds.size(); selectedIndex++) {
-				moveFilterFirst(filters, selectedResultCategoryFilterIds.get(selectedIndex));
-			}
-			return;
-		}
-		String currentFilterId = getCurrentSearchFilterId();
-		if (currentFilterId == null) {
-			return;
-		}
-		moveFilterFirst(filters, currentFilterId);
-	}
-
-	private void moveFilterFirst(@NonNull List<PoiUIFilter> filters, @NonNull String filterId) {
-		for (int i = 0; i < filters.size(); i++) {
-			if (filterId.equals(filters.get(i).getFilterId())) {
-				if (i > 0) {
-					filters.add(0, filters.remove(i));
-				}
-				return;
-			}
-		}
 	}
 
 	private void onPoiTypeChipClick(@NonNull String filterId) {
