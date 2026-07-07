@@ -211,6 +211,7 @@ private fun ChipsLayoutContent(
 	val activeColor = colorAttr(R.attr.active_color_primary)
 	val inActiveColor = colorAttr(R.attr.secondary_icon_color)
 	val activeBackground = colorAttr(R.attr.active_color_secondary)
+	val contentPadding = dimensionResource(R.dimen.content_padding)
 	val halfPadding = dimensionResource(R.dimen.content_padding_half)
 	val chips = items.filter { it.visible }
 
@@ -230,6 +231,7 @@ private fun ChipsLayoutContent(
 			horizontalArrangement = Arrangement.spacedBy(halfPadding),
 			verticalAlignment = Alignment.CenterVertically
 		) {
+			Spacer(modifier = Modifier.width(contentPadding - halfPadding))
 			chips.forEach { chip ->
 				ChipAnchor(
 					chip = chip,
@@ -246,6 +248,7 @@ private fun ChipsLayoutContent(
 					activeBackground = activeBackground
 				)
 			}
+			Spacer(modifier = Modifier.width(contentPadding - halfPadding))
 		}
 	}
 }

@@ -136,9 +136,7 @@
 	                    android:clickable="false"
 	                    android:gravity="center_vertical"
 	                    android:orientation="vertical"
-	                    android:paddingStart="@dimen/content_padding"
 	                    android:paddingTop="@dimen/content_padding_small"
-	                    android:paddingEnd="@dimen/content_padding"
 	                    android:paddingBottom="@dimen/content_padding_small">
 
 						<net.osmand.plus.search.dialogs.ChipsLayout
