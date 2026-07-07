@@ -170,11 +170,19 @@ public class SpatialSearchContext {
 			this.internalFile.add(fc);
 			indexInd += fc.indexReaders.size();
 			fileInd++;
+			boolean initPoi = false;
+			if (fc.poiFrequencies != null || fc.poiSearch != poiSearch) {
+				fc.poiFrequencies = new HashMap<String, Integer>();
+				fc.poiSearch = poiSearch;
+				initPoi = true;
+			}
 			for (NameIndexReader r : fc.indexReaders) {
 				if (r.poiRegion != null) {
 					long bRead = bir.getBytesRead();
 					bir.initCategories(r.poiRegion);
-					poiSearch.init(cache, fc, bir, r.poiRegion);
+					if (initPoi) {
+						poiSearch.init(cache, fc, bir, r.poiRegion);
+					}
 					stats.readAtomsBytes += (bir.getBytesRead() - bRead);
 				}
 				r.gcPrefixes(settings.AUTO_CLEAR_PREFIX_CACHE_LIMIT);
@@ -185,6 +193,13 @@ public class SpatialSearchContext {
 	
 	public void setTokens(List<SpatialSearchToken> tokens) {
 		this.tokens = tokens;
+	}
+
+	
+	void processPoiCategories() throws IOException {
+		if (settings.SEARCH_POI_CATEGORIES) {
+			poiSearch.processPoiCategories(this, tokens);
+		}
 	}
 
 	void readAtoms() throws IOException {
@@ -785,10 +800,6 @@ public class SpatialSearchContext {
 			}
 		}
 
-	}
-
-	void processPoiCategories() throws IOException {
-		poiSearch.processPoiCategories(this, tokens);
 	}
 
 	

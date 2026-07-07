@@ -53,6 +53,7 @@ public class SpatialTextSearch {
 		public boolean SEARCH_BUILDINGS = true;
 		public boolean SEARCH_STREET_INTERSECTIONS = true;
 		public boolean SEARCH_POI_INTERSECTIONS = true;
+		public boolean SEARCH_POI_CATEGORIES = true;
 		// no intersection recorded but streets are nearby
 		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
 		
@@ -82,6 +83,9 @@ public class SpatialTextSearch {
 		public boolean DEV_READ_ADDR_OBJECTS = false;
 		public boolean DEV_READ_POI_OBJECTS = false;
 
+		// display only top 10
+		public int LIMIT_POI_CATEGORY_BY_FREQ = 15;
+		
 		// no need to find 3 street intersection or 3 POI intersection
 		public int LIMIT_ATOMIC_OBJECTS = 2;
 
@@ -133,6 +137,8 @@ public class SpatialTextSearch {
 		public final long length;
 		public final long edition;
 		public final List<NameIndexReader> indexReaders = new ArrayList<NameIndexReader>();
+		public Map<String, Integer> poiFrequencies = null;
+		public SpatialPoiSearch poiSearch;
 
 		public SpatialSearchFileCache(BinaryMapIndexReader r) {
 			file = r.getFile().getName();

@@ -1,14 +1,15 @@
 package net.osmand.search.core.spatial;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import gnu.trove.list.array.TIntArrayList;
-import net.osmand.CollatorStringMatcher;
-import net.osmand.CollatorStringMatcher.StringMatcherMode;
+import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiSubType;
@@ -29,9 +30,9 @@ public class SpatialPoiSearch {
 	final MapPoiTypes poiTypes;
 	StringPrefixTree<SpatialPoiType> poiTypesIndex = new StringPrefixTree<>();
 	AtomicInteger ids = new AtomicInteger();
-	Map<Integer, SpatialPoiType> byId = new ConcurrentHashMap<>();
 	Map<String, SpatialPoiType> byKey = new ConcurrentHashMap<>();
-
+	Map<Integer, SpatialPoiType> byId = new ConcurrentHashMap<>();
+	
 	public static class SpatialPoiType {
 		final AbstractPoiType singleType;
 		final String poiAdditional;
@@ -39,8 +40,6 @@ public class SpatialPoiSearch {
 		final String key;
 		final int id;
 		List<AbstractPoiType> parentTypes;
-		int total;
-		NameIndexAtom atom;
 
 		public SpatialPoiType(AbstractPoiType pt, int id) {
 			this.singleType = pt;
@@ -76,9 +75,9 @@ public class SpatialPoiSearch {
 				}
 				addToIndex(pt, null);
 				for (PoiType add : pt.getPoiAdditionals()) {
-//					if (add.isTopVisible() && !"no".equals(poiTypes.getBasePoiName(add))) {
+					if (add.isTopVisible() && !"no".equals(poiTypes.getBasePoiName(add))) {
 						addToIndex(add, pt);
-//					}
+					}
 				}
 			}
 		}
@@ -116,18 +115,13 @@ public class SpatialPoiSearch {
 			poiTypesIndex.put(name, poiType);
 		}
 		SpatialSearchContext.checkPoiTypeId(poiType.id);
-		NameIndexAtomXY xy = new NameIndexAtomXY(null, null, null);
-		NameIndexAtom atom = new NameIndexAtom(basePoiName, SpatialSearchToken.POI_CATEGORY_TYPE, poiType.id, 0, null,
-				false, 0, 0, xy, 0);
-		poiType.atom = atom;
+		
 		byId.put(poiType.id, poiType);
 		byKey.put(poiType.key, poiType);
 	}
 
 	public void init(SpatialSearchGlobalCache cache, SpatialSearchFileCache fc, BinaryMapIndexReader bir,
 			PoiRegion poiRegion) {
-		// TODO check null byKey
-		System.out.println(poiRegion.getName()); // add stats
 		List<String> cats = poiRegion.getCategories();
 		List<List<String>> subcategories = poiRegion.getSubcategories();
 		TIntArrayList categoryFreqs = poiRegion.getCategoryFreqs();
@@ -135,10 +129,10 @@ public class SpatialPoiSearch {
 		for (int i = 0; i < cats.size(); i++) {
 			List<String> lst = subcategories.get(i);
 			int f = i < categoryFreqs.size() ? categoryFreqs.get(i) : 0;
-			byKey.get(cats.get(i)).total += f;
+			fc.poiFrequencies.put(cats.get(i), f);
 			for (int j = 0; j < lst.size(); j++) {
 				int ft = i < subcatFreqs.size() && j < subcatFreqs.get(i).size() ? subcatFreqs.get(i).get(j) : 0;
-				byKey.get(lst.get(j)).total += ft;
+				fc.poiFrequencies.put(lst.get(j), ft);
 			}
 		}
 		
@@ -155,7 +149,6 @@ public class SpatialPoiSearch {
 					String fullKey = subType.name + "_" + valueKey;
 					SpatialPoiType topValue = byKey.get(fullKey);
 					if (topValue == null) {
-						System.out.println(fullKey);
 						String poiTranslation = poiTypes.getPoiTranslation(valueKey, false);
 						topValue = new SpatialPoiType(topValueName, fullKey, ids.getAndIncrement());
 						if (!topValueName.equalsIgnoreCase(poiTranslation) && poiTranslation != null) {
@@ -164,7 +157,7 @@ public class SpatialPoiSearch {
 						addToIndex(topValueName, topValue);
 					}
 					int freq = k < subType.possibleValuesFreqs.size() ? subType.possibleValuesFreqs.get(k) : 0;
-					topValue.total += freq;
+					fc.poiFrequencies.put(topValue.key, freq);
 				}
 			}
 			SpatialPoiType indSubType = byKey.get(subType.name);
@@ -172,27 +165,70 @@ public class SpatialPoiSearch {
 				// skip top level additional
 				continue;
 			}
-			indSubType.total += subType.frequency;
+			fc.poiFrequencies.put(indSubType.key, subType.frequency);
 		}
 	}
 
+	private record PoiCatSearch(SpatialPoiType pt, List<SpatialSearchToken> tokens, List<NameIndexAtom> atoms, int freq) implements Comparable<PoiCatSearch> {
+
+		@Override
+		public int compareTo(PoiCatSearch o) {
+			int i1 = -Integer.compare(tokens.size(), o.tokens.size());
+			if (i1 != 0) {
+				return i1;
+			}
+			return -Integer.compare(freq, o.freq);
+		}
+	}
+	
 	public void processPoiCategories(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
+		Map<SpatialPoiType, PoiCatSearch> res = new LinkedHashMap<>();
 		for (SpatialSearchToken t : tokens) {
 			List<SpatialPoiType> poiTypes = poiTypesIndex.match(t.getPrefixMatcher(ctx.stats));
 			for (SpatialPoiType a : poiTypes) {
 				boolean match = false;
 				for (String n : a.names) {
-//					match = CollatorStringMatcher.cmatchesNoAlign(t.getCollator().getCollator(), n, t.word,
-//							StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
 					if (t.getMainCollator().matches(n)) {
 						match = true;
 						break;
 					}
 				}
 				if (match) {
-					System.out.println(a.names + " " + a.key + " " + a.total);
-					t.addAtom(a.atom);
+					int total = 0;
+					for (SpatialSearchFileCache l : ctx.internalFile) {
+						if (l.poiFrequencies != null) {
+							Integer freq = l.poiFrequencies.get(a.key);
+							if (freq != null) {
+								total += freq;
+							}
+						}
+					}
+//					System.out.println(a.names + " " + a.key + " " + total);
+					PoiCatSearch cs = res.get(a);
+					if (cs == null) {
+						cs = new PoiCatSearch(a, new ArrayList<>(), new ArrayList<>(), total);
+						res.put(a, cs);
+					}
+					if (cs.tokens.contains(t)) {
+						continue;
+					}
+					NameIndexAtomXY xy = new NameIndexAtomXY(null, null, null);
+					NameIndexAtom atom = new NameIndexAtom(a.names.get(0), SpatialSearchToken.POI_CATEGORY_TYPE, 
+							a.id, 0, null, false, -total, total, xy, 0);
+					cs.atoms.add(atom);
+					cs.tokens.add(t);
 				}
+			}
+		}
+		
+		List<PoiCatSearch> finalRes = new ArrayList<>(res.values());
+		Collections.sort(finalRes);
+		if (finalRes.size() > ctx.settings.LIMIT_POI_CATEGORY_BY_FREQ) {
+			finalRes = finalRes.subList(0, ctx.settings.LIMIT_POI_CATEGORY_BY_FREQ);
+		}
+		for (PoiCatSearch pc : finalRes) {
+			for (int i = 0; i < pc.tokens.size(); i++) {
+				pc.tokens.get(i).addAtom(pc.atoms.get(i));
 			}
 		}
 	}

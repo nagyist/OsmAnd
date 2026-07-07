@@ -693,9 +693,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			return false;
 		}
 		// 4. New intersection check the limits
-		HashMap<Long, NameIndexAtom> objects = new HashMap<>(4);
+		HashMap<Long, NameIndexAtom> atomObjs = new HashMap<>(4);
 		if (a.atomicObject()) {
-			objects.put(a.id, a);
+			atomObjs.put(a.id, a);
 		}
 		NameIndexAtom poiType = a.isPoiCategory() ? a : null;
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
@@ -724,9 +724,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 			}
 			if (pa.atomicObject()) {
-				objects.put(pa.id, pa);
+				atomObjs.put(pa.id, pa);
 			}
-			if (objects.size() > settings.LIMIT_ATOMIC_OBJECTS) {
+			if (atomObjs.size() > settings.LIMIT_ATOMIC_OBJECTS) {
 				return false;
 			}
 			// allow intersection for Buildings associated with place
@@ -735,8 +735,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 //				return false;
 //			}
 		}
-		if (objects.size() > 1) {
-			Iterator<NameIndexAtom> it = objects.values().iterator();
+		if (poiType != null && atomObjs.size() > 0) {
+			return false;
+		}
+		if (atomObjs.size() > 1) {
+			Iterator<NameIndexAtom> it = atomObjs.values().iterator();
 			NameIndexAtom a1 = it.next();
 			NameIndexAtom a2 = it.next();
 			// if one object is same as city name don't intersect with street poi...

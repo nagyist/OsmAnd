@@ -29,7 +29,7 @@ import net.osmand.util.SearchAlgorithms;
 public class SpatialSearchToken {
 	public static final int ALL_CITY_TYPE = -10;
 	
-	public static final int POI_CATEGORY_TYPE = -3;
+	public static final int POI_CATEGORY_TYPE = -5;
 	public static final int BUILDING_TYPE = -2;
 	public static final int POI_TYPE = -1;
 	public static final int STREET_TYPE = CityBlocks.STREET_TYPE.index;

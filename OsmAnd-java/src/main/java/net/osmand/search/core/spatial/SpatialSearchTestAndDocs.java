@@ -40,8 +40,11 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////// IN PROGRESS //////////
 
-// FIXME POI Categories + top poi categories
-// FIXME Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
+// TESTING POI Categories + top poi categories
+
+// TODO API to return result
+// TODO accept intersection POI Category /\ POI - deduplicate?
+// TODO Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 // TODO POI Categories translations / synonyms
 // TODO query = "Catedral-Basílica de Nuestra Señora del Pilar"; - poi category
 
@@ -256,7 +259,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_";
 		pattern = "Ukraine_kyiv-";
-		query = "Пуз.";
+		query = "Пуз. kyiv";
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
