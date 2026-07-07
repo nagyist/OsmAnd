@@ -127,7 +127,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private static final String QUICK_SEARCH_FAB_VISIBLE_KEY = "quick_search_fab_visible_key";
 	private static final String QUICK_SEARCH_CATEGORY_SEARCH_BY_FILTER_KEY = "quick_search_category_search_by_filter_key";
 	private static final String QUICK_SEARCH_CURRENT_FILTER_ID_KEY = "quick_search_current_filter_id_key";
-	private static final String QUICK_SEARCH_SELECTED_RESULT_CATEGORY_FILTER_IDS_KEY = "quick_search_selected_result_category_filter_ids_key";
+	private static final String QUICK_SEARCH_SELECTED_RESULT_POI_TYPE_NAMES_KEY = "quick_search_selected_result_poi_type_names_key";
 
 	private static final String QUICK_SEARCH_RUN_SEARCH_FIRST_TIME_KEY = "quick_search_run_search_first_time_key";
 	private static final String QUICK_SEARCH_PHRASE_DEFINED_KEY = "quick_search_phrase_defined_key";
@@ -210,7 +210,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private SortByOption selectedSortByOption = SortByOption.RELEVANCE;
 	private String selectedSortContextId;
 	private String currentSearchFilterId;
-	private final List<String> selectedResultCategoryFilterIds = new ArrayList<>();
+	private final List<String> selectedResultPoiTypeNames = new ArrayList<>();
 	private FragmentManager.OnBackStackChangedListener returnToSearchAfterHistorySettingsListener;
 	private List<SearchResult> nearestCities;
 	private LatLon storedOriginalLocation;
@@ -311,10 +311,10 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			fabVisible = savedInstanceState.getBoolean(QUICK_SEARCH_FAB_VISIBLE_KEY, false);
 			categorySearchByFilter = savedInstanceState.getBoolean(QUICK_SEARCH_CATEGORY_SEARCH_BY_FILTER_KEY, false);
 			currentSearchFilterId = savedInstanceState.getString(QUICK_SEARCH_CURRENT_FILTER_ID_KEY);
-			ArrayList<String> selectedFilterIds = savedInstanceState.getStringArrayList(
-					QUICK_SEARCH_SELECTED_RESULT_CATEGORY_FILTER_IDS_KEY);
-			if (selectedFilterIds != null) {
-				selectedResultCategoryFilterIds.addAll(selectedFilterIds);
+			ArrayList<String> selectedPoiTypeNames = savedInstanceState.getStringArrayList(
+					QUICK_SEARCH_SELECTED_RESULT_POI_TYPE_NAMES_KEY);
+			if (selectedPoiTypeNames != null) {
+				selectedResultPoiTypeNames.addAll(selectedPoiTypeNames);
 			}
 		}
 		if (searchQuery == null && arguments != null) {
@@ -984,14 +984,14 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		searchAroundChip.visible = searchVisible && isSearchAroundChipVisible();
 		searchAroundChip.dropdownItems = getSearchAroundOptions();
 
-		List<PoiUIFilter> topFilters = getTopFilterChipsSource();
-		for (PoiUIFilter filter : topFilters) {
-			if (!NEAREST_POIS_UI_FILTER_ID.equals(filter.getFilterId())) {
-				boolean selected = selectedResultCategoryFilterIds.contains(filter.getFilterId());
+		List<String> poiTypeNames = getPoiTypesChipsSource();
+		for (String poiTypeName : poiTypeNames) {
+			if (!Algorithms.isEmpty(poiTypeName)) {
+				boolean selected = selectedResultPoiTypeNames.contains(poiTypeName);
 				topChips.add(new ChipsLayout.ChipData(
-						filter.getFilterId(),
+						poiTypeName,
 						0,
-						filter.getName(),
+						poiTypeName,
 						selected,
 						searchVisible,
 						true,
@@ -1041,38 +1041,40 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	@NonNull
-	private List<PoiUIFilter> getTopFilterChipsSource() {
+	private List<String> getPoiTypesChipsSource() {
 		if (isSearchViewVisible()) {
-			return getSearchResultPoiTypeFilters();
+			return getSearchResultPoiTypeNames();
 		}
 		return new ArrayList<>();
 	}
 
-	private boolean isCategorySearch() {
-		return categorySearchByFilter || searchUICore != null
-				&& searchUICore.getPhrase() != null
-				&& searchUICore.getPhrase().isLastWord(POI_TYPE);
-	}
-
 	@NonNull
-	private List<PoiUIFilter> getSearchResultPoiTypeFilters() {
-		List<PoiUIFilter> filters = new ArrayList<>();
+	private List<String> getSearchResultPoiTypeNames() {
+		List<String> poiTypeNames = new ArrayList<>();
 		SearchResultCollection collection = unfilteredResultCollection != null ? unfilteredResultCollection : getResultCollection();
 		if (collection == null) {
-			return filters;
+			return poiTypeNames;
 		}
-		Map<String, PoiUIFilter> uniqueFilters = new LinkedHashMap<>();
+		Map<String, Integer> uniquePoiTypes = new LinkedHashMap<>();
 		for (SearchResult result : collection.getCurrentSearchResults()) {
-			AbstractPoiType poiType = getPoiTypeForResult(result);
-			if (poiType != null) {
-				PoiUIFilter filter = getPoiUiFilter(poiType);
-				if (filter != null) {
-					uniqueFilters.put(filter.getFilterId(), filter);
-				}
+			String poiTypeName = getPoiTypeNameForResult(result);
+			if (!Algorithms.isEmpty(poiTypeName)) {
+				Integer count = uniquePoiTypes.get(poiTypeName);
+				uniquePoiTypes.put(poiTypeName, count != null ? count + 1 : 1);
 			}
 		}
-		filters.addAll(uniqueFilters.values());
-		return filters;
+		List<Map.Entry<String, Integer>> poiTypeCounts = new ArrayList<>(uniquePoiTypes.entrySet());
+		poiTypeCounts.sort((first, second) -> Integer.compare(second.getValue(), first.getValue()));
+		for (Map.Entry<String, Integer> poiTypeCount : poiTypeCounts) {
+			poiTypeNames.add(poiTypeCount.getKey());
+		}
+		return poiTypeNames;
+	}
+
+	@Nullable
+	private String getPoiTypeNameForResult(@NonNull SearchResult result) {
+		AbstractPoiType poiType = getPoiTypeForResult(result);
+		return poiType != null ? poiType.getTranslation() : null;
 	}
 
 	@Nullable
@@ -1102,27 +1104,20 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		return null;
 	}
 
-	@Nullable
-	private PoiUIFilter getPoiUiFilter(@NonNull AbstractPoiType poiType) {
-		String filterId = PoiUIFilter.STD_PREFIX + poiType.getKeyName();
-		PoiUIFilter filter = app.getPoiFilters().getFilterById(filterId);
-		return filter != null ? filter : new PoiUIFilter(poiType, app, "");
+	private void onPoiTypeChipClick(@NonNull String poiTypeName) {
+		toggleResultPoiTypeFilter(poiTypeName);
 	}
 
-	private void onPoiTypeChipClick(@NonNull String filterId) {
-		toggleResultCategoryFilter(filterId);
-	}
-
-	private void toggleResultCategoryFilter(@NonNull String filterId) {
-		if (selectedResultCategoryFilterIds.remove(filterId)) {
-			applyResultCategoryFilters();
+	private void toggleResultPoiTypeFilter(@NonNull String poiTypeName) {
+		if (selectedResultPoiTypeNames.remove(poiTypeName)) {
+			applyResultPoiTypeFilters();
 		} else {
-			selectedResultCategoryFilterIds.add(filterId);
-			applyResultCategoryFilters();
+			selectedResultPoiTypeNames.add(poiTypeName);
+			applyResultPoiTypeFilters();
 		}
 	}
 
-	private void applyResultCategoryFilters() {
+	private void applyResultPoiTypeFilters() {
 		SearchResultCollection source = unfilteredResultCollection != null ? unfilteredResultCollection : getResultCollection();
 		if (source == null) {
 			return;
@@ -1134,14 +1129,13 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 
 	@NonNull
 	private SearchResultCollection getFilteredResultCollection(@NonNull SearchResultCollection source) {
-		if (selectedResultCategoryFilterIds.isEmpty()) {
+		if (selectedResultPoiTypeNames.isEmpty()) {
 			return source;
 		}
 		List<SearchResult> filteredResults = new ArrayList<>();
 		for (SearchResult result : source.getCurrentSearchResults()) {
-			AbstractPoiType poiType = getPoiTypeForResult(result);
-			PoiUIFilter filter = poiType != null ? getPoiUiFilter(poiType) : null;
-			if (filter != null && selectedResultCategoryFilterIds.contains(filter.getFilterId())) {
+			String poiTypeName = getPoiTypeNameForResult(result);
+			if (poiTypeName != null && selectedResultPoiTypeNames.contains(poiTypeName)) {
 				filteredResults.add(result);
 			}
 		}
@@ -1557,8 +1551,8 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		outState.putBoolean(QUICK_SEARCH_CATEGORY_SEARCH_BY_FILTER_KEY,
 				categorySearchByFilter || activeCategoryFilterId != null);
 		outState.putString(QUICK_SEARCH_CURRENT_FILTER_ID_KEY, activeCategoryFilterId);
-		outState.putStringArrayList(QUICK_SEARCH_SELECTED_RESULT_CATEGORY_FILTER_IDS_KEY,
-				new ArrayList<>(selectedResultCategoryFilterIds));
+		outState.putStringArrayList(QUICK_SEARCH_SELECTED_RESULT_POI_TYPE_NAMES_KEY,
+				new ArrayList<>(selectedResultPoiTypeNames));
 		if (centerLatLon != null) {
 			outState.putDouble(QUICK_SEARCH_LAT_KEY, centerLatLon.getLatitude());
 			outState.putDouble(QUICK_SEARCH_LON_KEY, centerLatLon.getLongitude());
@@ -1714,7 +1708,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	public void setResultCollection(SearchResultCollection resultCollection) {
 		if (resultCollection == null) {
 			unfilteredResultCollection = null;
-			selectedResultCategoryFilterIds.clear();
+			selectedResultPoiTypeNames.clear();
 		}
 		searchHelper.setResultCollection(resultCollection);
 	}
@@ -2195,7 +2189,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		foundPartialLocation = false;
 		if (!searchMore) {
 			unfilteredResultCollection = null;
-			selectedResultCategoryFilterIds.clear();
+			selectedResultPoiTypeNames.clear();
 		}
 		updateToolbarButton();
 		interruptedSearch = false;
@@ -2472,7 +2466,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		if (searchPhrase.isLastWord(POI_TYPE)) {
 			categorySearchByFilter = true;
 			currentSearchFilterId = filter.getFilterId();
-			selectedResultCategoryFilterIds.clear();
+			selectedResultPoiTypeNames.clear();
 			poiFilterApplied = true;
 			SearchResult sr = searchPhrase.getLastSelectedWord().getResult();
 			sr.object = filter;
@@ -2554,7 +2548,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			unfilteredResultCollection = res;
 		}
 		SearchResultCollection visibleResults = res;
-		if (unfilteredResultCollection != null && !selectedResultCategoryFilterIds.isEmpty()) {
+		if (unfilteredResultCollection != null && !selectedResultPoiTypeNames.isEmpty()) {
 			visibleResults = getFilteredResultCollection(unfilteredResultCollection);
 			append = false;
 		}
@@ -2772,7 +2766,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private void showFilter(@NonNull PoiUIFilter filter) {
 		categorySearchByFilter = true;
 		currentSearchFilterId = filter.getFilterId();
-		selectedResultCategoryFilterIds.clear();
+		selectedResultPoiTypeNames.clear();
 		String filterId = filter.getFilterId();
 		boolean isCustomFilter = filterId.equals(app.getPoiFilters().getCustomPOIFilter().getFilterId());
 		if (isCustomFilter) {
