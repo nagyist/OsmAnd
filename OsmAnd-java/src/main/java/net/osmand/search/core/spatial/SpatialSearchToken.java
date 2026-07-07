@@ -27,6 +27,9 @@ import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 public class SpatialSearchToken {
+	public static final int ALL_CITY_TYPE = -10;
+	
+	public static final int POI_CATEGORY_TYPE = -3;
 	public static final int BUILDING_TYPE = -2;
 	public static final int POI_TYPE = -1;
 	public static final int STREET_TYPE = CityBlocks.STREET_TYPE.index;
@@ -41,6 +44,7 @@ public class SpatialSearchToken {
 	String originalWord;
 	String word;
 	String wordAligned;
+	String wordNoDot;
 	Set<String> bldWordSplit;
 	
 	List<NameIndexAtom> atoms = new ArrayList<>();
@@ -57,18 +61,21 @@ public class SpatialSearchToken {
 	int mainNumber = -1;
 	CollatorStringMatcher[] otherMatch;
 
-	public SpatialSearchToken(int MIN_CHAR_INCOMPLETE, String w, String original, int order) {
+	
+
+	public SpatialSearchToken(int MIN_CHAR_INCOMPLETE, String ow, String original, int order) {
 		this.MIN_CHAR_INCOMPLETE = MIN_CHAR_INCOMPLETE;
 		originalWord = original;
-		word = w;
+		word = ow;
 		wordAligned = CollatorStringMatcher.alignChars(word);
 		bldWordSplit = SearchAlgorithms.getBuildingCompareSet(word, null);
 		originalOrder = order;
-		String noDot = w;
-		if (w.endsWith(DOT_INCOMPLETE_STRING)) {
+		String noDot = wordAligned;
+		if (wordAligned.endsWith(DOT_INCOMPLETE_STRING)) {
 			incomplete = true;
-			noDot = w.substring(0, w.length() - 1);
+			noDot = wordAligned.substring(0, wordAligned.length() - 1);
 		}
+		this.wordNoDot = noDot;
 		if (incomplete && word.length() <= MIN_CHAR_INCOMPLETE + 1) {
 			collatorMain = new CollatorStringMatcher(noDot, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
 		} else {
@@ -78,7 +85,7 @@ public class SpatialSearchToken {
 				mainNumber = Algorithms.extractFirstIntegerNumber(noDot);
 			}
 			// . already in collator w.endsWith(DOT_INCOMPLETE_STRING)
-			collatorMain = new CollatorStringMatcher(w, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
+			collatorMain = new CollatorStringMatcher(wordAligned, StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
 		}
 		String abbr = Abbreviations.getSearchabbreviations().get(noDot);
 		if (abbr != null) {
@@ -107,6 +114,19 @@ public class SpatialSearchToken {
 	@Override
 	public String toString() {
 		return String.format("%d. %s - %d atoms", sortedOrder, originalWord, atoms.size());
+	}
+	
+	NameIndexReaderMatcher getPrefixMatcherPoiType(SpatialSearchStats stats) {
+		return new NameIndexReaderMatcher(wordNoDot + ".") {
+			
+			@Override
+			public boolean matchKey(String key) {
+				stats.sub1MatchTime.start();
+				boolean matched = super.matchKey(key);
+				stats.sub1MatchTime.finish();
+				return matched;
+			}
+		};
 	}
 	
 	NameIndexReaderMatcher getPrefixMatcher(SpatialSearchStats stats) {
@@ -261,8 +281,12 @@ public class SpatialSearchToken {
 				SpatialTextSearchSettings settings) {
 			if (a != null) {
 				init(a, settings);
-			} else {
+			} else if(b != null){
 				init(b);
+			} else {
+				// full world
+				bboxTileZoom = 0;
+				bboxTileId = 0;
 			}
 		}
 
@@ -475,6 +499,10 @@ public class SpatialSearchToken {
 			return type == STREET_TYPE || type == BUILDING_TYPE;
 		}
 		
+		public boolean isPoiCategory() {
+			return type == POI_CATEGORY_TYPE;
+		}
+		
 		public boolean isPostcode() {
 			return type == CityBlocks.POSTCODES_TYPE.index;
 		}
@@ -509,7 +537,9 @@ public class SpatialSearchToken {
 
 		String typeStr() {
 			String typeS = "";
-			if (isPOI()) {
+			if (isPoiCategory()) {
+				typeS = "POI_TYPE";
+			} else if (isPOI()) {
 				typeS = "POI";
 			} else if (isBuilding()) {
 				typeS = "Building";

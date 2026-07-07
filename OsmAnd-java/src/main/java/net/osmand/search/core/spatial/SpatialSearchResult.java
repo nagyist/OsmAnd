@@ -153,7 +153,9 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		}
 		
 		public int typeOrder(int min) {
-			if (atom.isBuilding()) {
+			if (atom.isPoiCategory()) {
+				return -2;
+			} else if (atom.isBuilding()) {
 				return -1;
 			} else if (atom.isPOI()) {
 				return 0;

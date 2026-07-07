@@ -22,6 +22,7 @@ import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.NameIndexReader;
 import net.osmand.map.OsmandRegions;
+import net.osmand.osm.MapPoiTypes;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.util.SearchAlgorithms;
 
@@ -353,25 +354,21 @@ public class SpatialTextSearch {
 		return result;
 
 	}
-	public SpatialSearchResults searchStreetAPI(String input, SpatialSearchContext ctx) throws IOException {
-		SpatialSearchResults res = new SpatialSearchResults();
-		ctx.initFiles(cache);
-		res.input = input;
-		res.tokens = splitWords(ctx, input);
-		ctx.readAtoms(res.tokens);
-		return res;
-	}
+	
 
 	public SpatialSearchResults searchAPI(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = new SpatialSearchResults();
 		ctx.initFiles(cache);
 		res.input = input;
+		
 		// 1. prepare tokens
 		res.tokens = splitWords(ctx, input);
-
-		// 2. read atoms
+		
+		// 2. read atoms & poi categories
 		ctx.stats.step1Atoms.start();
-		ctx.readAtoms(res.tokens);
+		ctx.setTokens(res.tokens);
+		ctx.processPoiCategories();
+		ctx.readAtoms();
 		ctx.stats.step1Atoms.finish();
 
 		// 3. sort tokens
@@ -519,7 +516,9 @@ public class SpatialTextSearch {
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 		SpatialTextSearch a = new SpatialTextSearch();
-		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, null);
+		SpatialPoiSearch poiSearch = new SpatialPoiSearch(MapPoiTypes.getDefault());
+		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, poiSearch,
+				null);
 		a.searchTest(query, searchContext, 1000);
 	}
 
