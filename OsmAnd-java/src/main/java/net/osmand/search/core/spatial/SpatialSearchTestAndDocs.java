@@ -38,16 +38,16 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING Venezia city Street / Place  -  <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street') 
 // TESTING find check that token is reused in parent - and ignore intersection for complete mattch
 // TESTING TODO !! POI Categories + top poi categories !! RZR
+// TESTING POI CATEGORY Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
 
 ////////// IN PROGRESS //////////
 
-// TODO POI CATEGORY Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
-
 // TODO numbers obj- filter cafe & rest (incorrect privat!)
 // TODO POI CATEGORY Sort maps poi categories API search
+
 // TODO POI CATEGORY Improve slow on many maps (measure bytes)...
 
-// TODO POI Categories translations / synonyms (WEB)
+// TODO POI Categories translations / synonyms (WEB) - Стоматол., Dentist, Stomatology 
 // TODO query = "Catedral-Basílica de Nuestra Señora del Pilar"; -  POI_TYPE /\ POI
 
 // TODO Analyze stats slow queries
@@ -280,7 +280,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Aquarium.";
 //		query = "Vegeterian";
 		query = "Mcdonald's";
-		query = "Госп.";
+		query = "Stomat.";
 		
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
