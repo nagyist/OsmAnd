@@ -149,7 +149,8 @@ public class SpatialPoiSearch {
 			fc.poiFrequencies.put(cats.get(i), f);
 			for (int j = 0; j < lst.size(); j++) {
 				int ft = subcatFreqs != null && i < subcatFreqs.size() && j < subcatFreqs.get(i).size() ? subcatFreqs.get(i).get(j) : 0;
-				fc.poiFrequencies.put(lst.get(j), ft);
+				String vkey = lst.get(j);
+				fc.poiFrequencies.put(vkey, ft);
 			}
 		}
 		
@@ -174,6 +175,10 @@ public class SpatialPoiSearch {
 						addToIndex(topValueName, topValue);
 					}
 					int freq = subType.possibleValuesFreqs != null && k < subType.possibleValuesFreqs.size() ? subType.possibleValuesFreqs.get(k) : 0;
+					Integer fit = fc.poiFrequencies.get(topValue.key);
+					if (fit != null) {
+						freq += fit;
+					}
 					fc.poiFrequencies.put(topValue.key, freq);
 				}
 			}

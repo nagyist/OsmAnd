@@ -39,13 +39,12 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING find check that token is reused in parent - and ignore intersection for complete mattch
 // TESTING TODO WEB ! POI Categories + top poi categories !! RZR
 // TESTING POI CATEGORY Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
-// TESTING BUG: numbers obj- filter cafe & rest 
+// TESTING BUG: numbers obj- filter cafe & rest  + incorrect PrivatBank counts
+// TESTING: check additional filter not stored old
 
 ////////// IN PROGRESS //////////
 
-// TODO BUG: incorrect privat! production?
-// TODO BUG: check additional filter not stored?
-// TODO POI CATEGORY Sort maps poi categories API search ??
+// TODO POI: Sort maps poi categories API search (sort bboxes?)
 
 // TODO POI Categories translations / synonyms (WEB) - Стоматол., Dentist, Stomatology 
 // TODO query = "Catedral-Basílica de Nuestra Señora del Pilar"; -  POI_TYPE /\ POI
@@ -274,15 +273,16 @@ public class SpatialSearchTestAndDocs {
 //		pattern = "regions.ocbf" ;
 		
 		pattern = "Ukraine_kyiv-city";
-		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-//		pattern = "Ukraine_kyiv-";
+//		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
+//		pattern = "Ukraine_";
 		// poi types
 //		location = new LatLon(50.439, 30.516);
 		settings.SEARCH_POI = false;
 		settings.DEV_PRINT_POI_CAT_LIMIT = 100000; 
 		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 1000;
-//		query = "п.";
-		query = "Cafe";
+		query = "п.";
+		query = "New york.";
+//		query = "Cafe";
 //		query = "Aquarium.";
 //		query = "Vegeterian";
 //		query = "Mcdonald's";
