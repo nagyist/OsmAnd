@@ -1909,7 +1909,7 @@ public class BinaryMapIndexReader {
 		public boolean log = true;
 		int numberOfVisitedObjects = 0;
 		int numberOfAcceptedObjects = 0;
-		int numberOfReadSubtrees = 0;
+		public int numberOfReadSubtrees = 0;
 		int numberOfAcceptedSubtrees = 0;
 		boolean interrupted = false;
 		PriorityQueue<T> priorityQueue;
