@@ -3,7 +3,9 @@ package net.osmand.search.core.spatial;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -288,6 +290,21 @@ public class SpatialPoiSearch {
 	}
 
 
+	private List<BinaryMapIndexReader> filterByRadius(LatLon l, int rad, List<BinaryMapIndexReader> oFiles,
+			List<BinaryMapIndexReader> res) {
+		QuadRect rect = MapUtils.calculateBbox(rad, l);
+		Iterator<BinaryMapIndexReader> it = oFiles.iterator();
+		while (it.hasNext()) {
+			BinaryMapIndexReader next = it.next();
+			if (next.containsPoiData((int) rect.left, (int) rect.top, (int) rect.right, (int) rect.bottom)) {
+				res.add(next);
+				it.remove();
+			}
+		}
+		return res;
+	}
+
+
 	public List<Amenity> loadPOIObjects(SpatialSearchContext ctx, long id, LatLon latLon, int radMeters, int limit)
 			throws IOException {
 		final SpatialPoiType spt = byId.get((int) id);
@@ -356,7 +373,8 @@ public class SpatialPoiSearch {
 
 				@Override
 				public boolean isCancelled() {
-					return alimit[0] == 0;
+					return false; // allow to read all for proper sorting
+//					return alimit[0] == 0;
 				}
 			};
 			SearchRequest<Amenity> req = BinaryMapIndexReader.buildSearchPoiRequest(
@@ -366,16 +384,29 @@ public class SpatialPoiSearch {
 				req = BinaryMapIndexReader.buildSearchPoiRequest((int) qr.left, (int) qr.right, (int) qr.top,
 						(int) qr.bottom, -1, typeFilter, addFilter, matcher);
 			}
-			for (BinaryMapIndexReader bir : ctx.files) {
-				ctx.stats.poiByTypeTime.start();
-				long br = bir.getBytesRead();
-				bir.searchPoi(req);
-				ctx.stats.poiByTypeBytes += (bir.getBytesRead() - br);
-				ctx.stats.poiByTypeTime.finish();
-				ctx.stats.poiByTypeBboxes += req.numberOfReadSubtrees;
+			List<BinaryMapIndexReader> oFiles = new LinkedList<BinaryMapIndexReader>(ctx.files);
+			iterateSearch(ctx, req, filterByRadius(latLon, 5_000, oFiles, new ArrayList<BinaryMapIndexReader>()));
+			if (alimit[0] != 0 && radMeters > 5_000) {
+				iterateSearch(ctx, req, filterByRadius(latLon, 50_000, oFiles, new ArrayList<BinaryMapIndexReader>()));
+			}
+			if (alimit[0] != 0 && radMeters > 50_000) {
+				iterateSearch(ctx, req, oFiles);
 			}
 		}
 		return results;
+	}
+
+
+	private void iterateSearch(SpatialSearchContext ctx, SearchRequest<Amenity> req, List<BinaryMapIndexReader> res)
+			throws IOException {
+		for (BinaryMapIndexReader bir : res) {
+			ctx.stats.poiByTypeTime.start();
+			long br = bir.getBytesRead();
+			bir.searchPoi(req);
+			ctx.stats.poiByTypeBytes += (bir.getBytesRead() - br);
+			ctx.stats.poiByTypeTime.finish();
+			ctx.stats.poiByTypeBboxes += req.numberOfReadSubtrees;
+		}
 	}
 
 }
