@@ -1101,8 +1101,7 @@ public class MenuBuilder {
 		}
 		ArrayList<String> values = collectMultiValues(text, "[,;]");
 		if (values.size() > 1) {
-			PoiAdditionalActionsBottomSheet.showInstance(mapActivity, title, values,
-					value -> openPhoneNumber(view.getContext(), value));
+			PoiAdditionalActionsBottomSheet.showInstance(mapActivity, title, values, this::openPhoneNumber);
 		} else if (values.size() == 1) {
 			openPhoneNumber(view.getContext(), values.get(0));
 		}
@@ -1114,8 +1113,7 @@ public class MenuBuilder {
 		}
 		ArrayList<String> values = collectMultiValues(text, Amenity.SEPARATOR);
 		if (values.size() > 1 && isEmailValues(values)) {
-			PoiAdditionalActionsBottomSheet.showInstance(mapActivity, title, values,
-					value -> openEmail(view.getContext(), value));
+			PoiAdditionalActionsBottomSheet.showInstance(mapActivity, title, values, this::openEmail);
 		} else if (values.size() == 1 && AndroidUtils.isValidEmail(values.get(0))) {
 			openEmail(view.getContext(), values.get(0));
 		}
@@ -1132,12 +1130,11 @@ public class MenuBuilder {
 		}
 		ArrayList<String> values = hiddenUrl == null ? collectMultiValues(text, Amenity.SEPARATOR) : new ArrayList<>();
 		if (values.size() > 1) {
-			PoiAdditionalActionsBottomSheet.showInstance(mapActivity, title, values,
-					value -> openUrl(view.getContext(), value, !light));
+			PoiAdditionalActionsBottomSheet.showInstance(mapActivity, title, values, this::openUrl);
 		} else if (url.contains(WIKI_LINK)) {
 			openWikiUrl(url, light);
 		} else {
-			openUrl(view.getContext(), url, !light);
+			openUrl(view.getContext(), url);
 		}
 	}
 
@@ -1155,8 +1152,8 @@ public class MenuBuilder {
 		AndroidUtils.startActivityIfSafe(context, intent);
 	}
 
-	private void openUrl(@NonNull Context context, @NonNull String value, boolean nightMode) {
-		AndroidUtils.openUrl(context, value, nightMode);
+	private void openUrl(@NonNull Context context, @NonNull String value) {
+		AndroidUtils.openUrl(context, value, isNightMode());
 	}
 
 	@NonNull

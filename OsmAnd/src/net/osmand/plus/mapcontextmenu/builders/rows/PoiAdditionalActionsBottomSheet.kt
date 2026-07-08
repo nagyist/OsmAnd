@@ -7,21 +7,18 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.FragmentActivity
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import net.osmand.OnResultCallback
 import net.osmand.plus.R
 import net.osmand.plus.base.BaseMaterialSimpleListBottomSheet
 import net.osmand.plus.utils.AndroidUtils
-import net.osmand.plus.utils.ColorUtilities
 
 class PoiAdditionalActionsBottomSheet : BaseMaterialSimpleListBottomSheet() {
 
 	private var title: String = ""
 	private var values: List<String> = emptyList()
-	private var resultCallback: OnResultCallback<String>? = null
+	private var itemClickListener: OnItemClickListener? = null
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -46,7 +43,7 @@ class PoiAdditionalActionsBottomSheet : BaseMaterialSimpleListBottomSheet() {
 		mainView.findViewById<TextView>(R.id.title).text = title
 		val itemsContainer = mainView.findViewById<LinearLayout>(R.id.itemsContainer)
 		values.forEachIndexed { index, value ->
-			itemsContainer.addView(createRow(value, index < values.lastIndex))
+			itemsContainer.addView(createRow(itemsContainer, value, index < values.lastIndex))
 		}
 		return mainView
 	}
@@ -67,45 +64,14 @@ class PoiAdditionalActionsBottomSheet : BaseMaterialSimpleListBottomSheet() {
 		}
 	}
 
-	private fun createRow(value: String, showDivider: Boolean): View {
-		return FrameLayout(requireContext()).apply {
-			addView(TextView(context).apply {
-				text = value
-				textSize = 16f
-				maxLines = 2
-				ellipsize = android.text.TextUtils.TruncateAt.END
-				gravity = android.view.Gravity.CENTER_VERTICAL
-				setTextColor(ColorUtilities.getActiveColor(osmandApp, nightMode))
-				setPadding(dpToPx(16f), dpToPx(8f), dpToPx(16f), dpToPx(8f))
-				minHeight = getDimensionPixelSize(R.dimen.bottom_sheet_medium_list_item_height)
-				background = ContextCompat.getDrawable(context, AndroidUtils.resolveAttribute(context, android.R.attr.selectableItemBackground))
-				setOnClickListener {
-					resultCallback?.onResult(value)
-					dismiss()
-				}
-			}, FrameLayout.LayoutParams(
-				ViewGroup.LayoutParams.MATCH_PARENT,
-				ViewGroup.LayoutParams.WRAP_CONTENT
-			))
-			if (showDivider) {
-				addView(createDivider(), FrameLayout.LayoutParams(
-					ViewGroup.LayoutParams.MATCH_PARENT,
-					1,
-					android.view.Gravity.BOTTOM
-				).apply {
-					marginStart = dpToPx(16f)
-				})
-			}
+	private fun createRow(parent: ViewGroup, value: String, showDivider: Boolean): View {
+		return layoutInflater.inflate(R.layout.bottom_sheet_item_active_color_text, parent, false).apply {
+			findViewById<TextView>(R.id.itemText).text = value
+			findViewById<View>(R.id.divider).visibility = if (showDivider) View.VISIBLE else View.GONE
 			setOnClickListener {
-				resultCallback?.onResult(value)
+				activity?.let { itemClickListener?.onItemClick(it, value) }
 				dismiss()
 			}
-		}
-	}
-
-	private fun createDivider(): View {
-		return View(requireContext()).apply {
-			setBackgroundColor(AndroidUtils.getColorFromAttr(context, R.attr.divider_color))
 		}
 	}
 
@@ -119,14 +85,14 @@ class PoiAdditionalActionsBottomSheet : BaseMaterialSimpleListBottomSheet() {
 			activity: FragmentActivity,
 			title: String?,
 			values: ArrayList<String>,
-			listener: OnResultCallback<String>
+			listener: OnItemClickListener
 		) {
 			val manager = activity.supportFragmentManager
 			if (!AndroidUtils.isFragmentCanBeAdded(manager, TAG) || values.isEmpty()) {
 				return
 			}
 			PoiAdditionalActionsBottomSheet().apply {
-				resultCallback = listener
+				itemClickListener = listener
 				arguments = Bundle().apply {
 					putString(ARG_TITLE, title)
 					putStringArrayList(ARG_VALUES, values)
@@ -134,5 +100,9 @@ class PoiAdditionalActionsBottomSheet : BaseMaterialSimpleListBottomSheet() {
 				show(manager, TAG)
 			}
 		}
+	}
+
+	fun interface OnItemClickListener {
+		fun onItemClick(activity: FragmentActivity, value: String)
 	}
 }
