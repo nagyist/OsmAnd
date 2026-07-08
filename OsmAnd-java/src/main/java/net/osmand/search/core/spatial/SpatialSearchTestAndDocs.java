@@ -41,12 +41,12 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING BUG: numbers obj- filter cafe & rest  + incorrect PrivatBank counts
 // TESTING check additional filter not stored old
 // TESTING Sort maps poi categories API search (sort bboxes?)
+// TESTING query = "Church Catedral-Basílica de Nuestra Señora del Pilar"; -  POI_TYPE /\ POI (SYNONYMS!)
 
 ////////// IN PROGRESS //////////
 
-// TESTING query = "Church Catedral-Basílica de Nuestra Señora del Pilar"; -  POI_TYPE /\ POI (SYNONYMS!)
 // TODO Review if poi doesn't have bbox don't intersect or add bbox! - Shell 2 Rožňavská (test)
-
+// TODO INDEX: Find POI Categories translations / synonyms (WEB) - Стоматол., Dentist, Stomatology, Basilica (???)
 // TODO INSPECTOR stats index_words_dashboard.html
 
 // TO DO Ivan / Gateway
@@ -80,7 +80,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO ANDROID: Integrate (include regions.ocbf) on client
 // TODO ANDROID: Progress / cancel
 // TODO ANDROID: memory performance 
-// TODO INDEX: Find POI Categories translations / synonyms (WEB) - Стоматол., Dentist, Stomatology 
+ 
 
 /////////////// EXTRA FEATURES ///////////////
 // TODO Review Abbrevations (synonyms / direction words) other languages?

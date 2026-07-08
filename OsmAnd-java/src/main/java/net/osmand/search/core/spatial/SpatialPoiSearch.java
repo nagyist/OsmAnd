@@ -68,6 +68,21 @@ public class SpatialPoiSearch {
 			this.id = id;
 			this.poiAdditional = additional;
 		}
+
+		public boolean accept(Amenity a) {
+			if (key.equals(a.getType().getKeyName())) {
+				return true;
+			}
+			// contains for ';'
+			boolean multi = a.getSubType().indexOf(';') != -1;
+			if (key.equals(a.getSubType()) 
+					|| (multi && key.startsWith(a.getSubType() + ";"))
+					|| (multi && key.endsWith(";" + a.getSubType()))
+					|| (multi && key.contains(";" + a.getSubType() + ";"))) {
+				return true;
+			}
+			return false;
+		}
 		
 	}
 
