@@ -29,6 +29,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -2844,7 +2845,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		boolean showOnMapVisible = showOnMapFab != null && showOnMapFab.getVisibility() == View.VISIBLE;
 		if (showOnMapVisible) {
 			FrameLayout.LayoutParams parameter = (FrameLayout.LayoutParams) showOnMapFab.getLayoutParams();
-			parameter.setMargins(parameter.leftMargin, parameter.topMargin, parameter.rightMargin, bottomMargin);
+			updateFabBottomMargin(showOnMapFab, parameter, bottomMargin);
 			showOnMapFab.setLayoutParams(parameter);
 		}
 
@@ -2853,9 +2854,18 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 				bottomMargin += getDimensionPixelSize(R.dimen.fab_size_with_shadow);
 			}
 			FrameLayout.LayoutParams parameter = (FrameLayout.LayoutParams) fab.getLayoutParams();
-			parameter.setMargins(parameter.leftMargin, parameter.topMargin, parameter.rightMargin, bottomMargin);
+			updateFabBottomMargin(fab, parameter, bottomMargin);
 			fab.setLayoutParams(parameter);
 		}
+		View view = getView();
+		if (view != null) {
+			ViewCompat.requestApplyInsets(view);
+		}
+	}
+
+	private void updateFabBottomMargin(@NonNull View view, @NonNull FrameLayout.LayoutParams params, int baseBottomMargin) {
+		view.setTag(R.id.initial_margin_bottom, baseBottomMargin);
+		params.setMargins(params.leftMargin, params.topMargin, params.rightMargin, baseBottomMargin);
 	}
 
 	private void updateSendEmptySearchBottomBar(boolean sendSearchQueryVisible) {
