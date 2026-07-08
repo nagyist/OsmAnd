@@ -44,10 +44,9 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////// IN PROGRESS //////////
 
-// TODO POI Categories translations / synonyms (WEB) - Стоматол., Dentist, Stomatology 
-// TODO query = "Catedral-Basílica de Nuestra Señora del Pilar"; -  POI_TYPE /\ POI
-
+// TESTING query = "Church Catedral-Basílica de Nuestra Señora del Pilar"; -  POI_TYPE /\ POI (SYNONYMS!)
 // TODO Review if poi doesn't have bbox don't intersect or add bbox! - Shell 2 Rožňavská (test)
+
 // TODO INSPECTOR stats index_words_dashboard.html
 
 // TO DO Ivan / Gateway
@@ -66,6 +65,8 @@ import net.osmand.util.SearchAlgorithms;
 // TODO INSPECTOR : doesn't show suffixes
 
 // LARGE IMPORTANT TASKS
+// TODO INDEX: Speedup load after sorting - to limit objects (store elo in index)! 
+// TODO INDEX: Poi category index (effective intersection 'Church St. Miguel' - refactor checkAmenity)
 // TODO ANALYZE: find slow queries on Autotests
 // TODO ANALYZE: too many wiki places on streets?
 // TODO ANALYZE: Germany POI words - . (115,158, 115,158), und (97,839, 97,839), - not common? - bach (56,475, 56,475) - could be common?
@@ -79,12 +80,11 @@ import net.osmand.util.SearchAlgorithms;
 // TODO ANDROID: Integrate (include regions.ocbf) on client
 // TODO ANDROID: Progress / cancel
 // TODO ANDROID: memory performance 
-// 
+// TODO INDEX: Find POI Categories translations / synonyms (WEB) - Стоматол., Dentist, Stomatology 
 
 /////////////// EXTRA FEATURES ///////////////
 // TODO Review Abbrevations (synonyms / direction words) other languages?
 // TODO Store and test conscription number for some cities - issue (RZR)
-// TODO Speedup load after sorting - to limit objects (store elo in index)s 
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
 // TODO Japan test, housename, block_number + housenumber, neighbourhood + quarter - street + India assign houses to suburbs / neighbourhood / blocks
 // TODO Postcode needs to load street and check buildings! Store postcode as bbox not as City! - '1186RZ 324' (NL, UK) 
@@ -275,13 +275,13 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-//		pattern = "Ukraine_";
+		pattern = "Ukraine_";
 		// poi types
 //		location = new LatLon(50.439, 30.516);
 //		settings.SEARCH_POI = false;
 //		settings.DEV_PRINT_POI_CAT_LIMIT = 1000; 
 //		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 10;
-//		query = "п.";
+//		query = "при.";
 //		query = "Cafe";
 //		query = "Aquarium.";
 //		query = "Veget.";
@@ -335,7 +335,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Shell 2 Rožňavská";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-		pattern = "Us_new-"; 
+//		pattern = "Us_new-"; 
 		
 //		location = new LatLon(40.78035, -73.96572); // central park
 //		location = new LatLon(40.64946, -74.00682); // brooklyn
@@ -346,7 +346,7 @@ public class SpatialSearchTestAndDocs {
 		// 40.64946, -74.00682 - unit test '4th av', '4 ave', '4th avenue' 241843204, 247910224, 85393997 (..) brooklyn - not 48
 		// 40.78035, -73.96572 - unit test '4th av', '4 ave', '4th avenue'  - 85393997 Park avenue
 //		query = "New York 4 av 8"; 
-		query = "New York 4 av 8"; // 160947243
+//		query = "New York 4 av 8"; // 160947243
 //		query = "57th street"; // central park - 265345338 east, 86216906 west, ()66926268 (west)?),
 //		query = "new york 57th street manhattan";
 //		query = "4th ave"; //  unit '4 ave'   
@@ -389,10 +389,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "Венец."; 
 
 		pattern = "Spain_aragon_europe_";
-//		query = "Basílica de Nuestra Señora del Pilar";
+		query = "Church Basílica de Nuestra Señora del Pilar";
 //		query = "Catedral-Basílica de Nuestra Señora del Pilar"; // 7 words! 2^7 combinations
 		query = "Church de Nuestra Señora del Pilar"; 
-		
+//		
 //		pattern = "Peru_";
 //		query ="Calle 20 188 San Isidro Lima"; // 1430799557
 //		query ="Lima Calle 20 San Isidro";

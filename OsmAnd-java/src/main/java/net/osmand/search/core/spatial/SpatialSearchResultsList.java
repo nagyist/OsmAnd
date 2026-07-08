@@ -25,6 +25,7 @@ import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
+import net.osmand.search.core.spatial.SpatialPoiSearch.SpatialPoiType;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.MapUtils;
@@ -145,6 +146,16 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	public void loadObjectsAndCalcBuildings(SpatialSearchContext ctx) throws IOException {
 		ctx.stats.sub2LoadObjectsBldTime.start();
 		loadObjects(ctx);
+		// calculate amenity type
+		List<SpatialSearchToken> missingTokens = getMissingTokens(ctx);
+		if (!missingTokens.isEmpty()) {
+			for (int indx = 0; indx < getCombinations(); indx++) {
+				if (skipResults.contains(indx)) {
+					continue;
+				}
+				checkAmenityType(ctx, indx, missingTokens);
+			}
+		}
 		
 		if (ctx.settings.SEARCH_BUILDINGS) {
 			Map<String, Building> bldCheckCache = new HashMap<>();
@@ -166,6 +177,34 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		
 		ctx.stats.sub2LoadObjectsBldTime.finish();
+	}
+
+	private void checkAmenityType(SpatialSearchContext ctx, int indx, List<SpatialSearchToken> missingTokens) {
+		for (int i = 0; i < tCount; i++) {
+			NameIndexAtom atom = linearResults.get(indx * tCount + i);
+			if (atom.object instanceof Amenity a) {
+				boolean matched = false;
+				for (SpatialSearchToken st : missingTokens) {
+					if (st.hasPoiType(a.getType().getKeyName(), ctx.poiSearch) != null
+							|| st.hasPoiType(a.getSubType(), ctx.poiSearch) != null) {
+						matched = true;
+						break;
+					}
+					if (a.getSubType().indexOf(';') != -1) {
+						for (String subtStr : a.getSubType().split(";")) {
+							if (st.hasPoiType(subtStr, ctx.poiSearch) != null) {
+								matched = true;
+								break;
+							}
+						}
+					}
+				}
+				if (matched) {
+					atom.otherWordsCnt = -1; // could be added to surplusWords later 
+					break;
+				}
+			}
+		}
 	}
 	
 	private void calcStreetIntersections(SpatialSearchContext ctx, int indx) {
