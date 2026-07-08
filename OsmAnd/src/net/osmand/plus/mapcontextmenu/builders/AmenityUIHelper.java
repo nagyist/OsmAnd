@@ -232,6 +232,12 @@ public class AmenityUIHelper extends MenuBuilder {
 		}
 	}
 
+	@Override
+	protected void openWikiUrl(@NonNull String url, boolean light) {
+		LatLon location = wikiAmenity != null ? wikiAmenity.getLocation() : getLatLon();
+		WikiArticleHelper.askShowArticle(mapActivity, !light, location, url);
+	}
+
 	public void buildWikiDataRow(@NonNull View view) {
 		String value = additionalInfo.get(WIKIDATA);
 		if (value != null) {
@@ -661,30 +667,18 @@ public class AmenityUIHelper extends MenuBuilder {
 
 		((LinearLayout) view).addView(baseView);
 
-		if (isPhoneNumber) {
-			ll.setOnClickListener(v -> {
-				if (customization.isFeatureEnabled(CONTEXT_MENU_PHONE_ID)) {
-					showDialog(text, Intent.ACTION_DIAL, "tel:", v);
-				}
-			});
-		} else if (isUrl) {
-			ll.setOnClickListener(v -> {
-				if (customization.isFeatureEnabled(CONTEXT_MENU_LINKS_ID)) {
-					String url = hiddenUrl == null ? text : hiddenUrl;
-					if (url.contains(WIKI_LINK)) {
-						LatLon location = wikiAmenity != null ? wikiAmenity.getLocation() : getLatLon();
-						WikiArticleHelper.askShowArticle(mapActivity, !light, location, url);
-					} else {
-						Intent intent = new Intent(Intent.ACTION_VIEW);
-						intent.setData(Uri.parse(url));
-						AndroidUtils.startActivityIfSafe(v.getContext(), intent);
-					}
-				}
-			});
-		} else if (isWiki) {
-			ll.setOnClickListener(v -> WikipediaDialogFragment.showInstance(mapActivity, wikiAmenity, null));
-		} else if (isText && text.length() > 200) {
-			ll.setOnClickListener(v -> POIMapLayer.showPlainDescriptionDialog(view.getContext(), app, text, textPrefix));
+		if (!collapsable) {
+			if (isPhoneNumber) {
+				ll.setOnClickListener(v -> handlePhoneClick(textPrefix, text, v));
+			} else if (isUrl) {
+				ll.setOnClickListener(v -> handleUrlClick(textPrefix, text, hiddenUrl, light, v));
+			} else if (isMultiEmail(text)) {
+				ll.setOnClickListener(v -> handleEmailClick(textPrefix, text, v));
+			} else if (isWiki) {
+				ll.setOnClickListener(v -> WikipediaDialogFragment.showInstance(mapActivity, wikiAmenity, null));
+			} else if (isText && text.length() > 200) {
+				ll.setOnClickListener(v -> POIMapLayer.showPlainDescriptionDialog(view.getContext(), app, text, textPrefix));
+			}
 		}
 
 		rowBuilt();
