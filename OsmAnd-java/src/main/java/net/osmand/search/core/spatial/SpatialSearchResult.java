@@ -131,7 +131,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		List<String> result = null;
 		result = addResult(result, getWikidata());
 		result = addResult(result, getRouteId());
-		MapObject mapObject = getMapObject();		
+		MapObject mapObject = getFirstObject();		
 		if (mapObject instanceof Amenity amenity) {
 			if (amenity.getType().getKeyName().equals("natural")) {
 				String name = SearchAlgorithms.normalizeToken(SearchAlgorithms.alignChars(amenity.getName()));
