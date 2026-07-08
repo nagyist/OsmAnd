@@ -272,15 +272,15 @@ public class SpatialSearchTestAndDocs {
 //		pattern = "Germany_";
 //		pattern = "Us_";
 		// poi types
-		location = new LatLon(50.439, 30.516);
-		settings.SEARCH_POI = true;
-		settings.DEV_PRINT_POI_CAT_LIMIT = 100000; 
-		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 1000;
+//		location = new LatLon(50.439, 30.516);
+//		settings.SEARCH_POI = true;
+//		settings.DEV_PRINT_POI_CAT_LIMIT = 100000; 
+//		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 1000;
 //		query = "Cafe";
 //		query = "Aquarium.";
 //		query = "Vegeterian";
-		query = "Mcdonald's";
-		query = "Stomat.";
+//		query = "Mcdonald's";
+//		query = "Stomat.";
 		
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
@@ -323,9 +323,11 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-//		pattern = "Slovakia";
+		pattern = "Slovakia";
 //		query = "Bratislava Billa";
-//		query = "Shell";
+//		settings.DEDUPLICATE_RES = false;
+		query = "Shell einsteinova";
+//		query = "Shell einsteinova 3431/3";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		pattern = "Us_new-"; 

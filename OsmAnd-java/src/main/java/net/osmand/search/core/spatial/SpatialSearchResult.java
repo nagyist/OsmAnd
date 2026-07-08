@@ -155,34 +155,35 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 
 	public void addExtraResult(SpatialSearchResult other, String lang) {
+		MapObject object = getFirstObject();
+		MapObject otherObj = other.getFirstObject();
 		if (unitedObject == null) {
 			BaseDetailsObject baseDetails = new BaseDetailsObject(lang);
-			if (!objs.isEmpty()) {
-				SpatialSearchResultRef first = objs.get(0);
-				if (first.atom.object instanceof Amenity amenity) {
+			if (object == null) {
+				object = otherObj;
+			}
+			if (object != null) {
+				if (object instanceof Amenity amenity) {
 					baseDetails.addObject(amenity);
 					unitedObject = baseDetails.getSyntheticAmenity();
 				} else {
-					unitedObject = first.atom.object;
+					unitedObject = object;
 				}
-			}	
-		}		
-		if (!other.objs.isEmpty()) {
-			SpatialSearchResultRef first = other.objs.get(0);
-			MapObject otherObj = first.atom.object;
-			if (otherObj != null) {
-				if (otherObj instanceof Amenity amenity) {
-					BaseDetailsObject baseDetails = new BaseDetailsObject(lang);
-					baseDetails.addObject(unitedObject);
-					baseDetails.addObject(amenity);
-					Amenity united = baseDetails.getSyntheticAmenity();
-					united.copyNames(unitedObject);
-					unitedObject = united;
-				} else {
-					unitedObject.copyNames(otherObj);
-					if (unitedObject.getLocation() == null) {
-						unitedObject.setLocation(otherObj.getLocation());
-					}
+			}
+		}
+		if (object != null && otherObj != null) {
+			// merge needed
+			if (otherObj instanceof Amenity amenity) {
+				BaseDetailsObject baseDetails = new BaseDetailsObject(lang);
+				baseDetails.addObject(unitedObject);
+				baseDetails.addObject(amenity);
+				Amenity united = baseDetails.getSyntheticAmenity();
+				united.copyNames(unitedObject);
+				unitedObject = united;
+			} else {
+				unitedObject.copyNames(otherObj);
+				if (unitedObject.getLocation() == null) {
+					unitedObject.setLocation(otherObj.getLocation());
 				}
 			}
 		}
