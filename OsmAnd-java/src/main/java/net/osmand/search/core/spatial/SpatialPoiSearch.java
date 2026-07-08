@@ -225,6 +225,23 @@ public class SpatialPoiSearch {
 							if (freq != null) {
 								total += freq;
 							}
+							if (a.singleType instanceof PoiFilter pf) {
+								for (PoiType p : pf.getPoiTypes()) {
+									freq = l.poiFrequencies.get(p.getKeyName());
+									if (freq != null) {
+										total += freq;
+									}
+								}
+							}
+							// additional could be on top
+//							if (a.parentTypes != null) {
+//								for (AbstractPoiType p : a.parentTypes) {
+//									freq = l.poiFrequencies.get(p.getKeyName());
+//									if (freq != null) {
+//										total += freq;
+//									}
+//								}
+//							}
 						}
 					}
 //					System.out.println(a.names + " " + a.key + " " + total);

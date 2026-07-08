@@ -37,20 +37,20 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING delete default enlarge and enlarge data
 // TESTING Venezia city Street / Place  -  <City Street> ('<Salt Lake City>') with Street ('Pennsylvania street') 
 // TESTING find check that token is reused in parent - and ignore intersection for complete mattch
-// TESTING TODO !! POI Categories + top poi categories !! RZR
+// TESTING TODO WEB ! POI Categories + top poi categories !! RZR
 // TESTING POI CATEGORY Specific Healthcare specialties (Vegan) - https://github.com/osmandapp/OsmAnd/issues/24941
+// TESTING BUG: numbers obj- filter cafe & rest 
 
 ////////// IN PROGRESS //////////
 
-// TODO numbers obj- filter cafe & rest (incorrect privat!)
-// TODO POI CATEGORY Sort maps poi categories API search
-
-// TODO POI CATEGORY Improve slow on many maps (measure bytes)...
+// TODO BUG: incorrect privat! production?
+// TODO BUG: check additional filter not stored?
+// TODO POI CATEGORY Sort maps poi categories API search ??
 
 // TODO POI Categories translations / synonyms (WEB) - Стоматол., Dentist, Stomatology 
 // TODO query = "Catedral-Basílica de Nuestra Señora del Pilar"; -  POI_TYPE /\ POI
+// TODO Review if poi doesn't have bbox don't intersect or add bbox! - Shell 2 Rožňavská
 
-// TODO Analyze stats slow queries
 // TODO INSPECTOR stats index_words_dashboard.html
 
 // TO DO Ivan / Gateway
@@ -61,13 +61,19 @@ import net.osmand.util.SearchAlgorithms;
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 // TODO DEDUPLICATE: Test wiki / travel maps, seamarks map
 // TODO DEDUPLICATE: same location (5-10m) 2 streets different cities
-// TODO CHECK : too many wiki places
+// TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
 // TODO UNIT TESTS: (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
 // TODO UNIT TESTS: Auto tests - Slow analysis (Auto test New york)
 // TODO UNIT TESTS: Analyze Abbrefvations / common skip (abbrevations 1st=first) 
 // TODO UNIT TESTS: Add test on show more '2 sokak' - Show more 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak
 // TODO INSPECTOR : doesn't show suffixes
+
+// LARGE IMPORTANT TASKS
+// TODO ANALYZE: find slow queries on Autotests
+// TODO ANALYZE: too many wiki places on streets?
 // TODO ANALYZE: Germany POI words - . (115,158, 115,158), und (97,839, 97,839), - not common? - bach (56,475, 56,475) - could be common?
+// TODO POI CATEGORY Bboxes too large - test size OsmAndPoiNameIndexDataAtom, quad tree (90% < 10K) add rare categories 
+// TODO ANALYZE: Large Geo atoms "Berlin" 
 
 // TO DO - RZR
 // TODO WEB PRODUCTION: display results std way: house, interpolation results, poi...
@@ -267,16 +273,16 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-		pattern = "Ukraine_";
+		pattern = "Ukraine_kyiv-city";
+		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
 //		pattern = "Ukraine_kyiv-";
-//		pattern = "Germany_";
-//		pattern = "Us_";
 		// poi types
 //		location = new LatLon(50.439, 30.516);
-//		settings.SEARCH_POI = true;
-//		settings.DEV_PRINT_POI_CAT_LIMIT = 100000; 
-//		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 1000;
-//		query = "Cafe";
+		settings.SEARCH_POI = false;
+		settings.DEV_PRINT_POI_CAT_LIMIT = 100000; 
+		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 1000;
+//		query = "п.";
+		query = "Cafe";
 //		query = "Aquarium.";
 //		query = "Vegeterian";
 //		query = "Mcdonald's";
@@ -323,11 +329,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-		pattern = "Slovakia";
+//		pattern = "Slovakia";
 //		query = "Bratislava Billa";
 //		settings.DEDUPLICATE_RES = false;
-		query = "Shell einsteinova";
-//		query = "Shell einsteinova 3431/3";
+//		query = "Shell 2 Rožňavská";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		pattern = "Us_new-"; 
