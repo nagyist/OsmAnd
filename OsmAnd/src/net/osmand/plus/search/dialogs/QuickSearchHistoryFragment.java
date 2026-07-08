@@ -22,7 +22,13 @@ import androidx.fragment.app.FragmentManager;
 
 import net.osmand.Location;
 import net.osmand.PlatformUtil;
+import net.osmand.data.Amenity;
 import net.osmand.data.LatLon;
+import net.osmand.data.PointDescription;
+import net.osmand.osm.AbstractPoiType;
+import net.osmand.osm.MapPoiTypes;
+import net.osmand.osm.PoiCategory;
+import net.osmand.osm.PoiType;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.OsmAndLocationProvider;
 import net.osmand.plus.OsmAndLocationProvider.OsmAndCompassListener;
@@ -45,6 +51,7 @@ import net.osmand.plus.widgets.tools.SimpleTextWatcher;
 import net.osmand.search.core.SearchPhrase;
 import net.osmand.search.core.SearchSettings;
 import net.osmand.search.core.SearchResult;
+import net.osmand.search.core.ObjectType;
 import net.osmand.util.Algorithms;
 import net.osmand.util.MapUtils;
 
@@ -369,7 +376,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		}
 		List<HistoryRecord> filtered = new ArrayList<>();
 		for (HistoryRecord record : records) {
-			if (selectedTypeFilters.contains(record.filterTypeName)) {
+			if (selectedTypeFilters.contains(record.filterCategoryName)) {
 				filtered.add(record);
 			}
 		}
@@ -468,22 +475,22 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		if (chipsToolbar == null) {
 			return;
 		}
-		Map<String, Integer> typeCounts = new LinkedHashMap<>();
+		Map<String, Integer> categoryCounts = new LinkedHashMap<>();
 		for (HistoryRecord record : records) {
-			if (!Algorithms.isEmpty(record.filterTypeName)) {
-				Integer count = typeCounts.get(record.filterTypeName);
-				typeCounts.put(record.filterTypeName, count != null ? count + 1 : 1);
+			if (!Algorithms.isEmpty(record.filterCategoryName)) {
+				Integer count = categoryCounts.get(record.filterCategoryName);
+				categoryCounts.put(record.filterCategoryName, count != null ? count + 1 : 1);
 			}
 		}
-		selectedTypeFilters.retainAll(typeCounts.keySet());
-		List<Map.Entry<String, Integer>> sortedTypes = new ArrayList<>(typeCounts.entrySet());
-		sortedTypes.sort((first, second) -> Integer.compare(second.getValue(), first.getValue()));
-		List<String> typeNames = new ArrayList<>();
-		for (Map.Entry<String, Integer> typeCount : sortedTypes) {
-			typeNames.add(typeCount.getKey());
+		selectedTypeFilters.retainAll(categoryCounts.keySet());
+		List<Map.Entry<String, Integer>> sortedCategories = new ArrayList<>(categoryCounts.entrySet());
+		sortedCategories.sort((first, second) -> Integer.compare(second.getValue(), first.getValue()));
+		List<String> categoryNames = new ArrayList<>();
+		for (Map.Entry<String, Integer> categoryCount : sortedCategories) {
+			categoryNames.add(categoryCount.getKey());
 		}
 		visibleTypeFilters.clear();
-		visibleTypeFilters.addAll(typeNames);
+		visibleTypeFilters.addAll(categoryNames);
 		updateChipsState();
 	}
 
@@ -612,22 +619,87 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private static class HistoryRecord {
 		final long time;
 		final QuickSearchListItem item;
-		final String filterTypeName;
+		final String filterCategoryName;
 
 		HistoryRecord(@NonNull OsmandApplication app, @NonNull HistoryEntry entry, @NonNull QuickSearchListItem item) {
 			this.time = entry.getLastAccessTime();
 			this.item = item;
-			this.filterTypeName = getFilterTypeName(app, entry, item);
+			this.filterCategoryName = getFilterCategoryName(app, entry, item);
 		}
 
 		@Nullable
-		private static String getFilterTypeName(@NonNull OsmandApplication app, @NonNull HistoryEntry entry,
-		                                        @NonNull QuickSearchListItem item) {
-			if (!Algorithms.isEmpty(entry.getTypeName())) {
-				return entry.getTypeName();
+		private static String getFilterCategoryName(@NonNull OsmandApplication app, @NonNull HistoryEntry entry,
+		                                            @NonNull QuickSearchListItem item) {
+			PoiCategory category = getPoiCategory(app, entry, item);
+			if (category != null) {
+				if (category.isAdministrative()) {
+					return app.getString(R.string.shared_string_address);
+				}
+				return category.getTranslation();
+			}
+			String typeName = getHistoryTypeName(app, entry.getName());
+			if (!Algorithms.isEmpty(typeName)) {
+				return typeName;
 			}
 			SearchResult result = item.getSearchResult();
 			return result != null ? QuickSearchListItem.getTypeName(app, result) : null;
+		}
+
+		@Nullable
+		private static String getHistoryTypeName(@NonNull OsmandApplication app, @NonNull PointDescription name) {
+			String type = name.getType();
+			if (Algorithms.isEmpty(type)) {
+				return null;
+			}
+			return switch (type) {
+				case PointDescription.POINT_TYPE_ADDRESS -> app.getString(R.string.shared_string_address);
+				case PointDescription.POINT_TYPE_CUSTOM_POI_FILTER,
+				     PointDescription.POINT_TYPE_POI,
+				     PointDescription.POINT_TYPE_POI_TYPE -> app.getString(R.string.poi);
+				case PointDescription.POINT_TYPE_FAVORITE -> app.getString(R.string.shared_string_favorite);
+				case PointDescription.POINT_TYPE_GPX,
+				     PointDescription.POINT_TYPE_GPX_FILE -> app.getString(R.string.shared_string_gpx_track);
+				case PointDescription.POINT_TYPE_LOCATION -> app.getString(R.string.shared_string_location);
+				case PointDescription.POINT_TYPE_MAP_MARKER -> app.getString(R.string.map_marker);
+				case PointDescription.POINT_TYPE_MARKER -> app.getString(R.string.shared_string_marker);
+				case PointDescription.POINT_TYPE_OSM_BUG -> app.getString(R.string.osn_bug_name);
+				case PointDescription.POINT_TYPE_PHOTO_NOTE -> app.getString(R.string.shared_string_photo);
+				case PointDescription.POINT_TYPE_TARGET -> app.getString(R.string.route_descr_destination);
+				case PointDescription.POINT_TYPE_VIDEO_NOTE -> app.getString(R.string.shared_string_video);
+				case PointDescription.POINT_TYPE_WORLD_REGION_SHOW_ON_MAP -> app.getString(R.string.regions);
+				case PointDescription.POINT_TYPE_WPT -> app.getString(R.string.shared_string_waypoint);
+				default -> null;
+			};
+		}
+
+		@Nullable
+		private static PoiCategory getPoiCategory(@NonNull OsmandApplication app, @NonNull HistoryEntry entry,
+		                                          @NonNull QuickSearchListItem item) {
+			if (!Algorithms.isEmpty(entry.getPoiCategoryKey())) {
+				PoiCategory category = app.getPoiTypes().getPoiCategoryByName(entry.getPoiCategoryKey());
+				if (category != null) {
+					return category;
+				}
+			}
+			if (!Algorithms.isEmpty(entry.getPoiSubtypeKey())) {
+				AbstractPoiType poiType = app.getPoiTypes().getAnyPoiTypeByKey(entry.getPoiSubtypeKey());
+				if (poiType instanceof PoiCategory category) {
+					return category;
+				} else if (poiType instanceof PoiType type) {
+					return type.getCategory();
+				}
+			}
+			SearchResult result = item.getSearchResult();
+			if (result != null) {
+				if (result.objectType == ObjectType.POI && result.object instanceof Amenity amenity) {
+					return amenity.getType();
+				} else if (result.objectType == ObjectType.POI_TYPE && result.object instanceof PoiCategory category) {
+					return category;
+				} else if (ObjectType.isAddress(result.objectType)) {
+					return app.getPoiTypes().getPoiCategoryByName(MapPoiTypes.ADMINISTRATIVE_CATEGORY);
+				}
+			}
+			return null;
 		}
 	}
 
