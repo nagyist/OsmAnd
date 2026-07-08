@@ -1661,7 +1661,7 @@
     <string name="add_waypoint">Útpont hozzáadása</string>
     <string name="save_gpx_waypoint">GPX-útpont mentése</string>
     <string name="waypoint_one">Útpont 1</string>
-    <string name="empty_state_favourites">Kedvencek hozzáadása</string>
+    <string name="empty_state_favourites">Hozzáadás a kedvencekhez</string>
     <string name="empty_state_favourites_desc">Kedvencek importálása vagy hozzáadása a térképen pontok megjelölésével.</string>
     <string name="import_track">GPX-fájl importálása</string>
     <string name="import_track_desc">%1$s fájl nem tartalmaz útpontot. Importálja nyomvonalként\?</string>
@@ -2615,7 +2615,7 @@
     <string name="set_working_days_to_continue">A folytatáshoz állítsa be a munkanapokat</string>
     <string name="route_between_points">Útvonal pontok között</string>
     <string name="plan_a_route">Egy útvonal tervezése</string>
-    <string name="add_to_a_track">Hozzáadás nyomvonalhoz</string>
+    <string name="add_to_a_track">Hozzáadás egy nyomvonalhoz</string>
     <string name="pass_whole_track_descr">A nyomvonal elérendő pontja</string>
     <string name="release_3_6">• Profilok: most már módosíthatja a sorrendet, beállíthat egy ikont a térképen, megváltoztathatja az alapprofilok összes beállítását, és visszaállíthatja azokat az alapértelmezett értékekre \n \n • Kijárat száma megjelenik navigálásnál \n \n • Átdolgozott bővítmény-beállítások \n \n • Átdolgozott beállítás-képernyő az összes profil gyors eléréséhez \n \n • Beállítások másolása egy másik profilból \n \n • POI-kategóriák sorrendjének módosítása vagy elrejtésük a Keresésben \n \n • Helyesen igazított POI-ikonok a térképen \n \n • Napkelte / napnyugta adatai a Térkép konfigurálásához \n \n • Otthon / munkahely ikonok a térképen \n \n • Többsoros leírás támogatása a Beállításoknál \n \n • Helyes átírás Japán térképénél \n \n • Antarktisz-térkép</string>
     <string name="gpx_split_interval_descr">Válassza ki azt az időközt, amelyenként megjelenjenek a távolság- vagy időjelölések a nyomvonalon.</string>
@@ -3814,7 +3814,7 @@
     <string name="file_already_exists_description">Már létezik a(z) „%1$s” nevű fájl. A csere felülírja a jelenlegi verzióval készített összes módosítást.</string>
     <string name="file_already_exists">A fájl már létezik</string>
     <string name="nav_profile_confirm_delete">Biztosan törli a következőt: „%1$s”?</string>
-    <string name="no_search_results">Nincs találat</string>
+    <string name="no_search_results">Nincsenek eredmények</string>
     <string name="search_track_by_name">Nyomvonal keresése név alapján</string>
     <string name="number_of_tracks">%1$s nyomvonal</string>
     <string name="device_connected">Kapcsolódva ezzel: %1$s</string>
@@ -4911,10 +4911,10 @@
     <string name="astro_star_clusters">Csillaghalmazok</string>
     <string name="astro_nebulas">Ködök</string>
     <string name="delete_groups_confirmation">Biztosan törli a csoportokat?</string>
-    <string name="add_to_track">Hozzáadás a nyomvonalhoz</string>
+    <string name="add_to_track">Hozzáadás nyomvonalhoz</string>
     <string name="unpin_folder">Mappa kitűzésének megszüntetése</string>
     <string name="pin_folder">Mappa kitűzése</string>
-    <string name="favorite_search_empty_state_description">Finomítsa a keresést vagy módosítsa a szűrőket, hátha úgy sikerül</string>
+    <string name="favorite_search_empty_state_description">Próbálja meg módosítani a keresési feltételeket vagy a szűrőket, hátha ez segít</string>
     <string name="favorites_empty_folder_description">Ebben a mappában még nincs pont.</string>
     <string name="building_3d_low_details_content_desc">Alacsony részletességű 3D épületek</string>
     <string name="building_3d_high_details_content_desc">Magas részletességű 3D épületek</string>
