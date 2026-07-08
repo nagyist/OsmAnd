@@ -1,17 +1,17 @@
 package net.osmand.search.core.spatial;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import net.osmand.binary.ObfConstants;
 import net.osmand.data.Amenity;
+import net.osmand.data.BaseDetailsObject;
 import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
+import net.osmand.util.Algorithms;
 import net.osmand.util.MapUtils;
+import net.osmand.util.SearchAlgorithms;
 
 public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
@@ -21,9 +21,13 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	final LatLon preciseLatlon; 
 	final int surplusWords; // negative some building numbers not found, positive some extra tokens matched
 	int visibleLevel;
+	public MapObject unitedObject;
 	
 	private static final List<String> FILTER_DUPLICATE_POI_SUBTYPE = new ArrayList<String>(
 			Arrays.asList("building", "internet_access_yes"));
+	final int ZOOM_SIMILARITY_70_KM = 9 - 8; // 1 symbol - tile z=9 - 1 pixel of z=1
+	final int ZOOM_SIMILARITY_10_KM = 12 - 8; // 2 symbols - tile z=12
+	final int ZOOM_SIMILARITY_1_KM = 15 - 8; // 3 symbols
 	
 	SpatialSearchResult(SpatialSearchResultsList parentList, int parentInd, LatLon preciseLatlon) {
 		this.parentInd = parentInd;
@@ -122,9 +126,70 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	public int visibleLevel() {
 		return visibleLevel;
 	}
+
+	public List<String> extraDeduplicateKeys() {
+		List<String> result = null;
+		result = addResult(result, getWikidata());
+		result = addResult(result, getRouteId());
+		MapObject mapObject = getMapObject();		
+		if (mapObject instanceof Amenity amenity) {
+			if (amenity.getType().getKeyName().equals("natural")) {
+				String name = SearchAlgorithms.normalizeToken(SearchAlgorithms.alignChars(amenity.getName()));
+				String link = getShortLink(ZOOM_SIMILARITY_10_KM);
+				if (name != null && link != null) {
+					result = addResult(result, name + "_" + link);
+				}
+			}
+		}
+		return result;
+	}
+	
+	private List<String> addResult(List<String> result, String value) {
+		if (Algorithms.isEmpty(value)) {
+			if (result == null) {
+				result = new ArrayList<String>();
+			}
+			result.add(value);
+		}
+		return result;
+	}
+
+	public void addExtraResult(SpatialSearchResult other, String lang) {
+		if (unitedObject == null) {
+			BaseDetailsObject baseDetails = new BaseDetailsObject(lang);
+			if (!objs.isEmpty()) {
+				SpatialSearchResultRef first = objs.get(0);
+				if (first.atom.object instanceof Amenity amenity) {
+					baseDetails.addObject(amenity);
+					unitedObject = baseDetails.getSyntheticAmenity();
+				} else {
+					unitedObject = first.atom.object;
+				}
+			}	
+		}		
+		if (!other.objs.isEmpty()) {
+			SpatialSearchResultRef first = other.objs.get(0);
+			MapObject otherObj = first.atom.object;
+			if (otherObj != null) {
+				if (otherObj instanceof Amenity amenity) {
+					BaseDetailsObject baseDetails = new BaseDetailsObject(lang);
+					baseDetails.addObject(unitedObject);
+					baseDetails.addObject(amenity);
+					Amenity united = baseDetails.getSyntheticAmenity();
+					united.copyNames(unitedObject);
+					unitedObject = united;
+				} else {
+					unitedObject.copyNames(otherObj);
+					if (unitedObject.getLocation() == null) {
+						unitedObject.setLocation(otherObj.getLocation());
+					}
+				}
+			}
+		}
+	}
 	
 	public long getIdDeduplication() {
-		if (objs.size() > 0) {
+		if (!objs.isEmpty()) {
 			SpatialSearchResultRef first = objs.get(0);
 			// street intersection (!) or building interpolation
 			if (preciseLatlon != null) {
@@ -334,5 +399,33 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	public int compareTo(SpatialSearchResult o) {
 		return compare(this, o, null);
 	}
+
+	private String getWikidata() {
+		MapObject mapObject = getFirstObject();
+		if (mapObject != null) {
+			if (mapObject instanceof Amenity amenity) {
+				return amenity.getWikidata();
+			}
+			return mapObject.getName("wikidata");
+		}
+		return null;
+	}
+
+	private String getRouteId() {
+		MapObject obj = getFirstObject();
+		if (obj instanceof Amenity amenity) {
+			return amenity.getRouteId();
+		}
+		return null;
+	}
+
+	private String getShortLink(int zoom) {
+		LatLon loc = getLatLon();
+		if (loc == null) {
+			return "";
+		}
+		return MapUtils.createShortLinkString(loc.getLatitude(), loc.getLongitude(), zoom);
+	}
+
 }
 	

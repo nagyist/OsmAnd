@@ -155,7 +155,7 @@ public class SpatialSearchTestAndDocs {
 	 *    That's an issue for 'Weberstrasse' -> Weber strasse, Hemauerstraße -> Hemauer straße.
 	 *    Possible solution is to prepare 2 variation during indexing 
 	 */
-	public static void main(String[] args) throws IOException, InterruptedException {
+	public static void main(String[] args) throws IOException, InterruptedException {				
 		SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
 		File folder = new File(System.getProperty("maps.dir"));
 		LatLon location = null;
@@ -427,6 +427,48 @@ public class SpatialSearchTestAndDocs {
 //		settings.DEDUPLICATE_RES = true;
 //		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
 //		a.searchTest(query, searchContext, 8000);
+	}
+
+	private static void testDeduplication(String[] args) throws IOException, InterruptedException {
+		SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
+		File folder = new File(System.getProperty("maps.dir"));
+		LatLon location = null;
+		String pattern = "Italy_";
+		String pattern2 = "World";		
+		String query = "Torrente Capraia"; // deduplicate by name and similarityRadius
+		settings.LANG_DEDUPLICATE = "en";
+		query = "Anello di Capraia e Montelupo"; // deduplicate by route_id 
+		
+		pattern = "Ukraine_";
+		pattern2 = "Ukraine_";
+		query = "Софійський"; // deduplicate by osmId and wikidata
+		query = "Ярославів Вал";
+
+		long t = System.nanoTime();
+
+		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
+		for (File f : folder.listFiles()) {
+			if (f.getName().startsWith(pattern) || f.getName().startsWith(pattern2)) {
+				SpatialTextSearch.initFile(ls, f);
+			} else if(f.getName().equals(OsmandRegions.REGIONS_OCBF)){
+				SpatialTextSearch.initFile(ls, f);
+			}
+		}
+		SpatialTextSearch a = new SpatialTextSearch();
+		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
+		SpatialPoiSearch poiSearch = new SpatialPoiSearch(MapPoiTypes.getDefault());
+		SpatialSearchContext searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
+		SpatialSearchResults rs = a.searchTest(query, searchContext, 1000);
+		if (rs.mainResults != null) {
+			for (SpatialSearchResult s : rs.mainResults) {
+				MapObject unitedObject = s.unitedObject;
+				String out = s.toString();
+				if (unitedObject != null) {
+					out += " United:" + unitedObject.toString();
+				}
+				System.out.println(out);
+			}
+		}
 	}
 	
 }

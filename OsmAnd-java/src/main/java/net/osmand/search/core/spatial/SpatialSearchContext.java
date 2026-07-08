@@ -49,9 +49,9 @@ public class SpatialSearchContext {
 	final SpatialPoiSearch poiSearch;
 	final SpatialTextSearchSettings settings;
 	final SpatialSearchStats stats = new SpatialSearchStats();
-	
-	List<SpatialSearchToken> tokens = null; // non initiatilized
 
+	List<SpatialSearchToken> tokens = null; // non initiatilized
+	
 	public static class SpatialSearchStats {
 		public Timer requestTime = new Timer();
 		public Timer step1Atoms = new Timer();
@@ -807,5 +807,6 @@ public class SpatialSearchContext {
 
 	}
 
-	
+
+
 }
