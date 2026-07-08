@@ -145,7 +145,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 	
 	private List<String> addResult(List<String> result, String value) {
-		if (Algorithms.isEmpty(value)) {
+		if (!Algorithms.isEmpty(value)) {
 			if (result == null) {
 				result = new ArrayList<String>();
 			}
