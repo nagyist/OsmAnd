@@ -5176,5 +5176,5 @@
     <string name="route_calculation_using_standard_algorithm">Normál (lassabb) útvonaltervezési algoritmus használata.</string>
     <string name="route_calculation_missing_maps_estimate_desc">Lehetséges hiányzó térképek észlelhetőek egy egyenes vonalú becslés alapján.\nHa az útvonala elkerüli ezeket a területeket, használja a meglévő térképeket.</string>
     <string name="route_calculation_review_maps">Térképek áttekintése</string>
-    <string name="traffic_warning_red_light_camera">Közlekedésellenőrző kamera</string>
+    <string name="traffic_warning_red_light_camera">Piroson áthaladást figyelő kamera</string>
 </resources>
