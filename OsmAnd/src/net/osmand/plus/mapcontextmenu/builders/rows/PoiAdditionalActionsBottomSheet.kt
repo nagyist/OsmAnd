@@ -8,22 +8,25 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.doOnPreDraw
-import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import net.osmand.plus.R
 import net.osmand.plus.base.BaseMaterialSimpleListBottomSheet
+import net.osmand.plus.base.dialog.interfaces.dialog.IDialog
 import net.osmand.plus.utils.AndroidUtils
 
-class PoiAdditionalActionsBottomSheet : BaseMaterialSimpleListBottomSheet() {
+class PoiAdditionalActionsBottomSheet : BaseMaterialSimpleListBottomSheet(), IDialog {
 
-	private var title: String = ""
-	private var values: List<String> = emptyList()
-	private var itemClickListener: OnItemClickListener? = null
+	private var controller: PoiAdditionalActionsDialogController? = null
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
-		title = arguments?.getString(ARG_TITLE).orEmpty()
-		values = arguments?.getStringArrayList(ARG_VALUES).orEmpty()
+		controller = PoiAdditionalActionsDialogController.getExistedInstance(osmandApp)
+		if (controller != null) {
+			controller?.registerDialog(this)
+		} else {
+			dismiss()
+		}
 	}
 
 	override fun onCreateView(
@@ -40,10 +43,11 @@ class PoiAdditionalActionsBottomSheet : BaseMaterialSimpleListBottomSheet() {
 			content.paddingRight,
 			getDimensionPixelSize(R.dimen.bottom_sheet_content_margin)
 		)
-		mainView.findViewById<TextView>(R.id.title).text = title
+		val controller = controller ?: return mainView
+		mainView.findViewById<TextView>(R.id.title).text = controller.title
 		val itemsContainer = mainView.findViewById<LinearLayout>(R.id.itemsContainer)
-		values.forEachIndexed { index, value ->
-			itemsContainer.addView(createRow(itemsContainer, value, index < values.lastIndex))
+		controller.values.forEachIndexed { index, value ->
+			itemsContainer.addView(createRow(itemsContainer, value, index < controller.values.lastIndex))
 		}
 		return mainView
 	}
@@ -69,40 +73,27 @@ class PoiAdditionalActionsBottomSheet : BaseMaterialSimpleListBottomSheet() {
 			findViewById<TextView>(R.id.itemText).text = value
 			findViewById<View>(R.id.divider).visibility = if (showDivider) View.VISIBLE else View.GONE
 			setOnClickListener {
-				activity?.let { itemClickListener?.onItemClick(it, value) }
+				activity?.let { controller?.onItemClick(it, value) }
 				dismiss()
 			}
 		}
 	}
 
-	companion object {
-		private val TAG = PoiAdditionalActionsBottomSheet::class.java.simpleName
-		private const val ARG_TITLE = "title"
-		private const val ARG_VALUES = "values"
-
-		@JvmStatic
-		fun showInstance(
-			activity: FragmentActivity,
-			title: String?,
-			values: ArrayList<String>,
-			listener: OnItemClickListener
-		) {
-			val manager = activity.supportFragmentManager
-			if (!AndroidUtils.isFragmentCanBeAdded(manager, TAG) || values.isEmpty()) {
-				return
-			}
-			PoiAdditionalActionsBottomSheet().apply {
-				itemClickListener = listener
-				arguments = Bundle().apply {
-					putString(ARG_TITLE, title)
-					putStringArrayList(ARG_VALUES, values)
-				}
-				show(manager, TAG)
-			}
-		}
+	override fun onDestroy() {
+		super.onDestroy()
+		controller?.finishProcessIfNeeded(activity)
 	}
 
-	fun interface OnItemClickListener {
-		fun onItemClick(activity: FragmentActivity, value: String)
+	companion object {
+		private val TAG = PoiAdditionalActionsBottomSheet::class.java.simpleName
+
+		@JvmStatic
+		fun showInstance(manager: FragmentManager): Boolean {
+			if (!AndroidUtils.isFragmentCanBeAdded(manager, TAG)) {
+				return false
+			}
+			PoiAdditionalActionsBottomSheet().show(manager, TAG)
+			return true
+		}
 	}
 }

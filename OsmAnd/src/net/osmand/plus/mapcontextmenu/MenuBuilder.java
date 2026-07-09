@@ -73,7 +73,7 @@ import net.osmand.plus.mapcontextmenu.SearchAmenitiesTask.SearchAmenitiesListene
 import net.osmand.plus.mapcontextmenu.SearchByRouteIdTask.SearchByRouteIdListener;
 import net.osmand.plus.mapcontextmenu.SearchByRouteIdTask.SearchType;
 import net.osmand.plus.mapcontextmenu.builders.MenuRowBuilder;
-import net.osmand.plus.mapcontextmenu.builders.rows.PoiAdditionalActionsBottomSheet;
+import net.osmand.plus.mapcontextmenu.builders.rows.PoiAdditionalActionsDialogController;
 import net.osmand.plus.mapcontextmenu.controllers.AmenityMenuController;
 import net.osmand.plus.mapcontextmenu.controllers.TransportStopController;
 import net.osmand.plus.mapcontextmenu.gallery.GalleryRowBuilder;
@@ -1101,7 +1101,7 @@ public class MenuBuilder {
 		}
 		ArrayList<String> values = collectMultiValues(text, "[,;]");
 		if (values.size() > 1) {
-			PoiAdditionalActionsBottomSheet.showInstance(mapActivity, title, values, this::openPhoneNumber);
+			PoiAdditionalActionsDialogController.showDialog(mapActivity, title, values, this::openPhoneNumber);
 		} else if (values.size() == 1) {
 			openPhoneNumber(view.getContext(), values.get(0));
 		}
@@ -1113,7 +1113,7 @@ public class MenuBuilder {
 		}
 		ArrayList<String> values = collectMultiValues(text, Amenity.SEPARATOR);
 		if (values.size() > 1 && isEmailValues(values)) {
-			PoiAdditionalActionsBottomSheet.showInstance(mapActivity, title, values, this::openEmail);
+			PoiAdditionalActionsDialogController.showDialog(mapActivity, title, values, this::openEmail);
 		} else if (values.size() == 1 && AndroidUtils.isValidEmail(values.get(0))) {
 			openEmail(view.getContext(), values.get(0));
 		}
@@ -1130,7 +1130,7 @@ public class MenuBuilder {
 		}
 		ArrayList<String> values = hiddenUrl == null ? collectMultiValues(text, Amenity.SEPARATOR) : new ArrayList<>();
 		if (values.size() > 1) {
-			PoiAdditionalActionsBottomSheet.showInstance(mapActivity, title, values, this::openUrl);
+			PoiAdditionalActionsDialogController.showDialog(mapActivity, title, values, this::openUrl);
 		} else if (url.contains(WIKI_LINK)) {
 			openWikiUrl(url, light);
 		} else {
