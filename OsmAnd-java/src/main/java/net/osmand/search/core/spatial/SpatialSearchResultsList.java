@@ -729,11 +729,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				return false; 
 			}
 			// if poi doesn't have bbox don't intersect or add bbox! (transport stops take street names)
-			// issue with <POI + Address> search
-			if ((pa.buildingInd >= 0) && a.isPOI() && a.coords.bbox31 == null) {
-				return false;
-			} else if ((a.buildingInd >= 0) && pa.isPOI() && pa.coords.bbox31 == null) {
-				return false;
+			if (!ctx.settings.TEST_ALLOW_HOUSE_POI_TYPE_INTERSECTION) {
+				if ((pa.buildingInd >= 0) && a.isPOI() && a.coords.bbox31 == null) {
+					return false;
+				} else if ((a.buildingInd >= 0) && pa.isPOI() && pa.coords.bbox31 == null) {
+					return false;
+				}
 			}
 //			
 		}
