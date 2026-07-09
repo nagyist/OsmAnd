@@ -588,8 +588,9 @@ public class AmenityUIHelper extends MenuBuilder {
 		textView.setTextColor(ColorUtilities.getPrimaryTextColor(app, !light));
 
 		int linkTextColor = ContextCompat.getColor(view.getContext(), light ? R.color.active_color_primary_light : R.color.active_color_primary_dark);
+		boolean isEmailAction = isEmailAction(text);
 
-		if (isPhoneNumber || isUrl) {
+		if (isPhoneNumber || isUrl || isEmailAction) {
 			textView.setTextColor(linkTextColor);
 			needLinks = false;
 		}
@@ -672,7 +673,7 @@ public class AmenityUIHelper extends MenuBuilder {
 				ll.setOnClickListener(v -> handlePhoneClick(textPrefix, text, v));
 			} else if (isUrl) {
 				ll.setOnClickListener(v -> handleUrlClick(textPrefix, text, hiddenUrl, light, v));
-			} else if (isMultiEmail(text)) {
+			} else if (isEmailAction) {
 				ll.setOnClickListener(v -> handleEmailClick(textPrefix, text, v));
 			} else if (isWiki) {
 				ll.setOnClickListener(v -> WikipediaDialogFragment.showInstance(mapActivity, wikiAmenity, null));

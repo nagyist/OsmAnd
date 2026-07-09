@@ -43,7 +43,6 @@ import androidx.annotation.ColorRes;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.core.content.ContextCompat;
@@ -73,7 +72,7 @@ import net.osmand.plus.mapcontextmenu.SearchAmenitiesTask.SearchAmenitiesListene
 import net.osmand.plus.mapcontextmenu.SearchByRouteIdTask.SearchByRouteIdListener;
 import net.osmand.plus.mapcontextmenu.SearchByRouteIdTask.SearchType;
 import net.osmand.plus.mapcontextmenu.builders.MenuRowBuilder;
-import net.osmand.plus.mapcontextmenu.builders.rows.PoiAdditionalActionsDialogController;
+import net.osmand.plus.mapcontextmenu.builders.rows.PoiAdditionalMultiValueDialogController;
 import net.osmand.plus.mapcontextmenu.controllers.AmenityMenuController;
 import net.osmand.plus.mapcontextmenu.controllers.TransportStopController;
 import net.osmand.plus.mapcontextmenu.gallery.GalleryRowBuilder;
@@ -1101,7 +1100,7 @@ public class MenuBuilder {
 		}
 		ArrayList<String> values = collectMultiValues(text, "[,;]");
 		if (values.size() > 1) {
-			PoiAdditionalActionsDialogController.showDialog(mapActivity, title, values, this::openPhoneNumber);
+			PoiAdditionalMultiValueDialogController.showDialog(mapActivity, title, values, this::openPhoneNumber);
 		} else if (values.size() == 1) {
 			openPhoneNumber(view.getContext(), values.get(0));
 		}
@@ -1113,7 +1112,7 @@ public class MenuBuilder {
 		}
 		ArrayList<String> values = collectMultiValues(text, Amenity.SEPARATOR);
 		if (values.size() > 1 && isEmailValues(values)) {
-			PoiAdditionalActionsDialogController.showDialog(mapActivity, title, values, this::openEmail);
+			PoiAdditionalMultiValueDialogController.showDialog(mapActivity, title, values, this::openEmail);
 		} else if (values.size() == 1 && AndroidUtils.isValidEmail(values.get(0))) {
 			openEmail(view.getContext(), values.get(0));
 		}
@@ -1130,7 +1129,7 @@ public class MenuBuilder {
 		}
 		ArrayList<String> values = hiddenUrl == null ? collectMultiValues(text, Amenity.SEPARATOR) : new ArrayList<>();
 		if (values.size() > 1) {
-			PoiAdditionalActionsDialogController.showDialog(mapActivity, title, values, this::openUrl);
+			PoiAdditionalMultiValueDialogController.showDialog(mapActivity, title, values, this::openUrl);
 		} else if (url.contains(WIKI_LINK)) {
 			openWikiUrl(url, light);
 		} else {
@@ -1170,9 +1169,9 @@ public class MenuBuilder {
 		return values;
 	}
 
-	protected boolean isMultiEmail(@Nullable String text) {
+	protected boolean isEmailAction(@Nullable String text) {
 		ArrayList<String> values = collectMultiValues(text, Amenity.SEPARATOR);
-		return values.size() > 1 && isEmailValues(values);
+		return !values.isEmpty() && isEmailValues(values);
 	}
 
 	protected boolean isEmailValues(@NonNull ArrayList<String> values) {
@@ -1182,27 +1181,6 @@ public class MenuBuilder {
 			}
 		}
 		return true;
-	}
-
-	protected void showDialog(String text, String actionType, String dataPrefix, View v) {
-		Context context = v.getContext();
-		String[] items = text.split("[,;]");
-		Intent intent = new Intent(actionType);
-		if (items.length > 1) {
-			for (int i = 0; i < items.length; i++) {
-				items[i] = items[i].trim();
-			}
-			AlertDialog.Builder dlg = new AlertDialog.Builder(context);
-			dlg.setNegativeButton(R.string.shared_string_cancel, null);
-			dlg.setItems(items, (dialog, which) -> {
-				intent.setData(Uri.parse(dataPrefix + items[which]));
-				AndroidUtils.startActivityIfSafe(context, intent);
-			});
-			dlg.show();
-		} else {
-			intent.setData(Uri.parse(dataPrefix + text));
-			AndroidUtils.startActivityIfSafe(context, intent);
-		}
 	}
 
 	protected void setDividerWidth(boolean matchWidthDivider) {

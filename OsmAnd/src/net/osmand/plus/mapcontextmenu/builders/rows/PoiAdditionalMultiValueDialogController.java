@@ -11,17 +11,17 @@ import net.osmand.plus.base.dialog.DialogManager;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PoiAdditionalActionsDialogController extends BaseDialogController {
+public class PoiAdditionalMultiValueDialogController extends BaseDialogController {
 
-	private static final String PROCESS_ID = "poi_additional_actions";
+	private static final String PROCESS_ID = "poi_additional_multi_value_selector";
 
 	private final String title;
 	private final ArrayList<String> values;
 	private OnItemClickListener itemClickListener;
 
-	public PoiAdditionalActionsDialogController(@NonNull OsmandApplication app,
-	                                            @Nullable String title,
-	                                            @NonNull ArrayList<String> values) {
+	public PoiAdditionalMultiValueDialogController(@NonNull OsmandApplication app,
+	                                               @Nullable String title,
+	                                               @NonNull ArrayList<String> values) {
 		super(app);
 		this.title = title != null ? title : "";
 		this.values = values;
@@ -54,8 +54,8 @@ public class PoiAdditionalActionsDialogController extends BaseDialogController {
 	}
 
 	@Nullable
-	public static PoiAdditionalActionsDialogController getExistedInstance(@NonNull OsmandApplication app) {
-		return (PoiAdditionalActionsDialogController) app.getDialogManager().findController(PROCESS_ID);
+	public static PoiAdditionalMultiValueDialogController getExistedInstance(@NonNull OsmandApplication app) {
+		return (PoiAdditionalMultiValueDialogController) app.getDialogManager().findController(PROCESS_ID);
 	}
 
 	public static void showDialog(@NonNull FragmentActivity activity,
@@ -66,8 +66,8 @@ public class PoiAdditionalActionsDialogController extends BaseDialogController {
 			return;
 		}
 		OsmandApplication app = (OsmandApplication) activity.getApplication();
-		PoiAdditionalActionsDialogController controller =
-				new PoiAdditionalActionsDialogController(app, title, values);
+		PoiAdditionalMultiValueDialogController controller =
+				new PoiAdditionalMultiValueDialogController(app, title, values);
 		controller.setItemClickListener(listener);
 
 		DialogManager dialogManager = app.getDialogManager();

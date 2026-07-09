@@ -17,11 +17,11 @@ import net.osmand.plus.utils.AndroidUtils
 
 class PoiAdditionalActionsBottomSheet : BaseMaterialSimpleListBottomSheet(), IDialog {
 
-	private var controller: PoiAdditionalActionsDialogController? = null
+	private var controller: PoiAdditionalMultiValueDialogController? = null
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
-		controller = PoiAdditionalActionsDialogController.getExistedInstance(osmandApp)
+		controller = PoiAdditionalMultiValueDialogController.getExistedInstance(osmandApp)
 		if (controller != null) {
 			controller?.registerDialog(this)
 		} else {
