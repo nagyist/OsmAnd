@@ -11,14 +11,15 @@ import java.util.*;
 import java.util.Map.Entry;
 
 public class CommonWords {
-	protected static Map<String, Integer> commonWordsDictionary = new LinkedHashMap<>(); 
-	protected static Map<String, Integer> frequentlyUsedWordsDictionary = new LinkedHashMap<>();
-	private static Set<String> regionNames = new HashSet<>();
+	protected Map<String, Integer> commonWordsDictionary = new LinkedHashMap<>(); 
+	protected Map<String, Integer> frequentlyUsedWordsDictionary = new LinkedHashMap<>();
+	private Set<String> regionNames = new HashSet<>();
 	
 	// for ex: 100 bridge, ленина 30, but not potenitally name of street (31st road)
 	private static String NUMBER_WITH_LESS_THAN_2_LETTERS = "NUMBER_WITH_LESS_THAN_2_LETTERS";
+	private static CommonWords DEFAULT_INSTANCE;
 	
-	private static void addCommon(String string) {
+	private void addCommon(String string) {
 		String string2 = SearchAlgorithms.replaceGermanSS(string);
 		string2 = UnicodeDiacritics.getInstance().stripDiacritics(string2);
 		commonWordsDictionary.put(string, commonWordsDictionary.size());
@@ -26,7 +27,7 @@ public class CommonWords {
 			commonWordsDictionary.put(string2, commonWordsDictionary.size());
 		}
 	}
-	private static void addFrequent(String string) {
+	private void addFrequent(String string) {
 		String string2 = SearchAlgorithms.replaceGermanSS(string);
 		string2 = UnicodeDiacritics.getInstance().stripDiacritics(string2);
 		if (isCommon(string) || frequentlyUsedWordsDictionary.containsKey(string)) {
@@ -38,18 +39,19 @@ public class CommonWords {
 		}
 	}
 	
-	private static void addFrequentAbbrevation(String string) {
+	private void addFrequentAbbrevation(String string) {
 		addFrequent(string);
 	}
-	public static boolean isNumber2Letters(String name) {
+	
+	private boolean isNumber2Letters(String name) {
 		return SearchAlgorithms.isNumber2Letters(name);
 	}
 
-	public static boolean isCommon(String name) {
+	public boolean isCommon(String name) {
 		return commonWordsDictionary.containsKey(name) || isNumber2Letters(name); 
 	}
 	
-	public static int getCommon(String name) {
+	public int getCommon(String name) {
 		if (isNumber2Letters(name)) {
 			name = NUMBER_WITH_LESS_THAN_2_LETTERS;
 		}
@@ -63,13 +65,12 @@ public class CommonWords {
 		return -1;
 	}
 	
-
-	public static int getFrequentlyUsed(String name) {
+	public int getFrequentlyUsed(String name) {
 		Integer i = frequentlyUsedWordsDictionary.get(name);
 		return i == null ? -1 : i.intValue();
 	}
 
-	public static int getCommonSearch(String name) {
+	public int getCommonSearch(String name) {
 		if (SearchAlgorithms.isNumber2Letters(name)) {
 			name = NUMBER_WITH_LESS_THAN_2_LETTERS;
 		}
@@ -88,7 +89,7 @@ public class CommonWords {
 		return -1;
 	}
 
-	public static int getCommonGeocoding(String name) {
+	public int getCommonGeocoding(String name) {
 		Integer i = commonWordsDictionary.get(name);
 		if (i != null) {
 			return i.intValue();
@@ -100,7 +101,7 @@ public class CommonWords {
 	}
 	
 	
-	private static void addAbbrevationsToCommon() {
+	private void addAbbrevationsToCommon() {
 		Map<String, String> abbreviations = Abbreviations.getAbbreviations();
 		Iterator<Entry<String, String>> it = abbreviations.entrySet().iterator();
 		while (it.hasNext()) {
@@ -112,7 +113,7 @@ public class CommonWords {
 		}
 	}
 	
-	private static void addRegionNames() {
+	private void addRegionNames() {
 		OsmandRegions osmandRegions = null;
 		try {
 			osmandRegions = PlatformUtil.getOsmandRegions();
@@ -158,18 +159,23 @@ public class CommonWords {
 		}
 	}
 	
-	static {
-		// Push higher than roads to avoid problem with "Drive A 21"
-		addCommon(NUMBER_WITH_LESS_THAN_2_LETTERS);
-		addCalculatedCommonWords();
-		addAbbrevationsToCommon(); // common words
-		
-		addManualAbbrevationsToFrequent();
-		addRegionNames(); // to be deleted
-		addCalculatedFrequentWords();
+	public static CommonWords getInstance() {
+		if (DEFAULT_INSTANCE == null) {
+			CommonWords cw = new CommonWords();
+			// Push higher than roads to avoid problem with "Drive A 21"
+			cw.addCommon(NUMBER_WITH_LESS_THAN_2_LETTERS);
+			cw.addCalculatedCommonWords();
+			cw.addAbbrevationsToCommon(); // common words
+			
+			cw.addManualAbbrevationsToFrequent();
+			cw.addRegionNames(); // to be deleted
+			cw.addCalculatedFrequentWords();
+			DEFAULT_INSTANCE = cw;
+		}
+		return DEFAULT_INSTANCE;
 	}
 		
-	private static void addManualAbbrevationsToFrequent() {
+	private void addManualAbbrevationsToFrequent() {
 		// manually maintained - could be "mc" or "mc." 
 		// some of them present in OSM some not
 		addFrequentAbbrevation("mc");
@@ -208,7 +214,7 @@ public class CommonWords {
 
 	
 	// Calculated using index_words_dashboard.html sorted by Top in Country!
-	private static void addCalculatedCommonWords() {
+	private void addCalculatedCommonWords() {
 		// Issue of order != popularity "west avenue 45" not searchable by "avenue 45"
 //		addCommon("NUMBLD"); // 1. 637,978,200 (indx 0.0%),  Us (300,323,393), Us_california (25,232,791)
 //		addCommon("OTHERBLD"); // 2. 50,063,791 (indx 0.0%),  Taiwan (33,832,521), Taiwan_asia (33,832,521)
@@ -755,7 +761,7 @@ public class CommonWords {
 	}
 	
 	// Calculated using index_words_dashboard.html sorted by Top in Region! 
-	private static void addCalculatedFrequentWords() {
+	private void addCalculatedFrequentWords() {
 //		addFrequent("OTHERBLD"); // 1. 50,063,791 (indx 0.0%),  Taiwan (33,832,521), Taiwan_asia (33,832,521)
 //		addFrequent("NUMBLD"); // 2. 637,978,200 (indx 0.0%),  Us (300,323,393), Us_california (25,232,791)
 		addFrequent("rua"); // 3. 3,719,468 (indx 4.4%),  Brazil (3,036,951), Brazil_sao-paulo (736,221)
@@ -5771,11 +5777,11 @@ public class CommonWords {
 				"Main Street",
 				//. ....
 		};
-		
+		CommonWords instance = CommonWords.getInstance();
 		for (String name : array) {
 			List<String> tokens = SearchAlgorithms.splitAndNormalize(name, true);
 			for (String token : tokens) {
-				if (CommonWords.getCommonSearch(token) < 0) {
+				if (instance.getCommonSearch(token) < 0) {
 					System.out.println("Missing " + token);
 				}
 			}
