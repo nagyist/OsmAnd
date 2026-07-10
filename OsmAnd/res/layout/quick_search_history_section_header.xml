@@ -14,7 +14,7 @@
 		android:id="@+id/title"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:background="@drawable/bg_quick_search_history_group_header"
+		android:background="@drawable/bg_list_card_top_round"
 		android:gravity="center_vertical"
 		android:minHeight="48dp"
 		android:paddingStart="@dimen/content_padding"

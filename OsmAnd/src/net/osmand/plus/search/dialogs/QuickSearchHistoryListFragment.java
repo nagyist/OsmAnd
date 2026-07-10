@@ -191,8 +191,8 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 	private void updateHistoryCollapseIndicator() {
 		if (historyTitleContainer != null) {
 			historyTitleContainer.setBackgroundResource(historyCollapsed
-					? R.drawable.bg_quick_search_explore_card
-					: R.drawable.bg_quick_search_explore_card_top);
+					? R.drawable.bg_list_card_round
+					: R.drawable.bg_list_card_top_round);
 		}
 		if (historyCollapseIndicator != null) {
 			int iconRes = historyCollapsed ? R.drawable.ic_action_arrow_down : R.drawable.ic_action_arrow_up;

@@ -13,7 +13,7 @@
 		android:id="@+id/card_container"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:background="@drawable/bg_quick_search_explore_card_bottom"
+		android:background="@drawable/bg_list_card_bottom_round"
 		android:orientation="vertical">
 
 		<include

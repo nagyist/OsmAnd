@@ -6,14 +6,14 @@
 	android:layout_height="wrap_content"
 	android:background="?attr/activity_background_color"
 	android:paddingTop="@dimen/content_padding_half"
-	android:paddingBottom="@dimen/content_padding_half"
+	android:paddingBottom="@dimen/content_padding"
 	app:shimmer_base_alpha="1.0"
 	app:shimmer_highlight_alpha="0.2">
 
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:background="@drawable/bg_quick_search_explore_card"
+		android:background="@drawable/bg_list_card_round"
 		android:orientation="vertical">
 
 		<LinearLayout

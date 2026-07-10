@@ -160,7 +160,7 @@
 						android:id="@+id/advanced_coordinates_card"
 						android:layout_width="match_parent"
 						android:layout_height="wrap_content"
-						android:background="@drawable/bg_quick_search_explore_card"
+						android:background="@drawable/bg_list_card_round"
 						android:clickable="true"
 						android:focusable="true"
 						android:orientation="horizontal"

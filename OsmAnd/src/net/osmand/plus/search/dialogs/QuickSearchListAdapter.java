@@ -581,18 +581,18 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 			if (listItem.getType() == QuickSearchListItemType.DISABLED_HISTORY) {
 				view.setBackgroundColor(ColorUtilities.getActivityBgColor(app, nightMode));
 			} else if (position == getCount() - 1) {
-				view.setBackgroundResource(R.drawable.bg_quick_search_explore_card_bottom);
+				view.setBackgroundResource(R.drawable.bg_list_card_bottom_round);
 			} else {
 				view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
 			}
 			return;
 		}
 		if (position == 0 && getCount() == 1) {
-			view.setBackgroundResource(R.drawable.bg_quick_search_explore_card);
+			view.setBackgroundResource(R.drawable.bg_list_card_round);
 		} else if (position == 0) {
-			view.setBackgroundResource(R.drawable.bg_quick_search_explore_card_top);
+			view.setBackgroundResource(R.drawable.bg_list_card_top_round);
 		} else if (position == getCount() - 1) {
-			view.setBackgroundResource(R.drawable.bg_quick_search_explore_card_bottom);
+			view.setBackgroundResource(R.drawable.bg_list_card_bottom_round);
 		} else {
 			view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
 		}
