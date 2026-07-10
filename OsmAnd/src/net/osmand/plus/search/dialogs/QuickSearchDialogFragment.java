@@ -2041,7 +2041,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			try {
 				List<QuickSearchListItem> rows = new ArrayList<>();
 				boolean historyEnabled = settings.SEARCH_HISTORY.get() || settings.NAVIGATION_HISTORY.get();
-				if (historyEnabled && !historySearchFragment.isHistoryCollapsed()) {
+				if (historyEnabled && historySearchFragment.isHistoryExpanded()) {
 					List<HistoryEntry> entries = app.getSearchHistoryHelper().getVisibleHistoryEntries(null, false, false);
 					entries.sort((first, second) -> Long.compare(second.getLastAccessTime(), first.getLastAccessTime()));
 					SearchPhrase phrase = SearchPhrase.emptyPhrase(searchUICore.getSearchSettings());
@@ -2062,7 +2062,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 					}));
 				} else {
 					OnClickListener listener = v -> openHistorySettingsAndReturnToSearch();
-					if (!historySearchFragment.isHistoryCollapsed()) {
+					if (historySearchFragment.isHistoryExpanded()) {
 						rows.add(new QuickSearchDisabledHistoryItem(app, listener));
 					}
 				}

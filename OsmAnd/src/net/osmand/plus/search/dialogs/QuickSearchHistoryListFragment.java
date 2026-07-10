@@ -176,8 +176,8 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 		getListView().addHeaderView(historyHeader, null, false);
 	}
 
-	public boolean isHistoryCollapsed() {
-		return historyCollapsed;
+	public boolean isHistoryExpanded() {
+		return !historyCollapsed;
 	}
 
 	private void updateHistoryCollapseIndicator() {
