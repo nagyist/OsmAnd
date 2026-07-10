@@ -33,7 +33,6 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 		NearbyItemClickListener, DownloadIndexesThread.DownloadEvents {
 
 	public static final int TITLE = R.string.shared_string_explore;
-	private static final String HISTORY_COLLAPSED_KEY = "history_collapsed_key";
 
 	private boolean selectionMode;
 	private NearbyPlacesCard nearbyPlacesCard;
@@ -109,10 +108,8 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 				}
 			});
 		}
-		if (savedInstanceState != null) {
-			historyCollapsed = savedInstanceState.getBoolean(HISTORY_COLLAPSED_KEY, false);
-			updateHistoryCollapseIndicator();
-		}
+		historyCollapsed = app.getSettings().EXPLORE_HISTORY_ROW_COLLAPSED.get();
+		updateHistoryCollapseIndicator();
 		getListView().setOnItemLongClickListener((parent, view, position, id) -> {
 			int index = position - ((ListView) parent).getHeaderViewsCount();
 			QuickSearchDialogFragment dialogFragment = getDialogFragment();
@@ -128,12 +125,6 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 			}
 			return true;
 		});
-	}
-
-	@Override
-	public void onSaveInstanceState(@NonNull Bundle outState) {
-		super.onSaveInstanceState(outState);
-		outState.putBoolean(HISTORY_COLLAPSED_KEY, historyCollapsed);
 	}
 
 	@Nullable
@@ -177,6 +168,7 @@ public class QuickSearchHistoryListFragment extends QuickSearchListFragment impl
 		historyCollapseIndicator = historyHeader.findViewById(R.id.explicit_indicator);
 		historyHeader.setOnClickListener(v -> {
 			historyCollapsed = !historyCollapsed;
+			app.getSettings().EXPLORE_HISTORY_ROW_COLLAPSED.set(historyCollapsed);
 			updateHistoryCollapseIndicator();
 			getDialogFragment().reloadHistory();
 		});
