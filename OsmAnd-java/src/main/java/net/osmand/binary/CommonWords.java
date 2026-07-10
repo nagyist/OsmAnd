@@ -215,7 +215,6 @@ public class CommonWords {
 	
 	// Calculated using index_words_dashboard.html sorted by Top in Country!
 	private void addCalculatedCommonWords() {
-		// Issue of order != popularity "west avenue 45" not searchable by "avenue 45"
 //		addCommon("NUMBLD"); // 1. 637,978,200 (indx 0.0%),  Us (300,323,393), Us_california (25,232,791)
 //		addCommon("OTHERBLD"); // 2. 50,063,791 (indx 0.0%),  Taiwan (33,832,521), Taiwan_asia (33,832,521)
 		addCommon("die"); // ADDED MANUALLY AS MISSING
