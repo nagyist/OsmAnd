@@ -214,6 +214,26 @@ public class CommonWords {
 //		addCommon("OTHERBLD"); // 2. 50,063,791 (indx 0.0%),  Taiwan (33,832,521), Taiwan_asia (33,832,521)
 		addCommon("die"); // ADDED MANUALLY AS MISSING
 		addCommon("und"); // ADDED MANUALLY AS MISSING
+		addCommon("and"); // ADDED MANUALLY AS MISSING
+		addCommon("tongass"); // ADDED MANUALLY AS MISSING
+		addCommon("st."); // ADDED MANUALLY AS MISSING
+		addCommon("hotel"); // ADDED MANUALLY AS MISSING
+		addCommon("cafe"); // ADDED MANUALLY AS MISSING
+		addCommon("bar"); // ADDED MANUALLY AS MISSING
+		addCommon("ligne"); // ADDED MANUALLY AS MISSING
+		addCommon("canal"); // ADDED MANUALLY AS MISSING
+		addCommon("santa"); // ADDED MANUALLY AS MISSING
+		addCommon("nord"); // ADDED MANUALLY AS MISSING
+		addCommon("café"); // ADDED MANUALLY AS MISSING
+		addCommon("z"); // ADDED MANUALLY AS MISSING
+		addCommon("centro"); // ADDED MANUALLY AS MISSING
+		addCommon("restaurant");
+		addCommon("pod");
+		addCommon("sud");
+		addCommon("parc");
+		addCommon("shop");
+		addCommon("gare");
+		addCommon("primaire");
 		
 		addCommon("road"); // 3. 5,664,831 (indx 0.6%),  Us (3,991,563), Gb_england (526,456)
 		addCommon("rua"); // 4. 3,719,468 (indx 4.4%),  Brazil (3,036,951), Brazil_sao-paulo (736,221)
