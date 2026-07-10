@@ -80,6 +80,7 @@ import net.osmand.plus.search.listitems.QuickSearchHeaderListItem;
 import net.osmand.plus.search.listitems.QuickSearchListItem;
 import net.osmand.plus.search.listitems.QuickSearchMoreListItem;
 import net.osmand.plus.search.listitems.QuickSearchMoreListItem.SearchMoreItemOnClickListener;
+import net.osmand.plus.search.listitems.QuickSearchSimpleButtonListItem;
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.settings.enums.HistorySource;
@@ -2053,8 +2054,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 						rows.add(new QuickSearchListItem(app, result));
 						count++;
 					}
-					rows.add(new QuickSearchButtonListItem(app, R.drawable.ic_action_history,
-							getString(R.string.shared_string_view_all), v -> {
+					rows.add(new QuickSearchSimpleButtonListItem(app, getString(R.string.shared_string_view_all), v -> {
 						FragmentManager fragmentManager = getFragmentManager();
 						if (fragmentManager != null) {
 							QuickSearchHistoryFragment.showInstance(fragmentManager, this);
