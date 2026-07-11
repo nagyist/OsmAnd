@@ -5179,5 +5179,5 @@
     <string name="required_maps_calculate_with_existing_maps">Effectuer les calculs avec les cartes existantes</string>
     <string name="attached_media">Fichiers média joints</string>
     <string name="traffic_warning_red_light_camera">Radar de feu rouge</string>
-    <string name="attached_media_delete_confirmation">Souhaitez-vous supprimer %1$d éléments multimédias à partir de maintenant ? Les fichiers multimédias enregistrés par l\'application et non associés à un autre emplacement seront également supprimés de l\'appareil.</string>
+    <string name="attached_media_delete_confirmation">Souhaitez-vous supprimer les %1$d éléments multimédias de ce point ? Les fichiers multimédias enregistrés par l\'application et non associés à un emplacement seront également supprimés de l\'appareil.</string>
 </resources>
