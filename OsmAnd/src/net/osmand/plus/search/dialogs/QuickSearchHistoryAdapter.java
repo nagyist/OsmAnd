@@ -126,17 +126,35 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 		if (view.findViewById(R.id.compass_layout) != null) {
 			QuickSearchListAdapter.updateCompass(view, listItem, locationViewCache, useMapCenter);
 		}
-		view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
+		setupBackground(position, view);
 		updateDivider(position, view);
 		return view;
+	}
+
+	private void setupBackground(int position, @NonNull View view) {
+		boolean first = position == 0;
+		boolean last = isLastResultInGroup(position);
+		if (first && last) {
+			view.setBackgroundResource(R.drawable.bg_list_card_round);
+		} else if (first) {
+			view.setBackgroundResource(R.drawable.bg_list_card_top_round);
+		} else if (last) {
+			view.setBackgroundResource(R.drawable.bg_list_card_bottom_round);
+		} else {
+			view.setBackgroundColor(ColorUtilities.getListBgColor(app, nightMode));
+		}
 	}
 
 	private void updateDivider(int position, @NonNull View view) {
 		View divider = view.findViewById(R.id.divider);
 		if (divider != null) {
-			boolean last = position == getCount() - 1 || getItemViewType(position + 1) == TYPE_HEADER;
+			boolean last = isLastResultInGroup(position);
 			divider.setVisibility(last ? View.GONE : View.VISIBLE);
 		}
+	}
+
+	private boolean isLastResultInGroup(int position) {
+		return position == getCount() - 1 || getItemViewType(position + 1) == TYPE_HEADER;
 	}
 
 	@SuppressWarnings("unchecked")
