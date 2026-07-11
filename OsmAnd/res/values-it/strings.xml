@@ -5217,4 +5217,7 @@
     <string name="android_auto_possible_missing_maps_desc">Mappe potenzialmente mancanti. Prova a utilizzare le mappe esistenti per continuare.</string>
     <string name="route_calculation_calculating_route">Calcolando il percorso...</string>
     <string name="route_calculation_calculating_fast_route">Calcolando il percorso veloce...</string>
+    <string name="shared_string_recent">Recente</string>
+    <string name="attached_media_delete_confirmation">Eliminare %1$d elementi multimediali da questo punto? Anche i file multimediali memorizzati dall\'app e non collegati altrove saranno eliminati dal dispositivo.</string>
+    <string name="route_calculation_using_fast_algorithm">Utilizzo dell\'algoritmo di calcolo veloce del percorso.</string>
 </resources>
