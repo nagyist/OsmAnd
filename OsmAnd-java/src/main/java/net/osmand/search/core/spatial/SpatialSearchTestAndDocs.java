@@ -47,6 +47,11 @@ import net.osmand.util.SearchAlgorithms;
 ////////// IN PROGRESS //////////
 
 // INSPECTOR stats index_words_dashboard.html
+// OPTIM_READ_COMMON_WORDS_ATOMS incomplete!
+
+// TODO INDEX: Speedup load after sorting - to limit objects (store elo in index)! 
+// TODO INDEX: Store Poi category index (effective intersection 'Church St. Miguel' - refactor checkAmenity)
+// TODO ANALYZE: BUG - Germany POI words - . (115,158, 115,158), und (97,839, 97,839), - not common? - bach (56,475, 56,475) - could be common?
 
 // TO DO Ivan
 // REVIEW DEDUPLICATE: Review / implement similarity radius - similarityRadius = 50000 ... Route Id
@@ -65,13 +70,11 @@ import net.osmand.util.SearchAlgorithms;
 
 // TO DO Gateway
 // TODO INSPECTOR: doesn't show suffixes
-// TODO INDEX: Speedup load after sorting - to limit objects (store elo in index)! 
-// TODO INDEX: Store Poi category index (effective intersection 'Church St. Miguel' - refactor checkAmenity)
-// TODO ANALYZE: BUG - Germany POI words - . (115,158, 115,158), und (97,839, 97,839), - not common? - bach (56,475, 56,475) - could be common?
 // TODO ANALYZE: find slow queries on Autotests
 // TODO ANALYZE: Large Geo atoms "Berlin" (Slow query)
 // TODO ANALYZE: too many wiki places on streets?
 // TODO INDEX: Find POI Categories translations / synonyms (WEB) - Стоматол., Dentist, Stomatology, Basilica (?)
+
 
 
 // TO DO - RZR
@@ -276,8 +279,8 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-		pattern = "Ukraine_";
-		pattern = "Ukraine_krop";
+//		pattern = "Ukraine_";
+//		pattern = "Ukraine_krop";
 		// poi types
 //		location = new LatLon(50.439, 30.516);
 //		settings.SEARCH_POI = false;
@@ -290,7 +293,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Mcdonald's";
 //		query = "Stomat.";
 		
-		settings.OPTIM_READ_COMMON_WORDS_ATOMS = true;
+//		settings.OPTIM_READ_COMMON_WORDS_ATOMS = true;
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
@@ -310,8 +313,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "54-та Садова вулиця 8"; // interpolation
 //		query = "Яр. вал 29-г";
 //		query = "Школа 25 Володимирська вулиця"; // Школа 25 Володимирська вулиця ALWAYS_READ_COMMON_WORDS_ATOMS = true 
-		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
-		query = "Школа ";
+//		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
+//		query = "Школа ";
 //		query = "Школа А+";
 //		location = new LatLon(50.4631,30.4553);
 //		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25' // 63112526
@@ -358,6 +361,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "4th ave 8 paterson"; //  wrong city...
 		// Result 4 - 40.8407, -74.0954 [[4th, 8] Building 2 4th Street (26238417818) 40.8441 -74.0910 , [ave, paterson] STREET_TYPE Paterson Avenue (651531238) 40.8374 -74.0997 ]
 //		settings.OPTIM_READ_COMMON_WORDS_ATOMS = true;
+//		settings.OPTIM_READ_COMMON_WORDS_LIMIT = 5000;
 		
 //		query = "2 street"; // poi types
 		

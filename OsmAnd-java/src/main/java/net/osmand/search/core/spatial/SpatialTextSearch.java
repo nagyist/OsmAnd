@@ -102,12 +102,13 @@ public class SpatialTextSearch {
 		// no need to find 3 street intersection or 3 POI intersection
 		public int LIMIT_ATOMIC_OBJECTS = 2;
 
-		// TODO incomplete Performance improvement 
+		// Performance improvement 
 		// 1. If object does have rare words and they are not in query - skip it 
 		//    Automatically implemented for common via index, for frequent disabled for now
 		// 2. If object does have other common words and they are not in query - skip it
 		// Problem search: School On Street - some schools have specifiers and some don't   
 		public boolean OPTIM_READ_COMMON_WORDS_ATOMS = true;
+		public int OPTIM_READ_COMMON_WORDS_LIMIT = 5000;
 
 		// Limit evaluation intersection for unique objects
 		public int LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS = 1000;
