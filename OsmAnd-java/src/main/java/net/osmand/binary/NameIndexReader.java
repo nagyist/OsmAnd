@@ -774,6 +774,57 @@ public class NameIndexReader {
 		return ls;
 	}
 	
+	private static class ValueWordIteration {
+		Set<ValueFreq> set = new LinkedHashSet<ValueFreq>();
+		Set<ValueFreq> setExtra2 = new LinkedHashSet<ValueFreq>();
+		Set<ValueFreq> setExtra1 = new LinkedHashSet<ValueFreq>();
+		ValueFreq mainSuffix;
+		ValueFreq singleCommonSuffix;
+		boolean otherRareWords;
+		boolean otherCommonWords;
+		boolean otherNumWords;
+		int indInSingleName;
+		int wordInd;
+
+		void nextAtom() {
+			mainSuffix = null;
+			singleCommonSuffix = null;
+			otherRareWords = false;
+			otherCommonWords = false;
+			otherNumWords = false;
+			set.clear();
+			setExtra1.clear();
+			setExtra2.clear();
+			indInSingleName = 0;
+			wordInd = 0;
+		}
+
+		void nextName() {
+			if (mainSuffix != null) {
+				if (!otherRareWords) {
+					setExtra1.add(mainSuffix); // no rare words
+					if (!otherCommonWords) {
+						setExtra2.add(mainSuffix); // no other common (num + name)
+					}
+				}
+				if (singleCommonSuffix != null) {
+					setExtra1.add(singleCommonSuffix); // no other common words
+					if (!otherRareWords && !otherNumWords) {
+						setExtra2.add(singleCommonSuffix); // no rare & no numbers
+					}
+				}
+			}
+			mainSuffix = null;
+			singleCommonSuffix = null;
+			otherRareWords = false;
+			otherCommonWords = false;
+			otherNumWords = false;
+			wordInd++;
+			indInSingleName = -1; // ++ below
+
+		}
+	}
+	
 	private List<ValueFreq> collectFrequencies(PrefixNameValue p, List<? extends GeneratedMessage> atoms, SuffixesStat suffStats) {
 		List<ValueFreq> suffixes = new ArrayList<>();
 		Map<Integer, ValueFreq> intSuffixes = new HashMap<>();
@@ -802,7 +853,7 @@ public class NameIndexReader {
 			suffStats.longestSuffixesKey = p.key;
 		}
 		
-		Set<ValueFreq> set = new LinkedHashSet<ValueFreq>();
+		ValueWordIteration word = new ValueWordIteration();
 		for (GeneratedMessage a : atoms) {
 			List<Integer> suffixesBitsetIndexList = null;
 			List<Integer> otherWordsCountList = null;
@@ -819,44 +870,36 @@ public class NameIndexReader {
 				extraSuffixList = ma.getExtraSuffixList();
 //				enclosing = ma.getEnclosingObjects();
 			}
-			boolean otherWords = false;
-			boolean otherCommonWords = false;
-			ValueFreq possibleSingle = null;
-			set.clear();
-			int indInSingleName = 0;
-			int wordInd = 0;
+			word.nextAtom();
+			
 			for (int i = 0; i < suffixesBitsetIndexList.size(); i++) {
 				int suffBit = suffixesBitsetIndexList.get(i);
-				if (indInSingleName == 0 && wordInd < otherWordsCountList.size()
-						&& otherWordsCountList.get(wordInd) > 0) {
-					otherWords = true;
+				if (word.indInSingleName == 0 && word.wordInd < otherWordsCountList.size()
+						&& otherWordsCountList.get(word.wordInd) > 0) {
+					word.otherRareWords = true;
 				}
-				if (indInSingleName == 0 && wordInd < extraSuffixList.size()
-						&& extraSuffixList.get(wordInd).startsWith(" ")) {
-					otherWords = true;
+				if (word.indInSingleName == 0 && word.wordInd < extraSuffixList.size()
+						&& extraSuffixList.get(word.wordInd).startsWith(" ")) {
+					word.otherRareWords = true;
 				}
+				// new word
 				if (suffBit == 0) {
-					if (!otherWords && possibleSingle != null ) {
-						if (!otherCommonWords) {
-							possibleSingle.extra2++;
-						}
-						possibleSingle.extra++;
-					}
-					possibleSingle = null;
-					otherWords = false;
-					otherCommonWords = false;
-					wordInd++;
-					indInSingleName = -1; // ++ below
+					word.nextName();
 				} else if (suffBit % 2 == 0 && suffBit != 0) {
 					int ind = suffBit / 2 - 1;
-					ValueFreq mainSuf = suffixes.get(ind);
-					if (mainSuf.value.startsWith(" ")) {
+					ValueFreq suffix = suffixes.get(ind);
+					if (suffix.value.startsWith(" ")) {
 						// common words count as single (should be optionable)
-						otherCommonWords = true;
+						if (word.otherCommonWords) {
+							word.singleCommonSuffix = null; // reset
+						} else {
+							word.singleCommonSuffix = suffix;
+						}
+						word.otherCommonWords = true;
 					} else {
-						possibleSingle = mainSuf; 
+						word.mainSuffix = suffix; 
 					}
-					set.add(mainSuf);
+					word.set.add(suffix);
 				} else if (suffBit % 2 == 1) {
 					ValueFreq vf = intSuffixes.get(suffBit);
 					if (vf == null) {
@@ -867,19 +910,20 @@ public class NameIndexReader {
 						suffixes.add(vf);
 					}
 					if (vf.value.startsWith(" ")) {
-						otherWords = true;
+						word.otherNumWords = true;
 					}
-					set.add(vf);
+					word.set.add(vf);
 				}
-				indInSingleName++;
+				word.indInSingleName++;
 			}
-			if (!otherWords && possibleSingle != null ) {
-				if (!otherCommonWords) {
-					possibleSingle.extra2++;
-				}
-				possibleSingle.extra++;
+			word.nextName();
+			for (ValueFreq v : word.setExtra1) {
+				v.extra++;
 			}
-			for (ValueFreq v : set) {
+			for (ValueFreq v : word.setExtra2) {
+				v.extra2++;
+			}
+			for (ValueFreq v : word.set) {
 				v.freq++;
 				v.enclosing += enclosing;
 				v.maxSingleAtomEnc = Math.max(v.maxSingleAtomEnc, enclosing);
@@ -891,7 +935,6 @@ public class NameIndexReader {
 		
 		return suffixes;
 	}
-	
 
 	private Map<String, List<? extends GeneratedMessage>> buildAtomsMap(int filter, PrefixNameValue p) {
 		Map<String, List<? extends GeneratedMessage>> atomsMap = new HashMap<>();
