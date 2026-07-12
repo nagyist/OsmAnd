@@ -277,6 +277,7 @@ public class SpatialSearchTestAndDocs {
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
 		pattern = "Ukraine_";
+		pattern = "Ukraine_krop";
 		// poi types
 //		location = new LatLon(50.439, 30.516);
 //		settings.SEARCH_POI = false;
@@ -291,8 +292,8 @@ public class SpatialSearchTestAndDocs {
 		
 		settings.OPTIM_READ_COMMON_WORDS_ATOMS = true;
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
-		query = "нова пошта Бульварно Кудрявська";
-		query = "Бульварно-кудрявс.";
+//		query = "нова пошта Бульварно Кудрявська";
+//		query = "Бульварно-кудрявс.";
 //		query = "Ukraine kyiv saks.";
 //		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 3 харків";
@@ -310,6 +311,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Яр. вал 29-г";
 //		query = "Школа 25 Володимирська вулиця"; // Школа 25 Володимирська вулиця ALWAYS_READ_COMMON_WORDS_ATOMS = true 
 		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
+		query = "Школа ";
 //		query = "Школа А+";
 //		location = new LatLon(50.4631,30.4553);
 //		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25' // 63112526

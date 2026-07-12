@@ -390,19 +390,6 @@ public class SpatialSearchContext {
 			}
 		});
 		for (SpatialSearchToken t : tokens) {
-			StringPrefixTree<ValueFreq> commonWordsTree = indx.getCommonWordsTree();
-			boolean number2Letters = SearchAlgorithms.isNumber2Letters(t.word);
-			// always search numbers as they could be very specific - "2" token could match "2-nd" atom
-			ValueFreq commonWord = null;
-			if (!number2Letters && commonWordsTree != null) {
-				// better check word itself for incomplete
-				List<ValueFreq> vf = commonWordsTree.match(t.getPrefixMatcher(stats));
-				for (ValueFreq v : vf) {
-					if (commonWord == null || commonWord.freq < v.freq) {
-						commonWord = v;
-					}
-				}
-			}
 			List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
 			if (matchedPrefixes == null) {
 				stats.sub1FileAtomsTime.start();
@@ -759,8 +746,9 @@ public class SpatialSearchContext {
 			Map<String, ValueFreq> commonWordsStats = indx.getCommonWordsStats();
 			boolean number2Letters = SearchAlgorithms.isNumber2Letters(mainWord);
 			ValueFreq vf = commonWordsStats.get(mainWord);
-			// other tokens didn't match for common word but present in object
+			// always search numbers as they could be very specific - "2" token could match "2-nd" atom
 			if (vf != null && !number2Letters) {
+				// other tokens didn't match for common word but present in object
 				return;
 			}
 		}
