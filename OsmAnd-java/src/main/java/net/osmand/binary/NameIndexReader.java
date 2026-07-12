@@ -716,8 +716,14 @@ public class NameIndexReader {
 				List<ValueFreq> subvalues = collectFrequencies(p, atoms, suffixesStat );
 				int total = 0;
 				for (ValueFreq s : subvalues) {
-					if (!s.value.startsWith(" ")) {
-						total += s.freq;
+					if (!groupByPrefix) {
+						if (s.value.equals(name)) {
+							total += s.freq;
+						}
+					} else {
+						if (!s.value.startsWith(" ")) {
+							total += s.freq;
+						}
 					}
 				}
 				ValueFreq vf = new ValueFreq(name, total);
