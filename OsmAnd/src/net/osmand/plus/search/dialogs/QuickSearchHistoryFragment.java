@@ -234,7 +234,6 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 			HistorySourceFilter[] filters = HistorySourceFilter.values();
 			if (itemId >= 0 && itemId < filters.length) {
 				selectedSourceFilter = filters[itemId];
-				selectedTypeFilters.clear();
 				updateChipsState();
 				if (searchTextEditable != null) {
 					updateHistoryItems(searchTextEditable.toString());
@@ -596,7 +595,6 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	}
 
 	private void updateSourceFilterFromSettings() {
-		HistorySourceFilter previousSourceFilter = selectedSourceFilter;
 		boolean searchHistoryEnabled = settings.SEARCH_HISTORY.get();
 		boolean navigationHistoryEnabled = settings.NAVIGATION_HISTORY.get();
 		if (!searchHistoryEnabled && navigationHistoryEnabled) {
@@ -605,9 +603,6 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 			selectedSourceFilter = HistorySourceFilter.SEARCH;
 		} else if (!searchHistoryEnabled) {
 			selectedSourceFilter = HistorySourceFilter.ALL;
-		}
-		if (previousSourceFilter != selectedSourceFilter) {
-			selectedTypeFilters.clear();
 		}
 	}
 

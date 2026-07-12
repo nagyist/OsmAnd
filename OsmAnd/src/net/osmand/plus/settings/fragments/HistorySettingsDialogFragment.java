@@ -77,8 +77,7 @@ public class HistorySettingsDialogFragment extends BaseFullScreenDialogFragment 
 	private void setupCloseButton(@Nullable View view) {
 		View closeButton = view != null ? view.findViewById(R.id.close_button) : null;
 		if (closeButton != null) {
-			View.OnClickListener listener = v -> dismissAllowingStateLoss();
-			closeButton.setOnClickListener(listener);
+			closeButton.setOnClickListener(v -> dismissAllowingStateLoss());
 		}
 	}
 

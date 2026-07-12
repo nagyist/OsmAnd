@@ -236,7 +236,7 @@ private fun ChipsLayoutContent(
 				ChipAnchor(
 					chip = chip,
 					expanded = expandedChipId == chip.id,
-					onExpandedChanged = { expanded ->
+					changeExpandedState = { expanded ->
 						onExpandedChipChanged(if (expanded) chip.id else null)
 					},
 					onChipClick = onChipClick,
@@ -257,7 +257,7 @@ private fun ChipsLayoutContent(
 private fun ChipAnchor(
 	chip: ChipsLayout.ChipData,
 	expanded: Boolean,
-	onExpandedChanged: (Boolean) -> Unit,
+	changeExpandedState: (Boolean) -> Unit,
 	onChipClick: (String) -> Unit,
 	onDropdownItemClick: (String, Int) -> Unit,
 	listBackground: Color,
@@ -273,7 +273,7 @@ private fun ChipAnchor(
 			selected = chip.selected || expanded,
 			onClick = {
 				if (chip.hasDropDown && chip.enabled) {
-					onExpandedChanged(true)
+					changeExpandedState(true)
 				} else if (chip.enabled) {
 					val clickListener = chip.onClickListener
 					if (clickListener != null) {
@@ -292,7 +292,7 @@ private fun ChipAnchor(
 		if (chip.hasDropDown) {
 			DropdownMenu(
 				expanded = expanded && chip.enabled,
-				onDismissRequest = { onExpandedChanged(false) },
+				onDismissRequest = { changeExpandedState(false) },
 				modifier = Modifier
 					.background(listBackground)
 					.padding(0.dp),
@@ -312,6 +312,7 @@ private fun ChipAnchor(
 					DropdownItemRow(
 						item = item,
 						onClick = {
+							changeExpandedState(false)
 							val dropdownItemClickListener = chip.onDropdownItemClickListener
 							if (dropdownItemClickListener != null) {
 								dropdownItemClickListener.onDropdownItemClick(chipId, item.id)
