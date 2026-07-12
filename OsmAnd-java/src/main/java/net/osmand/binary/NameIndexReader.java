@@ -821,8 +821,6 @@ public class NameIndexReader {
 			}
 			boolean otherWords = false;
 			boolean otherCommonWords = false;
-			ValueFreq single = null;
-			ValueFreq singleWithCommon = null;
 			ValueFreq possibleSingle = null;
 			set.clear();
 			int indInSingleName = 0;
@@ -838,11 +836,11 @@ public class NameIndexReader {
 					otherWords = true;
 				}
 				if (suffBit == 0) {
-					if (!otherWords && possibleSingle != null) {
+					if (!otherWords && possibleSingle != null ) {
 						if (!otherCommonWords) {
-							single = possibleSingle;
+							possibleSingle.extra2++;
 						}
-						singleWithCommon = possibleSingle;
+						possibleSingle.extra++;
 					}
 					possibleSingle = null;
 					otherWords = false;
@@ -875,17 +873,11 @@ public class NameIndexReader {
 				}
 				indInSingleName++;
 			}
-			if (!otherWords && possibleSingle != null) {
-				if(!otherCommonWords) {
-					single = possibleSingle;
+			if (!otherWords && possibleSingle != null ) {
+				if (!otherCommonWords) {
+					possibleSingle.extra2++;
 				}
-				singleWithCommon = possibleSingle;
-			}
-			if (singleWithCommon != null) {
-				singleWithCommon.extra++;
-			}
-			if (single != null) {
-				single.extra2++;
+				possibleSingle.extra++;
 			}
 			for (ValueFreq v : set) {
 				v.freq++;
