@@ -5,9 +5,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -28,6 +30,7 @@ import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndex.OsmAndPoiNameIndexData;
 import net.osmand.binary.OsmandOdb.OsmAndPoiNameIndexDataAtom;
 import net.osmand.data.City;
 import net.osmand.data.QuadRect;
+import net.osmand.search.core.spatial.StringPrefixTree;
 import net.osmand.util.SearchAlgorithms;
 
 public class NameIndexReader {
@@ -48,6 +51,7 @@ public class NameIndexReader {
 	private CommonIndexedStats commonStats;
 	private List<String> commonsList = new ArrayList<String>();
 	private Map<String, ValueFreq> commonStatsValues = null;
+	private StringPrefixTree<ValueFreq> commonStatsTree = null;
 	
 	// stats
 	private NameIndexReaderBytes bytesStat = new NameIndexReaderBytes();
@@ -418,7 +422,11 @@ public class NameIndexReader {
 				}
 				return String.format("%s (%,d%s%s)", value, freq, extraS, enc);
 			}
-			return String.format("%s (%,d)", value, freq);
+			String extraS = "";
+			if (extra > 0) {
+				extraS = String.format(", ex %,d", extra);
+			}
+			return String.format("%s (%,d%s)", value, freq, extraS);
 		}
 		
 		public int getTopFreq() {
@@ -467,11 +475,10 @@ public class NameIndexReader {
 			}
 		}
 
-		private List<ValueFreq> collectAddrFrequencies(String prefix, 
-				SuffixesStat suffStats, int f) {
+		private List<ValueFreq> collectAddrFrequencies(String prefix, SuffixesStat suffStats, int f) {
 			List<ValueFreq> suffixes = new ArrayList<>();
 			Map<Integer, ValueFreq> intSuffixes = new HashMap<>();
-			
+
 			String curSuffix = "";
 			if (suffStats != null) {
 				suffStats.prefixesCount++;
@@ -485,7 +492,7 @@ public class NameIndexReader {
 			}
 			for (Integer i : addr.getSuffixesCommonDictionaryList()) {
 				String value = commonsList.get(i);
-				suffixes.add(new ValueFreq(" " + value, 0));
+				suffixes.add(new ValueFreq(" ^" + value, 0));
 			}
 			if (suffStats != null && suffStats.longestSuffixes.size() < suffixes.size()) {
 				suffStats.longestSuffixes = suffixes;
@@ -496,26 +503,57 @@ public class NameIndexReader {
 				if (a.getType() != f && f >= 0) {
 					continue;
 				}
+				boolean otherWords = false;
+				ValueFreq possibleSingle = null;
 				set.clear();
+				int indInSingleName = 0;
+				int wordInd = 0;
 				for (int i = 0; i < a.getSuffixesBitsetIndexCount(); i++) {
 					int suffBit = a.getSuffixesBitsetIndex(i);
+					if (indInSingleName == 0 && wordInd < a.getOtherWordsCountCount()
+							&& a.getOtherWordsCount(wordInd) > 0) {
+						otherWords = true;
+					}
+					if (indInSingleName == 0 && wordInd < a.getExtraSuffixCount()
+							&& a.getExtraSuffix(wordInd).startsWith(" ")) {
+						otherWords = true;
+					}
 					if (suffBit == 0) {
-						 // use only first name
+						if (!otherWords && possibleSingle != null) {
+							possibleSingle.extra++;
+						}
+						possibleSingle = null;
+						otherWords = false;
+						wordInd++;
+						indInSingleName = -1; // ++ below
 					} else if (suffBit % 2 == 0 && suffBit != 0) {
 						int ind = suffBit / 2 - 1;
 						ValueFreq mainSuf = suffixes.get(ind);
+						if (mainSuf.value.startsWith(" ")) {
+							// common words count as single (should be optionable)
+							otherWords = true;
+						} else {
+							possibleSingle = mainSuf; 
+						}
 						set.add(mainSuf);
 					} else if (suffBit % 2 == 1) {
 						ValueFreq vf = intSuffixes.get(suffBit);
 						if (vf == null) {
 							// number
-							String valueNum = (suffBit % 4 == 1 ? " " : "") + (suffBit >> 2);
+							String valueNum = (suffBit % 4 == 1 ? " ^" : "") + (suffBit >> 2);
 							vf = new ValueFreq(valueNum, 0);
 							intSuffixes.put(suffBit, vf);
 							suffixes.add(vf);
 						}
+						if (vf.value.startsWith(" ")) {
+							otherWords = true;
+						}
 						set.add(vf);
 					}
+					indInSingleName++;
+				}
+				if (!otherWords && possibleSingle != null) {
+					possibleSingle.extra++;
 				}
 				for (ValueFreq v : set) {
 					v.freq++;
@@ -636,6 +674,23 @@ public class NameIndexReader {
 			}
 		}
 		return commonStatsValues;
+	}
+	
+	public StringPrefixTree<ValueFreq> getCommonWordsTree() {
+		if (commonStatsTree != null) {
+			return commonStatsTree;
+		}
+		Map<String, ValueFreq> stats = getCommonWordsStats();
+		if (stats == null) {
+			return null;
+		}
+		commonStatsTree = new StringPrefixTree<ValueFreq>();
+		Iterator<Entry<String, ValueFreq>> it = stats.entrySet().iterator();
+		while(it.hasNext()) {
+			Entry<String, ValueFreq> e = it.next();
+			commonStatsTree.put(e.getKey(), e.getValue());
+		}
+		return commonStatsTree;
 	}
 
 	public CommonIndexedStats getCommonStats() {
