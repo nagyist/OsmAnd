@@ -4982,7 +4982,7 @@
     <string name="astro_nebulae">Nebulosa</string>
     <string name="astro_galaxy_clusters">Cluster di Galassie</string>
     <string name="astro_black_holes">Buchi Neri</string>
-    <string name="shared_string_azimuth">Azimuth</string>
+    <string name="shared_string_azimuth">Azimut</string>
     <string name="shared_string_magnitude">Magnitudine</string>
     <string name="astro_star_clusters">Ammassi stellari</string>
     <string name="equator_line">Linea Equatoriale</string>
@@ -5099,7 +5099,7 @@
     <string name="add_palette">Aggiungi palette</string>
     <string name="delete_palette">Elimina palette</string>
     <string name="delete_colors_palette_dialog_summary">Sei sicuro di voler eliminare la palette %1$s?</string>
-    <string name="astro_min_magnitude">Ampiezza min.</string>
+    <string name="astro_min_magnitude">Magnitudine min.</string>
     <string name="delete_groups_confirmation">Eliminare gruppi?</string>
     <string name="add_to_track">Aggiungi alla traccia</string>
     <string name="favorites_empty_folder_description">Questa cartella non ha ancora nessun punto.</string>
