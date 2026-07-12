@@ -84,9 +84,8 @@ import net.osmand.plus.search.listitems.QuickSearchSimpleButtonListItem;
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.settings.enums.HistorySource;
-import net.osmand.plus.settings.fragments.BaseSettingsFragment;
+import net.osmand.plus.settings.fragments.HistorySettingsDialogFragment;
 import net.osmand.plus.settings.fragments.OnPreferenceChanged;
-import net.osmand.plus.settings.fragments.SettingsScreenType;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.InsetTarget;
 import net.osmand.plus.utils.InsetTargetsCollection;
@@ -215,7 +214,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	private String currentSearchFilterId;
 	private String currentCategoryFilterParams;
 	private final List<String> selectedResultPoiTypeNames = new ArrayList<>();
-	private FragmentManager.OnBackStackChangedListener returnToSearchAfterHistorySettingsListener;
 	private List<SearchResult> nearestCities;
 	private LatLon storedOriginalLocation;
 
@@ -781,32 +779,9 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	public void openHistorySettingsAndReturnToSearch() {
-		FragmentActivity activity = requireActivity();
-		FragmentManager fragmentManager = activity.getSupportFragmentManager();
-		removeReturnToSearchListener(fragmentManager);
-		hide();
-		boolean opened = BaseSettingsFragment.showInstance(activity, SettingsScreenType.HISTORY_SETTINGS);
-		if (opened) {
-			returnToSearchAfterHistorySettingsListener = () -> {
-				Fragment historySettings = fragmentManager.findFragmentByTag(SettingsScreenType.HISTORY_SETTINGS.fragmentName);
-				if (historySettings == null) {
-					removeReturnToSearchListener(fragmentManager);
-					if (isAdded() && isSearchHidden()) {
-						show();
-						reloadHistory();
-					}
-				}
-			};
-			fragmentManager.addOnBackStackChangedListener(returnToSearchAfterHistorySettingsListener);
-		} else if (isSearchHidden()) {
-			show();
-		}
-	}
-
-	private void removeReturnToSearchListener(@NonNull FragmentManager fragmentManager) {
-		if (returnToSearchAfterHistorySettingsListener != null) {
-			fragmentManager.removeOnBackStackChangedListener(returnToSearchAfterHistorySettingsListener);
-			returnToSearchAfterHistorySettingsListener = null;
+		FragmentManager fragmentManager = getFragmentManager();
+		if (fragmentManager != null) {
+			HistorySettingsDialogFragment.showInstance(fragmentManager, this);
 		}
 	}
 
@@ -1587,7 +1562,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	public void onDismiss(@NonNull DialogInterface dialog) {
 		MapActivity mapActivity = getMapActivity();
 		if (mapActivity != null) {
-			removeReturnToSearchListener(mapActivity.getSupportFragmentManager());
 			hideToolbar();
 			mapActivity.updateStatusBarColor();
 			mapActivity.refreshMap();

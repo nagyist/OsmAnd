@@ -41,8 +41,7 @@ import net.osmand.plus.search.QuickSearchHelper.SearchHistoryAPI;
 import net.osmand.plus.search.history.HistoryEntry;
 import net.osmand.plus.search.listitems.QuickSearchListItem;
 import net.osmand.plus.settings.enums.HistorySource;
-import net.osmand.plus.settings.fragments.BaseSettingsFragment;
-import net.osmand.plus.settings.fragments.SettingsScreenType;
+import net.osmand.plus.settings.fragments.HistorySettingsDialogFragment;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.plus.utils.InsetTarget;
@@ -704,12 +703,9 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	}
 
 	private void openHistorySettings() {
-		Fragment target = getTargetFragment();
-		if (target instanceof QuickSearchDialogFragment quickSearchDialogFragment) {
-			dismissAllowingStateLoss();
-			quickSearchDialogFragment.openHistorySettingsAndReturnToSearch();
-		} else {
-			BaseSettingsFragment.showInstance(requireActivity(), SettingsScreenType.HISTORY_SETTINGS);
+		FragmentManager fragmentManager = getFragmentManager();
+		if (fragmentManager != null) {
+			HistorySettingsDialogFragment.showInstance(fragmentManager, getTargetFragment());
 		}
 	}
 
