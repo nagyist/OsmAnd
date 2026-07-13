@@ -121,6 +121,9 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 		} else if (listItem.isDestinationHistoryItem()) {
 			view = getView(convertView, R.layout.search_list_item_full);
 			SearchResultViewHolder.bindFullSearchResult(view, listItem);
+		} else if (listItem.isLegacyHistoryItem()) {
+			view = getView(convertView, R.layout.search_legacy_history_list_item);
+			SearchResultViewHolder.bindSearchResult(view, listItem, calendar);
 		} else {
 			view = getView(convertView, R.layout.search_list_item);
 			SearchResultViewHolder.bindSearchResult(view, listItem, calendar);
