@@ -324,6 +324,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 			sortRecords(records);
 			if (adapter != null) {
 				adapter.setUseMapCenter(selectedSortMode == HistorySortMode.MAP_CENTER);
+				adapter.setShowDestinationDate(selectedSortMode != HistorySortMode.RECENT);
 				adapter.setItems(createAdapterItems(records));
 			}
 		} catch (Exception e) {

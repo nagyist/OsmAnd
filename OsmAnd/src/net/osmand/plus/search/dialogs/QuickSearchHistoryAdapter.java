@@ -14,9 +14,11 @@ import androidx.fragment.app.FragmentActivity;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.search.SearchResultViewHolder;
+import net.osmand.plus.search.history.HistoryEntry;
 import net.osmand.plus.search.listitems.QuickSearchListItem;
 import net.osmand.plus.track.data.GPXInfo;
 import net.osmand.plus.utils.ColorUtilities;
+import net.osmand.plus.utils.OsmAndFormatter;
 import net.osmand.plus.utils.UiUtilities;
 import net.osmand.plus.utils.UpdateLocationUtils;
 import net.osmand.plus.utils.UpdateLocationUtils.UpdateLocationViewCache;
@@ -41,6 +43,7 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 
 	private final List<Item> items = new ArrayList<>();
 	private boolean useMapCenter;
+	private boolean showDestinationDate;
 
 	public QuickSearchHistoryAdapter(@NonNull OsmandApplication app, @NonNull FragmentActivity activity,
 			boolean nightMode) {
@@ -53,6 +56,11 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 
 	public void setUseMapCenter(boolean useMapCenter) {
 		this.useMapCenter = useMapCenter;
+		notifyDataSetChanged();
+	}
+
+	public void setShowDestinationDate(boolean showDestinationDate) {
+		this.showDestinationDate = showDestinationDate;
 		notifyDataSetChanged();
 	}
 
@@ -121,6 +129,7 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 		} else if (listItem.isDestinationHistoryItem()) {
 			view = getView(convertView, R.layout.search_list_item_full);
 			SearchResultViewHolder.bindFullSearchResult(view, listItem);
+			bindDestinationDate(view, listItem);
 		} else if (listItem.isLegacyHistoryItem()) {
 			view = getView(convertView, R.layout.search_legacy_history_list_item);
 			SearchResultViewHolder.bindSearchResult(view, listItem, calendar);
@@ -134,6 +143,24 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 		setupBackground(position, view);
 		updateDivider(position, view);
 		return view;
+	}
+
+	private void bindDestinationDate(@NonNull View view, @NonNull QuickSearchListItem listItem) {
+		SearchResult searchResult = listItem.getSearchResult();
+		if (!showDestinationDate || searchResult == null || !(searchResult.object instanceof HistoryEntry entry)) {
+			return;
+		}
+		if (entry.getLastAccessTime() <= 0) {
+			return;
+		}
+		String date = OsmAndFormatter.getFormattedDate(app, entry.getLastAccessTime());
+		TextView subtitle = view.findViewById(R.id.subtitle);
+		if (subtitle != null && !Algorithms.isEmpty(date)) {
+			String description = app.getString(R.string.ltr_or_rtl_combine_via_bold_point,
+					listItem.getTypeName(), date);
+			subtitle.setText(description);
+			subtitle.setVisibility(View.VISIBLE);
+		}
 	}
 
 	private void setupBackground(int position, @NonNull View view) {
