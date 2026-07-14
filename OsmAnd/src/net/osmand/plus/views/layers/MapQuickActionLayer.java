@@ -110,11 +110,20 @@ public class MapQuickActionLayer extends OsmandMapLayer implements QuickActionUp
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public void setMapActivity(@Nullable MapActivity mapActivity) {
+		if (quickActionsWidget != null) {
+			quickActionsWidget.setVisibilityChangeListener(null);
+		}
 		super.setMapActivity(mapActivity);
 		if (mapActivity != null) {
 			isLayerOn = mapButtonsHelper.hasEnabledButtons();
 			mapHudLayout = mapActivity.findViewById(R.id.map_hud_layout);
 			quickActionsWidget = mapActivity.findViewById(R.id.quick_action_widget);
+			quickActionsWidget.setVisibilityChangeListener(visible -> {
+				MapActivity currentActivity = getMapActivity();
+				if (currentActivity != null) {
+					currentActivity.updateStatusBarColor();
+				}
+			});
 
 			updateButtons();
 		} else {
@@ -227,7 +236,6 @@ public class MapQuickActionLayer extends OsmandMapLayer implements QuickActionUp
 		if (quickActionsWidget != null) {
 			quickActionsWidget.updateVisibility(visible);
 		}
-		mapActivity.updateStatusBarColor();
 
 		setInvalidated(false);
 		return true;

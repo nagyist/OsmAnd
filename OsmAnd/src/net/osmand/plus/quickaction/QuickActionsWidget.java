@@ -22,6 +22,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.fragment.app.FragmentActivity;
@@ -57,6 +58,8 @@ public class QuickActionsWidget extends LinearLayout {
 	private final UiUtilities uiUtilities;
 
 	private QuickActionSelectionListener selectionListener;
+	@Nullable
+	private VisibilityChangeListener visibilityChangeListener;
 
 	private List<QuickAction> actions;
 	private QuickActionButton selectedButton;
@@ -104,6 +107,19 @@ public class QuickActionsWidget extends LinearLayout {
 
 	public void setSelectionListener(QuickActionSelectionListener selectionListener) {
 		this.selectionListener = selectionListener;
+	}
+
+	public void setVisibilityChangeListener(@Nullable VisibilityChangeListener listener) {
+		visibilityChangeListener = listener;
+	}
+
+	@Override
+	public void setVisibility(int visibility) {
+		boolean changed = visibility != getVisibility();
+		super.setVisibility(visibility);
+		if (changed && visibilityChangeListener != null) {
+			visibilityChangeListener.onVisibilityChanged(visibility == View.VISIBLE);
+		}
 	}
 
 	private void setupLayout(@NonNull Context context, int pageCount) {
@@ -349,5 +365,9 @@ public class QuickActionsWidget extends LinearLayout {
 			}
 		});
 		set.start();
+	}
+
+	public interface VisibilityChangeListener {
+		void onVisibilityChanged(boolean visible);
 	}
 }
