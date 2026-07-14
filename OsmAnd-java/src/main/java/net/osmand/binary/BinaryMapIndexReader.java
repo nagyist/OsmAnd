@@ -1822,7 +1822,9 @@ public class BinaryMapIndexReader {
 
 	public void close() throws IOException {
 		if (codedIS != null) {
-			raf.close();
+			if (raf != null) {
+				raf.close();
+			}
 			codedIS = null;
 			mapIndexes.clear();
 			addressIndexes.clear();
@@ -1845,8 +1847,11 @@ public class BinaryMapIndexReader {
 	}
 
 	public static interface SearchPoiAdditionalFilter {
+		
 		public boolean accept(PoiSubType poiSubType, String value);
+		
 		String getName();
+		
 		String getIconResource();
 	}
 
@@ -1906,7 +1911,7 @@ public class BinaryMapIndexReader {
 		public boolean log = true;
 		int numberOfVisitedObjects = 0;
 		int numberOfAcceptedObjects = 0;
-		int numberOfReadSubtrees = 0;
+		public int numberOfReadSubtrees = 0;
 		int numberOfAcceptedSubtrees = 0;
 		boolean interrupted = false;
 		PriorityQueue<T> priorityQueue;

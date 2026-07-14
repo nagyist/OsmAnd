@@ -24,6 +24,9 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 public class MapUtils {
 
 	public static final int ROUNDING_ERROR = 3;
+	// for haversine use R = 6372.8 km instead of 6371 km
+	public static final double HAVERSINE_EARTH_RADIUS_METERS = 6372800.0;
+	public static final double VECTOR_LINE_EARTH_RADIUS_METERS = 6371000.0;
 	private static final int EARTH_RADIUS_B = 6356752;
 	static final int EARTH_RADIUS_A = 6378137;
 	public static final double MIN_LATITUDE = -85.0511;
@@ -193,24 +196,6 @@ public class MapUtils {
 	/**
 	 * Gets distance in meters
 	 */
-	public static double getDistance(double lat1, double lon1, double lat2, double lon2) {
-		double R = 6372.8; // for haversine use R = 6372.8 km instead of 6371 km
-		double dLat = toRadians(lat2 - lat1);
-		double dLon = toRadians(lon2 - lon1);
-		double sinHalfLat = Math.sin(dLat / 2);
-		double sinHalfLon = Math.sin(dLon / 2);
-		double a = sinHalfLat * sinHalfLat +
-				Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
-						sinHalfLon * sinHalfLon;
-		//double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-		//return R * c * 1000;
-		// simplify haversine:
-		return (2 * R * 1000 * Math.asin(Math.sqrt(a)));
-	}
-
-	/**
-	 * Gets distance in meters
-	 */
 	public static double getDistance(LatLon l1, LatLon l2) {
 		return getDistance(l1.getLatitude(), l1.getLongitude(), l2.getLatitude(), l2.getLongitude());
 	}
@@ -220,6 +205,29 @@ public class MapUtils {
 	 */
 	public static double getDistance(Location l1, Location l2) {
 		return getDistance(l1.getLatitude(), l1.getLongitude(), l2.getLatitude(), l2.getLongitude());
+	}
+
+	/**
+	 * Gets distance in meters.
+	 */
+	public static double getDistance(double lat1, double lon1, double lat2, double lon2) {
+		return getDistance(lat1, lon1, lat2, lon2, HAVERSINE_EARTH_RADIUS_METERS);
+	}
+
+	/**
+	 * Gets distance in meters using the specified Earth radius.
+	 */
+	public static double getDistance(double lat1, double lon1, double lat2, double lon2, double earthRadiusMeters) {
+		double dLat = toRadians(lat2 - lat1);
+		double dLon = toRadians(lon2 - lon1);
+		double sinHalfLat = Math.sin(dLat / 2);
+		double sinHalfLon = Math.sin(dLon / 2);
+		double a = sinHalfLat * sinHalfLat
+				+ Math.cos(toRadians(lat1))
+				* Math.cos(toRadians(lat2))
+				* sinHalfLon
+				* sinHalfLon;
+		return 2 * earthRadiusMeters * Math.asin(Math.sqrt(a));
 	}
 
 	public static double checkLongitude(double longitude) {
@@ -234,6 +242,11 @@ public class MapUtils {
 			}
 		}
 		return longitude;
+	}
+
+	public static boolean isValidLatLon(double latitude, double longitude) {
+		return latitude >= -90.0 && latitude <= 90.0
+				&& longitude >= MIN_LONGITUDE && longitude <= MAX_LONGITUDE;
 	}
 
 	public static double checkLatitude(double latitude) {
@@ -436,7 +449,9 @@ public class MapUtils {
 	public static String buildShortOsmUrl(double latitude, double longitude, int zoom) {
 		return BASE_SHORT_OSM_URL + createShortLinkString(latitude, longitude, zoom) + "?m";
 	}
-
+	
+	// Zoom represents 1 pixel (256x256) in the tile of the given zoom
+	// 1 symbol - (z=-5), 2 symbols (z=-2), 3 symbols (z=1), 4 symbols (z=4), 5 symbols (z=7)
 	public static String createShortLinkString(double latitude, double longitude, int zoom) {
 		long lat = (long) (((latitude + 90d)/180d)*(1L << 32));
 		long lon = (long) (((longitude + 180d)/360d)*(1L << 32));
@@ -958,5 +973,15 @@ public class MapUtils {
 		// clamp Y/latitude [-90,90]
 		bbox.top = Math.max(-90.0, Math.min(90.0, bbox.top));
 		bbox.bottom = Math.max(-90.0, Math.min(90.0, bbox.bottom));
+	}
+	
+	public static QuadRect calculateBbox(int radiusMeters, LatLon l) {
+		LatLon northWest = MapUtils.rhumbDestinationPoint(l.getLatitude(), l.getLongitude(), radiusMeters, 315);
+		LatLon southEast = MapUtils.rhumbDestinationPoint(l.getLatitude(), l.getLongitude(), radiusMeters, 135);
+		int top = MapUtils.get31TileNumberY(Math.min(MAX_LATITUDE, northWest.getLatitude()));
+		int left = MapUtils.get31TileNumberX(Math.max(MIN_LONGITUDE, northWest.getLongitude()));
+		int bottom = MapUtils.get31TileNumberY(Math.max(MIN_LATITUDE, southEast.getLatitude()));
+		int right = MapUtils.get31TileNumberX(Math.min(MAX_LONGITUDE, southEast.getLongitude()));
+		return new QuadRect(left, top, right, bottom);
 	}
 }

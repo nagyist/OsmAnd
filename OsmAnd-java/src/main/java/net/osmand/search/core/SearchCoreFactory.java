@@ -473,7 +473,7 @@ public class SearchCoreFactory {
 		
 		boolean hasNonNumericLeftUnknownSearchWord(SearchResult res) {
 			for (String leftUnknownSearchWord : res.filterUnknownSearchWord(null)) {
-				if (!CommonWords.isNumber2Letters(leftUnknownSearchWord)) {
+				if (!SearchAlgorithms.isNumber2Letters(leftUnknownSearchWord)) {
 					return true;
 				}
 			}
@@ -643,12 +643,12 @@ public class SearchCoreFactory {
 							req.setBBox(x31, y31, left, top, right, bottom);
 						} else {
 							int radius = (int) c.getType().getRadius() * 3;
-							rect = SearchPhrase.calculateBbox(radius, c.getLocation());
+							rect = MapUtils.calculateBbox(radius, c.getLocation());
 							req.setBBoxRadius(c.getLocation().getLatitude(), c.getLocation().getLongitude(), radius);
 						}
 					} else {
 						int radius = phrase.getRadiusSearch(maxRadius);
-						rect = SearchPhrase.calculateBbox(radius, loc);
+						rect = MapUtils.calculateBbox(radius, loc);
 						req.setBBoxRadius(loc.getLatitude(), loc.getLongitude(), radius);
 					}
                     offlineIterator = phrase.getOfflineIndexes(rect, SearchPhraseDataType.ADDRESS);
@@ -683,7 +683,7 @@ public class SearchCoreFactory {
 								if (match) {
 									newParentSearchResult = cityResult;
 								} else if(hasNonNumericLeftUnknownSearchWord(res)) { // speed up
-									QuadRect bbox = SearchPhrase.calculateBbox(1000, res.location);
+									QuadRect bbox = MapUtils.calculateBbox(1000, res.location);
 									List<City>  cacheResArray = townCitiesCache.queryBoundaries(bbox);
 									for (City boundary : cacheResArray) {
 										int[] bb = boundary.getBbox31();
@@ -1728,6 +1728,7 @@ public class SearchCoreFactory {
 		@Override
 		public boolean search(SearchPhrase phrase, final SearchResultMatcher resultMatcher) throws IOException {
 			Street s = null;
+			CommonWords commonWords = CommonWords.getInstance();
 			int priority = SEARCH_BUILDING_BY_STREET_PRIORITY;
 			if (phrase.isLastWord(ObjectType.STREET)) {
 				s =  (Street) phrase.getLastSelectedWord().getResult().object;
@@ -1828,7 +1829,7 @@ public class SearchCoreFactory {
 				String streetIntersection = phrase.getUnknownWordToSearch();
 				if (Algorithms.isEmpty(streetIntersection) ||
 						(!Character.isDigit(streetIntersection.charAt(0)) &&
-						  CommonWords.getCommonSearch(streetIntersection) == -1) &&
+								commonWords.getCommonSearch(streetIntersection) == -1) &&
 						 phrase.isSearchTypeAllowed(ObjectType.STREET_INTERSECTION)) {
 					for (Street street : s.getIntersectedStreets()) {
 						SearchResult res = new SearchResult(phrase);

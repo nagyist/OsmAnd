@@ -21,8 +21,12 @@ import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
 import net.osmand.binary.NameIndexReader;
+import net.osmand.data.Amenity;
+import net.osmand.data.LatLon;
 import net.osmand.map.OsmandRegions;
+import net.osmand.osm.MapPoiTypes;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
+import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
 //////////////// SEARCH ALGORITHM //////////////////
@@ -46,12 +50,16 @@ import net.osmand.util.SearchAlgorithms;
 public class SpatialTextSearch {
 
 	public static class SpatialTextSearchSettings {
+		
+		// lang to deduplicate results
+		public String LANG_DEDUPLICATE = ""; 
 
 		public boolean SEARCH_ADDR = true;
 		public boolean SEARCH_POI = true;
 		public boolean SEARCH_BUILDINGS = true;
 		public boolean SEARCH_STREET_INTERSECTIONS = true;
 		public boolean SEARCH_POI_INTERSECTIONS = true;
+		public boolean SEARCH_POI_CATEGORIES = true;
 		// no intersection recorded but streets are nearby
 		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
 		
@@ -73,6 +81,9 @@ public class SpatialTextSearch {
 
 		// Deduplicate results in the end by checking osm id of the first object in combination
 		public boolean DEDUPLICATE_RES = true;
+		
+		// we need to test performance and results (we need to turn on for <POI + Address> search)
+		public boolean TEST_ALLOW_HOUSE_POI_TYPE_INTERSECTION = true;
 
 		// READ OBJECTS before intersection to reduce number of duplicates from
 		// different maps by osm id - needs to be tested performance mostly slows down
@@ -81,14 +92,24 @@ public class SpatialTextSearch {
 		public boolean DEV_READ_ADDR_OBJECTS = false;
 		public boolean DEV_READ_POI_OBJECTS = false;
 
+		
+		// display only top 10
+		public int LIMIT_POI_CATEGORY_BY_FREQ = 15;
+		
+		// print some poi cat
+		public int DEV_PRINT_POI_CAT_LIMIT = 0; // 10
+		public int DEV_PRINT_POI_CAT_RADIUS_KM = 10;
+		
 		// no need to find 3 street intersection or 3 POI intersection
 		public int LIMIT_ATOMIC_OBJECTS = 2;
 
-		// Very good optimization but breaks some scenarios
-		// Performance improvement assuming for rare words we don't read common atoms
-		// Problem search: New york plaza, New York 45 Avenue, School 40 on Specific Street.  
-		public boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
-		public boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
+		// Performance improvement 
+		// 1. If object does have rare words and they are not in query - skip it 
+		//    Automatically implemented for common via index, for frequent disabled for now
+		// 2. If object does have other common words and they are not in query - skip it
+		// Problem search: School On Street - some schools have specifiers and some don't   
+		public boolean OPTIM_READ_COMMON_WORDS_ATOMS = true;
+		public int OPTIM_READ_COMMON_WORDS_LIMIT = 2000;
 
 		// Limit evaluation intersection for unique objects
 		public int LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS = 1000;
@@ -107,10 +128,8 @@ public class SpatialTextSearch {
 //		public int MAX_ELO_RATING = 4300; // not used now
 		
 		// > 300 km - x0, for 50km-300km - x0.5, 10-50km - x1.5, 10km - x3sorted!
-		public Map<Integer, Double> DEF_ENLARGE_BOUNDARIES = new TreeMap<Integer, Double>(
-				Map.of(-50_000, 0.3, -5_000, 1.0, -2_000, 3.0));
 		public Map<Integer, Double> ENLARGE_BOUNDARIES = new TreeMap<Integer, Double>(
-				Map.of(-300_000, 0.5, -100_000, 1.5, -10_000, 3.0, -1_000, 20.0));
+				Map.of(-300_000, 0.2, -100_000, 0.5, -10_000, 1.0, -1_000, 20.0));
 		
 		public double evalEnlargeBoundary(Map<Integer, Double> mp, double dim) {
 			Iterator<Entry<Integer, Double>> it = mp.entrySet().iterator();
@@ -134,6 +153,8 @@ public class SpatialTextSearch {
 		public final long length;
 		public final long edition;
 		public final List<NameIndexReader> indexReaders = new ArrayList<NameIndexReader>();
+		public Map<String, Integer> poiFrequencies = null;
+		public SpatialPoiSearch poiSearch;
 
 		public SpatialSearchFileCache(BinaryMapIndexReader r) {
 			file = r.getFile().getName();
@@ -355,25 +376,21 @@ public class SpatialTextSearch {
 		return result;
 
 	}
-	public SpatialSearchResults searchStreetAPI(String input, SpatialSearchContext ctx) throws IOException {
-		SpatialSearchResults res = new SpatialSearchResults();
-		ctx.initFiles(cache);
-		res.input = input;
-		res.tokens = splitWords(ctx, input);
-		ctx.readAtoms(res.tokens);
-		return res;
-	}
+	
 
 	public SpatialSearchResults searchAPI(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = new SpatialSearchResults();
 		ctx.initFiles(cache);
 		res.input = input;
+		
 		// 1. prepare tokens
 		res.tokens = splitWords(ctx, input);
-
-		// 2. read atoms
+		
+		// 2. read atoms & poi categories
 		ctx.stats.step1Atoms.start();
-		ctx.readAtoms(res.tokens);
+		ctx.setTokens(res.tokens);
+		ctx.processPoiCategories();
+		ctx.readAtoms();
 		ctx.stats.step1Atoms.finish();
 
 		// 3. sort tokens
@@ -394,7 +411,7 @@ public class SpatialTextSearch {
 		return res;
 	}
 
-	private void combineSortFilterResults(SpatialSearchContext ctx, SpatialSearchResults res) {
+	private void combineSortFilterResults(SpatialSearchContext ctx, SpatialSearchResults res) throws IOException {
 		SpatialSearchResultsList main = res.combinations.get(0);
 		for (SpatialSearchResultsList m : res.combinations) {
 			List<SpatialSearchResult> lst = m.getFinalResult();
@@ -404,12 +421,16 @@ public class SpatialTextSearch {
 			res.mainResults.addAll(lst);
 		}
 		res.mainResults = main.sortResults(ctx, res.mainResults, ctx.settings.DEDUPLICATE_RES);
+		int limitPoiCat = ctx.settings.DEV_PRINT_POI_CAT_LIMIT;
 		if (res.mainResults.size() > 0) {
 			int[] limits = ctx.settings.SHOW_MORE_WORDS_COUNT.clone();
 			long cKey = SpatialSearchResult.compareKey(res.mainResults.get(0));
 			int ind = 0, lind = 0;
 			int level = 0; 
 			for (SpatialSearchResult r : res.mainResults) {
+				if (limitPoiCat > 0) {
+					limitPoiCat = printPoiCategory(ctx, limitPoiCat, r);
+				}
 				long nextKey = SpatialSearchResult.compareKey(r);
 				if (cKey != nextKey) {
 					if (lind < limits.length && ind >= limits[lind]) {
@@ -426,6 +447,25 @@ public class SpatialTextSearch {
 				ind++;
 			}
 		}
+	}
+
+	private int printPoiCategory(SpatialSearchContext ctx, int limitPoiCat, SpatialSearchResult r) throws IOException {
+		if (r.getFirstRef() != null && r.getFirstRef().atom.isPoiCategory()) {
+			long nt = System.nanoTime();
+			System.out.printf("Loading poi type '%s' - limit %d...\n", r.getFirstRef().atom.name, limitPoiCat);
+			LatLon latLon = r.getLatLon();
+			List<Amenity> interRes = ctx.poiSearch.loadPOIObjects(ctx, r.getFirstRef().atom.id,
+					latLon == null ? ctx.location : latLon, ctx.settings.DEV_PRINT_POI_CAT_RADIUS_KM * 1000, limitPoiCat);
+			for (Amenity a : interRes) {
+				double dist = ctx.location == null ? 0 : MapUtils.getDistance(ctx.location, a.getLocation());
+				System.out.printf("\t %s (%s) %.2f km %s \n", a, a.getOsmId(), dist / 1000.0, a.getLocation());
+			}
+			System.out.printf("... Loaded %d pois %.1f ms (%.1f ms, %d tiles, %,d KB)\n", interRes.size(), 
+					(System.nanoTime() - nt) / 1e6, ctx.stats.poiByTypeTime.ms(), ctx.stats.poiByTypeBboxes, 
+					ctx.stats.poiByTypeBytes / 1024);
+			limitPoiCat = 0;
+		}
+		return limitPoiCat;
 	}
 
 	public List<SpatialSearchToken> splitWords(SpatialSearchContext ctx, String input) {
@@ -457,14 +497,14 @@ public class SpatialTextSearch {
 					level++;
 					System.out.printf("### %d - NEXT LEVEL %d (%s). "
 							+ " Format - 75(words) 02(objects) 0(surplus) 1(sum other) 52(rating) 72(sum types)\n",
-							sz, level, Long.toOctalString(r.compareKey()));
+							sz, level, SpatialSearchResult.compareKeyString(r));
 					sz = 0;
 				}
 				if (limitPrint-- < 0) {
 					System.out.println(".............");
 					break;
 				}
-				System.out.printf("Result %d (%s) - %s\n", r.matchedTokens(), Long.toOctalString(r.compareKey()), r);
+				System.out.printf("Result %d (%s) - %s\n", r.matchedTokens(), SpatialSearchResult.compareKeyString(r), r);
 			}
 			System.out.printf("------ ALL %d results ------- \n ", all);
 			System.out.println("---------------------------------------");
@@ -521,7 +561,9 @@ public class SpatialTextSearch {
 		}
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 		SpatialTextSearch a = new SpatialTextSearch();
-		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, null);
+		SpatialPoiSearch poiSearch = new SpatialPoiSearch(MapPoiTypes.getDefault());
+		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, poiSearch,
+				null);
 		a.searchTest(query, searchContext, 1000);
 	}
 
