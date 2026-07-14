@@ -107,6 +107,7 @@ import net.osmand.plus.search.dialogs.QuickSearchDialogFragment;
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.OsmAndAppCustomization.OsmAndAppCustomizationListener;
 import net.osmand.plus.settings.datastorage.SharedStorageWarningFragment;
+import net.osmand.plus.settings.enums.PanelBackgroundMode;
 import net.osmand.plus.settings.enums.ScreenLayoutMode;
 import net.osmand.plus.settings.fragments.BaseSettingsFragment;
 import net.osmand.plus.settings.fragments.SettingsScreenType;
@@ -137,7 +138,9 @@ import net.osmand.plus.views.layers.MapControlsLayer;
 import net.osmand.plus.views.layers.MapInfoLayer;
 import net.osmand.plus.views.mapwidgets.TopToolbarController;
 import net.osmand.plus.views.mapwidgets.TopToolbarController.TopToolbarControllerType;
+import net.osmand.plus.views.mapwidgets.WidgetsPanel;
 import net.osmand.plus.views.mapwidgets.WidgetsVisibilityHelper;
+import net.osmand.plus.views.mapwidgets.configure.appearance.PanelAppearanceSettings;
 import net.osmand.shared.gpx.GpxFile;
 import net.osmand.util.Algorithms;
 
@@ -833,14 +836,36 @@ public class MapActivity extends OsmandActionBarActivity implements DownloadEven
 		UiUtilities.updateSystemBarColors(this);
 	}
 
+	@Nullable
+	@Override
+	public Integer getNavigationBarColor() {
+		if (InsetsUtils.isEdgeToEdgeSupported() && isBottomWidgetsPanelVisible()) {
+			ScreenLayoutMode layoutMode = ScreenLayoutMode.getDefault(this);
+			return PanelAppearanceSettings.getCommittedCustomBackgroundColor(
+					app, WidgetsPanel.BOTTOM, layoutMode, isMapUiNightMode());
+		}
+		return null;
+	}
+
+	private boolean isMapUiNightMode() {
+		return app.getDaynightHelper().isNightMode(MAP);
+	}
+
+	private boolean isBottomWidgetsPanelVisible() {
+		VerticalWidgetPanel panel = findViewById(R.id.map_bottom_widgets_panel);
+		return panel != null && panel.isShown() && panel.isAnyRowVisible();
+	}
+
 	@Override
 	public int getNavigationBarColorId() {
 		if (InsetsUtils.isEdgeToEdgeSupported()) {
 			ScreenLayoutMode layoutMode = ScreenLayoutMode.getDefault(this);
-			VerticalWidgetPanel panel = findViewById(R.id.map_bottom_widgets_panel);
-			boolean transparent = settings.getTransparentMapThemePreference(layoutMode).get();
-			if (panel != null && panel.getVisibility() == View.VISIBLE && panel.isAnyRowVisible() && !transparent) {
-				return ColorUtilities.getWidgetBackgroundColorId(isNightMode());
+			boolean nightMode = isMapUiNightMode();
+			PanelBackgroundMode backgroundMode = app.getPanelAppearanceSettingsManager()
+					.resolveCommittedBackground(WidgetsPanel.BOTTOM, layoutMode, nightMode).getMode();
+			boolean transparent = backgroundMode == PanelBackgroundMode.TRANSPARENT;
+			if (isBottomWidgetsPanelVisible() && !transparent) {
+				return ColorUtilities.getWidgetBackgroundColorId(nightMode);
 			}
 			if (AddGpxPointBottomSheetHelper.isVisible(this)
 					|| AudioVideoNoteRecordingMenu.isVisible(this)) {
@@ -852,7 +877,7 @@ public class MapActivity extends OsmandActionBarActivity implements DownloadEven
 
 	@Override
 	public boolean isNavigationBarContentLight() {
-		return !app.getDaynightHelper().isNightMode(MAP);
+		return !isMapUiNightMode();
 	}
 
 	public boolean isInAppPurchaseAllowed() {

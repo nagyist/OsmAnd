@@ -37,6 +37,11 @@ public interface ISupportInsets {
 		return -1;
 	}
 
+	@Nullable
+	default Integer getNavigationBarColor() {
+		return null;
+	}
+
 	default boolean isNavigationBarContentLight() {
 		return !isNightMode();
 	}
