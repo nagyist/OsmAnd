@@ -95,6 +95,7 @@ public class SpatialTextSearch {
 		
 		// display only top 10
 		public int LIMIT_POI_CATEGORY_BY_FREQ = 15;
+		
 		// print some poi cat
 		public int DEV_PRINT_POI_CAT_LIMIT = 0; // 10
 		public int DEV_PRINT_POI_CAT_RADIUS_KM = 10;
@@ -102,11 +103,13 @@ public class SpatialTextSearch {
 		// no need to find 3 street intersection or 3 POI intersection
 		public int LIMIT_ATOMIC_OBJECTS = 2;
 
-		// Very good optimization but breaks some scenarios
-		// Performance improvement assuming for rare words we don't read common atoms
-		// Problem search: New york plaza, New York 45 Avenue, School 40 on Specific Street.  
-		public boolean ALWAYS_READ_COMMON_WORDS_ATOMS = true;
-		public boolean ALWAYS_READ_FREQ_WORDS_ATOMS = true;
+		// Performance improvement 
+		// 1. If object does have rare words and they are not in query - skip it 
+		//    Automatically implemented for common via index, for frequent disabled for now
+		// 2. If object does have other common words and they are not in query - skip it
+		// Problem search: School On Street - some schools have specifiers and some don't   
+		public boolean OPTIM_READ_COMMON_WORDS_ATOMS = true;
+		public int OPTIM_READ_COMMON_WORDS_LIMIT = 2000;
 
 		// Limit evaluation intersection for unique objects
 		public int LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS = 1000;
