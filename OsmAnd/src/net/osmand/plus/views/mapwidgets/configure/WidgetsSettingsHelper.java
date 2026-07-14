@@ -76,6 +76,9 @@ public class WidgetsSettingsHelper {
 
 		settings.getPanelsLayoutMode(mapActivity, layoutMode).resetModeToDefault(appMode);
 		settings.getTransparentMapThemePreference(layoutMode).resetModeToDefault(appMode);
+		for (WidgetsPanel panel : WidgetsPanel.values()) {
+			app.getPanelAppearanceSettingsManager().get(panel).resetToDefault(appMode, layoutMode);
+		}
 		mapButtonsHelper.getCompassButtonState().getVisibilityPref().resetModeToDefault(appMode);
 		settings.SHOW_DISTANCE_RULER.resetModeToDefault(appMode);
 		mapButtonsHelper.resetButtonStatesForMode(appMode, mapButtonsHelper.getAllButtonsStates());
@@ -90,6 +93,9 @@ public class WidgetsSettingsHelper {
 		}
 		copyPrefFromAppMode(settings.getPanelsLayoutMode(mapActivity, layoutMode), fromAppMode);
 		copyPrefFromAppMode(settings.getTransparentMapThemePreference(layoutMode), fromAppMode);
+		for (WidgetsPanel panel : WidgetsPanel.values()) {
+			app.getPanelAppearanceSettingsManager().get(panel).copyFromProfile(fromAppMode, appMode, layoutMode);
+		}
 		copyPrefFromAppMode(mapButtonsHelper.getCompassButtonState().getVisibilityPref(), fromAppMode);
 		copyPrefFromAppMode(settings.SHOW_DISTANCE_RULER, fromAppMode);
 		copyPrefFromAppMode(settings.POSITION_PLACEMENT_ON_MAP, fromAppMode);
