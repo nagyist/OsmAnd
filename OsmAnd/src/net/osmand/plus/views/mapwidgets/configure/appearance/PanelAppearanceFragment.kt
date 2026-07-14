@@ -1,6 +1,8 @@
 package net.osmand.plus.views.mapwidgets.configure.appearance
 
 import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +25,7 @@ import net.osmand.plus.settings.enums.PanelIconMode
 import net.osmand.plus.settings.enums.PanelSizeMode
 import net.osmand.plus.settings.enums.PanelTextColorMode
 import net.osmand.plus.settings.enums.ScreenLayoutMode
+import net.osmand.plus.utils.AndroidUtils
 import net.osmand.plus.utils.ColorUtilities
 import net.osmand.plus.utils.InsetTarget
 import net.osmand.plus.utils.InsetTargetsCollection
@@ -200,16 +203,15 @@ class PanelAppearanceFragment : BaseOsmAndFragment() {
 		getPaletteElements(button).updateColorItemView(preview, backgroundColor, false)
 
 		val background = preview.findViewById<ImageView>(R.id.background)
-		val outline = preview.findViewById<ImageView>(R.id.outline)
 		val icon = preview.findViewById<ImageView>(R.id.icon)
 		background.visibility = View.VISIBLE
-		outline.background = null
-		outline.visibility = View.INVISIBLE
 		val contourColor = ColorUtilities.getDividerColor(app, nightMode)
-		val contour = getPaintedIcon(R.drawable.bg_panel_appearance_preview_contour, contourColor)
-		contour?.let {
-			background.setImageDrawable(UiUtilities.getLayeredIcon(background.drawable, it))
+		val contour = GradientDrawable().apply {
+			shape = GradientDrawable.OVAL
+			setColor(Color.TRANSPARENT)
+			setStroke(AndroidUtils.dpToPx(app, 1F), contourColor)
 		}
+		background.setImageDrawable(UiUtilities.getLayeredIcon(background.drawable, contour))
 		if (textColor != null) {
 			setTintedIcon(icon, R.drawable.ic_action_text_preview, textColor)
 			icon.visibility = View.VISIBLE
