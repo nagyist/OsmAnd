@@ -31,6 +31,8 @@ import net.osmand.plus.views.controls.maphudbuttons.Map3DButton;
 import net.osmand.plus.views.controls.maphudbuttons.MapButton;
 import net.osmand.plus.views.layers.MapControlsLayer;
 import net.osmand.plus.views.layers.MapInfoLayer;
+import net.osmand.plus.views.mapwidgets.TopToolbarController.TopToolbarControllerType;
+import net.osmand.plus.views.mapwidgets.configure.appearance.MapHudPreviewPadding;
 import net.osmand.plus.views.mapwidgets.widgets.RulerWidget;
 import net.osmand.plus.widgets.dialogbutton.DialogButton;
 
@@ -73,8 +75,10 @@ public abstract class ConfigureMapOptionFragment extends BaseFullScreenFragment 
 		mapButtons = new ArrayList<>();
 		setupApplyButton(applyButton = view.findViewById(R.id.apply_button));
 		setupToolBar(view);
-		buildZoomButtons(view);
-		moveMap3DButton(view);
+		if (!shouldShowMapWidgets()) {
+			buildZoomButtons(view);
+			moveMap3DButton(view);
+		}
 		setupBackgroundShadow(view);
 		setupBottomContainer(view.findViewById(R.id.bottom_container));
 		setupMainContent(view.findViewById(R.id.main_content));
@@ -190,13 +194,26 @@ public abstract class ConfigureMapOptionFragment extends BaseFullScreenFragment 
 		}
 	}
 
+	public boolean shouldShowMapWidgets() {
+		return false;
+	}
+
 	@Override
 	public void onResume() {
 		super.onResume();
 
 		MapActivity activity = requireMapActivity();
 		activity.disableDrawer();
-		updateWidgetsVisibility(activity, View.GONE);
+		if (shouldShowMapWidgets()) {
+			activity.hideTopToolbar(TopToolbarControllerType.SUGGEST_MAP);
+			View view = getView();
+			if (view != null) {
+				view.post(() -> MapHudPreviewPadding.update(activity,
+						view.findViewById(R.id.appbar), view.findViewById(R.id.bottom_container)));
+			}
+		} else {
+			updateWidgetsVisibility(activity, View.GONE);
+		}
 	}
 
 	@Override
@@ -205,7 +222,11 @@ public abstract class ConfigureMapOptionFragment extends BaseFullScreenFragment 
 
 		MapActivity activity = requireMapActivity();
 		activity.enableDrawer();
-		updateWidgetsVisibility(activity, View.VISIBLE);
+		if (shouldShowMapWidgets()) {
+			MapHudPreviewPadding.reset(activity);
+		} else {
+			updateWidgetsVisibility(activity, View.VISIBLE);
+		}
 	}
 
 	protected void dismiss() {
