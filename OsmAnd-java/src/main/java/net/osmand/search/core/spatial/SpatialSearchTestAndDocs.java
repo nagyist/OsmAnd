@@ -40,8 +40,9 @@ import net.osmand.util.SearchAlgorithms;
 // REVIEW AUTO TESTS: Auto tests - Slow analysis (Auto test New york)
 // TESTING access_main_tag, poi names - limit, subtypes
 
-// TODO Test Size
-// TODO Autocomplete results from POI TYPE / SUB TYPE
+// Testing Test Size
+// Testing Autocomplete results from POI TYPE / SUB TYPE
+
 // TODO Bank abc (Bug New filter?) 
 
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
@@ -260,7 +261,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
 //		query = "11-NUON leons";
-		query = "Gate D18";
+		query = "Gate D18"; 
 		
 //		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // OK
