@@ -5180,4 +5180,5 @@
     <string name="attached_media">Fichiers média joints</string>
     <string name="traffic_warning_red_light_camera">Radar de feu rouge</string>
     <string name="attached_media_delete_confirmation">Souhaitez-vous supprimer les %1$d éléments multimédias de ce point ? Les fichiers multimédias enregistrés par l\'application et non associés à un emplacement seront également supprimés de l\'appareil.</string>
+    <string name="sort_by_nearest_to_current_location">Le plus proche de ma position actuelle</string>
 </resources>
