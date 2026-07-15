@@ -5248,4 +5248,5 @@
     <string name="attached_media">Priloženi mediji</string>
     <string name="traffic_warning_red_light_camera">Kamera za crveno svetlo</string>
     <string name="attached_media_delete_confirmation">Da li želite da obrišete %1$d medijskih stavki od ove tačke? Medijski sadržaji koje je aplikacija sačuvala i nisu priloženi nigde drugde takođe će biti obrisani sa uređaja.</string>
+    <string name="sort_by_nearest_to_current_location">Najbliže trenutnoj lokaciji</string>
 </resources>
