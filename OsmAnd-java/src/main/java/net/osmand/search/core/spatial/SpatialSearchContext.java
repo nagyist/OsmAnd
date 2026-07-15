@@ -232,7 +232,7 @@ public class SpatialSearchContext {
 			}
 		}
 		// add partial once we read all files
-		if (settings.OPTIM_READ_COMMON_WORDS_ATOMS) {
+		if (settings.OPTIM_READ_COMMON_WORDS_ATOMS || settings.OPTIM_READ_CATEGORY_WORD_ATOMS) {
 			for (SpatialSearchToken t : tokens) {
 				List<NameIndexAtom> partialCommonAtoms = t.getPartialCommonAtoms();
 				// 'haupstrasse' vs 'haupstrasse <specifier>'
@@ -256,7 +256,7 @@ public class SpatialSearchContext {
 				}
 				for (int ind = 0; ind < partialCommonAtoms.size(); ind++) {
 					NameIndexAtom atom = partialCommonAtoms.get(ind);
-					if (atom.nearbyRadius >= nearbyLimit) {
+					if (atom.nearbyRadius >= nearbyLimit && atom.elo <= settings.MIN_ELO_RATING_TO_KEEP_IN_ATOM) {
 						continue;
 					}
 					List<SpatialSearchToken> otherTokens = t.getPartialOtherTokens(ind);
@@ -835,6 +835,10 @@ public class SpatialSearchContext {
 				t.addPartialCommonAtom(atom, otherTokens, numericNotMatch);
 				return;
 			}
+		}
+		if (settings.OPTIM_READ_CATEGORY_WORD_ATOMS && t.hasPoiCategoryKeys() && atom.isPOI()) {
+			t.addPartialCommonAtom(atom, otherTokens, numericNotMatch);
+			return;
 		}
 		t.addAtom(atom);
 		if (otherTokens != null) {

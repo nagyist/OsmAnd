@@ -275,6 +275,10 @@ public class SpatialSearchToken {
 		return partialOtherCommonAtoms.get(i);
 	}
 	
+	public boolean hasPoiCategoryKeys() {
+		return !poiCategoryKeys.isEmpty();
+	}
+	
 	public boolean getPartialNumericNonMatch(int i) {
 		return partialNonNumericCommonAtoms.get(i);
 	}

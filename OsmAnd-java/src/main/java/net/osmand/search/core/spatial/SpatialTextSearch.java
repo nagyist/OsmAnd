@@ -72,6 +72,9 @@ public class SpatialTextSearch {
 //		public int[] OPTIM_LIMIT_RADIUS = new int[] {}; 
 		public int OPTIM_LIMIT_INTERSECTIONS = 30_000; // 10K (fast enough) or 50K (slow) - in new york  26,630 (3) -> 2,502 unique
 		
+		// do not filter objects with such rating from results
+		public int MIN_ELO_RATING_TO_KEEP_IN_ATOM = 0;
+		
 		// produces x10 less intersection and maintains x2-x4 ratio for DEDUPLICATE_RES
 		// by deleting embedded or duplicate boundaries in each other
 		public boolean OPTIM_DELETE_EMBEDDED_BOUNDARIES = true;
@@ -87,6 +90,7 @@ public class SpatialTextSearch {
 		// 2. If object does have other common words and they are not in query - skip it
 		// Problem search: School On Street - some schools have specifiers and some don't   
 		public boolean OPTIM_READ_COMMON_WORDS_ATOMS = true;
+		public boolean OPTIM_READ_CATEGORY_WORD_ATOMS = true;
 		public int OPTIM_READ_COMMON_WORDS_LIMIT = 2000;
 
 		
