@@ -180,31 +180,28 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		int refInd = 0;
 		for (refInd = 0; refInd < tCount; refInd++) {
 			NameIndexAtom refAtom = linearResults.get(indx * tCount + refInd);
-			if (refAtom.buildingInd >= 0) {
-				int amenityTokenInd = getTokenByOriginalOrder(refAtom.buildingInd);
+			if (refAtom.buildingOrRefInd >= 0) {
+				int amenityTokenInd = getTokenByOriginalOrder(refAtom.buildingOrRefInd);
 				if (amenityTokenInd < 0) {
-					break;
+					skipResults.put(indx, true);
+					return;
 				}
 				poiAtom = linearResults.get(indx * tCount + amenityTokenInd);
 				if (!poiAtom.isPOI()) {
 					// return but not skip! (street or poi category)
 					return;
 				}
-				if (poiAtom.id != refAtom.id) {
-					poiAtom = null;
+				if (poiAtom != null && poiAtom.id == refAtom.id && poiAtom.object instanceof Amenity as) {
+					String ref = as.getAdditionalInfo("ref");
+					if (ref != null && tokens[refInd].matchName(ref)) {
+						extraNameMatch.put(indx, ref);
+						return;
+					}
 				}
-				break;
-			}
-		}
-		if (poiAtom != null && poiAtom.object instanceof Amenity as) {
-			String ref = as.getAdditionalInfo("ref");
-			if (ref != null && tokens[refInd].matchName(ref)) {
-				extraNameMatch.put(indx, ref);
+				skipResults.put(indx, true);
 				return;
 			}
 		}
-		skipResults.put(indx, true);
-		return;
 	}
 
 	
@@ -269,9 +266,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		NameIndexAtom noBldStreet = null; 
 		for (int i = 0; i < tCount; i++) {
 			NameIndexAtom bld = linearResults.get(indx * tCount + i);
-			if (bld.buildingInd >= 0) {
+			if (bld.buildingOrRefInd >= 0) {
 				noBuildings = false;
-				int strTokenInd = getTokenByOriginalOrder(bld.buildingInd);
+				int strTokenInd = getTokenByOriginalOrder(bld.buildingOrRefInd);
 				if (strTokenInd < 0) {
 					skipResults.put(indx, true);
 					break;
@@ -280,7 +277,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				if (str.id != bld.id) {
 					continue;
 				}
-				if (str.isPOI()) {
+				if (str.isPOI() || str.isPoiCategory()) {
 					// buildind ind is reused for poi as well
 					break;
 				}
@@ -349,7 +346,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					// assign buildings
 					for (int i = 0; i < tCount; i++) {
 						NameIndexAtom bld = linearResults.get(indx * tCount + i);
-						if (bld.buildingInd >= 0 && str.id == bld.id) {
+						if (bld.buildingOrRefInd >= 0 && str.id == bld.id) {
 							bld.bldObject = bldObj;
 							// bld.name = bldObj.getName();
 						} else if(noBuildings  && str.id == bld.id) {
@@ -705,22 +702,22 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				continue;
 			}
 			// pa and a using same tokens for street & house but different streets / poi same as below
-			if (parent.tokens[i].originalOrder == a.buildingInd) {
+			if (parent.tokens[i].originalOrder == a.buildingOrRefInd) {
 				return false;
-			} else if (pa.buildingInd == token.originalOrder) {
+			} else if (pa.buildingOrRefInd == token.originalOrder) {
 				return false;
 			}
 			// don't intersect building with other street except if street-building is city
-			if ((pa.buildingInd >= 0) && a.isStreetBuilding() && !pa.isCityStreetName()) {
+			if ((pa.buildingOrRefInd >= 0) && a.isStreetBuilding() && !pa.isCityStreetName()) {
 				return false;
-			} else if ((a.buildingInd >= 0) && pa.isStreetBuilding() && !a.isCityStreetName()) {
+			} else if ((a.buildingOrRefInd >= 0) && pa.isStreetBuilding() && !a.isCityStreetName()) {
 				return false; 
 			}
 			// if poi doesn't have bbox don't intersect or add bbox! (transport stops take street names)
 			if (!ctx.settings.ALLOW_HOUSE_POI_TYPE_INTERSECTION) {
-				if ((pa.buildingInd >= 0) && a.isPOI() && a.coords.bbox31 == null) {
+				if ((pa.buildingOrRefInd >= 0) && a.isPOI() && a.coords.bbox31 == null) {
 					return false;
-				} else if ((a.buildingInd >= 0) && pa.isPOI() && pa.coords.bbox31 == null) {
+				} else if ((a.buildingOrRefInd >= 0) && pa.isPOI() && pa.coords.bbox31 == null) {
 					return false;
 				}
 			}

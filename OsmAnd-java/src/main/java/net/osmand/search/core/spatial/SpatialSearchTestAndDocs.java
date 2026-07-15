@@ -17,40 +17,36 @@ import net.osmand.util.SearchAlgorithms;
 
 
 //////////// TESTING //////////
-// TESTING Filter / group some categories: Public transport stops, City&Bike - New york?
-// TESTING Sort maps poi categories API search
-// TESTING query = "Church Catedral-Basílica de Nuestra Señora del Pilar"; -  POI_TYPE /\ POI (SYNONYMS!)
-// TEST_ALLOW_HOUSE_POI_TYPE_INTERSECTION Review if poi doesn't have bbox don't intersect or add bbox! - Shell 2 Rožňavská (test)
 // UNIT TESTING DEDUPLICATE: Review / implement similarity radius - similarityRadius = 50000 ... Route Id
 // UNIT TESTING DEDUPLICATE: Unite RouteArticle, POI by wikidata id ? - DEPTH_TO_CHECK_SAME_SEARCH_RESULTS = 20;...
 // UNIT TESTING DEDUPLICATE: Route by id 
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
-// UNIT TESTS: (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
-// UNIT TESTS: Add test on show more '2 sokak' - Show more 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak
+// UNIT TESTING: (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
+// UNIT TESTING: Add test on show more '2 sokak' - Show more 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak
 
-// TESTING OPTIM_READ_COMMON_WORDS_ATOMS !
 // UNIT TESTING: Store Poi category index (effective intersection aragon - 'Church Basílica de Nuestra Señora del Pilar')
 // UNIT TESTING: Autocheck poi subtype - Burger Mcdonald's
 // UNIT TESTING: Highlight ref sorting
-// Testing Test Size
-// Testing Autocomplete results from POI TYPE / SUB TYPE
-// TESTING access_main_tag, poi names - limit, subtypes
-// UNIT TESTING Fix 36K national park (don't index small islands > 100 POI !!!)
+// UNIT TESTING: Fix 36K national park (don't index small islands > 100 POI !!!)
 
-////////// IN PROGRESS //////////
-// REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru  
+// TESTING Autocomplete results from POI TYPE / SUB TYPE
+// TESTING access_main_tag, poi names - limit, subtypes
 // TESTING Limit results "Gate"...
 // TESTING Bank abcd (Bug New filter?) Test ???
+// TESTING Find Refs of amenity D18 
+// TESTING REGENERATE World basemap
+// TESTING - Abbreviations.isCommonSkipOtherCnt ???  Tour Eiffel don't count extra word (common) - test...!!
 
-// TODO REGENERATE World basemap
-// TODO Find Refs of amenity D18 + Intersect Category and ref
-// TODO Tour Eiffel don't count extra word (common)
+////////// IN PROGRESS //////////
+
+// REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // TODO mcdonalds fast food (amst)
+// TODO SUGGEST_SEARCH_POI_CATEGORY_WITH_REF + Intersect Category and ref
 
-// TODO Fixes Auto tests - Slow analysis (Auto test New york)
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
 // TODO ANALYZE: too many wiki places on streets?
+// TODO Fixes Auto tests - Slow analysis (Auto test New york)
 // TODO highway=services (Not index)
 
 // TO DO Ivan
@@ -61,15 +57,16 @@ import net.osmand.util.SearchAlgorithms;
 
 // TO DO Gateway
 // TODO INSPECTOR: doesn't show suffixes
-// TODO INDEX: Find POI Categories translations / synonyms (WEB) - Стоматол., Dentist, Stomatology, Basilica (?)
+// TODO INDEX: Find POI Categories translations / synonyms (+WEB) - Стоматол., Dentist, Stomatology, BASILICA (!!?)
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
 // TODO REVIEW: Analyze Abbrefvations / common skip (abbrevations 1st=first) 
 
 // TO DO - RZR
-// TODO WEB: POI Categories + top poi categories
-// TODO WEB: display results std way: house, interpolation results, poi...
+// TESTING WEB: POI Categories + top poi categories ...
+// TESTING WEB: display results std way: house, street, city, poi...
+// TODO WEB: Highlight ref matching, interpolation (somehow) with braces?
 // TODO WEB: Multithread pool, Monitor / time & memory optimize memory?
-// TODO WEB: Highlight ref matching (somehow) with braces?
+
 // TODO ANDROID: Integrate (include regions.ocbf) on client
 // TODO ANDROID: Progress / cancel
 // TODO ANDROID: memory performance 
@@ -263,13 +260,16 @@ public class SpatialSearchTestAndDocs {
 //		query = "Jugendheim Malbun";
 
 		pattern = "Netherlands_";
+		location = new LatLon(52.2827, 4.8601);
 		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
 //		query = "11-NUON leons";
-		pattern2 = "Gb_england_south-ea";
-		location = new LatLon(52.2827, 4.8601);
-		query = "Gate D18";
+//		pattern2 = "Gb_england";
+//		query = "Gate D18";
+//		query = "mcdonalds";
+//		query = "mcdonalds fast food"; // TODO 2807400942 didn't return close mcdonalds
+		
  
 		
 //		pattern = "Turkey_";
@@ -405,7 +405,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "France_ile-de-france";
 //		location = new LatLon(40, 5);
-//		query = "Tower Eiffel"; // Tour Eiffel
+//		query = "Eiffel"; // Tour Eiffel, Tower Eiffel, Eiffel
 //		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
 //		query = "Rue Jean Poulmarch 17bis"; //  17bis OK, 17 OK, 17 BIS - OK 'Rue Jean Poulmarch 17;17 bis' 
 //		query = "Dieu 8-bis"; // 'Rue Dieu 8 bis' , '8-bis', '8 bis'

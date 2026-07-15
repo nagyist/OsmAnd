@@ -276,7 +276,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		}
 		
 		public boolean extraNameRelated() {
-			return atom.buildingInd >= 0;
+			return atom.buildingOrRefInd >= 0;
 		}
 		
 		public int typeOrder(int min) {

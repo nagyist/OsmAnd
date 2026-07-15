@@ -61,6 +61,7 @@ public class SpatialTextSearch {
 		public boolean SEARCH_POI_INTERSECTIONS = true;
 		public boolean SEARCH_POI_CATEGORIES = true;
 		public boolean SEARCH_POI_REF = true;
+		public boolean SUGGEST_SEARCH_POI_CATEGORY_WITH_REF = true;
 		
 		// performance tested (we need to turn on for <POI + Address> search)
 		public boolean ALLOW_HOUSE_POI_TYPE_INTERSECTION = true;
