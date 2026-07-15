@@ -5178,4 +5178,5 @@
     <string name="route_calculation_review_maps">Térképek áttekintése</string>
     <string name="traffic_warning_red_light_camera">Piroson áthaladást figyelő kamera</string>
     <string name="attached_media_delete_confirmation">Biztosan töröl %1$d médiaelemet erről a pontról? Az alkalmazás által tárolt és máshová nem csatolt médiafájlok is törlődni fognak az eszközről.</string>
+    <string name="sort_by_nearest_to_current_location">Legközelebbi a jelenlegi helyhez</string>
 </resources>
