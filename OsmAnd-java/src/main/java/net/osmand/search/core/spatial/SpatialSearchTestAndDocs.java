@@ -32,18 +32,20 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: Store Poi category index (effective intersection aragon - 'Church Basílica de Nuestra Señora del Pilar')
 // UNIT TESTING: Autocheck poi subtype - Burger Mcdonald's
 // UNIT TESTING: Highlight ref sorting
-
-////////// IN PROGRESS //////////
-// TODO REGENERATE World basemap
-// REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru  
-// UNIT TESTING Fix 36K national park (don't index small islands > 100 POI !!!)
-// REVIEW AUTO TESTS: Auto tests - Slow analysis (Auto test New york)
-// TESTING access_main_tag, poi names - limit, subtypes
-
 // Testing Test Size
 // Testing Autocomplete results from POI TYPE / SUB TYPE
+// TESTING access_main_tag, poi names - limit, subtypes
+// UNIT TESTING Fix 36K national park (don't index small islands > 100 POI !!!)
 
-// TODO Bank abc (Bug New filter?) 
+////////// IN PROGRESS //////////
+// REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru  
+
+// TODO REGENERATE World basemap
+// TODO Limit results "Gate"
+// TODO Find Refs of amenity D18
+
+// TODO Fixes Auto tests - Slow analysis (Auto test New york)
+// TODO Bank abc (Bug New filter?) Test 
 
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
 // TODO ANALYZE: too many wiki places on streets?
@@ -244,6 +246,8 @@ public class SpatialSearchTestAndDocs {
 
 //		pattern = "Liechtenstein_europe.obf";
 //		query = "Vaduz Lettstrasse";
+//		query = "Fast food"; // "Burger Fast food";
+//		query = "Bank wheelchair"; // "Burger Fast food";
 //		query = "Burger Mcdonald's"; // Test 2 match
 //		query = "Vegan Mai Thai"; // Test 3 match
 //		query = "Vegan"; // Test Vegan results from subtype
@@ -256,12 +260,13 @@ public class SpatialSearchTestAndDocs {
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 
-		pattern = "Netherlands_";
+//		pattern = "Netherlands_";
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
 //		query = "11-NUON leons";
-		query = "Gate D18"; 
+//		query = "Gate D18";
+ 
 		
 //		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // OK
@@ -278,13 +283,18 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-//		pattern = "Ukraine_";
+		pattern = "Ukraine_";
+		
 		// poi types
-//		location = new LatLon(50.439, 30.516);
+		location = new LatLon(50.436423, 30.508097);
 //		settings.SEARCH_POI = false;
 //		settings.DEV_PRINT_POI_CAT_LIMIT = 1000; 
 //		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 10;
+//		query = "Cafe Fuel";
+		// Bank ATM TODO
+		query = "atm bank"; 
 		
+//		query = "Cafe Fuel";
 //		query = "bank приватбанк"; // прив.
 //		query = "при.";
 //		query = "Cafe";
@@ -366,7 +376,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "little creek"; // little creek
 		// Result 4 - 40.8407, -74.0954 [[4th, 8] Building 2 4th Street (26238417818) 40.8441 -74.0910 , [ave, paterson] STREET_TYPE Paterson Avenue (651531238) 40.8374 -74.0997 ]
 		
-//		query = "2nd street"; // poi types '2 street' - TODO broken
+//		query = "2nd street"; // poi types '2 street' - broken
 //		query = "blvd"; //  unit test  'blvd', 'boulevard' - 248280132
 		
 //		pattern = "Us_alaska_"; // special test slow 
