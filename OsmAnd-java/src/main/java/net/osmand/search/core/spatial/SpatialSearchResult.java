@@ -105,6 +105,22 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		return null;
 	}
 	
+	public List<MapObject> getAllObjects() {
+		if (objs.isEmpty()) {
+			return new ArrayList<>();
+		}
+		List<MapObject> result = new ArrayList<>();
+		for (SpatialSearchResultRef ref : objs) {
+			if (ref.atom.bldObject != null) {
+				result.add(ref.atom.bldObject);
+			} 
+			if (ref.atom.object != null) {
+				result.add(ref.atom.object);
+			}
+		}
+		return result;
+	}
+	
 	public List<MapObject> getObjects() {
 		List<MapObject> o = new ArrayList<>();
 		for (SpatialSearchResultRef r : objs) {
@@ -295,6 +311,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			}
 			return atom.simpleName(words.toString()); 
 		}
+		
+		public NameIndexAtom getNameIndexAtom() {
+			return atom;
+		}
 	}
 	
 	public int getObjectsSize() {
@@ -469,6 +489,5 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		}
 		return MapUtils.createShortLinkString(loc.getLatitude(), loc.getLongitude(), zoom);
 	}
-
 }
 	
