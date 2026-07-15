@@ -5251,4 +5251,5 @@
     <string name="attached_media">Приложени медији</string>
     <string name="traffic_warning_red_light_camera">Камера за црвено светло</string>
     <string name="attached_media_delete_confirmation">Да ли желите да обришете %1$d медијских ставки од ове тачке? Медијски садржаји које је апликација сачувала и нису приложени нигде другде такође ће бити обрисани са уређаја.</string>
+    <string name="sort_by_nearest_to_current_location">Најближе тренутној локацији</string>
 </resources>
