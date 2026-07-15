@@ -49,7 +49,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 					surplusWords++;
 				}
 			}
-			if (atom.matchExtraWord > 0) {
+			if (atom.matchExtraWord != 0) {
 				surplusWords += atom.matchExtraWord;
 			}
 			SpatialSearchToken token = parent.tokens[i];
@@ -255,11 +255,14 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
 	@Override
 	public String toString() {
+		String r = "";
 		if (preciseLatlon != null) {
-			return String.format("%.4f, %.4f %s", preciseLatlon.getLatitude(), preciseLatlon.getLongitude(),
-					objs.toString());
+			r+=String.format("%.4f, %.4f ", preciseLatlon.getLatitude(), preciseLatlon.getLongitude());
 		}
-		return objs.toString();
+		if (extraNameMatch != null) {
+			r += extraNameMatch + " ";
+		}
+		return r + objs.toString();
 	}
 	
 	
@@ -270,6 +273,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		
 		public SpatialSearchResultRef(NameIndexAtom atom) {
 			this.atom = atom;
+		}
+		
+		public boolean extraNameRelated() {
+			return atom.buildingInd >= 0;
 		}
 		
 		public int typeOrder(int min) {

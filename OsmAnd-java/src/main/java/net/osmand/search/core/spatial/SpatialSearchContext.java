@@ -266,7 +266,7 @@ public class SpatialSearchContext {
 							otherToken.addAtom(new NameIndexAtom(atom));
 						}
 					}
-					addBuildingAtoms(t, tokens, otherTokens, t.getPartialNumericNonMatch(ind), atom);
+					addBuildingRefAtoms(t, tokens, otherTokens, t.getPartialNumericNonMatch(ind), atom);
 				}
 				t.clearPartialAtoms();
 			}
@@ -846,7 +846,7 @@ public class SpatialSearchContext {
 				otherToken.addAtom(new NameIndexAtom(atom));
 			}
 		}
-		addBuildingAtoms(t, allTokens, otherTokens, numericNotMatch, atom);
+		addBuildingRefAtoms(t, allTokens, otherTokens, numericNotMatch, atom);
 
 	}
 
@@ -872,19 +872,27 @@ public class SpatialSearchContext {
 		return true;
 	}
 
-	private void addBuildingAtoms(SpatialSearchToken t, List<SpatialSearchToken> allTokens,
-			List<SpatialSearchToken> otherTokens, boolean numericNotMatch, NameIndexAtom atom) {
+	private void addBuildingRefAtoms(SpatialSearchToken t, List<SpatialSearchToken> allTokens,
+			List<SpatialSearchToken> otherTokens, boolean numericNotMatchObject, NameIndexAtom atom) {
 		boolean street = atom.type == SpatialSearchToken.STREET_TYPE;
-		// numericNotMatch - require full street match to assign buildings 
-		if (!numericNotMatch && street && settings.SEARCH_BUILDINGS) {
-			for (SpatialSearchToken token : allTokens) {
-				// assign building to word token isNumber2Letters (number + 1 char) + possible buildings
-				if (t != token && token.likelyPartOfBuilding()
-						&& (otherTokens == null || !otherTokens.contains(token))) {
-					NameIndexAtom atomB = new NameIndexAtom(atom.name, SpatialSearchToken.BUILDING_TYPE, atom.id, atom.parentid, atom.object,
-							atom.cityAsStreet, atom.otherWordsCnt, atom.otherFoundCnt, atom.coords, atom.nearbyRadius, t.originalOrder);
+		boolean poi = atom.type == SpatialSearchToken.POI_CATEGORY_TYPE || atom.type == SpatialSearchToken.POI_TYPE;
+		// numericNotMatch object name contains numeric - require full street (poi) name match to assign buildings
+		if (numericNotMatchObject) {
+			return;
+		}
+		if (!(street && settings.SEARCH_BUILDINGS) && !(poi && settings.SEARCH_POI_REF)) {
+			return;
+		}
+		for (SpatialSearchToken token : allTokens) {
+			// assign building to word token isNumber2Letters (number + 1 char) + possible
+			if (t != token && (otherTokens == null || !otherTokens.contains(token))) {
+				if ((token.likelyPartOfBuilding() && street) || (token.likelyRef() && poi)) {
+					NameIndexAtom atomB = new NameIndexAtom(atom.name, SpatialSearchToken.BUILDING_TYPE, atom.id,
+							atom.parentid, atom.object, atom.cityAsStreet, atom.otherWordsCnt, atom.otherFoundCnt,
+							atom.coords, atom.nearbyRadius, t.originalOrder);
 					token.addAtom(atomB);
 				}
+
 			}
 		}
 	}

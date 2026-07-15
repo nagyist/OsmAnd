@@ -146,7 +146,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		ctx.stats.sub2LoadObjectsBldTime.start();
 		loadObjects(ctx);
 		List<SpatialSearchToken> missingTokens = getMissingTokens(ctx);
-		if (ctx.settings.ALLOW_SEARCH_POI_REF) {
+		if (ctx.settings.SEARCH_POI_REF) {
 			for (int indx = 0; indx < getCombinations(); indx++) {
 				if (!skipResults.contains(indx)) {
 					checkAmenityRef(missingTokens, indx);
@@ -176,22 +176,35 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 
 	private void checkAmenityRef(List<SpatialSearchToken> missingTokens, int indx) {
-		NameIndexAtom a = null;
-		String ref = null;
-		for (int i = 0; i < tCount; i++) {
-			a = linearResults.get(indx * tCount + i);
-			if (a.object instanceof Amenity as) {
-				ref = as.getAdditionalInfo("ref");
+		NameIndexAtom poiAtom = null;
+		int refInd = 0;
+		for (refInd = 0; refInd < tCount; refInd++) {
+			NameIndexAtom refAtom = linearResults.get(indx * tCount + refInd);
+			if (refAtom.buildingInd >= 0) {
+				int amenityTokenInd = getTokenByOriginalOrder(refAtom.buildingInd);
+				if (amenityTokenInd < 0) {
+					break;
+				}
+				poiAtom = linearResults.get(indx * tCount + amenityTokenInd);
+				if (!poiAtom.isPOI()) {
+					// return but not skip! (street or poi category)
+					return;
+				}
+				if (poiAtom.id != refAtom.id) {
+					poiAtom = null;
+				}
 				break;
 			}
 		}
-		if (ref != null) {
-			for (SpatialSearchToken t : missingTokens) {
-				if (t.matchName(ref)) {
-					a.matchExtraWord++;
-				}
+		if (poiAtom != null && poiAtom.object instanceof Amenity as) {
+			String ref = as.getAdditionalInfo("ref");
+			if (ref != null && tokens[refInd].matchName(ref)) {
+				extraNameMatch.put(indx, ref);
+				return;
 			}
 		}
+		skipResults.put(indx, true);
+		return;
 	}
 
 	
@@ -266,6 +279,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				NameIndexAtom str = linearResults.get(indx * tCount + strTokenInd);
 				if (str.id != bld.id) {
 					continue;
+				}
+				if (str.isPOI()) {
+					// buildind ind is reused for poi as well
+					break;
 				}
 				if (bldCheckMap == null) {
 					bldCheckMap = new HashMap<>();

@@ -43,7 +43,7 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING Bank abcd (Bug New filter?) Test ???
 
 // TODO REGENERATE World basemap
-// TODO Find Refs of amenity D18
+// TODO Find Refs of amenity D18 + Intersect Category and ref
 // TODO Tour Eiffel don't count extra word (common)
 // TODO mcdonalds fast food (amst)
 
@@ -263,11 +263,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "Jugendheim Malbun";
 
 		pattern = "Netherlands_";
-//		query = "1186RZ Logger 324D Amstelveen";
+		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
 //		query = "11-NUON leons";
 		pattern2 = "Gb_england_south-ea";
+		location = new LatLon(52.2827, 4.8601);
 		query = "Gate D18";
  
 		

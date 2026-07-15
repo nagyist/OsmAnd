@@ -111,6 +111,10 @@ public class SpatialSearchToken {
 	public boolean likelyPartOfBuilding() {
 		return Abbreviations.likelyPartOfBuilding(word, bldWordSplit);
 	}
+	
+	public boolean likelyRef() {
+		return Abbreviations.likelyPartOfRef(word, bldWordSplit);
+	}
 
 	public CollatorStringMatcher getMainCollator() {
 		return collatorMain;
