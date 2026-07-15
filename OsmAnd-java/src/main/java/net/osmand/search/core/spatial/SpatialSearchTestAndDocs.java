@@ -39,15 +39,16 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru  
+// TESTING Limit results "Gate"...
+// TESTING Bank abcd (Bug New filter?) Test ???
 
 // TODO REGENERATE World basemap
-// TODO Limit results "Gate"...
 // TODO Find Refs of amenity D18
-// TODO Tour Eiffel don't count extra word
+// TODO Tour Eiffel don't count extra word (common)
+// TODO mcdonalds fast food (amst)
 
 // TODO Fixes Auto tests - Slow analysis (Auto test New york)
-// TODO Bank abc (Bug New filter?) Test 
-
+// TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
 // TODO ANALYZE: too many wiki places on streets?
 // TODO highway=services (Not index)
@@ -56,7 +57,6 @@ import net.osmand.util.SearchAlgorithms;
 // TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
 // TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Check)
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
-// TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
 
 // TO DO Gateway
@@ -75,8 +75,9 @@ import net.osmand.util.SearchAlgorithms;
 // TODO ANDROID: memory performance 
 
 /////////////// EXTRA FEATURES ///////////////
-// TODO Use new poi name index to find by poi type
-// TODO Optimize sorting (before load) use elo index and poi categories
+// TODO Investigate do we need to store poi types in name index (covered-yes)
+//      Some categories go to some maps and not others (Paris cafe) 
+// TODO Sorting before load objects (use elo and other buildings?) and limit results
 // TODO Suggestion based on common suffixes
 // TODO Store and test conscription number for some cities - issue (RZR)
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
@@ -261,12 +262,13 @@ public class SpatialSearchTestAndDocs {
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 
-//		pattern = "Netherlands_";
+		pattern = "Netherlands_";
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
 //		query = "11-NUON leons";
-//		query = "Gate D18";
+		pattern2 = "Gb_england_south-ea";
+		query = "Gate D18";
  
 		
 //		pattern = "Turkey_";
@@ -284,10 +286,10 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-		pattern = "Ukraine_";
+//		pattern = "Ukraine_";
 		
 		// poi types
-		location = new LatLon(50.436423, 30.508097);
+//		location = new LatLon(50.436423, 30.508097);
 //		settings.SEARCH_POI = false;
 //		settings.DEV_PRINT_POI_CAT_LIMIT = 1000; 
 //		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 10;
@@ -400,9 +402,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Cannaregio 539D Campo Saffa";
 //		query = "Campo Saffa";
 		
-		pattern = "France_ile-de-france";
+//		pattern = "France_ile-de-france";
 //		location = new LatLon(40, 5);
-		query = "Tower Eiffel"; // TODO Tour Eiffel
+//		query = "Tower Eiffel"; // Tour Eiffel
 //		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
 //		query = "Rue Jean Poulmarch 17bis"; //  17bis OK, 17 OK, 17 BIS - OK 'Rue Jean Poulmarch 17;17 bis' 
 //		query = "Dieu 8-bis"; // 'Rue Dieu 8 bis' , '8-bis', '8 bis'

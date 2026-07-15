@@ -2,7 +2,6 @@ package net.osmand.search.core.spatial;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,7 +24,6 @@ import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
-import net.osmand.search.core.spatial.SpatialPoiSearch.SpatialPoiType;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.MapUtils;
@@ -52,7 +50,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	int limitIntersection = -1;
 
 	TIntObjectHashMap<Boolean> skipResults = new TIntObjectHashMap<>();
-	Map<Integer, LatLon> preciseLocations = new HashMap<Integer, LatLon>();
+	Map<Integer, LatLon> preciseLocations = new HashMap<>();
+	Map<Integer, String> extraNameMatch = new HashMap<>();
 	List<SpatialSearchResult> finalResult = null;
 	
 	List<String> tempBuildNames1 = new ArrayList<String>();
@@ -243,9 +242,6 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 //						insLoc.getLongitude(), first.toString(), second.toString());
 			}
 			if (insLoc != null && !first.isCityStreetName() && !second.isCityStreetName()) {
-				if (second.object.getName().equals("Cannaregio")) {
-					System.out.println(first + " " + second + " " + insLoc);
-				}
 				preciseLocations.put(indx, insLoc);
 			} else {
 				skipResults.put(indx, true);
@@ -345,6 +341,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					}
 					if (bldObj.isInterpolation()) {
 						preciseLocations.put(indx, bldObj.getLocation(bldObj.interpolation(bldName)));
+						extraNameMatch.put(indx, bldName);
 					}
 				}
 			}
@@ -483,7 +480,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		finalResult = new ArrayList<>(tileIds.size());
 		for (int i = 0; i < tileIds.size(); i++) {
 			if (!skipResults.containsKey(i)) {
-				finalResult.add(new SpatialSearchResult(this, i, preciseLocations.get(i)));
+				finalResult.add(new SpatialSearchResult(this, i, preciseLocations.get(i), extraNameMatch.get(i)));
 			}
 		}		
 		finalResult = sortResults(ctx, finalResult, deduplicate);
