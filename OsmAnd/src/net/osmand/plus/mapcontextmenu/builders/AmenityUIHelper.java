@@ -244,14 +244,7 @@ public class AmenityUIHelper extends MenuBuilder {
 	}
 
 	private void initVariables() {
-		poiCategory = null;
-		String typeTag = additionalInfo.get(TYPE);
-		if (!Algorithms.isEmpty(typeTag)) {
-			poiCategory = MapPoiTypes.getDefault().getPoiCategoryByName(typeTag);
-		}
-		if (poiCategory == null) {
-			poiCategory = MapPoiTypes.getDefault().getOtherPoiCategory();
-		}
+		poiCategory = additionalInfo.getCategory();
 		subtype = additionalInfo.get(SUBTYPE);
 		poiTypes = app.getPoiTypes();
 		cuisineRow = null;

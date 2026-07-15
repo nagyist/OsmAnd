@@ -6,6 +6,7 @@ import static net.osmand.shared.gpx.GpxUtilities.*;
 
 import net.osmand.osm.AbstractPoiType;
 import net.osmand.osm.MapPoiTypes;
+import net.osmand.osm.PoiCategory;
 import net.osmand.osm.PoiType;
 import net.osmand.shared.util.MergeLocalizedTagsAlgorithm;
 import net.osmand.shared.util.PoiAdditionalLangLookup;
@@ -58,7 +59,7 @@ public class AdditionalInfoBundle {
 				}
 				if (!HIDDEN_EXTENSIONS.contains(key) && (Algorithms.isEmpty(customHiddenExtensions)
 						|| !customHiddenExtensions.contains(key))) {
-					result.put(key, get(key));
+					result.put(key, get(origKey));
 				}
 			}
 			filteredAdditionalInfo = result;
@@ -88,6 +89,20 @@ public class AdditionalInfoBundle {
 			return false;
 		}
 		return !Amenity.NAME.equals(key);
+	}
+
+	public PoiCategory getCategory() {
+		PoiCategory poiCategory = null;
+		if (additionalInfo != null) {
+			String typeTag = additionalInfo.get(TYPE);
+			if (!Algorithms.isEmpty(typeTag)) {
+				poiCategory = MapPoiTypes.getDefault().getPoiCategoryByName(typeTag);
+			}
+			if (poiCategory == null) {
+				poiCategory = MapPoiTypes.getDefault().getOtherPoiCategory();
+			}
+		}
+		return poiCategory;
 	}
 
 	public boolean containsAny(String... keys) {
