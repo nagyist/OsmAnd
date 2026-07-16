@@ -7,13 +7,11 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,13 +19,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -45,11 +40,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import net.osmand.plus.R
+import net.osmand.plus.widgets.popup.OsmAndDropdownMenu
+import net.osmand.plus.widgets.popup.OsmAndDropdownMenuColors
+import net.osmand.plus.widgets.popup.OsmAndDropdownMenuOption
 
 class QuickSearchChipsToolbarView @JvmOverloads constructor(
 	context: Context,
@@ -331,51 +328,29 @@ private fun MenuChip(
 			leadingIconId = iconId,
 			trailingIconId = R.drawable.ic_action_arrow_drop_down
 		)
-		DropdownMenu(
+		val menuOptions = options.map { option ->
+			OsmAndDropdownMenuOption(
+				value = option.id,
+				title = stringResource(option.titleId),
+				selected = option.selected,
+				showDividerAfter = option.id == dividerAfterOptionId
+			)
+		}
+		OsmAndDropdownMenu(
 			expanded = enabled && menuExpanded,
 			onDismissRequest = { onExpandedChange(false) },
-			modifier = Modifier.background(listBackground),
-			offset = DpOffset(x = 0.dp, y = 4.dp)
-		) {
-			if (menuTitleId != null) {
-				Text(
-					text = stringResource(menuTitleId),
-					color = secondaryTextColor,
-					fontSize = 16.sp,
-					modifier = Modifier.padding(start = 24.dp, top = 12.dp, end = 24.dp, bottom = 8.dp)
-				)
-			}
-			options.forEach { option ->
-				Row(
-					modifier = Modifier
-						.fillMaxWidth()
-						.defaultMinSize(minHeight = 56.dp)
-						.clickable { onOptionSelected(option.id) }
-						.padding(start = 24.dp, end = 24.dp),
-					verticalAlignment = Alignment.CenterVertically
-				) {
-					RadioButton(
-						selected = option.selected,
-						onClick = null,
-						colors = RadioButtonDefaults.colors(selectedColor = activeColor)
-					)
-					Spacer(modifier = Modifier.width(24.dp))
-					Text(
-						text = stringResource(option.titleId),
-						color = textColor,
-						fontSize = 18.sp
-					)
-				}
-				if (option.id == dividerAfterOptionId) {
-					Spacer(
-						modifier = Modifier
-							.fillMaxWidth()
-							.height(1.dp)
-							.background(dividerColor)
-					)
-				}
-			}
-		}
+			options = menuOptions,
+			onOptionSelected = onOptionSelected,
+			colors = OsmAndDropdownMenuColors(
+				background = listBackground,
+				divider = dividerColor,
+				text = textColor,
+				secondaryText = secondaryTextColor,
+				icon = textColor,
+				selected = activeColor
+			),
+			title = menuTitleId?.let { stringResource(it) }
+		)
 	}
 }
 
