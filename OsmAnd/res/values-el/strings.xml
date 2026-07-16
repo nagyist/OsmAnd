@@ -5065,4 +5065,6 @@
     <string name="rendering_attr_hideTidalFlats_description">Απόκρυψη λασπότοπων</string>
     <string name="rendering_attr_OSMMapperAssistantFixme_name">Ετικέτες fixme</string>
     <string name="rendering_attr_OSMMapperAssistantFixme_description">Εμφάνιση ετικετών fixme</string>
+    <string name="sort_by_nearest_to_current_location">Κοντινότερο στην τρέχουσα τοποθεσία</string>
+    <string name="attached_media_delete_confirmation">Διαγραφή %1$d πολυμέσων από αυτό το σημείο; Πολυμέσα που έχουν αποθηκευτεί από την εφαρμογή και δεν χρησιμοποιούνται αλλού, θα διαγραφούν επίσης από τη συσκευή.</string>
 </resources>
