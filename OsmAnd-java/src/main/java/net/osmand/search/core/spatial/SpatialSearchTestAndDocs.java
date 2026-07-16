@@ -43,10 +43,15 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING DISABLED SUGGEST_SEARCH_POI_CATEGORY_WITH_REF + Intersect Category and ref
 // TESTING mcdonalds fast food (amst)
 
+// 39.741207, -8.801283 - ("Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal")
+// TODO SLOW Analysis Rue de la
+// FIXME we could analyze poi comes from category and don't add on common at all?
+
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
 // TODO ANALYZE: too many wiki places on streets?
-// TODO Fixes Auto tests - Slow analysis (Auto test New york)
+// 
+// TODO Auto test New york, France, Italy (Slow ?)
 // TODO highway=services (Not index)
 
 // TO DO Ivan
@@ -180,7 +185,7 @@ public class SpatialSearchTestAndDocs {
 		// Weberstraße (33164748) 49.2041 10.7035,  Von-Weber-Straße (4648613942) 49.5609 10.8685
 //		query = "Weber Straße"; // +4648613942, +33164748
 //		query = "WeberStraße";  // +33164748, +4648613942
-//		query = "Von Weberstraße"; // +4648613942
+		query = "Von Weberstraße"; // +4648613942
 //		location = new LatLon(48.8315, 9.3155 );
 //		query = "53 Langestraße Waiblingen"; // OK - 48.8315 9.3155 !
 //		query = "69 Daimler Straße Stuttgart"; //  (Daimlerstraße) 107868593 48.8015 9.2224 // 69
@@ -239,7 +244,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "11954 East Hill Road Pine City";
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
-//		query = "PA 75 27193"; //'PA75'  Data 'PA-75', 27193  4472676432
+		query = "PA 75 27193"; //'PA75'  Data 'PA-75', 27193  4472676432
+		// FIXME
 //		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75' 
 		// data "PA 75" - see "M-2, 2 M" example
 
@@ -259,8 +265,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 
-		pattern = "Netherlands_";
-		location = new LatLon(52.2827, 4.8601);
+//		pattern = "Netherlands_";
+//		location = new LatLon(52.2827, 4.8601);
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
@@ -269,7 +275,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Gate D18"; // gate d18, "gate d-18"
 //		query = "mcdonalds"; 
 //		query = "mcdonalds fast food "; // 2807400942 didn't return with many maps LiVE TEST mcdonalds
-		query = "vegan cafe"; // vegan-no Popov exclude
+//		query = "vegan cafe"; // vegan-no Popov exclude
 		
  
 		
@@ -297,7 +303,9 @@ public class SpatialSearchTestAndDocs {
 //		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 10;
 //		query = "Cafe Fuel";
 //		query = "atm bank"; 
-//		query = "Aquarium"; 
+//		query = "Aquarium";
+//		query = "Fuel diesel";
+		
 		
 //		query = "Cafe Fuel";
 //		query = "bank приватбанк"; // прив.
@@ -362,7 +370,6 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		pattern = "Us_new-"; 
-		
 //		location = new LatLon(40.78035, -73.96572); // central park
 //		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
@@ -404,7 +411,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Cannaregio 539D Campo Saffa";
 //		query = "Campo Saffa";
 		
-//		pattern = "France_ile-de-france";
+		pattern = "France_ile-de-france";
+//		pattern = "France_";
 //		location = new LatLon(40, 5);
 //		query = "Eiffel"; // Tour Eiffel, Tower Eiffel, Eiffel
 //		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
@@ -412,8 +420,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Dieu 8-bis"; // 'Rue Dieu 8 bis' , '8-bis', '8 bis'
 		// too many results
 //		query = "rue de l'eglise"; // specific search - "rue de l'eglise", non specific "rue de"
-//		query = "rue de la";
-//		query = "rue la";
+//		query = "rue de la fen."; // all strets
+		query = "de la"; // "de la", "rue de la" only common words + high rating
+		// FIXME no intersection in that case
 //		query = "rû bas du rue";
 
 		

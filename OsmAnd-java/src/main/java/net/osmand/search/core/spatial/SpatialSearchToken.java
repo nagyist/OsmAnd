@@ -60,9 +60,8 @@ public class SpatialSearchToken {
 	Set<Integer> deletedAtoms = new HashSet<Integer>();
 	
 	// partial place holder
-	List<NameIndexAtom> partialCommonAtoms = new ArrayList<>();
-	List<List<SpatialSearchToken>> partialOtherCommonAtoms = new ArrayList<>();
-	List<Boolean> partialNonNumericCommonAtoms = new ArrayList<>();
+	List<PartialMatch> partialExactMatch = new ArrayList<>();
+	List<PartialMatch> partialMatch = new ArrayList<>();
 
 	CollatorStringMatcher collatorMain;
 	CollatorStringMatcher noDotCollatorMain;
@@ -72,8 +71,11 @@ public class SpatialSearchToken {
 	
 	int mainNumber = -1;
 	CollatorStringMatcher[] otherMatch;
-
 	
+	public record PartialMatch(NameIndexAtom atom, List<SpatialSearchToken> other, boolean nonNumericMatch) {
+		
+	}
+
 
 	public SpatialSearchToken(int MIN_CHAR_INCOMPLETE, String ow, String original, int order) {
 		this.MIN_CHAR_INCOMPLETE = MIN_CHAR_INCOMPLETE;
@@ -256,36 +258,20 @@ public class SpatialSearchToken {
 		if ((noDotCollatorMain == null ? collatorMain : noDotCollatorMain).matches(name)) {
 			return true;
 		}
-		// wordAligned without space but input name with space
-		// query 'weberstrasse' matches 'weber straße': works for popular suffixes
-		int space = name.indexOf(' ');
-		if (space != -1) {
-			String namePrefix = SearchAlgorithms.alignChars(name.substring(0, space));
-			if (wordAligned.length() > space && collatorMain.getCollator().equals(namePrefix, wordAligned.substring(0, space))) {
-				if (!namePrefix.equals(wordSpacePrefixCache)) {
-					wordSpacePrefixCache = namePrefix;
-					// could be some issues if number of letter do not match
-					wordSpaceCollatorSuffix = new CollatorStringMatcher(word.substring(wordSpacePrefixCache.length()),
-							StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
-				}
-				if (wordSpaceCollatorSuffix.matches(name.substring(space + 1))) {
-					return true;
-				}
-			}
-		}
 		return false;
 	}
 	
-	public List<NameIndexAtom> getPartialCommonAtoms() {
-		return partialCommonAtoms;
+	public List<PartialMatch> getPartialExactMatch() {
+		return partialExactMatch;
+	}
+	
+	public List<PartialMatch> getPartialMatch() {
+		return partialMatch;
 	}
 	
 	public void clearPartialAtoms() {
-		partialCommonAtoms.clear();
-	}
-	
-	public List<SpatialSearchToken> getPartialOtherTokens(int i) {
-		return partialOtherCommonAtoms.get(i);
+		partialExactMatch.clear();
+		partialMatch.clear();
 	}
 	
 	public boolean hasPoiCategoryKeys() {
@@ -301,15 +287,12 @@ public class SpatialSearchToken {
 		return false;
 	}
 	
-	
-	public boolean getPartialNumericNonMatch(int i) {
-		return partialNonNumericCommonAtoms.get(i);
+	public void addPartialCommonAtom(NameIndexAtom atom, List<SpatialSearchToken> otherTokens, boolean numericNotMatch) {
+		partialExactMatch.add(new PartialMatch(atom, otherTokens, numericNotMatch));
 	}
 	
-	public void addPartialCommonAtom(NameIndexAtom atom, List<SpatialSearchToken> otherTokens, boolean numericNotMatch) {
-		partialCommonAtoms.add(atom);
-		partialOtherCommonAtoms.add(otherTokens);
-		partialNonNumericCommonAtoms.add(numericNotMatch);
+	public void addPartialOtherAtom(NameIndexAtom atom, List<SpatialSearchToken> otherTokens, boolean numericNotMatch) {
+		partialMatch.add(new PartialMatch(atom, otherTokens, numericNotMatch));
 	}
 	
 	String[] matchSplitName(String name) {
