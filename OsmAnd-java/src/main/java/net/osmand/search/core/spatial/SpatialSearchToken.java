@@ -51,7 +51,8 @@ public class SpatialSearchToken {
 	String wordNoDot;
 	Set<String> bldWordSplit;
 	
-	Set<String> poiCategoryKeys = new HashSet<>();
+	Set<String> poiCategoryKeysToAutocomplete = new HashSet<>();
+	Set<Integer> poiCategoryIds = new HashSet<>();
 	List<NameIndexAtom> atoms = new ArrayList<>();
 	TLongObjectHashMap<NameIndexAtom> index = new TLongObjectHashMap<>();
 	HashQuadTree<Integer> quadTree = new HashQuadTree<>(16);
@@ -136,8 +137,8 @@ public class SpatialSearchToken {
 			@Override
 			public boolean matchKey(String key) {
 				stats.sub1MatchTime.start();
-				if (key.startsWith(NameIndexReader.POI_CATEGORY_PREFIX) && poiCategoryKeys.size() > 0) {
-					for (String poiCatKey : poiCategoryKeys) {
+				if (key.startsWith(NameIndexReader.POI_CATEGORY_PREFIX) && poiCategoryKeysToAutocomplete.size() > 0) {
+					for (String poiCatKey : poiCategoryKeysToAutocomplete) {
 						if (poiCatKey.startsWith(key.substring(NameIndexReader.POI_CATEGORY_PREFIX.length()))) {
 							stats.sub1MatchTime.finish();
 							return true;
@@ -183,9 +184,14 @@ public class SpatialSearchToken {
 		quadTree.put(atom.coords.bboxTileZoom, atom.coords.bboxTileId, na.indexInToken);
 	}
 	
+	void addPoiCategoryMatch(int id) {
+		poiCategoryIds.add(id);
+	}
+	
 	void addAtom(NameIndexAtom atom) {
 		if (atom.isPoiCategory()) {
-			poiCategoryKeys.add(atom.name);
+			poiCategoryKeysToAutocomplete.add(atom.name);
+			poiCategoryIds.add((int) atom.id);
 		}
 		if (atom.object != null && !(atom.object instanceof Street) && 
 				atom.object.getId() != null &&  atom.object.getId() > 0) {
@@ -280,8 +286,18 @@ public class SpatialSearchToken {
 	}
 	
 	public boolean hasPoiCategoryKeys() {
-		return !poiCategoryKeys.isEmpty();
+		return !poiCategoryKeysToAutocomplete.isEmpty();
 	}
+	
+	public boolean matchPoiCategoryKeys(TIntArrayList poiTypes) {
+		for (int k = 0; k < poiTypes.size(); k++) {
+			if (poiCategoryIds.contains(poiTypes.getQuick(k))) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	
 	public boolean getPartialNumericNonMatch(int i) {
 		return partialNonNumericCommonAtoms.get(i);

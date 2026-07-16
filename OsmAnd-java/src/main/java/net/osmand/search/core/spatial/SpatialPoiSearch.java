@@ -286,6 +286,7 @@ public class SpatialPoiSearch {
 					NameIndexAtom atom = new NameIndexAtom(a.key, a.id, total);
 					cs.atoms.add(atom);
 					cs.tokens.add(t);
+					t.addPoiCategoryMatch(a.id);
 					
 				}
 			}

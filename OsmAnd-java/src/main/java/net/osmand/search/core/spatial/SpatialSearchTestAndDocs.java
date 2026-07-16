@@ -260,7 +260,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Jugendheim Malbun";
 
 		pattern = "Netherlands_";
-//		location = new LatLon(52.2827, 4.8601);
+		location = new LatLon(52.2827, 4.8601);
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
@@ -268,7 +268,7 @@ public class SpatialSearchTestAndDocs {
 //		pattern2 = "Gb_england";
 		query = "Gate D18"; // gate d18, "gate d-18"
 //		query = "mcdonalds"; 
-//		query = "mcdonalds fast food "; // 2807400942 didn't return with many maps LiVE TEST mcdonalds
+		query = "mcdonalds fast food "; // 2807400942 didn't return with many maps LiVE TEST mcdonalds
 		
  
 		

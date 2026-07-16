@@ -763,8 +763,7 @@ public class SpatialSearchContext {
 	}
 
 	private void addObject(SpatialSearchToken t, NameIndexReader indx, String name, int type, long lid, long pid,
-			MapObject obj, int other, TIntArrayList poiTypes, int elo, NameIndexAtomXY coords,
-			List<SpatialSearchToken> allTokens) {
+			MapObject obj, int other, TIntArrayList poiTypes, int elo, NameIndexAtomXY coords, List<SpatialSearchToken> allTokens) {
 		List<SpatialSearchToken> otherTokens = null;
 		boolean streetCity = false;
 		boolean numericNotMatch = false;
@@ -779,6 +778,16 @@ public class SpatialSearchContext {
 		// '2.Sokak'
 		if (name.indexOf('.') != -1) {
 			split = SearchAlgorithms.splitAndNormalize(name.replace('.', ' '), false);
+		}
+		if (poiTypes != null && poiTypes.size() > 0) {
+			for (SpatialSearchToken token : allTokens) {
+				if (t != token && token.matchPoiCategoryKeys(poiTypes) && (otherTokens == null || !otherTokens.contains(token))) {
+					if (otherTokens == null) {
+						otherTokens = new ArrayList<>(3);
+					}
+					otherTokens.add(token);
+				}
+			}
 		}
 		if (split != null) {
 			for (int k = 1; k < split.size(); k++) {
