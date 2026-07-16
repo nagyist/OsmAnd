@@ -36,13 +36,13 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING Find Refs of amenity D18 
 // TESTING REGENERATE World basemap
 // TESTING - Abbreviations.isCommonSkipOtherCnt ???  Tour Eiffel don't count extra word (common) - test...!!
+// TESTING mcdonalds fast food (amst)
 
 ////////// IN PROGRESS //////////
 
 // REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru
-// TODO mcdonalds fast food (amst)
-// TODO SUGGEST_SEARCH_POI_CATEGORY_WITH_REF + Intersect Category and ref
 
+// TODO SUGGEST_SEARCH_POI_CATEGORY_WITH_REF + Intersect Category and ref
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
 // TODO ANALYZE: too many wiki places on streets?
@@ -261,14 +261,14 @@ public class SpatialSearchTestAndDocs {
 
 		pattern = "Netherlands_";
 		location = new LatLon(52.2827, 4.8601);
-		query = "1186RZ Logger 324D Amstelveen";
+//		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
 //		query = "11-NUON leons";
-//		pattern2 = "Gb_england";
-//		query = "Gate D18";
-//		query = "mcdonalds";
-//		query = "mcdonalds fast food"; // TODO 2807400942 didn't return close mcdonalds
+		pattern2 = "Gb_england";
+		query = "Gate D18";
+//		query = "mcdonalds"; 
+//		query = "mcdonalds fast food "; // 2807400942 didn't return with many maps LiVE TEST mcdonalds
 		
  
 		

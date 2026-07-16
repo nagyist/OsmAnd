@@ -770,7 +770,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				continue;
 			}
 			if (pa.isPoiCategory()) {
-				if (poiType == null || pa.id == a.id) {
+				if (poiType == null || pa.id == poiType.id) {
 					poiType = pa;
 					poiTypeToken = parent.tokens[i];
 				} else {
