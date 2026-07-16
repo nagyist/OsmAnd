@@ -23,42 +23,33 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
 // UNIT TESTING: (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
 // UNIT TESTING: Add test on show more '2 sokak' - Show more 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak
-
 // UNIT TESTING: Store Poi category index (effective intersection aragon - 'Church Basílica de Nuestra Señora del Pilar')
 // UNIT TESTING: Autocheck poi subtype - Burger Mcdonald's
 // UNIT TESTING: Highlight ref sorting
 // UNIT TESTING: Fix 36K national park (don't index small islands > 100 POI !!!)
-
-// TESTING Autocomplete results from POI TYPE / SUB TYPE
-// TESTING access_main_tag, poi names - limit, subtypes
-// TESTING Limit results "Gate"...
-// TESTING Bank abcd (Bug New filter?) Test ???
-// TESTING Find Refs of amenity D18 , D-18
-// TESTING REGENERATE World basemap
-// TESTING - Abbreviations.isCommonSkipOtherCnt ???  Tour Eiffel don't count extra word (common) - test...!!
+// UNIT TESTING Limit results "Gate"... 
+// UNIT TESTING Find Refs of amenity D18 , D-18 
+// UNIT TESTING - Abbreviations.isCommonSkipOtherCnt ???  Tour Eiffel don't count extra word (common) - test...!!
+// UNIT TESTING - PA-75 27193, PA21 !!
 
 ////////// IN PROGRESS //////////
 
 // REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru
-// TESTING DISABLED SUGGEST_SEARCH_POI_CATEGORY_WITH_REF + Intersect Category and ref
-// TESTING mcdonalds fast food (amst)
+// Auto test New york, France, Italy (Slow ?)
 
-// FIXME PA-75
-// FIXME no intersection in that case "rue de la" - for very common words if we have enough results?
-// FIXME Golden State Road Los Angeles United States
+// FIXME PA-75, PA21 !
+// FIXME 2nd street
 
+// TODO no intersection in that case "rue de la" - for very common words if we have enough results?
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
 // TODO ANALYZE: too many wiki places on streets?
-// 
-// TODO Auto test New york, France, Italy (Slow ?)
 // TODO highway=services (Not index)
 
 // TO DO Ivan
 // TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
 // TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
-// TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
 
 // TO DO Gateway
 // TODO INSPECTOR: doesn't show suffixes
@@ -70,17 +61,17 @@ import net.osmand.util.SearchAlgorithms;
 // Foothill Boulevard x Golden State Road x Los Angeles x United states of America
 
 // TO DO - RZR
-// TESTING WEB: POI Categories + top poi categories ...
-// TESTING WEB: display results std way: house, street, city, poi...
 // TODO WEB: Highlight ref matching, interpolation (somehow) with braces?
 // TODO WEB: Multithread pool, Monitor / time & memory optimize memory?
 // TODO WEB: CANCEL ! (slow queries for server)
 
-// TODO ANDROID: Integrate (include regions.ocbf) on client
-// TODO ANDROID: Progress / cancel
-// TODO ANDROID: memory performance 
+// TODO ANDROID - Convert to old results
+// - Integrate (include regions.ocbf) on client
+// - Progress / cancel
+// - Memory Speed performance comparison (new / old / server)  
 
 /////////////// EXTRA FEATURES ///////////////
+// TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
 // TODO Investigate do we need to store poi types in name index (covered-yes)
 //      Some categories go to some maps and not others (Paris cafe) 
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
@@ -225,7 +216,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
 //		query = "South 2nd Street 2 Saint Clair"; // to fix street matched twice
 //		query = "226 Wilkes-Barre Township Boulevard Wilkes-Barre"; // fixed type order
-//		query = "5676 US-15 Montgomery"; // Test 3 matched (not 2) 
+//		query = "5676 US-15 Montgomery"; // Test 3 matched (not 2) - Data "US 15"
 //		location = new LatLon(42.0061257, -76.5464141);
 //		query = "38 Orange Street Waverly";
 //		query = "441 Cook Road Addison";
@@ -248,9 +239,11 @@ public class SpatialSearchTestAndDocs {
 //		query = "11954 East Hill Road Pine City";
 		
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
-		query = "PA 75 27193"; //'PA75'  Data 'PA-75', 27193  4472676432
+//		query = "PA 75 27193"; // +'PA75', +'PA-75', +'PA 75'  Data 'PA-75', 27193  4472676432
+//		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75'
 		// FIXME
-//		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75' 
+//		query = "PA-21";  // 1336083883 DATA 'PA21' (-!'PA 21', +'PA-21',+'PA21') FIXME 
+		// UNIT TEST FOR  
 		// data "PA 75" - see "M-2, 2 M" example
 
 //		pattern = "Liechtenstein_europe.obf";
@@ -415,7 +408,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Cannaregio 539D Campo Saffa";
 //		query = "Campo Saffa";
 		
-		pattern = "France_ile-de-france";
+//		pattern = "France_ile-de-france";
 //		pattern = "France_";
 //		location = new LatLon(40, 5);
 //		query = "Eiffel"; // Tour Eiffel, Tower Eiffel, Eiffel - First always Tour Eiffel (second 'Le Jules Verne' OK) 

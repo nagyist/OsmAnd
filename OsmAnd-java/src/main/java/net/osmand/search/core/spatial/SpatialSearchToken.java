@@ -65,6 +65,7 @@ public class SpatialSearchToken {
 
 	CollatorStringMatcher collatorMain;
 	CollatorStringMatcher noDotCollatorMain;
+	CollatorStringMatcher noHyphenCollatorMain;
 	// cache for popular split
 	String wordSpacePrefixCache;
 	CollatorStringMatcher wordSpaceCollatorSuffix;
@@ -100,6 +101,10 @@ public class SpatialSearchToken {
 				// we use number to compare if we use is isNumber2Letters to many weird results on '2B'
 				mainNumber = Algorithms.extractFirstIntegerNumber(noDot);
 			}
+		}
+		if (wordAligned.indexOf('-') != -1) {
+			// PA-21
+			noHyphenCollatorMain = new CollatorStringMatcher(wordAligned.replace("-", ""), StringMatcherMode.CHECK_EQUALS_FROM_SPACE);
 		}
 		String abbr = Abbreviations.getSearchabbreviations().get(noDot);
 		if (abbr != null) {
@@ -258,6 +263,9 @@ public class SpatialSearchToken {
 		if ((noDotCollatorMain == null ? collatorMain : noDotCollatorMain).matches(name)) {
 			return true;
 		}
+		if (noHyphenCollatorMain != null && noHyphenCollatorMain.matches(name)) {
+			return true;
+		}
 		return false;
 	}
 	
@@ -297,6 +305,9 @@ public class SpatialSearchToken {
 	
 	String[] matchSplitName(String name) {
 		name = SearchAlgorithms.alignChars(name);
+		if (name.startsWith("pa21")) {
+			System.out.println(name);
+		}
 		String[] res = null;
 		if (wordAligned.length() < name.length()
 				&& collatorMain.getCollator().equals(name.substring(0, wordAligned.length()), wordAligned)) {

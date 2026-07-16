@@ -755,6 +755,13 @@ public class SpatialSearchContext {
 		int is = name.indexOf(' ');
 		String mname = is >= 0 ? name.substring(0, is) : name;
 		boolean acceptName = t.matchName(mname, poiTypes);
+		if(!acceptName && t.wordAligned.indexOf('-') != -1) {
+			// TODO collator
+//			acceptName =  mname.replace("-", "").equals(t.wordAligned.replace("-", ""));
+		}
+		if(name.startsWith("pa21")) {
+			System.out.println("---");
+		}
 		if (!acceptName && is >= 0) {
 			String[] split = name.split(" ");
 			for (int k = 1; k < split.length; k++) {
