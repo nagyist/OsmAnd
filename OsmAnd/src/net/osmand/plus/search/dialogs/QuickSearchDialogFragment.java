@@ -1370,10 +1370,14 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	private void rerunCurrentSearchQuery() {
+		rerunCurrentSearchQuery(false);
+	}
+
+	private void rerunCurrentSearchQuery(boolean preserveSelectedPoiTypeNames) {
 		String text = searchEditText.getText().toString();
 		if (!Algorithms.isEmpty(text)) {
 			searchQuery = text;
-			runSearch(text);
+			runSearch(text, preserveSelectedPoiTypeNames);
 		}
 	}
 
@@ -1397,7 +1401,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		updateChipsState();
 		if (changed) {
 			applySelectedSortSetting();
-			rerunCurrentSearchQuery();
+			rerunCurrentSearchQuery(true);
 		}
 	}
 
@@ -1680,9 +1684,15 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	public void setResultCollection(SearchResultCollection resultCollection) {
+		setResultCollection(resultCollection, false);
+	}
+
+	private void setResultCollection(SearchResultCollection resultCollection, boolean preserveSelectedPoiTypeNames) {
 		if (resultCollection == null) {
 			unfilteredResultCollection = null;
-			selectedResultPoiTypeNames.clear();
+			if (!preserveSelectedPoiTypeNames) {
+				selectedResultPoiTypeNames.clear();
+			}
 		}
 		searchHelper.setResultCollection(resultCollection);
 	}
@@ -2144,25 +2154,41 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	private void runSearch(String text) {
+		runSearch(text, false);
+	}
+
+	private void runSearch(String text, boolean preserveSelectedPoiTypeNames) {
 		showProgressBar();
 		SearchSettings settings = searchUICore.getSearchSettings();
 		if (settings.getRadiusLevel() != 1) {
 			searchUICore.updateSettings(settings.setRadiusLevel(1));
 		}
 		applySelectedSortSetting();
-		runCoreSearch(text, true, false);
+		runCoreSearch(text, true, false, preserveSelectedPoiTypeNames);
 	}
 
 	private void runCoreSearch(String text, boolean showQuickResult, boolean searchMore) {
-		runCoreSearch(text, showQuickResult, searchMore, defaultResultListener);
+		runCoreSearch(text, showQuickResult, searchMore, false);
+	}
+
+	private void runCoreSearch(String text, boolean showQuickResult, boolean searchMore,
+	                           boolean preserveSelectedPoiTypeNames) {
+		runCoreSearch(text, showQuickResult, searchMore, defaultResultListener, preserveSelectedPoiTypeNames);
 	}
 
 	private void runCoreSearch(String text, boolean showQuickResult, boolean searchMore, SearchResultListener resultListener) {
+		runCoreSearch(text, showQuickResult, searchMore, resultListener, false);
+	}
+
+	private void runCoreSearch(String text, boolean showQuickResult, boolean searchMore,
+	                           SearchResultListener resultListener, boolean preserveSelectedPoiTypeNames) {
 		showProgressBar();
 		foundPartialLocation = false;
 		if (!searchMore) {
 			unfilteredResultCollection = null;
-			selectedResultPoiTypeNames.clear();
+			if (!preserveSelectedPoiTypeNames) {
+				selectedResultPoiTypeNames.clear();
+			}
 		}
 		updateToolbarButton();
 		interruptedSearch = false;
@@ -2172,16 +2198,17 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		if (app.isApplicationInitializing() && !text.isEmpty()) {
 			app.getAppInitializer().addOnFinishListener(result -> {
 				if (!paused) {
-					runCoreSearchInternal(text, showQuickResult, searchMore, resultListener);
+					runCoreSearchInternal(text, showQuickResult, searchMore, resultListener, preserveSelectedPoiTypeNames);
 				}
 			});
 		} else {
-			runCoreSearchInternal(text, showQuickResult, searchMore, resultListener);
+			runCoreSearchInternal(text, showQuickResult, searchMore, resultListener, preserveSelectedPoiTypeNames);
 		}
 		updateChipsState();
 	}
 
-	private void runCoreSearchInternal(String text, boolean showQuickResult, boolean searchMore, SearchResultListener resultListener) {
+	private void runCoreSearchInternal(String text, boolean showQuickResult, boolean searchMore,
+	                                   SearchResultListener resultListener, boolean preserveSelectedPoiTypeNames) {
 		searchUICore.search(text, showQuickResult, new ResultMatcher<SearchResult>() {
 			SearchResultCollection regionResultCollection;
 			SearchCoreAPI regionResultApi;
@@ -2269,7 +2296,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		});
 
 		if (!searchMore) {
-			setResultCollection(null);
+			setResultCollection(null, preserveSelectedPoiTypeNames);
 			if (!showQuickResult) {
 				updateSearchResult(null, false);
 			}
@@ -2470,6 +2497,13 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	private void onSearchFinished(SearchPhrase phrase) {
+		SearchResultCollection collection = unfilteredResultCollection != null ? unfilteredResultCollection : getResultCollection();
+		if (collection != null && retainAvailableResultPoiTypeFilters(collection)) {
+			SearchResultCollection visibleResults = selectedResultPoiTypeNames.isEmpty()
+					? collection
+					: getFilteredResultCollection(collection);
+			renderSearchResult(visibleResults, false);
+		}
 		if (!PluginsHelper.onSearchFinished(this, phrase, isResultEmpty())) {
 			addMoreButton(searchUICore.isSearchMoreAvailable(phrase));
 		}
@@ -2530,6 +2564,20 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 			append = false;
 		}
 		renderSearchResult(visibleResults, append);
+	}
+
+	private boolean retainAvailableResultPoiTypeFilters(@NonNull SearchResultCollection collection) {
+		if (selectedResultPoiTypeNames.isEmpty()) {
+			return false;
+		}
+		LinkedHashSet<String> availablePoiTypeNames = new LinkedHashSet<>();
+		for (SearchResult result : collection.getCurrentSearchResults()) {
+			String poiTypeName = getPoiTypeNameForResult(result);
+			if (!Algorithms.isEmpty(poiTypeName)) {
+				availablePoiTypeNames.add(poiTypeName);
+			}
+		}
+		return selectedResultPoiTypeNames.retainAll(availablePoiTypeNames);
 	}
 
 	private void renderSearchResult(SearchResultCollection res, boolean append) {
