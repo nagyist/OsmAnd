@@ -178,8 +178,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	private void checkAmenityRef(List<SpatialSearchToken> missingTokens, int indx) {
 		NameIndexAtom poiAtom = null;
 		int refInd = 0;
+		String queryRef = null;
+		Set<String> objectRef = null;
 		for (refInd = 0; refInd < tCount; refInd++) {
 			NameIndexAtom refAtom = linearResults.get(indx * tCount + refInd);
+			
 			if (refAtom.buildingOrRefInd >= 0) {
 				int amenityTokenInd = getTokenByOriginalOrder(refAtom.buildingOrRefInd);
 				if (amenityTokenInd < 0) {
@@ -193,13 +196,26 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 				if (poiAtom != null && poiAtom.id == refAtom.id && poiAtom.object instanceof Amenity as) {
 					String ref = as.getAdditionalInfo("ref");
-					if (ref != null && tokens[refInd].matchName(ref)) {
-						extraNameMatch.put(indx, ref);
-						return;
+					if (objectRef == null && ref != null) {
+						objectRef = SearchAlgorithms.getBuildingCompareSet(ref, tempBuildNames2);
 					}
+					if(queryRef == null) {
+						queryRef = tokens[refInd].word;
+					} else {
+						queryRef += " " + tokens[refInd].word;
+					}
+				} else {
+					skipResults.put(indx, true);
+					return;
 				}
+			}
+		}
+		if (queryRef != null) {
+			Set<String> querySetRef = SearchAlgorithms.getBuildingCompareSet(queryRef, tempBuildNames1);
+			if (objectRef != null && objectRef.equals(querySetRef)) {
+				extraNameMatch.put(indx, queryRef);
+			} else {
 				skipResults.put(indx, true);
-				return;
 			}
 		}
 	}
