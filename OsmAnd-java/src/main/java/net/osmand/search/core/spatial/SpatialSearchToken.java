@@ -235,9 +235,12 @@ public class SpatialSearchToken {
 		quadTree.put(atom.coords.bboxTileZoom, atom.coords.bboxTileId, indx);
 	}
 
-	boolean matchName(String name) {
+	boolean matchName(String name, TIntArrayList poiTypes) {
 //		System.out.printf("query '%s' matches '%s' %s\n", word, name, collatorMain.matches(name) || 
 //				collatorMain.matches(name.replace(' ', '-')));
+		if (name.startsWith(NameIndexReader.POI_CATEGORY_PREFIX)) {
+			return poiTypes != null && matchPoiCategoryKeys(poiTypes);
+		}
 		if (mainNumber > 0) {
 			if (mainNumber == Algorithms.extractFirstIntegerNumber(name)) {
 				return true;

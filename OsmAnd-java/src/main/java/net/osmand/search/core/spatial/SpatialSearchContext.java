@@ -691,7 +691,7 @@ public class SpatialSearchContext {
 					} else if(b != null && wordInd < b.getExtraSuffixCount()) {
 						name += b.getExtraSuffix(wordInd);
 					}
-					if (matchName(t, name) || (name = matchPartName(t, name, allTokens)) != null) {
+					if (matchName(t, name, poiTypes) || (name = matchPartName(t, name, allTokens)) != null) {
 						int other;
 						if (a != null) {
 							other = wordInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wordInd) : 0;
@@ -724,7 +724,7 @@ public class SpatialSearchContext {
 		} else if (b != null && wordInd < b.getExtraSuffixCount()) {
 			name += b.getExtraSuffix(wordInd);
 		}
-		if (name.length() != 0 && (matchName(t, name) || (name = matchPartName(t, name, allTokens)) != null)) {
+		if (name.length() != 0 && (matchName(t, name, poiTypes) || (name = matchPartName(t, name, allTokens)) != null)) {
 			int other;
 			if (a != null) {
 				other = wordInd < a.getOtherWordsCountCount() ? a.getOtherWordsCount(wordInd) : 0;
@@ -738,9 +738,9 @@ public class SpatialSearchContext {
 		}
 	}
 
-	private boolean matchName(SpatialSearchToken t, String name) {
+	private boolean matchName(SpatialSearchToken t, String name, TIntArrayList poiTypes) {
 		stats.sub1MatchTime.start();
-		boolean acceptName = t.matchName(name);
+		boolean acceptName = t.matchName(name, poiTypes);
 		stats.sub1MatchTime.finish();
 		return acceptName;
 	}
@@ -751,7 +751,7 @@ public class SpatialSearchContext {
 		String resName = null;
 		if (res != null) {
 			for (SpatialSearchToken st : allTokens) {
-				if (st != t && st.matchName(res[1])) {
+				if (st != t && st.matchName(res[1], null)) {
 //					System.out.printf("%s -> '%s %s'\n", name, res[0], res[1]);
 					resName = res[0] + " " + res[1];
 					break;
@@ -799,7 +799,7 @@ public class SpatialSearchContext {
 				}
 				boolean matched = false;
 				for (SpatialSearchToken token : allTokens) {
-					if (t != token && matchName(token, otherName)
+					if (t != token && matchName(token, otherName, poiTypes)
 							&& (otherTokens == null || !otherTokens.contains(token))) {
 						if (otherTokens == null) {
 							otherTokens = new ArrayList<>(3);
@@ -814,7 +814,7 @@ public class SpatialSearchContext {
 						numericNotMatch = !t.word.contains(otherName); // "us 15" data, "us-15" token
 					}
 					if (!Abbreviations.isCommonSkipOtherCnt(otherName) &&
-							!isWordCommonlyUsed(indx, otherName)) { // TODO choose Tour eiffel or West / North 
+							!isWordCommonlyUsed(indx, otherName)) { // To choose Tour eiffel or onlyWest / North ! 
 						other++;
 					}
 				}
@@ -838,7 +838,7 @@ public class SpatialSearchContext {
 			String mainWord = name;
 			if (split != null) {
 				mainWord = split.get(0); // name 'ru de rue' could match 'rue' it's because of prefix & suffixes
-				matchMainWord = matchName(t, mainWord);
+				matchMainWord = matchName(t, mainWord, poiTypes);
 			}
 			if (!matchMainWord || isWordCommonlyUsed(indx, mainWord)) {
 				// other tokens didn't match for common word but present in object
