@@ -43,9 +43,8 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING DISABLED SUGGEST_SEARCH_POI_CATEGORY_WITH_REF + Intersect Category and ref
 // TESTING mcdonalds fast food (amst)
 
-// FIXME we could analyze poi comes from category and don't add on common at all?
-// FIXME no intersection in that case "rue de la"
 // FIXME PA-75
+// FIXME no intersection in that case "rue de la" - for very common words if we have enough results?
 // FIXME Golden State Road Los Angeles United States
 
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
@@ -163,7 +162,7 @@ public class SpatialSearchTestAndDocs {
 	 *    Possible solution is to prepare 2 variation during indexing 
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {				
-		SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
+		SpatialTextSearchSettings settings = SpatialTextSearchSettings.defaultSettings();
 		File folder = new File(System.getProperty("maps.dir"));
 		LatLon location = null;
 		String pattern = "Germany_b";
@@ -416,7 +415,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Cannaregio 539D Campo Saffa";
 //		query = "Campo Saffa";
 		
-//		pattern = "France_ile-de-france";
+		pattern = "France_ile-de-france";
 //		pattern = "France_";
 //		location = new LatLon(40, 5);
 //		query = "Eiffel"; // Tour Eiffel, Tower Eiffel, Eiffel - First always Tour Eiffel (second 'Le Jules Verne' OK) 
@@ -426,12 +425,12 @@ public class SpatialSearchTestAndDocs {
 		// too many results
 //		query = "rue de l'eglise"; // specific search - "rue de l'eglise", non specific "rue de"
 //		query = "rue de la fen."; // all strets
-//		query = "rue de la"; // "de la", "rue de la" only common words + high rating
+//		query = "de la"; // "de la", "rue de la" only common words + high rating
 //		query = "rû bas du rue";
 		
-		pattern = "Us_cal";
+//		pattern = "Us_cal";
 //		pattern2 = "regions";
-		query = "Golden State Road Los Angeles United States"; // matched only 5?, United States - not found
+//		query = "Golden State Road Los Angeles United States"; // matched only 5?, United States - not found
 //		query = "Sylmar United States"; // not found
 //		query = "United States"; // not found 
 //		query = "Golden State Road Foothill Boulevard Sylmar USA";
@@ -500,7 +499,7 @@ public class SpatialSearchTestAndDocs {
 	}
 
 	private static void testDeduplication(String[] args) throws IOException, InterruptedException {
-		SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
+		SpatialTextSearchSettings settings = SpatialTextSearchSettings.defaultSettings();
 		File folder = new File(System.getProperty("maps.dir"));
 		LatLon location = null;
 		String pattern = "Italy_";

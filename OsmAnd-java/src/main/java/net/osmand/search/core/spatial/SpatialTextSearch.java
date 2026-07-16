@@ -26,6 +26,7 @@ import net.osmand.data.LatLon;
 import net.osmand.map.OsmandRegions;
 import net.osmand.osm.MapPoiTypes;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
+import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
@@ -50,6 +51,7 @@ import net.osmand.util.SearchAlgorithms;
 public class SpatialTextSearch {
 
 	public static class SpatialTextSearchSettings {
+		private SpatialTextSearchSettings() {}
 		
 		// lang to deduplicate results
 		public String LANG_DEDUPLICATE = ""; 
@@ -67,8 +69,6 @@ public class SpatialTextSearch {
 		public boolean ALLOW_HOUSE_POI_TYPE_INTERSECTION = true;
 		// no intersection recorded but streets are nearby
 		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
-		
-		
 		
 		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 30_000, 80_000}; // 
 //		public int[] OPTIM_LIMIT_RADIUS = new int[] {}; 
@@ -150,6 +150,20 @@ public class SpatialTextSearch {
 				val = e.getValue();
 			}
 			return val;
+		}
+		
+		public static SpatialTextSearchSettings defaultSettings() {
+			return new SpatialTextSearchSettings();
+		}
+		 
+		public static SpatialTextSearchSettings suggestionSettings() {
+			SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
+			settings.SEARCH_STREET_INTERSECTIONS = false;
+			settings.SEARCH_POI_INTERSECTIONS = false;
+//			settings.SUGGEST_SEARCH_POI_CATEGORY_WITH_REF = false;
+			settings.OPTIM_LIMIT_INTERSECTIONS = 5000;
+			settings.OPTIM_READ_COMMON_WORDS_LIMIT = 500;
+			return settings;
 		}
 		
 	}
@@ -570,7 +584,7 @@ public class SpatialTextSearch {
 		System.out.println(String.format("Index files %.1f ms", (System.nanoTime() - t) / 1e6));
 		SpatialTextSearch a = new SpatialTextSearch();
 		SpatialPoiSearch poiSearch = new SpatialPoiSearch(MapPoiTypes.getDefault());
-		SpatialSearchContext searchContext = new SpatialSearchContext(new SpatialTextSearchSettings(), ls, poiSearch,
+		SpatialSearchContext searchContext = new SpatialSearchContext(SpatialTextSearchSettings.defaultSettings(), ls, poiSearch,
 				null);
 		a.searchTest(query, searchContext, 1000);
 	}

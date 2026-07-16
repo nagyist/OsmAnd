@@ -883,7 +883,8 @@ public class SpatialSearchContext {
 			}
 		}
 		if (settings.OPTIM_READ_CATEGORY_WORD_ATOMS && t.hasPoiCategoryKeys() && atom.isPOI()) {
-			// FIXME we could analyze poi comes from category and don't add on common at all?
+			// we always add to partial so if we word overloaded we don't display it
+			// doesn't matter if we read token by name "cafe" or "#^cafe" the word associated with category
 			t.addPartialCommonAtom(atom, otherTokens, numericNotMatch);
 			return;
 		}
