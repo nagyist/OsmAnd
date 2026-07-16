@@ -297,16 +297,16 @@ public class SpatialPoiSearch {
 			finalRes = finalRes.subList(0, ctx.settings.LIMIT_POI_CATEGORY_BY_FREQ);
 		}
 		for (PoiCatSearch pc : finalRes) {
-			SpatialSearchToken token = null;
-			NameIndexAtom atom = null;
 			for (int i = 0; i < pc.tokens.size(); i++) {
-				token = pc.tokens.get(i);
-				atom = pc.atoms.get(i);
-				token.addAtom(pc.atoms.get(i));
+				SpatialSearchToken token = pc.tokens.get(i);
+				NameIndexAtom atom = pc.atoms.get(i);
+				token.addAtom(atom);
 			}
-			if (ctx.settings.SUGGEST_SEARCH_POI_CATEGORY_WITH_REF) {
-				ctx.addBuildingRefAtoms(token, tokens, pc.tokens, false, atom, SpatialSearchToken.POI_CATEGORY_TYPE);
-			}
+			// Problem "Helipad 32" (doesn't list object because no 32 ref is found"
+			// Categories are not needed if exact result is found (there is always option to go in category and filter later)
+//			if (ctx.settings.SUGGEST_SEARCH_POI_CATEGORY_WITH_REF) {
+//				ctx.addBuildingRefAtoms(token, tokens, pc.tokens, false, atom, SpatialSearchToken.POI_CATEGORY_TYPE);
+//			}
 		}
 	}
 	

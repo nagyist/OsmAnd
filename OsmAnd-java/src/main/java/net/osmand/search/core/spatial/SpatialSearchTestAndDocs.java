@@ -41,8 +41,8 @@ import net.osmand.util.SearchAlgorithms;
 ////////// IN PROGRESS //////////
 
 // REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru
+// TESTING DISABLED SUGGEST_SEARCH_POI_CATEGORY_WITH_REF + Intersect Category and ref
 
-// TODO SUGGEST_SEARCH_POI_CATEGORY_WITH_REF + Intersect Category and ref
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
 // TODO ANALYZE: too many wiki places on streets?
@@ -243,14 +243,15 @@ public class SpatialSearchTestAndDocs {
 //		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75' 
 		// data "PA 75" - see "M-2, 2 M" example
 
-//		pattern = "Liechtenstein_europe.obf";
+		pattern = "Liechtenstein_europe.obf";
 //		query = "Vaduz Lettstrasse";
 //		query = "Fast food"; // "Burger Fast food";
 //		query = "Bank wheelchair"; // "Burger Fast food";
 //		query = "Burger Mcdonald's"; // Test 2 match
 //		query = "Vegan Mai Thai"; // Test 3 match
 //		query = "Vegan"; // Test Vegan results from subtype
-//		query = "Trübbach 10"; // Test Vegan results
+		query = "Trübbach 10"; // Test Vegan results
+		query = "helipad 1"; // TODO Building, TODO Stars 3 ???
 		// Test helipad 1, helipad 2
 //		query = "Friedenskapelle Church"; //Friedenskapelle, Friedhofskapelle (catholic), Mamerten (roman)
 //		settings.DEV_PRINT_POI_CAT_RADIUS_KM  = 100;
@@ -259,14 +260,14 @@ public class SpatialSearchTestAndDocs {
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 
-		pattern = "Netherlands_";
-		location = new LatLon(52.2827, 4.8601);
+//		pattern = "Netherlands_";
+//		location = new LatLon(52.2827, 4.8601);
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
 //		query = "11-NUON leons";
-		pattern2 = "Gb_england";
-		query = "Gate D18";
+//		pattern2 = "Gb_england";
+//		query = "Gate D18";
 //		query = "mcdonalds"; 
 //		query = "mcdonalds fast food "; // 2807400942 didn't return with many maps LiVE TEST mcdonalds
 		
