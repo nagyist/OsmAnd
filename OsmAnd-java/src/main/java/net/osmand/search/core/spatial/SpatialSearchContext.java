@@ -266,8 +266,7 @@ public class SpatialSearchContext {
 							otherToken.addAtom(new NameIndexAtom(atom));
 						}
 					}
-					addBuildingRefAtoms(t, tokens, otherTokens, t.getPartialNumericNonMatch(ind),
-							atom, SpatialSearchToken.BUILDING_TYPE);
+					addBuildingRefAtoms(t, tokens, otherTokens, t.getPartialNumericNonMatch(ind), atom);
 				}
 				t.clearPartialAtoms();
 			}
@@ -848,7 +847,7 @@ public class SpatialSearchContext {
 				otherToken.addAtom(new NameIndexAtom(atom));
 			}
 		}
-		addBuildingRefAtoms(t, allTokens, otherTokens, numericNotMatch, atom, SpatialSearchToken.BUILDING_TYPE);
+		addBuildingRefAtoms(t, allTokens, otherTokens, numericNotMatch, atom);
 
 	}
 
@@ -875,7 +874,7 @@ public class SpatialSearchContext {
 	}
 
 	void addBuildingRefAtoms(SpatialSearchToken t, List<SpatialSearchToken> allTokens,
-			List<SpatialSearchToken> otherTokens, boolean numericNotMatchObject, NameIndexAtom atom, int typeToAdd) {
+			List<SpatialSearchToken> otherTokens, boolean numericNotMatchObject, NameIndexAtom atom) {
 		boolean street = atom.type == SpatialSearchToken.STREET_TYPE;
 		boolean poi = atom.type == SpatialSearchToken.POI_CATEGORY_TYPE || atom.type == SpatialSearchToken.POI_TYPE;
 		// numericNotMatch object name contains numeric - require full street (poi) name match to assign buildings
@@ -885,6 +884,7 @@ public class SpatialSearchContext {
 		if (!(street && settings.SEARCH_BUILDINGS) && !(poi && settings.SEARCH_POI_REF)) {
 			return;
 		}
+		int typeToAdd = street ? SpatialSearchToken.BUILDING_TYPE : SpatialSearchToken.POI_REF_TYPE; 
 		for (SpatialSearchToken token : allTokens) {
 			// assign building to word token isNumber2Letters (number + 1 char) + possible
 			if (t != token && (otherTokens == null || !otherTokens.contains(token))) {

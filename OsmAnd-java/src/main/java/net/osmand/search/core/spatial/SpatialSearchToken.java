@@ -33,6 +33,7 @@ public class SpatialSearchToken {
 	public static final int ALL_CITY_TYPE = -10;
 	
 	public static final int POI_CATEGORY_TYPE = -5;
+	public static final int POI_REF_TYPE = -3;
 	public static final int BUILDING_TYPE = -2;
 	public static final int POI_TYPE = -1;
 	public static final int STREET_TYPE = CityBlocks.STREET_TYPE.index;
@@ -571,7 +572,7 @@ public class SpatialSearchToken {
 		}
 		
 		public boolean atomicObject() {
-			return type == STREET_TYPE || type == POI_TYPE || type == BUILDING_TYPE;
+			return type == STREET_TYPE || type == POI_TYPE || type == BUILDING_TYPE || type == POI_REF_TYPE;
 		}
 		
 		public boolean isBuilding() {
@@ -579,7 +580,7 @@ public class SpatialSearchToken {
 		}
 		
 		public boolean isPOI() {
-			return type == POI_TYPE;
+			return type == POI_TYPE || type == POI_REF_TYPE;
 		}
 
 		public String typeStr() {

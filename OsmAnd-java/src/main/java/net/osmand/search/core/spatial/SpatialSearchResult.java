@@ -257,15 +257,14 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	public String toString() {
 		String r = "";
 		if (preciseLatlon != null) {
-			r+=String.format("%.4f, %.4f ", preciseLatlon.getLatitude(), preciseLatlon.getLongitude());
+			r += String.format("%.4f, %.4f ", preciseLatlon.getLatitude(), preciseLatlon.getLongitude());
 		}
 		if (extraNameMatch != null) {
 			r += extraNameMatch + " ";
 		}
 		return r + objs.toString();
 	}
-	
-	
+
 	public static class SpatialSearchResultRef {
 		static final int MAX_TYPE_ORDER = 5;
 		NameIndexAtom atom;

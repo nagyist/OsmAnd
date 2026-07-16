@@ -250,9 +250,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Burger Mcdonald's"; // Test 2 match
 //		query = "Vegan Mai Thai"; // Test 3 match
 //		query = "Vegan"; // Test Vegan results from subtype
-		query = "Trübbach 10"; // Test Vegan results
-		query = "helipad 1"; // TODO Building, TODO Stars 3 ???
-		// Test helipad 1, helipad 2
+//		query = "Trübbach 10"; // Test Vegan results
+//		query = "helipad 2"; // 
 //		query = "Friedenskapelle Church"; //Friedenskapelle, Friedhofskapelle (catholic), Mamerten (roman)
 //		settings.DEV_PRINT_POI_CAT_RADIUS_KM  = 100;
 //		settings.DEV_PRINT_POI_CAT_LIMIT = 100;
