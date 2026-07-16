@@ -321,21 +321,10 @@ public class QuickSearchListAdapter extends ArrayAdapter<QuickSearchListItem> {
 		QuickSearchDisabledHistoryItem disabledHistoryItem = (QuickSearchDisabledHistoryItem) listItem;
 
 		View view = getConvertView(convertView, R.layout.quick_search_disabled_history_card);
-
-		TextView title = view.findViewById(R.id.title);
-		title.setText(R.string.history_is_turned_off);
-
-		TextView description = view.findViewById(R.id.description);
-		description.setText(R.string.search_and_navigation_history_disabled_descr);
-
-		TextView analyseButtonDescr = view.findViewById(R.id.settings_button);
-		FrameLayout analyseButton = view.findViewById(R.id.settings_button_container);
-		AndroidUtils.setBackground(app, analyseButton, nightMode, R.drawable.dlg_btn_secondary_light, R.drawable.dlg_btn_secondary_dark);
-		AndroidUtils.setBackground(app, analyseButtonDescr, nightMode, R.drawable.ripple_light, R.drawable.ripple_dark);
-		analyseButton.setOnClickListener(disabledHistoryItem.getOnClickListener());
-		analyseButtonDescr.setOnClickListener(disabledHistoryItem.getOnClickListener());
-
-		AndroidUiHelper.updateVisibility(view.findViewById(R.id.bottom_divider), false);
+		View settingsButton = view.findViewById(R.id.settings_button_container);
+		View settingsButtonDescr = view.findViewById(R.id.settings_button);
+		settingsButton.setOnClickListener(disabledHistoryItem.getOnClickListener());
+		settingsButtonDescr.setOnClickListener(disabledHistoryItem.getOnClickListener());
 
 		return view;
 	}

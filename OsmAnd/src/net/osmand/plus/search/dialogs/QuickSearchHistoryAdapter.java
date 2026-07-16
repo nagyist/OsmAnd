@@ -15,6 +15,7 @@ import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.search.SearchResultViewHolder;
 import net.osmand.plus.search.history.HistoryEntry;
+import net.osmand.plus.search.listitems.QuickSearchDisabledHistoryItem;
 import net.osmand.plus.search.listitems.QuickSearchListItem;
 import net.osmand.plus.track.data.GPXInfo;
 import net.osmand.plus.utils.ColorUtilities;
@@ -34,6 +35,7 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 
 	private static final int TYPE_HEADER = 0;
 	private static final int TYPE_RESULT = 1;
+	private static final int TYPE_DISABLED_HISTORY = 2;
 
 	private final OsmandApplication app;
 	private final LayoutInflater inflater;
@@ -83,13 +85,17 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 
 	@Override
 	public int getViewTypeCount() {
-		return 2;
+		return 3;
 	}
 
 	@Override
 	public int getItemViewType(int position) {
 		Item item = getItem(position);
-		return item != null && item.headerTitle != null ? TYPE_HEADER : TYPE_RESULT;
+		if (item != null && item.headerTitle != null) {
+			return TYPE_HEADER;
+		}
+		QuickSearchListItem listItem = item != null ? item.getListItem() : null;
+		return listItem instanceof QuickSearchDisabledHistoryItem ? TYPE_DISABLED_HISTORY : TYPE_RESULT;
 	}
 
 	@Override
@@ -113,7 +119,21 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 			return view;
 		}
 		QuickSearchListItem listItem = item.getListItem();
+		if (listItem instanceof QuickSearchDisabledHistoryItem disabledHistoryItem) {
+			return bindDisabledHistoryItem(convertView, disabledHistoryItem);
+		}
 		return listItem != null ? bindResultItem(position, convertView, listItem) : new View(parent.getContext());
+	}
+
+	@NonNull
+	private View bindDisabledHistoryItem(@Nullable View convertView,
+	                                     @NonNull QuickSearchDisabledHistoryItem disabledHistoryItem) {
+		View view = getView(convertView, R.layout.quick_search_disabled_history_card);
+		TextView settingsButtonDescr = view.findViewById(R.id.settings_button);
+		View settingsButton = view.findViewById(R.id.settings_button_container);
+		settingsButton.setOnClickListener(disabledHistoryItem.getOnClickListener());
+		settingsButtonDescr.setOnClickListener(disabledHistoryItem.getOnClickListener());
+		return view;
 	}
 
 	@NonNull
@@ -204,6 +224,10 @@ public class QuickSearchHistoryAdapter extends ArrayAdapter<QuickSearchHistoryAd
 	}
 
 	public static Item result(@NonNull QuickSearchListItem item) {
+		return new Item(null, item);
+	}
+
+	public static Item disabledHistory(@NonNull QuickSearchDisabledHistoryItem item) {
 		return new Item(null, item);
 	}
 

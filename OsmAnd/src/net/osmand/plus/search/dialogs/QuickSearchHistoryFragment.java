@@ -39,6 +39,7 @@ import net.osmand.plus.base.BaseFullScreenDialogFragment;
 import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.search.QuickSearchHelper.SearchHistoryAPI;
 import net.osmand.plus.search.history.HistoryEntry;
+import net.osmand.plus.search.listitems.QuickSearchDisabledHistoryItem;
 import net.osmand.plus.search.listitems.QuickSearchListItem;
 import net.osmand.plus.settings.enums.HistorySource;
 import net.osmand.plus.settings.fragments.HistorySettingsDialogFragment;
@@ -320,14 +321,22 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 
 	private void updateHistoryItems(@NonNull String query) {
 		try {
-			List<HistoryRecord> records = loadHistoryRecords(query);
-			updateTypeFilterChips(records);
-			records = applyTypeFilters(records);
-			sortRecords(records);
 			if (adapter != null) {
-				adapter.setUseMapCenter(selectedSortMode == HistorySortMode.MAP_CENTER);
-				adapter.setShowDestinationDate(selectedSortMode != HistorySortMode.RECENT);
-				adapter.setItems(createAdapterItems(records));
+				if (isHistoryDisabled()) {
+					visibleTypeFilters.clear();
+					selectedTypeFilters.clear();
+					updateChipsState();
+					adapter.setItems(Collections.singletonList(QuickSearchHistoryAdapter.disabledHistory(
+							new QuickSearchDisabledHistoryItem(app, v -> openHistorySettings()))));
+				} else {
+					List<HistoryRecord> records = loadHistoryRecords(query);
+					updateTypeFilterChips(records);
+					records = applyTypeFilters(records);
+					sortRecords(records);
+					adapter.setUseMapCenter(selectedSortMode == HistorySortMode.MAP_CENTER);
+					adapter.setShowDestinationDate(selectedSortMode != HistorySortMode.RECENT);
+					adapter.setItems(createAdapterItems(records));
+				}
 			}
 		} catch (Exception e) {
 			LOG.error(e);
@@ -613,6 +622,10 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		return !settings.SEARCH_HISTORY.get() || !settings.NAVIGATION_HISTORY.get();
 	}
 
+	private boolean isHistoryDisabled() {
+		return !settings.SEARCH_HISTORY.get() && !settings.NAVIGATION_HISTORY.get();
+	}
+
 	private static class HistoryRecord {
 		final long time;
 		final QuickSearchListItem item;
@@ -703,17 +716,21 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private void openHistorySettings() {
 		FragmentManager fragmentManager = getFragmentManager();
 		if (fragmentManager != null) {
-			HistorySettingsDialogFragment.showInstance(fragmentManager, getTargetFragment());
+			HistorySettingsDialogFragment.showInstance(fragmentManager, this);
+		}
+	}
+
+	public void reloadHistory() {
+		if (chipsToolbar != null && searchEditText != null) {
+			updateSourceChip();
+			updateHistoryItems(searchEditText.getText().toString());
 		}
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
-		if (chipsToolbar != null && searchEditText != null) {
-			updateSourceChip();
-			updateHistoryItems(searchEditText.getText().toString());
-		}
+		reloadHistory();
 		startLocationUpdate();
 	}
 

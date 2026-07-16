@@ -14,6 +14,7 @@ import androidx.fragment.app.FragmentManager;
 import net.osmand.plus.R;
 import net.osmand.plus.base.BaseFullScreenDialogFragment;
 import net.osmand.plus.search.dialogs.QuickSearchDialogFragment;
+import net.osmand.plus.search.dialogs.QuickSearchHistoryFragment;
 import net.osmand.plus.utils.AndroidUtils;
 
 public class HistorySettingsDialogFragment extends BaseFullScreenDialogFragment {
@@ -93,6 +94,8 @@ public class HistorySettingsDialogFragment extends BaseFullScreenDialogFragment 
 		Fragment target = getTargetFragment();
 		if (target instanceof QuickSearchDialogFragment quickSearchDialogFragment) {
 			quickSearchDialogFragment.reloadHistory();
+		} else if (target instanceof QuickSearchHistoryFragment quickSearchHistoryFragment) {
+			quickSearchHistoryFragment.reloadHistory();
 		}
 	}
 
