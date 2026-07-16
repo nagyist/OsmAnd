@@ -4718,9 +4718,9 @@
     <string name="shared_string_road_exit">Uscita</string>
     <string name="hmd_promo">Promozione HMD per%1$s mesi</string>
     <string name="apply_to_all_points">Applica a tutti i punti</string>
-    <string name="original_color_description">Ogni punto mantiene il suo colore individuale.</string>
+    <string name="original_color_description">Ogni punto mantiene il proprio colore individuale.</string>
     <string name="original_shape_description">Ogni punto mantiene la sua forma individuale.</string>
-    <string name="original_icon_description">Ogni punto mantiene la sua icona individuale.</string>
+    <string name="original_icon_description">Ogni punto mantiene la propria icona individuale.</string>
     <string name="save_favorite_default_appearance">Applicare le modifiche a tutti i punti esistenti nella cartella, o solo a quelli aggiunti di recente?</string>
     <string name="popular_places">Luoghi popolari</string>
     <string name="point_location">Posizione del punto</string>
