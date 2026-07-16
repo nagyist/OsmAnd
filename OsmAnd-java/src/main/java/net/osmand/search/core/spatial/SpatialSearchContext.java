@@ -898,24 +898,15 @@ public class SpatialSearchContext {
 	}
 
 	private boolean isWordCommonlyUsed(NameIndexReader indx, String mainWord) {
-		// store commonlyUsedWords across all files
-		if (commonlyUsedWords.contains(mainWord)) {
-			return true;
-		}
-		// always search numbers as they could be very specific - "2" token could match "2-nd" atom
-		// However 2 shouldn't be in common words by design!
-		if(SearchAlgorithms.isNumber2Letters(mainWord)) {
+		// do not store commonlyUsedWords across all files! 
+		// it creates bug "united states" not common for world, regions.ocbf (apple test case - appletree)
+		if (SearchAlgorithms.isNumber2Letters(mainWord)) {
 			return false;
 		}
 		ValueFreq isCommonWord = indx.getCommonWordsStats().get(SearchAlgorithms.alignChars(mainWord));
 		if (isCommonWord == null) {
 			return false;
 		}
-		// we can't yet rely on indexed stats as ('chateau vieux ...') 
-		// still shouldn't show up on single 'chateau' as it contains extra words but will be indexed
-		// this could be an issue for rare cases "haupstrasse <villagename>"
-//		if (isCommonWord.freq > 2 * isCommonWord.extra) {
-		commonlyUsedWords.add(mainWord);
 		return true;
 	}
 

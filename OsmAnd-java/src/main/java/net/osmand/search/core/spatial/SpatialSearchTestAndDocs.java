@@ -43,9 +43,10 @@ import net.osmand.util.SearchAlgorithms;
 // TESTING DISABLED SUGGEST_SEARCH_POI_CATEGORY_WITH_REF + Intersect Category and ref
 // TESTING mcdonalds fast food (amst)
 
-// 39.741207, -8.801283 - ("Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal")
-// TODO SLOW Analysis Rue de la
 // FIXME we could analyze poi comes from category and don't add on common at all?
+// FIXME no intersection in that case "rue de la"
+// FIXME PA-75
+// FIXME Golden State Road Los Angeles United States
 
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
@@ -56,7 +57,7 @@ import net.osmand.util.SearchAlgorithms;
 
 // TO DO Ivan
 // TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
-// TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Check)
+// TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 // TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
 
@@ -65,12 +66,16 @@ import net.osmand.util.SearchAlgorithms;
 // TODO INDEX: Find POI Categories translations / synonyms (+WEB) - Стоматол., Dentist, Stomatology, BASILICA (!!?)
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
 // TODO REVIEW: Analyze Abbrefvations / common skip (abbrevations 1st=first) 
+// SLOW ANALYSIS 
+// "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
+// Foothill Boulevard x Golden State Road x Los Angeles x United states of America
 
 // TO DO - RZR
 // TESTING WEB: POI Categories + top poi categories ...
 // TESTING WEB: display results std way: house, street, city, poi...
 // TODO WEB: Highlight ref matching, interpolation (somehow) with braces?
 // TODO WEB: Multithread pool, Monitor / time & memory optimize memory?
+// TODO WEB: CANCEL ! (slow queries for server)
 
 // TODO ANDROID: Integrate (include regions.ocbf) on client
 // TODO ANDROID: Progress / cancel
@@ -411,19 +416,25 @@ public class SpatialSearchTestAndDocs {
 //		query = "Cannaregio 539D Campo Saffa";
 //		query = "Campo Saffa";
 		
-		pattern = "France_ile-de-france";
+//		pattern = "France_ile-de-france";
 //		pattern = "France_";
 //		location = new LatLon(40, 5);
-//		query = "Eiffel"; // Tour Eiffel, Tower Eiffel, Eiffel
+//		query = "Eiffel"; // Tour Eiffel, Tower Eiffel, Eiffel - First always Tour Eiffel (second 'Le Jules Verne' OK) 
 //		query = "Rue Bouchardon 2BIS"; // '2bis' OK, '2 BIS' OK , '2' OK, '2-BIS'
 //		query = "Rue Jean Poulmarch 17bis"; //  17bis OK, 17 OK, 17 BIS - OK 'Rue Jean Poulmarch 17;17 bis' 
 //		query = "Dieu 8-bis"; // 'Rue Dieu 8 bis' , '8-bis', '8 bis'
 		// too many results
 //		query = "rue de l'eglise"; // specific search - "rue de l'eglise", non specific "rue de"
 //		query = "rue de la fen."; // all strets
-		query = "de la"; // "de la", "rue de la" only common words + high rating
-		// FIXME no intersection in that case
+//		query = "rue de la"; // "de la", "rue de la" only common words + high rating
 //		query = "rû bas du rue";
+		
+		pattern = "Us_cal";
+//		pattern2 = "regions";
+		query = "Golden State Road Los Angeles United States"; // matched only 5?, United States - not found
+//		query = "Sylmar United States"; // not found
+//		query = "United States"; // not found 
+//		query = "Golden State Road Foothill Boulevard Sylmar USA";
 
 		
 //		pattern = "World_basemap_2";
