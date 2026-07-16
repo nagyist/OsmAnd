@@ -140,7 +140,7 @@ import net.osmand.plus.views.mapwidgets.TopToolbarController;
 import net.osmand.plus.views.mapwidgets.TopToolbarController.TopToolbarControllerType;
 import net.osmand.plus.views.mapwidgets.WidgetsPanel;
 import net.osmand.plus.views.mapwidgets.WidgetsVisibilityHelper;
-import net.osmand.plus.views.mapwidgets.configure.appearance.PanelAppearanceSettings;
+import net.osmand.plus.views.mapwidgets.appearance.ResolvedPanelBackground;
 import net.osmand.shared.gpx.GpxFile;
 import net.osmand.util.Algorithms;
 
@@ -839,12 +839,21 @@ public class MapActivity extends OsmandActionBarActivity implements DownloadEven
 	@Nullable
 	@Override
 	public Integer getNavigationBarColor() {
-		if (InsetsUtils.isEdgeToEdgeSupported() && isBottomWidgetsPanelVisible()) {
-			ScreenLayoutMode layoutMode = ScreenLayoutMode.getDefault(this);
-			return PanelAppearanceSettings.getCommittedCustomBackgroundColor(
-					app, WidgetsPanel.BOTTOM, layoutMode, isMapUiNightMode());
+		if (InsetsUtils.isEdgeToEdgeSupported()) {
+			if (isBottomWidgetsPanelVisible()) {
+				ScreenLayoutMode layoutMode = ScreenLayoutMode.getDefault(this);
+				ResolvedPanelBackground background = app.getPanelAppearanceSettingsManager()
+						.resolveCommittedBackground(WidgetsPanel.BOTTOM, layoutMode, isMapUiNightMode());
+				if (background.getMode() != PanelBackgroundMode.TRANSPARENT) {
+					return background.getColor();
+				}
+			}
+			if (AddGpxPointBottomSheetHelper.isVisible(this)
+					|| AudioVideoNoteRecordingMenu.isVisible(this)) {
+				return getColor(ColorUtilities.getListBgColorId(isNightMode()));
+			}
 		}
-		return null;
+		return super.getNavigationBarColor();
 	}
 
 	private boolean isMapUiNightMode() {
@@ -854,25 +863,6 @@ public class MapActivity extends OsmandActionBarActivity implements DownloadEven
 	private boolean isBottomWidgetsPanelVisible() {
 		VerticalWidgetPanel panel = findViewById(R.id.map_bottom_widgets_panel);
 		return panel != null && panel.isShown() && panel.isAnyRowVisible();
-	}
-
-	@Override
-	public int getNavigationBarColorId() {
-		if (InsetsUtils.isEdgeToEdgeSupported()) {
-			ScreenLayoutMode layoutMode = ScreenLayoutMode.getDefault(this);
-			boolean nightMode = isMapUiNightMode();
-			PanelBackgroundMode backgroundMode = app.getPanelAppearanceSettingsManager()
-					.resolveCommittedBackground(WidgetsPanel.BOTTOM, layoutMode, nightMode).getMode();
-			boolean transparent = backgroundMode == PanelBackgroundMode.TRANSPARENT;
-			if (isBottomWidgetsPanelVisible() && !transparent) {
-				return ColorUtilities.getWidgetBackgroundColorId(nightMode);
-			}
-			if (AddGpxPointBottomSheetHelper.isVisible(this)
-					|| AudioVideoNoteRecordingMenu.isVisible(this)) {
-				return ColorUtilities.getListBgColorId(isNightMode());
-			}
-		}
-		return super.getNavigationBarColorId();
 	}
 
 	@Override

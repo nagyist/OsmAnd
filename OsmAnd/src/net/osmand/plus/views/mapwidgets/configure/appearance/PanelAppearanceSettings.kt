@@ -265,10 +265,23 @@ class PanelAppearanceSettings internal constructor(
 		landscapePreferences.addListener(listener)
 	}
 
+	internal fun removeListener(listener: StateChangedListener<Any?>) {
+		basePreferences.removeListener(listener)
+		portraitPreferences.removeListener(listener)
+		landscapePreferences.removeListener(listener)
+	}
+
 	@Suppress("UNCHECKED_CAST")
 	private fun LayoutPreferences.addListener(listener: StateChangedListener<Any?>) {
 		for (preference in all) {
 			(preference as CommonPreference<Any?>).addListener(listener)
+		}
+	}
+
+	@Suppress("UNCHECKED_CAST")
+	private fun LayoutPreferences.removeListener(listener: StateChangedListener<Any?>) {
+		for (preference in all) {
+			(preference as CommonPreference<Any?>).removeListener(listener)
 		}
 	}
 

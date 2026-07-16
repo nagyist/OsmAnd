@@ -2,9 +2,9 @@ package net.osmand.plus.views.mapwidgets.configure.appearance
 
 import androidx.annotation.ColorInt
 import androidx.fragment.app.FragmentActivity
-import net.osmand.StateChangedListener
 import net.osmand.plus.OsmandApplication
 import net.osmand.plus.R
+import net.osmand.plus.Version
 import net.osmand.plus.activities.MapActivity
 import net.osmand.plus.chooseplan.ChoosePlanFragment
 import net.osmand.plus.configmap.MapColorPaletteController
@@ -57,14 +57,6 @@ class PanelColorController private constructor(
 	private var previewToken: Long? = null
 	private var lastAvailability = isColorSelectionAvailable()
 	private var disposed = false
-	private var purchaseListenersRegistered = false
-	private val purchaseListener = StateChangedListener<Boolean> {
-		app.runInUIThread {
-			if (!disposed) {
-				handleAvailabilityChanged()
-			}
-		}
-	}
 
 	override fun getPreviewPanel(): WidgetsPanel = appearanceSettings.panel
 
@@ -80,7 +72,7 @@ class PanelColorController private constructor(
 
 	override fun isColorSelectionAvailable(): Boolean {
 		return target != PanelColorTarget.BACKGROUND
-				|| PanelAppearanceEntitlement.isCustomBackgroundAvailable(app)
+				|| Version.isPaidVersion(app)
 	}
 
 	override fun getUnavailableIconId(): Int = R.drawable.ic_action_widget_colored
@@ -102,12 +94,8 @@ class PanelColorController private constructor(
 	}
 
 	override fun onApplyChanges() {
-		tryApplyChanges()
-	}
-
-	override fun tryApplyChanges(): Boolean {
 		if (!isColorSelectionAvailable()) {
-			return false
+			return
 		}
 		val saved = appearanceSettings.commitCustomColors(
 			target, appMode, layoutMode, colorDay, colorNight
@@ -116,7 +104,6 @@ class PanelColorController private constructor(
 			dispose()
 			refreshWidgets()
 		}
-		return saved
 	}
 
 	override fun hasChanges(): Boolean {
@@ -197,9 +184,6 @@ class PanelColorController private constructor(
 	}
 
 	private fun activate() {
-		if (target == PanelColorTarget.BACKGROUND) {
-			registerPurchaseListeners()
-		}
 		startPreview()
 	}
 
@@ -227,30 +211,12 @@ class PanelColorController private constructor(
 		externalListener?.onAvailabilityChanged()
 	}
 
-	private fun registerPurchaseListeners() {
-		if (purchaseListenersRegistered) {
-			return
-		}
-		purchaseListenersRegistered = true
-		app.settings.FULL_VERSION_PURCHASED.addListener(purchaseListener)
-		app.settings.OSMAND_MAPS_PURCHASED.addListener(purchaseListener)
-		app.settings.OSMAND_PRO_PURCHASED.addListener(purchaseListener)
-		app.settings.BACKUP_PURCHASE_ACTIVE.addListener(purchaseListener)
-	}
-
 	private fun dispose() {
 		if (disposed) {
 			return
 		}
 		disposed = true
 		finishPreview()
-		if (purchaseListenersRegistered) {
-			purchaseListenersRegistered = false
-			app.settings.FULL_VERSION_PURCHASED.removeListener(purchaseListener)
-			app.settings.OSMAND_MAPS_PURCHASED.removeListener(purchaseListener)
-			app.settings.OSMAND_PRO_PURCHASED.removeListener(purchaseListener)
-			app.settings.BACKUP_PURCHASE_ACTIVE.removeListener(purchaseListener)
-		}
 	}
 
 	private fun refreshSelectedPaletteColor() {

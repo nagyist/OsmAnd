@@ -16,6 +16,7 @@ import androidx.annotation.StringRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.widget.ImageViewCompat
 import net.osmand.plus.R
+import net.osmand.plus.Version
 import net.osmand.plus.activities.MapActivity
 import net.osmand.plus.base.BaseOsmAndFragment
 import net.osmand.plus.palette.view.PaletteElements
@@ -299,7 +300,7 @@ class PanelAppearanceFragment : BaseOsmAndFragment() {
 
 	private fun showBackgroundColorMenu(anchorView: View) {
 		val pref = appearanceSettings.getBackgroundModePref(layoutMode)
-		val customAvailable = PanelAppearanceEntitlement.isCustomBackgroundAvailable(app)
+		val customAvailable = Version.isPaidVersion(app)
 		val items = PanelBackgroundMode.entries.map { mode ->
 			val builder = PopUpMenuItem.Builder(app)
 				.setTitleId(mode.titleId)

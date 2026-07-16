@@ -117,11 +117,6 @@ public abstract class MapColorPaletteController extends BaseDialogController imp
 
 	public abstract void onApplyChanges();
 
-	public boolean tryApplyChanges() {
-		onApplyChanges();
-		return true;
-	}
-
 	public abstract void onResetToDefault();
 
 	public boolean hasChanges() {

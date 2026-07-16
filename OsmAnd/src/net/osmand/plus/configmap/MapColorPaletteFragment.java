@@ -18,7 +18,6 @@ import net.osmand.plus.configmap.MapColorPaletteController.IMapColorPaletteContr
 import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.views.mapwidgets.WidgetsPanel;
-import net.osmand.plus.widgets.dialogbutton.DialogButton;
 import net.osmand.shared.palette.domain.PaletteItem;
 
 public class MapColorPaletteFragment extends ConfigureMapOptionFragment implements IMapColorPaletteControllerListener {
@@ -116,16 +115,6 @@ public class MapColorPaletteFragment extends ConfigureMapOptionFragment implemen
 		updateApplyButtonVisibility();
 	}
 
-	@Override
-	protected void setupApplyButton(@NonNull DialogButton applyButton) {
-		applyButton.setOnClickListener(v -> {
-			if (controller != null && controller.tryApplyChanges()) {
-				dismiss();
-			}
-		});
-		updateApplyButton(false);
-	}
-
 	private void updateApplyButtonVisibility() {
 		if (bottomContainer != null && controller != null) {
 			AndroidUiHelper.updateVisibility(bottomContainer.findViewById(R.id.apply_button),
@@ -135,6 +124,9 @@ public class MapColorPaletteFragment extends ConfigureMapOptionFragment implemen
 
 	@Override
 	protected void applyChanges() {
+		if (controller != null) {
+			controller.onApplyChanges();
+		}
 	}
 
 	@Override

@@ -115,10 +115,6 @@ public class RouteInfoWidget extends MapWidget implements ISupportVerticalPanel,
 		renderedWidgetSize = getWidgetSize();
 		renderedNightMode = nightMode;
 		collectViews();
-		ResolvedPanelAppearance appearance = getPanelAppearance();
-		if (appearance != null) {
-			applyRouteInfoAppearance(appearance);
-		}
 		int color = ColorUtilities.getSecondaryActiveColor(app, nightMode);
 		Drawable normal = UiUtilities.createTintedDrawable(app, R.drawable.rectangle_rounded_small, color);
 
@@ -445,7 +441,7 @@ public class RouteInfoWidget extends MapWidget implements ISupportVerticalPanel,
 	}
 
 	@Override
-	public void recreateView() {
+	protected void recreateViewInternal() {
 		initView();
 		forceUpdate = true;
 		setupViews();

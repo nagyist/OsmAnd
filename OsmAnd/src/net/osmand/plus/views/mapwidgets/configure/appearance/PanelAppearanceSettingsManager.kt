@@ -2,7 +2,9 @@ package net.osmand.plus.views.mapwidgets.configure.appearance
 
 import net.osmand.StateChangedListener
 import net.osmand.plus.OsmandApplication
+import net.osmand.plus.Version
 import net.osmand.plus.settings.backend.ApplicationMode
+import net.osmand.plus.settings.backend.OsmandSettings
 import net.osmand.plus.settings.enums.PanelBackgroundMode
 import net.osmand.plus.settings.enums.ScreenLayoutMode
 import net.osmand.plus.views.mapwidgets.WidgetsPanel
@@ -15,7 +17,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
-class PanelAppearanceSettingsManager(private val app: OsmandApplication) {
+class PanelAppearanceSettingsManager(
+	private val app: OsmandApplication,
+	settings: OsmandSettings
+) {
 
 	enum class ChangeOrigin {
 		COMMITTED,
@@ -34,7 +39,7 @@ class PanelAppearanceSettingsManager(private val app: OsmandApplication) {
 		val state: PanelAppearanceState
 	)
 
-	private val settings = app.settings
+	private var settings = settings
 	private val revisionCounter = AtomicLong()
 	private val committedRevisionCounter = AtomicLong()
 	private val previewTokenCounter = AtomicLong()
@@ -44,19 +49,36 @@ class PanelAppearanceSettingsManager(private val app: OsmandApplication) {
 
 	private val preferenceListener = StateChangedListener<Any?> { notifyChanged(ChangeOrigin.COMMITTED) }
 	private val appModeListener = StateChangedListener<ApplicationMode> { notifyChanged(ChangeOrigin.COMMITTED) }
-	private val purchaseListener = StateChangedListener<Boolean> { notifyChanged(ChangeOrigin.COMMITTED) }
 
 	init {
+		registerSettings()
+	}
+
+	private fun registerSettings() {
 		for (panel in WidgetsPanel.values()) {
 			val panelSettings = PanelAppearanceSettings(settings, panel)
 			settingsByPanel[panel] = panelSettings
 			panelSettings.addListener(preferenceListener)
 		}
 		settings.APPLICATION_MODE.addListener(appModeListener)
-		settings.FULL_VERSION_PURCHASED.addListener(purchaseListener)
-		settings.OSMAND_MAPS_PURCHASED.addListener(purchaseListener)
-		settings.OSMAND_PRO_PURCHASED.addListener(purchaseListener)
-		settings.BACKUP_PURCHASE_ACTIVE.addListener(purchaseListener)
+	}
+
+	private fun unregisterSettings() {
+		settingsByPanel.values.forEach { it.removeListener(preferenceListener) }
+		settings.APPLICATION_MODE.removeListener(appModeListener)
+	}
+
+	@Synchronized
+	fun updateSettings(settings: OsmandSettings) {
+		if (this.settings === settings) {
+			return
+		}
+		unregisterSettings()
+		this.settings = settings
+		settingsByPanel.clear()
+		previewSession.set(null)
+		registerSettings()
+		notifyChanged(ChangeOrigin.COMMITTED)
 	}
 
 	operator fun get(panel: WidgetsPanel): PanelAppearanceSettings =
@@ -111,7 +133,7 @@ class PanelAppearanceSettingsManager(private val app: OsmandApplication) {
 		var state = (if (includePreview) getPreviewState(panel, appMode, layoutMode) else null)
 			?: get(panel).readState(appMode, layoutMode)
 		if (state.backgroundMode == PanelBackgroundMode.CUSTOM
-				&& !PanelAppearanceEntitlement.isCustomBackgroundAvailable(app)) {
+				&& !Version.isPaidVersion(app)) {
 			state = state.copy(backgroundMode = PanelBackgroundMode.DEFAULT)
 		}
 		return PanelAppearanceResolver.resolve(

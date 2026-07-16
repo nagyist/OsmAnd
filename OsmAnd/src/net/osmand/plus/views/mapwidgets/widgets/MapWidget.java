@@ -120,6 +120,18 @@ public abstract class MapWidget implements PanelAppearanceConsumer {
 		return view;
 	}
 
+	public final void recreateView() {
+		recreateViewInternal();
+		ResolvedPanelAppearance appearance = panelAppearance;
+		if (appearance != null && appearance.getPanel() == panel) {
+			onPanelAppearanceChanged(appearance);
+		}
+	}
+
+	protected void recreateViewInternal() {
+
+	}
+
 	protected void setupView(@NonNull View view) {
 
 	}

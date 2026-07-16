@@ -165,7 +165,7 @@ public class OsmandApplication extends MultiDexApplication {
 	private final LocaleHelper localeHelper = new LocaleHelper(this);
 	private final ToastHelper toastHelper = new ToastHelper(this);
 	private final CoordinateFormatHelper coordinateFormatHelper = new CoordinateFormatHelper(this);
-	private volatile PanelAppearanceSettingsManager panelAppearanceSettingsManager;
+	private PanelAppearanceSettingsManager panelAppearanceSettingsManager;
 
 	// start variables
 	ResourceManager resourceManager;
@@ -268,6 +268,7 @@ public class OsmandApplication extends MultiDexApplication {
 		appCustomization = new OsmAndAppCustomization();
 		appCustomization.setup(this);
 		settings = appCustomization.getOsmandSettings();
+		panelAppearanceSettingsManager = new PanelAppearanceSettingsManager(this, settings);
 		appInitializer.initVariables();
 		if (appInitializer.isAppVersionChanged() && appInitializer.getPrevAppVersion() < AppVersionUpgradeOnInit.VERSION_2_3) {
 			settings.freezeExternalStorageDirectory();
@@ -443,23 +444,17 @@ public class OsmandApplication extends MultiDexApplication {
 
 	public synchronized void setSettings(OsmandSettings settings) {
 		this.settings = settings;
-		panelAppearanceSettingsManager = null;
+		if (panelAppearanceSettingsManager == null) {
+			panelAppearanceSettingsManager = new PanelAppearanceSettingsManager(this, settings);
+		} else {
+			panelAppearanceSettingsManager.updateSettings(settings);
+		}
 		PluginsHelper.initPlugins(this);
 	}
 
 	@NonNull
 	public PanelAppearanceSettingsManager getPanelAppearanceSettingsManager() {
-		PanelAppearanceSettingsManager manager = panelAppearanceSettingsManager;
-		if (manager == null) {
-			synchronized (this) {
-				manager = panelAppearanceSettingsManager;
-				if (manager == null) {
-					manager = new PanelAppearanceSettingsManager(this);
-					panelAppearanceSettingsManager = manager;
-				}
-			}
-		}
-		return manager;
+		return panelAppearanceSettingsManager;
 	}
 
 	public SavingTrackHelper getSavingTrackHelper() {

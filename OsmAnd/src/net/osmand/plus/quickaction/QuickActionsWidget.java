@@ -58,8 +58,6 @@ public class QuickActionsWidget extends LinearLayout {
 	private final UiUtilities uiUtilities;
 
 	private QuickActionSelectionListener selectionListener;
-	@Nullable
-	private VisibilityChangeListener visibilityChangeListener;
 
 	private List<QuickAction> actions;
 	private QuickActionButton selectedButton;
@@ -107,19 +105,6 @@ public class QuickActionsWidget extends LinearLayout {
 
 	public void setSelectionListener(QuickActionSelectionListener selectionListener) {
 		this.selectionListener = selectionListener;
-	}
-
-	public void setVisibilityChangeListener(@Nullable VisibilityChangeListener listener) {
-		visibilityChangeListener = listener;
-	}
-
-	@Override
-	public void setVisibility(int visibility) {
-		boolean changed = visibility != getVisibility();
-		super.setVisibility(visibility);
-		if (changed && visibilityChangeListener != null) {
-			visibilityChangeListener.onVisibilityChanged(visibility == View.VISIBLE);
-		}
 	}
 
 	private void setupLayout(@NonNull Context context, int pageCount) {
@@ -310,15 +295,18 @@ public class QuickActionsWidget extends LinearLayout {
 		return (int) Math.ceil((actions.size()) / (double) 6);
 	}
 
-	public void updateVisibility(boolean visible) {
+	public void updateVisibility(boolean visible, @Nullable Runnable visibilityApplied) {
 		if (settings.DO_NOT_USE_ANIMATIONS.get() || !isAttachedToWindow() || selectedButton == null) {
-			AndroidUiHelper.updateVisibility(this, visible);
+			if (AndroidUiHelper.updateVisibility(this, visible) && visibilityApplied != null) {
+				visibilityApplied.run();
+			}
 		} else {
-			animateWidget(visible);
+			int targetVisibility = visible ? View.VISIBLE : View.GONE;
+			animateWidget(visible, getVisibility() != targetVisibility ? visibilityApplied : null);
 		}
 	}
 
-	private void animateWidget(boolean show) {
+	private void animateWidget(boolean show, @Nullable Runnable visibilityApplied) {
 		AnimatorSet set = new AnimatorSet();
 		List<Animator> animators = new ArrayList<>();
 
@@ -351,6 +339,9 @@ public class QuickActionsWidget extends LinearLayout {
 				super.onAnimationStart(animation);
 				if (show) {
 					setVisibility(View.VISIBLE);
+					if (visibilityApplied != null) {
+						visibilityApplied.run();
+					}
 				}
 			}
 
@@ -361,13 +352,12 @@ public class QuickActionsWidget extends LinearLayout {
 					setVisibility(View.GONE);
 					setTranslationX(0);
 					setTranslationY(0);
+					if (visibilityApplied != null) {
+						visibilityApplied.run();
+					}
 				}
 			}
 		});
 		set.start();
-	}
-
-	public interface VisibilityChangeListener {
-		void onVisibilityChanged(boolean visible);
 	}
 }

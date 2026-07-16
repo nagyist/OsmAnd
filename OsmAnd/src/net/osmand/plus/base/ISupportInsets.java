@@ -4,6 +4,7 @@ import static net.osmand.plus.settings.enums.ThemeUsageContext.APP;
 
 import android.app.Activity;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.WindowInsetsCompat;
@@ -33,11 +34,8 @@ public interface ISupportInsets {
 
 	void setLastRootInsets(@NonNull WindowInsetsCompat rootInsets);
 
-	default int getNavigationBarColorId() {
-		return -1;
-	}
-
 	@Nullable
+	@ColorInt
 	default Integer getNavigationBarColor() {
 		return null;
 	}

@@ -406,6 +406,7 @@ public class NextTurnBaseWidget extends TextInfoWidget implements IComplexWidget
 	protected void onPanelAppearanceChanged(@NonNull ResolvedPanelAppearance appearance) {
 		if (verticalWidget && renderedWidgetSize != resolveWidgetSize(getWidgetSizePref().get())) {
 			recreateView();
+			return;
 		}
 		if (verticalWidget) {
 			applyVerticalNavigationAppearance(appearance);
@@ -441,10 +442,6 @@ public class NextTurnBaseWidget extends TextInfoWidget implements IComplexWidget
 		if (isFullRow != fullRow) {
 			isFullRow = fullRow;
 			recreateView();
-			ResolvedPanelAppearance appearance = getPanelAppearance();
-			if (appearance != null) {
-				applyPanelAppearance(appearance);
-			}
 			updateInfo(null);
 		}
 	}
@@ -510,7 +507,7 @@ public class NextTurnBaseWidget extends TextInfoWidget implements IComplexWidget
 	}
 
 	@Override
-	public void recreateView() {
+	protected void recreateViewInternal() {
 		View view = getView();
 		View oldContainer = container;
 		if (verticalWidget) {

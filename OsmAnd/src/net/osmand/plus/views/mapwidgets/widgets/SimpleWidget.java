@@ -184,7 +184,8 @@ public abstract class SimpleWidget extends TextInfoWidget implements ISupportWid
 		}
 	}
 
-	public void recreateView() {
+	@Override
+	protected void recreateViewInternal() {
 		initView();
 		ImageView oldImageView = imageView;
 		OutlinedTextContainer oldTextView = textView;
@@ -382,6 +383,7 @@ public abstract class SimpleWidget extends TextInfoWidget implements ISupportWid
 	protected void onPanelAppearanceChanged(@NonNull ResolvedPanelAppearance appearance) {
 		if (renderedWidgetSize != resolveWidgetSize(getWidgetSizePref().get())) {
 			recreateView();
+			return;
 		}
 		AndroidUiHelper.updateVisibility(imageView, shouldShowIcon());
 		if (!isVerticalWidget()) {
@@ -424,10 +426,6 @@ public abstract class SimpleWidget extends TextInfoWidget implements ISupportWid
 		if (isFullRow != fullRow) {
 			isFullRow = fullRow;
 			recreateView();
-			ResolvedPanelAppearance appearance = getPanelAppearance();
-			if (appearance != null) {
-				applyPanelAppearance(appearance);
-			}
 			updateInfo(null);
 		}
 	}
