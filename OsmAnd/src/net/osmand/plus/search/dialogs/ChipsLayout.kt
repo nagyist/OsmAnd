@@ -1,7 +1,6 @@
 package net.osmand.plus.search.dialogs
 
 import android.content.Context
-import android.content.res.Configuration
 import android.util.AttributeSet
 import android.util.TypedValue
 import androidx.annotation.DrawableRes
@@ -32,6 +31,7 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
@@ -40,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.AbstractComposeView
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -51,7 +50,13 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import net.osmand.StateChangedListener
+import net.osmand.plus.OsmandApplication
 import net.osmand.plus.R
+import net.osmand.plus.settings.backend.ApplicationMode
+import net.osmand.plus.settings.enums.DayNightMode
+import net.osmand.plus.settings.enums.ThemeUsageContext
+import net.osmand.plus.utils.ColorUtilities
 
 class ChipsLayout @JvmOverloads constructor(
 	context: Context,
@@ -160,8 +165,17 @@ class ChipsLayout @JvmOverloads constructor(
 
 	private var items by mutableStateOf<List<ChipData>>(emptyList(), neverEqualPolicy())
 	private var expandedChipId by mutableStateOf<String?>(null)
+	private var appMode by mutableStateOf<ApplicationMode?>(null)
+	private var themeUsageContext by mutableStateOf(ThemeUsageContext.APP)
+	private var nightMode by mutableStateOf(resolveNightMode())
 	private var chipClickListener: OnChipClickListener? = null
 	private var dropdownItemClickListener: OnDropdownItemClickListener? = null
+
+	fun setThemeContext(appMode: ApplicationMode, themeUsageContext: ThemeUsageContext) {
+		this.appMode = appMode
+		this.themeUsageContext = themeUsageContext
+		updateNightMode()
+	}
 
 	fun updateContent(chips: List<ChipData>) {
 		val currentChips = items.associateBy { it.id }
@@ -184,8 +198,10 @@ class ChipsLayout @JvmOverloads constructor(
 
 	@Composable
 	override fun Content() {
+		ObserveThemeChanges()
 		ChipsLayoutContent(
 			items = items,
+			nightMode = nightMode,
 			expandedChipId = expandedChipId,
 			onExpandedChipChanged = { expandedChipId = it },
 			onChipClick = { chipClickListener?.onChipClick(it) },
@@ -195,11 +211,45 @@ class ChipsLayout @JvmOverloads constructor(
 			}
 		)
 	}
+
+	@Composable
+	private fun ObserveThemeChanges() {
+		DisposableEffect(Unit) {
+			val app = context.applicationContext as? OsmandApplication
+			if (app == null) {
+				onDispose { }
+			} else {
+				val dayNightListener = StateChangedListener<DayNightMode> {
+					app.runInUIThread { updateNightMode() }
+				}
+				val appThemeListener = StateChangedListener<Int> {
+					app.runInUIThread { updateNightMode() }
+				}
+				app.settings.DAYNIGHT_MODE.addListener(dayNightListener)
+				app.settings.OSMAND_THEME.addListener(appThemeListener)
+				onDispose {
+					app.settings.DAYNIGHT_MODE.removeListener(dayNightListener)
+					app.settings.OSMAND_THEME.removeListener(appThemeListener)
+				}
+			}
+		}
+	}
+
+	private fun updateNightMode() {
+		nightMode = resolveNightMode()
+	}
+
+	private fun resolveNightMode(): Boolean {
+		val app = context.applicationContext as? OsmandApplication ?: return false
+		val appMode = appMode ?: app.settings.applicationMode
+		return app.daynightHelper.isNightMode(appMode, themeUsageContext)
+	}
 }
 
 @Composable
 private fun ChipsLayoutContent(
 	items: List<ChipsLayout.ChipData>,
+	nightMode: Boolean,
 	expandedChipId: String?,
 	onExpandedChipChanged: (String?) -> Unit,
 	onChipClick: (String) -> Unit,
@@ -245,7 +295,8 @@ private fun ChipsLayoutContent(
 					dividerColor = dividerColor,
 					activeColor = activeColor,
 					inActiveColor = inActiveColor,
-					activeBackground = activeBackground
+					activeBackground = activeBackground,
+					nightMode = nightMode
 				)
 			}
 			Spacer(modifier = Modifier.width(contentPadding - halfPadding))
@@ -264,7 +315,8 @@ private fun ChipAnchor(
 	dividerColor: Color,
 	activeColor: Color,
 	inActiveColor: Color,
-	activeBackground: Color
+	activeBackground: Color,
+	nightMode: Boolean
 ) {
 	Box {
 		val chipId = chip.id
@@ -287,7 +339,8 @@ private fun ChipAnchor(
 			dividerColor = dividerColor,
 			activeColor = activeColor,
 			inActiveColor = inActiveColor,
-			activeBackground = activeBackground
+			activeBackground = activeBackground,
+			nightMode = nightMode
 		)
 		if (chip.hasDropDown) {
 			DropdownMenu(
@@ -321,7 +374,8 @@ private fun ChipAnchor(
 							}
 						},
 						activeColor = activeColor,
-						inActiveColor = inActiveColor
+						inActiveColor = inActiveColor,
+						nightMode = nightMode
 					)
 					if (item.showDividerBelow) {
 						Spacer(
@@ -342,7 +396,8 @@ private fun DropdownItemRow(
 	item: ChipsLayout.DropdownItem,
 	onClick: () -> Unit,
 	activeColor: Color,
-	inActiveColor: Color
+	inActiveColor: Color,
+	nightMode: Boolean
 ) {
 	val itemTextColor = textColor(ChipsLayout.TextColorStyle.PRIMARY)
 	val secondaryTextColor = textColor(ChipsLayout.TextColorStyle.SECONDARY)
@@ -358,7 +413,7 @@ private fun DropdownItemRow(
 			Icon(
 				painter = painterResource(item.iconId),
 				contentDescription = null,
-				tint = iconColor(ChipsLayout.IconColorStyle.DEFAULT),
+				tint = iconColor(ChipsLayout.IconColorStyle.DEFAULT, nightMode),
 				modifier = Modifier.size(24.dp)
 			)
 		} else {
@@ -402,10 +457,11 @@ private fun OsmandFilterChip(
 	dividerColor: Color,
 	activeColor: Color,
 	inActiveColor: Color,
-	activeBackground: Color
+	activeBackground: Color,
+	nightMode: Boolean
 ) {
 	val labelColor = textColor(chipData.titleColor)
-	val leadingIconColor = iconColor(chipData.iconColor)
+	val leadingIconColor = iconColor(chipData.iconColor, nightMode)
 	val trailingIconVisible =
 		chipData.hasDropDown && (chipData.enabled || chipData.showDropDownIconWhenDisabled)
 	val title = chipData.title
@@ -498,28 +554,15 @@ private fun textColor(style: ChipsLayout.TextColorStyle): Color {
 }
 
 @Composable
-private fun iconColor(style: ChipsLayout.IconColorStyle): Color {
+private fun iconColor(style: ChipsLayout.IconColorStyle, nightMode: Boolean): Color {
 	val context = LocalContext.current
-	val configuration = LocalConfiguration.current
-	val nightMode = (configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-			Configuration.UI_MODE_NIGHT_YES
 	val colorId = when (style) {
-		ChipsLayout.IconColorStyle.DEFAULT ->
-			if (nightMode) R.color.icon_color_default_dark else R.color.icon_color_default_light
-
-		ChipsLayout.IconColorStyle.SECONDARY ->
-			if (nightMode) R.color.icon_color_secondary_dark else R.color.icon_color_secondary_light
-
-		ChipsLayout.IconColorStyle.PRIMARY ->
-			if (nightMode) R.color.icon_color_primary_dark else R.color.icon_color_primary_light
-
-		ChipsLayout.IconColorStyle.OSMAND ->
-			if (nightMode) R.color.icon_color_osmand_dark else R.color.icon_color_osmand_light
-
-		ChipsLayout.IconColorStyle.ACTIVE ->
-			if (nightMode) R.color.icon_color_active_dark else R.color.icon_color_active_light
-
-		ChipsLayout.IconColorStyle.WARNING -> R.color.icon_color_warning
+		ChipsLayout.IconColorStyle.DEFAULT -> ColorUtilities.getDefaultIconColorId(nightMode)
+		ChipsLayout.IconColorStyle.SECONDARY -> ColorUtilities.getSecondaryIconColorId(nightMode)
+		ChipsLayout.IconColorStyle.PRIMARY -> ColorUtilities.getPrimaryIconColorId(nightMode)
+		ChipsLayout.IconColorStyle.OSMAND -> ColorUtilities.getOsmandIconColorId(nightMode)
+		ChipsLayout.IconColorStyle.ACTIVE -> ColorUtilities.getActiveIconColorId(nightMode)
+		ChipsLayout.IconColorStyle.WARNING -> ColorUtilities.getWarningColorId(nightMode)
 	}
 	return Color(ContextCompat.getColor(context, colorId))
 }

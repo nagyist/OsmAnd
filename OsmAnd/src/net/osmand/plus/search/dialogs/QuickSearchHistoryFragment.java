@@ -195,6 +195,8 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private void setupChips(@NonNull View view) {
 		chipsToolbar = view.findViewById(R.id.chips_toolbar);
 		typeChipsToolbar = view.findViewById(R.id.type_chips_toolbar);
+		chipsToolbar.setThemeContext(appMode, getThemeUsageContext());
+		typeChipsToolbar.setThemeContext(appMode, getThemeUsageContext());
 		typeChipsToolbar.setOnChipClickListener(this::onTypeChipClick);
 		initToolbarChipItems();
 		updateSourceFilterFromSettings();

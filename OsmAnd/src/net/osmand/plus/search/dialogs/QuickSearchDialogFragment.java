@@ -350,6 +350,8 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		buttonToolbarView = view.findViewById(R.id.button_toolbar_layout);
 		filterChips = view.findViewById(R.id.search_result_filter_chips);
 		searchResultPoiTypesChips = view.findViewById(R.id.search_result_poi_types_chips);
+		filterChips.setThemeContext(appMode, getThemeUsageContext());
+		searchResultPoiTypesChips.setThemeContext(appMode, getThemeUsageContext());
 		searchResultPoiTypesChips.setOnChipClickListener(this::onPoiTypeChipClick);
 		initFilterChipItems();
 		updateChipsState();
