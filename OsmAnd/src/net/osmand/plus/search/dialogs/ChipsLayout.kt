@@ -462,6 +462,11 @@ private fun OsmandFilterChip(
 ) {
 	val labelColor = textColor(chipData.titleColor)
 	val leadingIconColor = iconColor(chipData.iconColor, nightMode)
+	val trailingIconColor = if (chipData.enabled) {
+		labelColor
+	} else {
+		iconColor(ChipsLayout.IconColorStyle.SECONDARY, nightMode)
+	}
 	val trailingIconVisible =
 		chipData.hasDropDown && (chipData.enabled || chipData.showDropDownIconWhenDisabled)
 	val title = chipData.title
@@ -506,7 +511,7 @@ private fun OsmandFilterChip(
 				Icon(
 					painter = painterResource(R.drawable.ic_action_arrow_drop_down),
 					contentDescription = null,
-					tint = labelColor,
+					tint = trailingIconColor,
 					modifier = Modifier.size(24.dp)
 				)
 			}
@@ -521,7 +526,7 @@ private fun OsmandFilterChip(
 			disabledContainerColor = listBackground,
 			disabledLabelColor = labelColor.copy(alpha = .5f),
 			disabledLeadingIconColor = leadingIconColor.copy(alpha = .5f),
-			disabledTrailingIconColor = labelColor.copy(alpha = .5f),
+			disabledTrailingIconColor = trailingIconColor,
 			selectedContainerColor = activeBackground,
 			selectedLabelColor = labelColor,
 			selectedLeadingIconColor = leadingIconColor,

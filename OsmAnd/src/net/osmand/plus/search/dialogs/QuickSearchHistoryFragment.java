@@ -125,6 +125,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 	private HistorySourceFilter selectedSourceFilter = HistorySourceFilter.ALL;
 	private final List<String> selectedTypeFilters = new ArrayList<>();
 	private final List<String> visibleTypeFilters = new ArrayList<>();
+	private boolean hasHistoryRecords;
 
 	@ColorRes
 	@Override
@@ -323,6 +324,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		try {
 			if (adapter != null) {
 				if (isHistoryDisabled()) {
+					hasHistoryRecords = false;
 					visibleTypeFilters.clear();
 					selectedTypeFilters.clear();
 					updateChipsState();
@@ -330,6 +332,7 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 							new QuickSearchDisabledHistoryItem(app, v -> openHistorySettings()))));
 				} else {
 					List<HistoryRecord> records = loadHistoryRecords(query);
+					hasHistoryRecords = !records.isEmpty();
 					updateTypeFilterChips(records);
 					records = applyTypeFilters(records);
 					sortRecords(records);
@@ -552,6 +555,10 @@ public class QuickSearchHistoryFragment extends BaseFullScreenDialogFragment imp
 		List<ChipsLayout.ChipData> typeChips = new ArrayList<>();
 		sortModeChip.iconId = selectedSortMode.iconId;
 		sortModeChip.title = getString(selectedSortMode.titleId);
+		sortModeChip.enabled = !isHistoryDisabled() && hasHistoryRecords;
+		sortModeChip.iconColor = sortModeChip.enabled
+				? ChipsLayout.IconColorStyle.ACTIVE
+				: ChipsLayout.IconColorStyle.SECONDARY;
 		sortModeChip.dropdownItems = getSortOptions();
 
 		sourceFilterChip.iconId = selectedSourceFilter.iconId;
