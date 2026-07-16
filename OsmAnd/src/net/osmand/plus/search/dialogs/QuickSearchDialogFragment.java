@@ -908,7 +908,9 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 				0,
 				new ArrayList<>(),
 				false,
-				chipId -> onFilterChipClick());
+				chipId -> onFilterChipClick(),
+				null,
+				app.getString(R.string.shared_string_filters));
 		sortChip = new ChipsLayout.DropDownChipData(
 				SORT_CHIP_ID,
 				R.drawable.ic_action_sort,

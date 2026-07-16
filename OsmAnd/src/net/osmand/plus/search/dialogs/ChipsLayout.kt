@@ -96,7 +96,8 @@ class ChipsLayout @JvmOverloads constructor(
 		@JvmField var dropdownItems: List<DropdownItem> = emptyList(),
 		@JvmField var showDropDownIconWhenDisabled: Boolean = false,
 		@JvmField var onClickListener: OnChipClickListener? = null,
-		@JvmField var onDropdownItemClickListener: OnDropdownItemClickListener? = null
+		@JvmField var onDropdownItemClickListener: OnDropdownItemClickListener? = null,
+		@JvmField var contentDescription: String? = null
 	) {
 		fun updateContent(chip: ChipData) {
 			iconId = chip.iconId
@@ -112,6 +113,7 @@ class ChipsLayout @JvmOverloads constructor(
 			showDropDownIconWhenDisabled = chip.showDropDownIconWhenDisabled
 			onClickListener = chip.onClickListener
 			onDropdownItemClickListener = chip.onDropdownItemClickListener
+			contentDescription = chip.contentDescription
 		}
 	}
 
@@ -127,7 +129,8 @@ class ChipsLayout @JvmOverloads constructor(
 		@StringRes menuTitleId: Int = 0,
 		dropdownItems: List<DropdownItem> = emptyList(),
 		showDropDownIconWhenDisabled: Boolean = false,
-		onDropdownItemClickListener: OnDropdownItemClickListener? = null
+		onDropdownItemClickListener: OnDropdownItemClickListener? = null,
+		contentDescription: String? = null
 	) : ChipData(
 		id = id,
 		iconId = iconId,
@@ -141,7 +144,8 @@ class ChipsLayout @JvmOverloads constructor(
 		menuTitleId = menuTitleId,
 		dropdownItems = dropdownItems,
 		showDropDownIconWhenDisabled = showDropDownIconWhenDisabled,
-		onDropdownItemClickListener = onDropdownItemClickListener
+		onDropdownItemClickListener = onDropdownItemClickListener,
+		contentDescription = contentDescription
 	)
 
 	class DropdownItem @JvmOverloads constructor(
@@ -322,6 +326,7 @@ private fun ChipAnchor(
 		val chipId = chip.id
 		OsmandFilterChip(
 			chipData = chip,
+			contentDescription = chip.contentDescription,
 			selected = chip.selected || expanded,
 			onClick = {
 				if (chip.hasDropDown && chip.enabled) {
@@ -451,6 +456,7 @@ private fun DropdownItemRow(
 @Composable
 private fun OsmandFilterChip(
 	chipData: ChipsLayout.ChipData,
+	contentDescription: String? = null,
 	selected: Boolean,
 	onClick: () -> Unit,
 	listBackground: Color,
@@ -479,7 +485,7 @@ private fun OsmandFilterChip(
 			if (iconOnly) {
 				Icon(
 					painter = painterResource(chipData.iconId),
-					contentDescription = null,
+					contentDescription = contentDescription,
 					tint = leadingIconColor.copy(alpha = if (chipData.enabled) 1f else .5f),
 					modifier = Modifier.size(18.dp)
 				)
@@ -498,7 +504,7 @@ private fun OsmandFilterChip(
 			{
 				Icon(
 					painter = painterResource(chipData.iconId),
-					contentDescription = null,
+					contentDescription = contentDescription,
 					tint = leadingIconColor,
 					modifier = Modifier.size(18.dp)
 				)
