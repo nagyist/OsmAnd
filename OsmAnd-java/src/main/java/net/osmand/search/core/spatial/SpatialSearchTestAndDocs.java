@@ -21,25 +21,23 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING DEDUPLICATE: Unite RouteArticle, POI by wikidata id ? - DEPTH_TO_CHECK_SAME_SEARCH_RESULTS = 20;...
 // UNIT TESTING DEDUPLICATE: Route by id 
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
+// UNIT TESTING: Live? Fix 36K national park - live test? (don't index small islands > 100 POI !!!)
+// UNIT TESTING: Live? Limit results "Gate"... ?
 // UNIT TESTING: (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
-// UNIT TESTING: Add test on show more '2 sokak' - Show more 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak
-// UNIT TESTING: Store Poi category index (effective intersection aragon - 'Church Basílica de Nuestra Señora del Pilar')
-// UNIT TESTING: Autocheck poi subtype - Burger Mcdonald's
-// UNIT TESTING: Highlight ref sorting
-// UNIT TESTING: Fix 36K national park (don't index small islands > 100 POI !!!)
-// UNIT TESTING Limit results "Gate"... 
-// UNIT TESTING Find Refs of amenity D18 , D-18 
-// UNIT TESTING - Abbreviations.isCommonSkipOtherCnt ???  Tour Eiffel don't count extra word (common) - test...!!
-// UNIT TESTING - PA-75 27193, PA21 !!
+// UNIT TESTING: Add test on show more '2 sokak' - Show more 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak!
+// UNIT TESTING: Store Poi category index (effective intersection aragon - 'Church Basílica de Nuestra Señora del Pilar') - TEST
+// UNIT TESTING: Autocheck poi subtype - Burger Mcdonald's!
+// UNIT TESTING: Find Refs of amenity "Gate D18" , D-18!!, "Helipad 2", "Trübbach 10" (name + ref) 
+// UNIT TESTING - Abbreviations.isCommonSkipOtherCnt ???  Tour Eiffel don't count extra word (common) - test...!!!
+// UNIT TESTING - PA-75 27193, PA21 !!!
+
 
 ////////// IN PROGRESS //////////
 
 // REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // Auto test New york, France, Italy (Slow ?)
 
-// FIXME PA-75, PA21 !
 // FIXME 2nd street
-
 // TODO no intersection in that case "rue de la" - for very common words if we have enough results?
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
@@ -241,10 +239,7 @@ public class SpatialSearchTestAndDocs {
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
 //		query = "PA 75 27193"; // +'PA75', +'PA-75', +'PA 75'  Data 'PA-75', 27193  4472676432
 //		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75'
-		// FIXME
-//		query = "PA-21";  // 1336083883 DATA 'PA21' (-!'PA 21', +'PA-21',+'PA21') FIXME 
-		// UNIT TEST FOR  
-		// data "PA 75" - see "M-2, 2 M" example
+//		query = "PA 21";  // 1336083883 DATA 'PA21' (+!'PA 21', +'PA-21',+'PA21') FIXME 
 
 //		pattern = "Liechtenstein_europe.obf";
 //		query = "Vaduz Lettstrasse";

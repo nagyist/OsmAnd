@@ -168,6 +168,12 @@ public class SpatialSearchToken {
 //						System.out.println(alignedKey + " ??? " + matched + " " + o.getPart());
 					}
 				}
+				if (!matched && key.startsWith(wordNoDot)
+						&& SearchAlgorithms.letters(key) == SearchAlgorithms.letters(wordNoDot)) {
+					// query 'pa 21' match 'pa21' key
+					matched = true;
+				}
+				
 				stats.sub1MatchTime.finish();
 				return matched;
 			}
@@ -305,9 +311,6 @@ public class SpatialSearchToken {
 	
 	String[] matchSplitName(String name) {
 		name = SearchAlgorithms.alignChars(name);
-		if (name.startsWith("pa21")) {
-			System.out.println(name);
-		}
 		String[] res = null;
 		if (wordAligned.length() < name.length()
 				&& collatorMain.getCollator().equals(name.substring(0, wordAligned.length()), wordAligned)) {
