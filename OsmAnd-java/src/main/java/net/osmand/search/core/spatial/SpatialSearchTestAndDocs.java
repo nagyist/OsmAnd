@@ -22,9 +22,10 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 'tongass national forest', 'national', national forest'
 // UNIT TESTING: 'rue de l'eglise', 'rue de la', 'rue de la fen.', 'rû bas du rue'
 // UNIT TESTING: 'Venezia', 'Everest', 'Rio de Janeiro', 'остров Пасхи'
-// UNIT TESTING: Location - 100km <City> <Brand>, <City> + <Poi Type | Common word>
-// UNIT TESTING: "Мигия озеро" (non freq-common word + enlarge)
-// UNIT TESTING: Calle 20 188 San Isidro Lima - 100 km away doesn't work 
+// UNIT TESTING: Location - 100km <City> <Brand>, <City> + <Poi Type | Common word> - нова пошта 3 краматорск
+// UNIT TESTING: "Мигия озеро" (non freq-common word + enlarge), no branhd - нова пошта
+// UNIT TESTING: Calle 20 188 San Isidro Lima - 100 km away doesn't work
+
 //////////// TESTING //////////
 // UNIT TESTING: Calle 20 (not enough objects - 'Lima 188', 'Calle 2', ' Calle 20') - Search doesn't work 10 km away! (LIVE) 
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
@@ -41,16 +42,15 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 'Venezia Cannaregio Campo Saffa', 'Cannaregio 539D Campo Saffa', 'Venezia Cannaregio 539D'
 // UNIT TESTING: Gynaecologist - from all poi types should be result ! (not like old search)
 // UNIT TESTING: 'Kyiv Глушкова 1', 'Kyiv 1'
-// UNIT TESTING: нова пошта <street>, нова пошта <city>, just <ref> (краматорск), <>... 
+// UNIT TESTING: нова пошта <street>, нова пошта <city>, just <post_ref> (нова пошта 3 краматорск), <>... 
+// UNIT TESTING: POI intersection (пузата хата mcdonal.) or (cafe/shop fuel in poland wihout cafe=yes)
 
 ////////// IN PROGRESS //////////
- 
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
-// 
-// TODO нова пошта 3
-// TODO UNIT TESTING: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
-// TODO suggestions web
-// TODO INDEX: Find POI Categories translations / synonyms (+WEB) - Стоматол., Dentist, Stomatology, BASILICA (!!?)
+// TEST mihia lake, нова пошта 3, нова пошта краматорськ 
+
+// TODO TEST: With all poi translation!
+// TODO FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
 
 // TODO no intersection in that case "rue de la" - for very common words if we have enough results?
 // TODO ANALYZE: too many wiki places on streets?
@@ -62,20 +62,24 @@ import net.osmand.util.SearchAlgorithms;
 // TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 
-// TODO Gateway
-// REVIEW: Abbrevations (synonyms / direction words) other languages?
-// REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
-// REVIEW: Auto test New york, France, Italy (Slow?)
+// TO DO Gateway
+// TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
+// TODO REVIEW: Auto test New york, France, Italy (Slow?)
+// TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
+// TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
 // SLOW: 
 //       "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
 //        Foothill Boulevard x Golden State Road x Los Angeles x United states of America
 
 // TODO WEB - RZR
+// - FIXME Bug web by brand - post 
 // - Highlight ref matching, interpolation (somehow) with braces?
+// - Poi category + geo object (name of geobject, dist? and relocate)
+// - Autosuggestions (postpone?)
 // - Multithread pool
 // - Production - check time & memory - tune params?
 // - CANCEL ! (slow queries for server)
-// - Poi translation
+// - Poi translation provider
 
 // TODO ANDROID - Convert to old results
 // - Integrate (include regions.ocbf) on client
@@ -303,7 +307,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-		pattern = "Ukraine_my";
+		pattern = "Ukraine_";
 		
 		// poi types
 //		location = new LatLon(50.436423, 30.508097);
@@ -319,9 +323,15 @@ public class SpatialSearchTestAndDocs {
 		// "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
 //		pattern = "Ukraine_mykolayiv_europe.";
 //		query = "Мигия озеро";
-		
 //		query = "water"; 
 		
+//		location = new LatLon(48.75, 37.5);
+//		query = "нова пошта 3 краматорськ"; // (1482296639) 
+		// no brand - no search 7846074085; TODO Wait + limit map
+//		query = "Нова пошта 3 харків";
+//		query = "Нова пошта харків";
+		
+//		query = "shop Fuel";
 //		query = "Cafe Fuel";
 //		query = "bank приватбанк"; // прив.
 //		query = "при.";
@@ -340,8 +350,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Ukraine kyiv saks.";
 //		query = ". entr."; // check dots
 //		query = "пузата хата mcdonal.";
-//		query = "Нова пошта 3 харків";
-//		query = "Нова пошта харків";
+//		
 //		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
 //		query = "2га Нова вулиця"; 
 //		query = "2 нова вулиця"; // '"25-та вулиця", "25та вулиця", "25 та вулиця", "25 вулиця" (NOT FIRST) - '25-та Садова вулиця' 150768561

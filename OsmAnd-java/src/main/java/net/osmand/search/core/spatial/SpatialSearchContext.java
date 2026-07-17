@@ -234,9 +234,7 @@ public class SpatialSearchContext {
 		}
 		// add partial once we read all files
 		for (SpatialSearchToken t : tokens) {
-			if (settings.OPTIM_READ_COMMON_WORDS_ATOMS || settings.OPTIM_READ_CATEGORY_WORD_ATOMS || 
-					t.getPartialMatch().size() > 0
-					) {
+			if (settings.OPTIM_READ_COMMON_WORDS_ATOMS || settings.OPTIM_READ_CATEGORY_WORD_ATOMS) {
 				List<PartialMatch> partialAtoms = t.getPartialExactMatch();
 				// 'haupstrasse' vs 'haupstrasse <specifier>'
 				if (partialAtoms.size() == 0) {

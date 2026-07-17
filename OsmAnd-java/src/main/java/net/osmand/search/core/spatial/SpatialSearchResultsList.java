@@ -196,10 +196,13 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 				if (poiAtom != null && poiAtom.id == refAtom.id && poiAtom.object instanceof Amenity as) {
 					String ref = as.getAdditionalInfo("ref");
+					if (ref == null) {
+						ref = as.getAdditionalInfo("ref_post");
+					}
 					if (objectRef == null && ref != null) {
 						objectRef = SearchAlgorithms.getBuildingCompareSet(ref, tempBuildNames2);
 					}
-					if(queryRef == null) {
+					if (queryRef == null) {
 						queryRef = tokens[refInd].word;
 					} else {
 						queryRef += " " + tokens[refInd].word;

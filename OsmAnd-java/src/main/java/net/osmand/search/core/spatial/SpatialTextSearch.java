@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,6 +31,7 @@ import net.osmand.data.LatLon;
 import net.osmand.map.OsmandRegions;
 import net.osmand.osm.MapPoiTypes;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
+import net.osmand.search.core.spatial.SpatialSearchToken.PartialMatch;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
@@ -78,7 +80,7 @@ public class SpatialTextSearch {
 		// no intersection recorded but streets are nearby
 		public boolean ALLOW_VIRTUAL_STREET_INTERSECTIONS = true;
 		
-		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 30_000, 80_000}; // 
+		public int[] OPTIM_LIMIT_RADIUS = new int[] {10_000, 30_000, 80_000, 200_000}; // 
 //		public int[] OPTIM_LIMIT_RADIUS = new int[] {}; 
 		public int OPTIM_LIMIT_INTERSECTIONS = 30_000; // 10K (fast enough) or 50K (slow) - in new york  26,630 (3) -> 2,502 unique
 		
@@ -410,18 +412,17 @@ public class SpatialTextSearch {
 	}
 	
 	
-	private StringBuilder tokenStats(List<SpatialSearchToken> tokens) {
+	private StringBuilder tokenStats(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
 		StringBuilder s = new StringBuilder(" tokens: ");
-		TLongHashSet ids = new TLongHashSet();
 		for (SpatialSearchToken t : tokens) {
-			int level0 = 0;
-			for (NameIndexAtom at : t.atoms) {
-				ids.add(at.id);
-				if (at.nearbyRadius <= 1) {
-					level0++;
+			int[] cnts = new int[ctx.settings.OPTIM_LIMIT_RADIUS.length + 1];
+			TLongHashSet set = new TLongHashSet();
+			for (NameIndexAtom a : t.atoms) {
+				if (set.add(a.id)) {
+					cnts[a.nearbyRadius]++;
 				}
 			}
-			s.append(String.format("'%s' (%,d, 5km-%,d), ", t.word, t.atoms.size(), level0));
+			s.append(String.format("'%s' %s, ", t.word, Arrays.toString(cnts)));
 		}
 		return s;
 	}
@@ -445,7 +446,7 @@ public class SpatialTextSearch {
 		ctx.readAtoms();
 		ctx.stats.step1Atoms.finish();
 		if (ctx.stats.printLogs) {
-			System.out.printf("'%s' - %s\n", input, tokenStats(res.tokens).toString());
+			System.out.printf("'%s' - %s\n", input, tokenStats(ctx, res.tokens).toString());
 		}
 
 		// 3. sort tokens
