@@ -69,9 +69,8 @@ import net.osmand.util.SearchAlgorithms;
 // - Memory Speed performance comparison (new / old / server)  
 
 /////////////// EXTRA FEATURES ///////////////
+// TODO FORBID: to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
 // TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
-// TODO Investigate do we need to store poi types in name index (covered-yes)
-//      Some categories go to some maps and not others (Paris cafe) 
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
 // TODO Suggestion based on common suffixes
 // TODO Store and test conscription number for some cities - issue (RZR)

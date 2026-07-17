@@ -704,7 +704,8 @@ public class MapPoiTypes {
 		tp.setAdditional(lastType != null ? lastType :
 			 (lastFilter != null ? lastFilter : lastCategory));
 		tp.setTopVisible(Boolean.parseBoolean(parser.getAttributeValue("", "top")));
-		tp.setNonIndx(!Boolean.parseBoolean(parser.getAttributeValue("", "top")));
+		tp.setNonIndx(!Boolean.parseBoolean(parser.getAttributeValue("", "top")) ||
+				Boolean.parseBoolean(parser.getAttributeValue("", "no_indx")));
 		tp.setText("text".equals(parser.getAttributeValue("", "type")));
 		tp.setHidden(Boolean.parseBoolean(parser.getAttributeValue("", "hidden")));
 		String orderStr = parser.getAttributeValue("", "order");
