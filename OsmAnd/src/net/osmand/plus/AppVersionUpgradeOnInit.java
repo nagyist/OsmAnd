@@ -1205,7 +1205,9 @@ public class AppVersionUpgradeOnInit {
 			case LocationConvert.FORMAT_MINUTES -> GridFormat.DM;
 			case LocationConvert.FORMAT_DEGREES -> GridFormat.DIGITAL;
 			case LocationConvert.UTM_FORMAT -> GridFormat.UTM;
+			case LocationConvert.OLC_FORMAT -> GridFormat.OLC;
 			case LocationConvert.MGRS_FORMAT -> GridFormat.MGRS;
+			case LocationConvert.MAIDENHEAD_FORMAT -> GridFormat.MAIDENHEAD;
 			default -> GridFormat.DIGITAL;
 		};
 	}
