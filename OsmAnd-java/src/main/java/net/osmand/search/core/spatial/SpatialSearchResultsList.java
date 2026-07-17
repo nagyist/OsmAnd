@@ -26,6 +26,7 @@ import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
+import net.osmand.util.Algorithms;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
@@ -201,6 +202,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					}
 					if (objectRef == null && ref != null) {
 						objectRef = SearchAlgorithms.getBuildingCompareSet(ref, tempBuildNames2);
+					} else {
+						int num = Algorithms.extractIntegerNumber(as.getName());
+						if (num > 0) {
+							objectRef = Collections.singleton(num + "");
+						}
 					}
 					if (queryRef == null) {
 						queryRef = tokens[refInd].word;
@@ -215,7 +221,15 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		if (queryRef != null) {
 			Set<String> querySetRef = SearchAlgorithms.getBuildingCompareSet(queryRef, tempBuildNames1);
-			if (objectRef != null && objectRef.equals(querySetRef)) {
+			boolean match = false;
+			if (objectRef != null && objectRef.size() > 0) {
+				if (objectRef.equals(querySetRef)) {
+					match = true;
+				} else if (querySetRef.size() == objectRef.size() + 1 && querySetRef.containsAll(objectRef)) {
+					match = true;
+				}
+			}
+			if (match) {
 				extraNameMatch.put(indx, queryRef);
 			} else {
 				skipResults.put(indx, true);

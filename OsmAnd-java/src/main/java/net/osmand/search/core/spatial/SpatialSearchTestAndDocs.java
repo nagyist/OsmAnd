@@ -48,13 +48,15 @@ import net.osmand.util.SearchAlgorithms;
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // TEST mihia lake, нова пошта 3, нова пошта краматорськ 
+// LIVE TEST: 25-та школа
 
 // TODO TEST: With all poi translation!
 // TODO FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
-
-// TODO no intersection in that case "rue de la" - for very common words if we have enough results?
+// TODO Tests 3-4
 // TODO ANALYZE: too many wiki places on streets?
 // TODO INDEX: highway=services (Not index)
+
+// TODO no intersection in that case "rue de la" - for very common words if we have enough results?
 
 // TO DO Ivan
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
