@@ -1785,7 +1785,7 @@
     <string name="osm_edits_export_desc">Exporter comme notes OSM, POI ou les deux.</string>
     <string name="all_data">Toutes les données</string>
     <string name="osm_notes">Notes OSM</string>
-    <string name="tunnel_warning">En approche d\'un tunnel</string>
+    <string name="tunnel_warning">Tunnel à venir</string>
     <string name="show_tunnels">Tunnels</string>
     <string name="shared_string_current">Actuelle</string>
     <string name="last_intermediate_dest_description">Ajouter comme dernière étape</string>
@@ -3713,7 +3713,7 @@
     <string name="sort_distance_ascending">Distance la plus courte en premier</string>
     <string name="sort_distance_descending">Distance la plus longue en premier</string>
     <string name="sort_date_ascending">Date la plus récente en premier</string>
-    <string name="shared_string_nearest">Le plus proche</string>
+    <string name="shared_string_nearest">Plus proche</string>
     <string name="selected_value">Valeur sélectionnée</string>
     <string name="sort_date_descending">Date la plus ancienne en premier</string>
     <string name="shared_string_delete_file">Supprimer le fichier</string>
@@ -5101,7 +5101,7 @@
     <string name="gallery_stats_counts">%1$d photos, %2$d vidéos, %3$d fichiers audio.</string>
     <string name="gallery_stats_size">Taille %1$s.</string>
     <string name="gallery_sort_last_modified">Dernière modification</string>
-    <string name="gallery_sort_nearest">Le plus proche</string>
+    <string name="gallery_sort_nearest">Plus proche</string>
     <string name="gallery_sort_name_a_z">Nom de A à Z</string>
     <string name="gallery_sort_name_z_a">Nom de Z à A</string>
     <string name="gallery_sort_newest_first">Du plus récente à la plus ancienne</string>
@@ -5142,7 +5142,7 @@
     <string name="ais_receive_in_background">Recevoir les données AIS même lorsque OsmAnd est en pause.</string>
     <string name="ais_receive_in_background_description">Lorsque cette option est activée, le récepteur AIS fonctionne même si OsmAnd est en pause ou s\'exécute en arrière-plan. Si l\'option est désactivée, aucun message AIS n\'est reçu lorsque OsmAnd s\'exécute en arrière-plan.</string>
     <string name="shared_string_recent">Récentes</string>
-    <string name="sort_by_nearest_to_map_center">Plus proche du centre de la carte</string>
+    <string name="sort_by_nearest_to_map_center">Proximité du centre de la carte</string>
     <string name="last_week">Semaine dernière</string>
     <string name="history_is_turned_off">L\'historique est désactivé</string>
     <string name="search_around_my_location_description">Rechercher autour de votre position</string>
@@ -5161,15 +5161,15 @@
     <string name="route_calculation_using_standard_algorithm">Utilisation de l\'algorithme de routage standard (plus lent).</string>
     <string name="route_calculation_missing_maps">Cartes manquantes</string>
     <string name="route_calculation_missing_maps_desc">Certaines cartes hors ligne nécessaires pour cet itinéraire sont manquantes. Téléchargez-les pour continuer.</string>
-    <string name="route_calculation_mixed_maps_desc">Le calcul d\'itinéraire rapide n\'est pas disponible en raison de cartes avec des différences de dates. Le passage au calcul standard peut prendre quelques minutes.</string>
-    <string name="route_calculation_missing_maps_estimate_desc">L\'estimation à vol d\'oiseau a potentiellement détecté des cartes manquantes.\nSi votre itinéraire contourne ces zones, vous pouvez utiliser les cartes existantes.</string>
-    <string name="route_calculation_route_not_found_desc">Le calcul d\'itinéraire rapide n\'a pas permis de trouver d\'itinéraire. Bascule sur le calcul standard.</string>
-    <string name="route_calculation_unavailable_parameters_desc">Le calcul d\'itinéraire rapide n\'est pas disponible avec les paramètres d\'itinéraire sélectionnés. Bascule sur le calcul standard.</string>
+    <string name="route_calculation_mixed_maps_desc">Le calcul rapide d\'itinéraire n\'est pas disponible en raison de cartes avec des différences de dates. Le passage au calcul standard peut prendre quelques minutes.</string>
+    <string name="route_calculation_missing_maps_estimate_desc">L\'estimation à vol d\'oiseau a détecté des cartes potentiellement manquantes.\nSi votre itinéraire contourne ces zones, vous pouvez utiliser les cartes existantes.</string>
+    <string name="route_calculation_route_not_found_desc">Le calcul rapide d\'itinéraire n\'a pas permis de trouver d\'itinéraire. Bascule vers le calcul standard.</string>
+    <string name="route_calculation_unavailable_parameters_desc">Le calcul rapide d\'itinéraire n\'est pas disponible avec les paramètres d\'itinéraire sélectionnés. Bascule vers le calcul standard.</string>
     <string name="route_calculation_standard_long_route_desc">Le calcul standard pour les longs trajets (&gt; 300 km) peut prendre un certain temps. L\'ajout d\'un point de passage peut accélérer ce calcul.</string>
     <string name="route_calculation_fast_missing_or_outdated_maps_desc">Certaines cartes hors ligne nécessaires pour cet itinéraire sont manquantes ou obsolètes. Téléchargez-les ou mettez-les à jour pour continuer.</string>
-    <string name="route_calculation_fast_route_not_found_desc">Le calcul d\'itinéraire rapide n\'a pas pu trouver d\'itinéraire à l\'aide des cartes disponibles.</string>
-    <string name="route_calculation_fast_missing_hh_cache_desc">Les données d\'itinéraire rapide ne figurent pas sur les cartes. Mettez à jour les cartes ou choisissez une autre méthode de calcul.</string>
-    <string name="route_calculation_fast_unavailable_parameters_desc">Le calcul d\'itinéraire rapide n\'est pas disponible avec les paramètres d\'itinéraire sélectionnés. Modifiez les paramètres d\'itinéraire ou choisissez une autre méthode de calcul.</string>
+    <string name="route_calculation_fast_route_not_found_desc">Le calcul rapide d\'itinéraire n\'a pas pu trouver d\'itinéraire à l\'aide des cartes disponibles.</string>
+    <string name="route_calculation_fast_missing_hh_cache_desc">Les données nécessaires au calcul rapide d\'itinéraire sont absentes des cartes. Mettez à jour les cartes ou sélectionnez une autre méthode de calcul.</string>
+    <string name="route_calculation_fast_unavailable_parameters_desc">Le calcul rapide d\'itinéraire n\'est pas disponible avec les paramètres d\'itinéraire sélectionnés. Modifiez les paramètres d\'itinéraire ou choisissez une autre méthode de calcul.</string>
     <string name="route_calculation_review_maps">Consulter les cartes</string>
     <string name="route_calculation_use_existing_maps">Utiliser les cartes existantes</string>
     <string name="required_maps_missing_and_outdated_title">Cartes manquantes ou obsolètes</string>
@@ -5180,4 +5180,5 @@
     <string name="attached_media">Fichiers média joints</string>
     <string name="traffic_warning_red_light_camera">Radar de feu rouge</string>
     <string name="attached_media_delete_confirmation">Souhaitez-vous supprimer les %1$d éléments multimédias de ce point ? Les fichiers multimédias enregistrés par l\'application et non associés à un emplacement seront également supprimés de l\'appareil.</string>
+    <string name="sort_by_nearest_to_current_location">Proximité de la position actuelle</string>
 </resources>

@@ -32,7 +32,6 @@ import net.osmand.osm.PoiFilter;
 import net.osmand.osm.PoiType;
 import net.osmand.search.core.TopIndexFilter;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
-import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtomXY;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchFileCache;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchGlobalCache;
 import net.osmand.util.MapUtils;
@@ -283,11 +282,12 @@ public class SpatialPoiSearch {
 					if (cs.tokens.contains(t)) {
 						continue;
 					}
-					NameIndexAtomXY xy = new NameIndexAtomXY(null, null, null);
-					NameIndexAtom atom = new NameIndexAtom(a.names.get(0), SpatialSearchToken.POI_CATEGORY_TYPE, 
-							a.id, 0, null, false, -total, total, xy, 0);
+					
+					NameIndexAtom atom = new NameIndexAtom(a.key, a.id, total);
 					cs.atoms.add(atom);
 					cs.tokens.add(t);
+					t.addPoiCategoryMatch(a.id);
+					
 				}
 			}
 		}
@@ -299,8 +299,15 @@ public class SpatialPoiSearch {
 		}
 		for (PoiCatSearch pc : finalRes) {
 			for (int i = 0; i < pc.tokens.size(); i++) {
-				pc.tokens.get(i).addAtom(pc.atoms.get(i));
+				SpatialSearchToken token = pc.tokens.get(i);
+				NameIndexAtom atom = pc.atoms.get(i);
+				token.addAtom(atom);
 			}
+			// Problem "Helipad 32" (doesn't list object because no 32 ref is found"
+			// Categories are not needed if exact result is found (there is always option to go in category and filter later)
+//			if (ctx.settings.SUGGEST_SEARCH_POI_CATEGORY_WITH_REF) {
+//				ctx.addBuildingRefAtoms(token, tokens, pc.tokens, false, atom, SpatialSearchToken.POI_CATEGORY_TYPE);
+//			}
 		}
 	}
 	

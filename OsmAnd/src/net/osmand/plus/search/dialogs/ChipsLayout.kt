@@ -6,11 +6,9 @@ import android.util.TypedValue
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,16 +16,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -46,7 +40,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -57,6 +50,9 @@ import net.osmand.plus.settings.backend.ApplicationMode
 import net.osmand.plus.settings.enums.DayNightMode
 import net.osmand.plus.settings.enums.ThemeUsageContext
 import net.osmand.plus.utils.ColorUtilities
+import net.osmand.plus.widgets.popup.OsmAndDropdownMenu
+import net.osmand.plus.widgets.popup.OsmAndDropdownMenuColors
+import net.osmand.plus.widgets.popup.OsmAndDropdownMenuOption
 
 class ChipsLayout @JvmOverloads constructor(
 	context: Context,
@@ -348,107 +344,40 @@ private fun ChipAnchor(
 			nightMode = nightMode
 		)
 		if (chip.hasDropDown) {
-			DropdownMenu(
-				expanded = expanded && chip.enabled,
-				onDismissRequest = { changeExpandedState(false) },
-				modifier = Modifier
-					.background(listBackground)
-					.padding(0.dp),
-				offset = DpOffset(x = 0.dp, y = 4.dp)
-			) {
-				if (chip.menuTitleId != 0) {
-					Text(
-						text = stringResource(chip.menuTitleId),
-						color = textColor(ChipsLayout.TextColorStyle.SECONDARY),
-						fontSize = 16.sp,
-						modifier = Modifier
-							.fillMaxWidth()
-							.padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 12.dp)
-					)
-				}
-				chip.dropdownItems.forEach { item ->
-					DropdownItemRow(
-						item = item,
-						onClick = {
-							changeExpandedState(false)
-							val dropdownItemClickListener = chip.onDropdownItemClickListener
-							if (dropdownItemClickListener != null) {
-								dropdownItemClickListener.onDropdownItemClick(chipId, item.id)
-							} else {
-								onDropdownItemClick(chipId, item.id)
-							}
-						},
-						activeColor = activeColor,
-						inActiveColor = inActiveColor,
-						nightMode = nightMode
-					)
-					if (item.showDividerBelow) {
-						Spacer(
-							modifier = Modifier
-								.fillMaxWidth()
-								.height(1.dp)
-								.background(dividerColor)
-						)
-					}
-				}
-			}
-		}
-	}
-}
-
-@Composable
-private fun DropdownItemRow(
-	item: ChipsLayout.DropdownItem,
-	onClick: () -> Unit,
-	activeColor: Color,
-	inActiveColor: Color,
-	nightMode: Boolean
-) {
-	val itemTextColor = textColor(ChipsLayout.TextColorStyle.PRIMARY)
-	val secondaryTextColor = textColor(ChipsLayout.TextColorStyle.SECONDARY)
-	Row(
-		modifier = Modifier
-			.fillMaxWidth()
-			.wrapContentHeight()
-			.clickable(enabled = item.enabled) { onClick() }
-			.padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 12.dp),
-		verticalAlignment = Alignment.CenterVertically
-	) {
-		if (item.iconId != 0) {
-			Icon(
-				painter = painterResource(item.iconId),
-				contentDescription = null,
-				tint = iconColor(ChipsLayout.IconColorStyle.DEFAULT, nightMode),
-				modifier = Modifier.size(24.dp)
-			)
-		} else {
-			RadioButton(
-				selected = item.selected,
-				onClick = null,
-				enabled = item.enabled,
-				colors = RadioButtonDefaults.colors(
-					selectedColor = activeColor,
-					unselectedColor = inActiveColor),
-				modifier = Modifier.size(24.dp)
-			)
-		}
-		Spacer(modifier = Modifier.width(20.dp))
-		Column(
-			modifier = Modifier.weight(1f),
-			verticalArrangement = Arrangement.Center
-		) {
-			Text(
-				text = item.title,
-				color = itemTextColor.copy(alpha = if (item.enabled) 1f else .5f),
-				fontSize = 16.sp
-			)
-			if (item.description != null) {
-				Text(
-					text = item.description,
-					color = secondaryTextColor.copy(alpha = if (item.enabled) 1f else .5f),
-					fontSize = 14.sp
+			val menuOptions = chip.dropdownItems.map { item ->
+				OsmAndDropdownMenuOption(
+					value = item.id,
+					title = item.title,
+					iconId = if (item.iconId != 0) item.iconId else null,
+					description = item.description,
+					selected = item.selected,
+					enabled = item.enabled,
+					showDividerAfter = item.showDividerBelow
 				)
 			}
+			OsmAndDropdownMenu(
+				expanded = expanded && chip.enabled,
+				onDismissRequest = { changeExpandedState(false) },
+				options = menuOptions,
+				onOptionSelected = { itemId ->
+					changeExpandedState(false)
+					val dropdownItemClickListener = chip.onDropdownItemClickListener
+					if (dropdownItemClickListener != null) {
+						dropdownItemClickListener.onDropdownItemClick(chipId, itemId)
+					} else {
+						onDropdownItemClick(chipId, itemId)
+					}
+				},
+				colors = OsmAndDropdownMenuColors(
+					background = listBackground,
+					divider = dividerColor,
+					text = textColor(ChipsLayout.TextColorStyle.PRIMARY),
+					secondaryText = textColor(ChipsLayout.TextColorStyle.SECONDARY),
+					icon = iconColor(ChipsLayout.IconColorStyle.DEFAULT, nightMode),
+					selected = activeColor
+				),
+				title = if (chip.menuTitleId != 0) stringResource(chip.menuTitleId) else null
+			)
 		}
 	}
 }
