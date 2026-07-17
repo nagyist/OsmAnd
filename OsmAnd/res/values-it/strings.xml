@@ -4223,7 +4223,7 @@
     <string name="see_all_plans">Vedi tutti i piani</string>
     <string name="topography_maps">Mappe topografiche</string>
     <string name="shared_string_reassign">Riassocia</string>
-    <string name="key_assignments">Assegnazioni chiave</string>
+    <string name="key_assignments">Tasti associati</string>
     <string name="key_event_action_activity_back_pressed">Tasto \"Indietro\" premuto</string>
     <string name="shared_string_eta">ETA</string>
     <string name="rendering_attr_showToll_name">Mostra restrizioni di pedaggio</string>
