@@ -16,52 +16,67 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSetting
 import net.osmand.util.SearchAlgorithms;
 
 
+//////////// LIVE TESTING //////////
+// UNIT TESTING: Fix 36K national park - live test? (don't index small islands > 100 POI !!!)
+// UNIT TESTING: Limit results "Gate" - "Gate D18"... ?
+// UNIT TESTING: 'tongass national forest', 'national', national forest'
+// UNIT TESTING: 'rue de l'eglise', 'rue de la', 'rue de la fen.', 'rû bas du rue'
+// UNIT TESTING: 'Venezia', 'Everest', 'Rio de Janeiro', 'остров Пасхи'
+// UNIT TESTING: Location - 100km <City> <Brand>, <City> + <Poi Type | Common word>
+
 //////////// TESTING //////////
-// UNIT TESTING DEDUPLICATE: Review / implement similarity radius - similarityRadius = 50000 ... Route Id
-// UNIT TESTING DEDUPLICATE: Unite RouteArticle, POI by wikidata id ? - DEPTH_TO_CHECK_SAME_SEARCH_RESULTS = 20;...
-// UNIT TESTING DEDUPLICATE: Route by id 
+// Calle 20 188 San Isidro Lima
+
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
-// UNIT TESTING: Live? Fix 36K national park - live test? (don't index small islands > 100 POI !!!)
-// UNIT TESTING: Live? Limit results "Gate"... ?
-// UNIT TESTING: (duplicate words), Бульварно-Кудрявська, NC-42, 2-га Нова (2 Нова), M2...
-// UNIT TESTING: Add test on show more '2 sokak' - Show more 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak!
-// UNIT TESTING: Store Poi category index (effective intersection aragon - 'Church Basílica de Nuestra Señora del Pilar') - TEST
-// UNIT TESTING: Autocheck poi subtype - Burger Mcdonald's!
-// UNIT TESTING: Find Refs of amenity "Gate D18" , D-18!!, "Helipad 2", "Trübbach 10" (name + ref) 
-// UNIT TESTING - Abbreviations.isCommonSkipOtherCnt ???  Tour Eiffel don't count extra word (common) - test...!!!
-// UNIT TESTING - PA-75 27193, PA21 !!!
-// UNIT TESTING: "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
-// TODO UNIT TESTING: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
+// UNIT TESTING: 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak!
+// "2.Sokak", "2 Sokak", "Sokak 2", "2. Sokak", "32/2 Sokak" + housenumber (?),  2/1 21038 Sokak, Sokak 23018. Balikesir, 2301. Sokak
+// UNIT TESTING: Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA
+// UNIT TESTING (future): 763 Ro-Ki Boulevard Nichols
+// UNIT TESTING: "саксаг. Володимирська"; // intersection
+// UNIT TESTING (or any other): саксаг. 63/28, 2 (ref + 2 +house), саксаг. 28, 2, саксаг. 63
+// UNIT TESTING (school): "Школа 25 Володимирська вулиця" "андріівський узвіз Школа "
+// UNIT TESTING (by id): O128894
+// UNIT TESTING: POI Name / Type + Address - Shell 2 Rožňavská
+// UNIT TESTING: 4av - 'New York 4 av 8', '4 av', '4 avenue 8', '4th ave', '4th ave 8 paterson'
+// UNIT TESTING: 'Venezia Cannaregio Campo Saffa', 'Cannaregio 539D Campo Saffa', 'Venezia Cannaregio 539D'
+// UNIT TESTING: Gynaecologist - from all poi types should be result ! (not like old search)
+// UNIT TESTING: 'Kyiv Глушкова 1', 'Kyiv 1'
+// UNIT TESTING: нова пошта <street>, нова пошта <city>, just <ref> (краматорск), <>... 
 
 ////////// IN PROGRESS //////////
-
 // REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru
-// Auto test New york, France, Italy (Slow ?)
+// 
+
+// TODO нова пошта 3
+// TODO озеро
+// TODO UNIT TESTING: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
+// TODO suggestions web
+// TODO INDEX: Find POI Categories translations / synonyms (+WEB) - Стоматол., Dentist, Stomatology, BASILICA (!!?)
 
 // TODO no intersection in that case "rue de la" - for very common words if we have enough results?
-// TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO ANALYZE: too many wiki places on streets?
-// TODO highway=services (Not index)
-// TODO cleanup poi
+// TODO INDEX: highway=services (Not index)
 
 // TO DO Ivan
+// TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
 // TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 
-// TO DO Gateway
-// TODO INSPECTOR: doesn't show suffixes
-// TODO INDEX: Find POI Categories translations / synonyms (+WEB) - Стоматол., Dentist, Stomatology, BASILICA (!!?)
-// TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
-// TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first) 
-// SLOW ANALYSIS 
-// "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
-// Foothill Boulevard x Golden State Road x Los Angeles x United states of America
+// TODO Gateway
+// REVIEW: Abbrevations (synonyms / direction words) other languages?
+// REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
+// REVIEW: Auto test New york, France, Italy (Slow?)
+// SLOW: 
+//       "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
+//        Foothill Boulevard x Golden State Road x Los Angeles x United states of America
 
-// TO DO - RZR
-// TODO WEB: Highlight ref matching, interpolation (somehow) with braces?
-// TODO WEB: Multithread pool, Monitor / time & memory optimize memory?
-// TODO WEB: CANCEL ! (slow queries for server)
+// TODO WEB - RZR
+// - Highlight ref matching, interpolation (somehow) with braces?
+// - Multithread pool
+// - Production - check time & memory - tune params?
+// - CANCEL ! (slow queries for server)
+// - Poi translation
 
 // TODO ANDROID - Convert to old results
 // - Integrate (include regions.ocbf) on client
@@ -69,7 +84,7 @@ import net.osmand.util.SearchAlgorithms;
 // - Memory Speed performance comparison (new / old / server)  
 
 /////////////// EXTRA FEATURES ///////////////
-// TODO FORBID: to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
+// TODO FORBID (slow): to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
 // TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
 // TODO Suggestion based on common suffixes
@@ -274,7 +289,6 @@ public class SpatialSearchTestAndDocs {
 //		query = "vegan cafe"; // vegan-no Popov exclude
 		
  
-		
 //		pattern = "Turkey_";
 //		query = "Sokak 23018. Balikesir"; // OK
 //		query = "2301. Sokak"; // Test 23018., 23018 - Fixed NameIndexCreator - parsePureIntegerSuffix
@@ -306,7 +320,6 @@ public class SpatialSearchTestAndDocs {
 		location = new LatLon(48, 30);
 		settings.OPTIM_READ_CATEGORY_WORD_ATOMS = false;
 		settings.OPTIM_READ_COMMON_WORDS_ATOMS = false;
-		// TODO
 		query = "Мигия lake"; // "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
 		
 //		query = "Cafe Fuel";
