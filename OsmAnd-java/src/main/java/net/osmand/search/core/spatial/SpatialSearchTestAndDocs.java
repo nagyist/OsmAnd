@@ -39,7 +39,7 @@ import net.osmand.util.SearchAlgorithms;
 
 
 // 2419 Kilgarney Keep St, Dickinson
-// 2419 Avenue G, Dickinson, TX 77539, USA 
+// 2419 Avenue G, Dickinson, TX 77539, USA
 // ++ 2nd street
 // TODO no intersection in that case "rue de la" - for very common words if we have enough results?
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
@@ -243,7 +243,11 @@ public class SpatialSearchTestAndDocs {
 		// Street ref "pa 75" (not stored), house "pa-75" (data)
 //		query = "PA 75 27193"; // +'PA75', +'PA-75', +'PA 75'  Data 'PA-75', 27193  4472676432
 //		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75'
-//		query = "PA 21";  // 1336083883 DATA 'PA21' (+!'PA 21', +'PA-21',+'PA21') FIXME 
+//		query = "PA 21";  // 1336083883 DATA 'PA21' (+!'PA 21', +'PA-21',+'PA21') 
+		
+		pattern = "Us_texas";
+		query = "Avenue G, Dickinson TX";
+		query = "Avenue G, Dickinson";
 
 //		pattern = "Liechtenstein_europe.obf";
 //		query = "Vaduz Lettstrasse";
@@ -288,7 +292,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-		pattern = "Ukraine_kyiv-city";
+//		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
 //		pattern = "Ukraine_";
 		
@@ -318,7 +322,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
-		query = "Ukraine kyiv saks.";
+//		query = "Ukraine kyiv saks.";
 //		query = ". entr."; // check dots
 //		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 3 харків";
