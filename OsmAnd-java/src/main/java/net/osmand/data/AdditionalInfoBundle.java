@@ -1,7 +1,14 @@
 package net.osmand.data;
 
+import static net.osmand.data.Amenity.ALT_NAME_WITH_LANG_PREFIX;
+import static net.osmand.data.Amenity.COLLAPSABLE_PREFIX;
+import static net.osmand.data.Amenity.LANG_YES;
+import static net.osmand.data.Amenity.ROUTE;
 import static net.osmand.data.Amenity.SUBTYPE;
 import static net.osmand.data.Amenity.TYPE;
+import static net.osmand.data.Amenity.WIKIDATA;
+import static net.osmand.data.Amenity.WIKIMEDIA_COMMONS;
+import static net.osmand.data.Amenity.WIKI_PHOTO;
 import static net.osmand.shared.gpx.GpxUtilities.*;
 
 import net.osmand.osm.AbstractPoiType;
@@ -133,5 +140,20 @@ public class AdditionalInfoBundle {
 		this.filteredAdditionalInfo = null;
 		this.localizedAdditionalInfo = null;
 		this.customHiddenExtensions = customHiddenExtensions;
+	}
+
+	public PoiType getPoiAdditionalType(String key, String vl) {
+		AbstractPoiType pt = poiTypes.getAnyPoiAdditionalTypeByKey(key);
+		if (pt == null && !Algorithms.isEmpty(vl) && vl.length() < 50) {
+			pt = poiTypes.getAnyPoiAdditionalTypeByKey(key + "_" + vl);
+		}
+		return pt instanceof PoiType poiType ? poiType : null;
+	}
+
+	public boolean isKeyToSkip(String key) {
+		return CollectionUtils.startsWithAny(key, COLLAPSABLE_PREFIX, ALT_NAME_WITH_LANG_PREFIX, LANG_YES)
+				|| CollectionUtils.equalsToAny(key, WIKI_PHOTO, WIKIDATA, WIKIMEDIA_COMMONS, "image", "mapillary", "subway_region")
+				|| MapObject.isNameLangTag(key)
+				|| key.contains(ROUTE);
 	}
 }
