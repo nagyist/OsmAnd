@@ -413,7 +413,7 @@
     <string name="poi_swimming_pool">Piscina</string>
     <string name="poi_water_park">Parco acquatico</string>
     <string name="poi_park">Parco</string>
-    <string name="poi_cafe">Bar</string>
+    <string name="poi_cafe">Caffetteria</string>
     <string name="poi_restaurant">Ristorante</string>
     <string name="poi_fast_food">Fast food</string>
     <string name="poi_bar">American Bar</string>
@@ -767,7 +767,7 @@
     <string name="poi_sightseeing">Meta turistica</string>
     <string name="poi_entertainment">Tempo libero</string>
     <string name="poi_service">Servizio</string>
-    <string name="poi_coffee">Caffetteria</string>
+    <string name="poi_coffee">Torrefazione</string>
     <string name="poi_pastry">Pasticceria</string>
     <string name="poi_doors">Porte</string>
     <string name="poi_free_flying">Negozio di articoli di freefly (paracadutismo)</string>
@@ -2030,7 +2030,7 @@
     <string name="poi_reservation_yes">Sì</string>
     <string name="poi_reservation_no">No</string>
     <string name="poi_backcountry">Nessuna struttura</string>
-    <string name="poi_cafeteria">Caffetteria</string>
+    <string name="poi_cafeteria">Mensa</string>
     <string name="poi_zoo_type">Tipo</string>
     <string name="poi_motorcycle_services">Servizi</string>
     <string name="poi_animal_shelter_type">Animali accettati</string>
