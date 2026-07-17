@@ -32,6 +32,7 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING - PA-75 27193, PA21 !!!
 // UNIT TESTING: "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
 // TODO UNIT TESTING: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
+
 ////////// IN PROGRESS //////////
 
 // REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru
@@ -41,6 +42,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO ANALYZE: too many wiki places on streets?
 // TODO highway=services (Not index)
+// TODO cleanup poi
 
 // TO DO Ivan
 // TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
@@ -289,7 +291,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-//		pattern = "Ukraine_";
+		pattern = "Ukraine_";
 		
 		// poi types
 //		location = new LatLon(50.436423, 30.508097);
@@ -301,6 +303,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "Aquarium";
 //		query = "Fuel diesel";
 		
+//		settings.OPTIM_READ_COMMON_WORDS_LIMIT = 5000;
+		location = new LatLon(48, 30);
+		settings.OPTIM_READ_CATEGORY_WORD_ATOMS = false;
+		settings.OPTIM_READ_COMMON_WORDS_ATOMS = false;
+		// TODO
+		query = "Мигия lake"; // "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
 		
 //		query = "Cafe Fuel";
 //		query = "bank приватбанк"; // прив.

@@ -698,6 +698,7 @@ public class MapPoiTypes {
 		}
 		String iconName = parser.getAttributeValue("", "icon");
 		PoiType tp = new PoiType(this, lastCategory, lastFilter, oname, iconName);
+		tp.setNonIndx(lastType.isNonIndx());
 		tp.setBaseLangType(langBaseType);
 		tp.setLang(lang);
 		tp.setAdditional(lastType != null ? lastType :
@@ -751,6 +752,7 @@ public class MapPoiTypes {
 		if (lang != null) {
 			otag += ":" + lang;
 		}
+		tp.setNonIndx(Boolean.parseBoolean(parser.getAttributeValue("", "no_indx")));
 		tp.setBaseLangType(langBaseType);
 		tp.setLang(lang);
 		tp.setOsmTag(otag);
