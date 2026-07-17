@@ -62,6 +62,8 @@ public class Abbreviations {
 		addConjunction("et");
 		addConjunction("y");
 		addConjunction("и");
+		
+		
 
 		// direction
 		addDirectionWord("e", "East");

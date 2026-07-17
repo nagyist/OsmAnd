@@ -30,19 +30,23 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: Find Refs of amenity "Gate D18" , D-18!!, "Helipad 2", "Trübbach 10" (name + ref) 
 // UNIT TESTING - Abbreviations.isCommonSkipOtherCnt ???  Tour Eiffel don't count extra word (common) - test...!!!
 // UNIT TESTING - PA-75 27193, PA21 !!!
-
+// UNIT TESTING: "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
 
 ////////// IN PROGRESS //////////
 
 // REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // Auto test New york, France, Italy (Slow ?)
 
-// FIXME 2nd street
+
+// 2419 Kilgarney Keep St, Dickinson
+// 2419 Avenue G, Dickinson, TX 77539, USA 
+// ++ 2nd street
 // TODO no intersection in that case "rue de la" - for very common words if we have enough results?
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
 // TODO ANALYZE: too many wiki places on streets?
 // TODO highway=services (Not index)
+// TODO duplicate words?, '.'//2419 Avenue G, Dickinson, TX 77539, USA
 
 // TO DO Ivan
 // TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
@@ -53,7 +57,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO INSPECTOR: doesn't show suffixes
 // TODO INDEX: Find POI Categories translations / synonyms (+WEB) - Стоматол., Dentist, Stomatology, BASILICA (!!?)
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
-// TODO REVIEW: Analyze Abbrefvations / common skip (abbrevations 1st=first) 
+// TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first) 
 // SLOW ANALYSIS 
 // "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
 // Foothill Boulevard x Golden State Road x Los Angeles x United states of America
@@ -284,7 +288,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-//		pattern = "Ukraine_kyiv-city";
+		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
 //		pattern = "Ukraine_";
 		
@@ -314,7 +318,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
-//		query = "Ukraine kyiv saks.";
+		query = "Ukraine kyiv saks.";
+//		query = ". entr."; // check dots
 //		query = "пузата хата mcdonal.";
 //		query = "Нова пошта 3 харків";
 //		query = "Нова пошта харків";
@@ -333,6 +338,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа ";
 //		query = "Школа А+";
+//		query = "25-та school"; // 25-та школа
 		
 //		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25' // 63112526
 //		query = "ВЕЛОwatt";

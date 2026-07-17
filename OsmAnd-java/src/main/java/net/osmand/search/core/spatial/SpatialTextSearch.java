@@ -15,6 +15,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import gnu.trove.set.hash.TLongHashSet;
+
 import java.util.TreeMap;
 
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
@@ -399,6 +402,22 @@ public class SpatialTextSearch {
 
 	}
 	
+	
+	private StringBuilder tokenStats(List<SpatialSearchToken> tokens) {
+		StringBuilder s = new StringBuilder(" tokens: ");
+		TLongHashSet ids = new TLongHashSet();
+		for (SpatialSearchToken t : tokens) {
+			int level0 = 0;
+			for (NameIndexAtom at : t.atoms) {
+				ids.add(at.id);
+				if (at.nearbyRadius <= 1) {
+					level0++;
+				}
+			}
+			s.append(String.format("'%s' (%,d, 5km-%,d), ", t.word, t.atoms.size(), level0));
+		}
+		return s;
+	}
 
 	public SpatialSearchResults searchAPI(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = new SpatialSearchResults();
@@ -414,6 +433,9 @@ public class SpatialTextSearch {
 		ctx.processPoiCategories();
 		ctx.readAtoms();
 		ctx.stats.step1Atoms.finish();
+		if (ctx.stats.printLogs) {
+			System.out.printf("'%s' - %s\n", input, tokenStats(res.tokens).toString());
+		}
 
 		// 3. sort tokens
 		sortTokens(res.tokens);
@@ -495,9 +517,13 @@ public class SpatialTextSearch {
 		// split by hyphen as we supposed to index them separately
 		List<String> words = SearchAlgorithms.splitAndNormalize(input, owords, false);
 		List<SpatialSearchToken> tokens = new ArrayList<>();
-		for (int order = 0; order < words.size(); order++) {
-			String w = words.get(order);
-			SpatialSearchToken token = new SpatialSearchToken(ctx.settings.MIN_CHARACTERS_INCOMPLETE, w, owords.get(order), order);
+		for (int ind = 0; ind < words.size(); ind++) {
+			String w = words.get(ind);
+			if (w.equals(SpatialSearchToken.DOT_INCOMPLETE_STRING)) {
+				continue;
+			}
+			SpatialSearchToken token = new SpatialSearchToken(ctx.settings.MIN_CHARACTERS_INCOMPLETE, w,
+					owords.get(ind), tokens.size());
 			tokens.add(token);
 		}
 		return tokens;

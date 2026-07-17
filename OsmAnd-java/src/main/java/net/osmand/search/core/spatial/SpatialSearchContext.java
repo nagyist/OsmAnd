@@ -265,20 +265,19 @@ public class SpatialSearchContext {
 						continue;
 					}
 					List<SpatialSearchToken> otherTokens = pm.other();
-					t.addAtom(atom);
-					if (otherTokens != null) {
-						for (SpatialSearchToken otherToken : otherTokens) {
-							otherToken.addAtom(new NameIndexAtom(atom));
+					boolean added = t.addAtom(atom);
+					if (added) {
+						if (otherTokens != null) {
+							for (SpatialSearchToken otherToken : otherTokens) {
+								otherToken.addAtom(new NameIndexAtom(atom));
+							}
 						}
+						addBuildingRefAtoms(t, tokens, otherTokens, pm.nonNumericMatch(), atom);
 					}
-					addBuildingRefAtoms(t, tokens, otherTokens, pm.nonNumericMatch(), atom);
 				}
 				t.clearPartialAtoms();
 			}
 		}
-		if (stats.printLogs) {
-			System.out.println(tokenStats(tokens).toString());
- 		}
 		if (settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES) {
 			stats.sub1PoiNameBoundaryTime.start();
 			Map<TIntArrayList, List<AtomByTokens>> boundaries = filterEmbeddedBoundaries(tokens);
@@ -412,22 +411,6 @@ public class SpatialSearchContext {
 		return regroup;
 	}
 
-	private StringBuilder tokenStats(List<SpatialSearchToken> tokens) {
-		StringBuilder s = new StringBuilder("Token stats: ");
-		TLongHashSet ids = new TLongHashSet();
-		for (SpatialSearchToken t : tokens) {
-			int level0 = 0;
-			for (NameIndexAtom at : t.atoms) {
-				ids.add(at.id);
-				if (at.nearbyRadius <= 1) {
-					level0++;
-				}
-			}
-			s.append(String.format("'%s' (%,d, 5km-%,d), ", t.word, t.atoms.size(), level0));
-		}
-		return s;
-	}
-	
 	private void readAtoms(List<SpatialSearchToken> tokens, BinaryMapIndexReader b, NameIndexReader indx, int indxInd)
 			throws IOException {
 		// sort to assign tokens to '2nd street 2' first instead '2 2nd street'
@@ -888,13 +871,15 @@ public class SpatialSearchContext {
 			t.addPartialCommonAtom(atom, otherTokens, numericNotMatch);
 			return;
 		}
-		t.addAtom(atom);
-		if (otherTokens != null) {
-			for (SpatialSearchToken otherToken : otherTokens) {
-				otherToken.addAtom(new NameIndexAtom(atom));
+		boolean added = t.addAtom(atom);
+		if (added) {
+			if (otherTokens != null) {
+				for (SpatialSearchToken otherToken : otherTokens) {
+					otherToken.addAtom(new NameIndexAtom(atom));
+				}
 			}
+			addBuildingRefAtoms(t, allTokens, otherTokens, numericNotMatch, atom);
 		}
-		addBuildingRefAtoms(t, allTokens, otherTokens, numericNotMatch, atom);
 
 	}
 
@@ -926,6 +911,7 @@ public class SpatialSearchContext {
 		for (SpatialSearchToken token : allTokens) {
 			// assign building to word token isNumber2Letters (number + 1 char) + possible
 			if (t != token && (otherTokens == null || !otherTokens.contains(token))) {
+				
 				if ((token.likelyPartOfBuilding() && street) || (token.likelyRef() && poi)) {
 					NameIndexAtom atomB = new NameIndexAtom(atom.name, typeToAdd, atom.id,
 							atom.parentid, atom.object, atom.cityAsStreet, atom.otherWordsCnt, atom.otherFoundCnt,

@@ -387,6 +387,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		Building partial1 = null;
 		double distExact = 0;
 		Building exact = null;
+		if(street.getName().startsWith("2nd south street")) {
+			System.out.println(street + " check ?? " + bld);
+		}
 		Set<String> query = SearchAlgorithms.getBuildingCompareSet(bld, tempBuildNames1);
 		for (Building b : street.getBuildings()) {
 			if (b.isInterpolation()) {

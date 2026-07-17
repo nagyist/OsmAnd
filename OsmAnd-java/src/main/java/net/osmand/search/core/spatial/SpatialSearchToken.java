@@ -201,7 +201,7 @@ public class SpatialSearchToken {
 		poiCategoryIds.add(id);
 	}
 	
-	void addAtom(NameIndexAtom atom) {
+	boolean addAtom(NameIndexAtom atom) {
 		if (atom.isPoiCategory()) {
 			poiCategoryKeysToAutocomplete.add(atom.name);
 			poiCategoryIds.add((int) atom.id);
@@ -212,7 +212,7 @@ public class SpatialSearchToken {
 			long osmId = ObfConstants.getOsmIdFromMapObjectId(atom.object.getId());
 			NameIndexAtom ex = indexByOsmIds.get(osmId);
 			if (ex != null) {
-				return;
+				return false;
 			}
 			indexByOsmIds.put(osmId, atom);
 		}
@@ -222,15 +222,12 @@ public class SpatialSearchToken {
 			if (existing != atom) {
 				// compare convention like method important!
 				// select shortest available version
-				int res = Integer.compare(atom.otherWordsCnt, existing.otherWordsCnt);
+				int res = Integer.compare(atom.otherWordsCnt + atom.otherFoundCnt,
+						existing.otherWordsCnt + existing.otherFoundCnt);
 				if (res == 0) {
 					// '2 south 2nd street' vs '25 садова вулиця' (25-та) -
 					// replace street (has number in name) with building
-					res = Boolean.compare(atom.isBuilding(), existing.isBuilding());
-				}
-				if (res == 0) {
-					// shorter version
-					res = Integer.compare(atom.otherFoundCnt, existing.otherFoundCnt);
+					res = -Boolean.compare(atom.isBuilding(), existing.isBuilding());
 				}
 				boolean replace = res < 0;
 				if (replace) {
@@ -238,14 +235,16 @@ public class SpatialSearchToken {
 					index.put(atom.id, atom);
 					atoms.set(atom.indexInToken, atom);
 				}
+				return true;
 			}
-			return;
+			return false;
 		}
 		index.put(atom.id, atom);
 		atoms.add(atom);
 		int indx = atoms.size() - 1;
 		atom.indexInToken = indx;
 		quadTree.put(atom.coords.bboxTileZoom, atom.coords.bboxTileId, indx);
+		return true;
 	}
 
 	boolean matchName(String name, TIntArrayList poiTypes) {
