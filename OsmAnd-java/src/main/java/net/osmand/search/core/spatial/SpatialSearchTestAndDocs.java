@@ -23,10 +23,10 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 'rue de l'eglise', 'rue de la', 'rue de la fen.', 'rû bas du rue'
 // UNIT TESTING: 'Venezia', 'Everest', 'Rio de Janeiro', 'остров Пасхи'
 // UNIT TESTING: Location - 100km <City> <Brand>, <City> + <Poi Type | Common word>
-
+// UNIT TESTING: "Мигия озеро" (non freq-common word + enlarge)
+// UNIT TESTING: Calle 20 188 San Isidro Lima - 100 km away doesn't work 
 //////////// TESTING //////////
-// Calle 20 188 San Isidro Lima
-
+// UNIT TESTING: Calle 20 (not enough objects - 'Lima 188', 'Calle 2', ' Calle 20') - Search doesn't work 10 km away! (LIVE) 
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
 // UNIT TESTING: 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak!
 // "2.Sokak", "2 Sokak", "Sokak 2", "2. Sokak", "32/2 Sokak" + housenumber (?),  2/1 21038 Sokak, Sokak 23018. Balikesir, 2301. Sokak
@@ -44,11 +44,10 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: нова пошта <street>, нова пошта <city>, just <ref> (краматорск), <>... 
 
 ////////// IN PROGRESS //////////
-// REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru
+ 
+// REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // 
-
 // TODO нова пошта 3
-// TODO озеро
 // TODO UNIT TESTING: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
 // TODO suggestions web
 // TODO INDEX: Find POI Categories translations / synonyms (+WEB) - Стоматол., Dentist, Stomatology, BASILICA (!!?)
@@ -304,7 +303,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-		pattern = "Ukraine_";
+		pattern = "Ukraine_my";
 		
 		// poi types
 //		location = new LatLon(50.436423, 30.508097);
@@ -316,11 +315,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "Aquarium";
 //		query = "Fuel diesel";
 		
-//		settings.OPTIM_READ_COMMON_WORDS_LIMIT = 5000;
-		location = new LatLon(48, 30);
-		settings.OPTIM_READ_CATEGORY_WORD_ATOMS = false;
-		settings.OPTIM_READ_COMMON_WORDS_ATOMS = false;
-		query = "Мигия lake"; // "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
+//		location = new LatLon(48, 30);
+		// "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
+//		pattern = "Ukraine_mykolayiv_europe.";
+//		query = "Мигия озеро";
+		
+//		query = "water"; 
 		
 //		query = "Cafe Fuel";
 //		query = "bank приватбанк"; // прив.

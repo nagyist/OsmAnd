@@ -20,6 +20,7 @@ import gnu.trove.set.hash.TLongHashSet;
 
 import java.util.TreeMap;
 
+import net.osmand.CollatorStringMatcher;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.AddressRegion;
 import net.osmand.binary.BinaryMapIndexReader;
 import net.osmand.binary.BinaryMapPoiReaderAdapter.PoiRegion;
@@ -56,6 +57,10 @@ public class SpatialTextSearch {
 	public static class SpatialTextSearchSettings {
 		private SpatialTextSearchSettings() {}
 		
+		public boolean SEARCH_SUGGESTION = false; // incomplete to add '.' in the end
+		// not used in search as maps provided (web could multiply by 1.5x or adjust bbox)
+		public int SUGGESTED_SEARCH_RADIUS_KM = 300;  
+				
 		// lang to deduplicate results
 		public String LANG_DEDUPLICATE = ""; 
 
@@ -163,9 +168,11 @@ public class SpatialTextSearch {
 			SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
 			settings.SEARCH_STREET_INTERSECTIONS = false;
 			settings.SEARCH_POI_INTERSECTIONS = false;
+			settings.SEARCH_SUGGESTION = true;
 //			settings.SUGGEST_SEARCH_POI_CATEGORY_WITH_REF = false;
 			settings.OPTIM_LIMIT_INTERSECTIONS = 5000;
 			settings.OPTIM_READ_COMMON_WORDS_LIMIT = 500;
+			settings.SUGGESTED_SEARCH_RADIUS_KM = 100;
 			return settings;
 		}
 		
@@ -421,6 +428,10 @@ public class SpatialTextSearch {
 
 	public SpatialSearchResults searchAPI(String input, SpatialSearchContext ctx) throws IOException {
 		SpatialSearchResults res = new SpatialSearchResults();
+		if (ctx.settings.SEARCH_SUGGESTION && !input.endsWith(CollatorStringMatcher.INCOMPLETE_DOT + "") && 
+				!input.endsWith(" ")) {
+			input += CollatorStringMatcher.INCOMPLETE_DOT;
+		}
 		ctx.initFiles(cache);
 		res.input = input;
 		
