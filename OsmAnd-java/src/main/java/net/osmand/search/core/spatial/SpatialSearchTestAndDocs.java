@@ -31,22 +31,16 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING - Abbreviations.isCommonSkipOtherCnt ???  Tour Eiffel don't count extra word (common) - test...!!!
 // UNIT TESTING - PA-75 27193, PA21 !!!
 // UNIT TESTING: "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
-
+// TODO UNIT TESTING: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
 ////////// IN PROGRESS //////////
 
 // REVIEW (index_words_dashboard.html): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // Auto test New york, France, Italy (Slow ?)
 
-
-// 2419 Kilgarney Keep St, Dickinson
-// 2419 Avenue G, Dickinson, TX 77539, USA
-// ++ 2nd street
 // TODO no intersection in that case "rue de la" - for very common words if we have enough results?
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
-// TODO AVENUE G https://github.com/osmandapp/OsmAnd/issues/15726
 // TODO ANALYZE: too many wiki places on streets?
 // TODO highway=services (Not index)
-// TODO duplicate words?, '.'//2419 Avenue G, Dickinson, TX 77539, USA
 
 // TO DO Ivan
 // TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
@@ -193,7 +187,7 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
 //		pattern = "Us_utah";
-		pattern = "Us_penn";
+//		pattern = "Us_penn";
 //		pattern2 = "Us_new-york_syracuse";
 //		pattern2 = "Us_virg";
 //		pattern = "Map";
@@ -246,8 +240,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "PA 21";  // 1336083883 DATA 'PA21' (+!'PA 21', +'PA-21',+'PA21') 
 		
 		pattern = "Us_texas";
+//		pattern2 = "regions";
 		query = "Avenue G, Dickinson TX";
-		query = "Avenue G, Dickinson";
+//		query = "TX";
 
 //		pattern = "Liechtenstein_europe.obf";
 //		query = "Vaduz Lettstrasse";
