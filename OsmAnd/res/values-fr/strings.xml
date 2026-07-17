@@ -5204,7 +5204,7 @@
     <string name="astro_eclipse_below_horizon">%1$s • sous l\'horizon (%2$.1f°)</string>
     <string name="astro_eclipse_calculating_local_state">Calcul de l\'apparence au centre de la carte…</string>
     <string name="astro_eclipse_timeline_description">Chronologie de l\'éclipse solaire. Faites glisser pour modifier l\'heure simulée.</string>
-    <string name="astro_eclipse_start">Démarrer</string>
+    <string name="astro_eclipse_start">Début</string>
     <string name="astro_eclipse_maximum">Maximum</string>
     <string name="astro_eclipse_end">Fin</string>
     <string name="astro_show_eclipse_on_map_loading">Recherche de l\'ombre de l\'éclipse…</string>
