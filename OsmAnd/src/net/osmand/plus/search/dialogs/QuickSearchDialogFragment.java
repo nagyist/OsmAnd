@@ -544,8 +544,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	public InsetTargetsCollection getInsetTargets() {
 		InsetTargetsCollection targetsCollection = super.getInsetTargets();
 		targetsCollection.replace(InsetTarget.createHorizontalLandscape(R.id.tab_toolbar_layout, R.id.toolbar, R.id.toolbar_edit, R.id.button_toolbar_layout));
-		targetsCollection.replace(InsetTarget.createFab(R.id.fab));
-		targetsCollection.replace(InsetTarget.createFab(R.id.show_on_map_fab));
+		targetsCollection.replace(InsetTarget.createFab(R.id.fabs_container));
 		return targetsCollection;
 	}
 
@@ -2864,34 +2863,10 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	}
 
 	private void updateFabMargins() {
-		int bottomMargin = sendEmptySearchBottomBarVisible
-				? getDimensionPixelSize(R.dimen.fab_margin_bottom_big)
-				: getDimensionPixelSize(R.dimen.fab_margin_right);
-
-		boolean showOnMapVisible = showOnMapFab != null && showOnMapFab.getVisibility() == View.VISIBLE;
-		if (showOnMapVisible) {
-			FrameLayout.LayoutParams parameter = (FrameLayout.LayoutParams) showOnMapFab.getLayoutParams();
-			updateFabBottomMargin(showOnMapFab, parameter, bottomMargin);
-			showOnMapFab.setLayoutParams(parameter);
-		}
-
-		if (fabVisible) {
-			if (showOnMapVisible) {
-				bottomMargin += getDimensionPixelSize(R.dimen.fab_size_with_shadow);
-			}
-			FrameLayout.LayoutParams parameter = (FrameLayout.LayoutParams) fab.getLayoutParams();
-			updateFabBottomMargin(fab, parameter, bottomMargin);
-			fab.setLayoutParams(parameter);
-		}
 		View view = getView();
 		if (view != null) {
 			ViewCompat.requestApplyInsets(view);
 		}
-	}
-
-	private void updateFabBottomMargin(@NonNull View view, @NonNull FrameLayout.LayoutParams params, int baseBottomMargin) {
-		view.setTag(R.id.initial_margin_bottom, baseBottomMargin);
-		params.setMargins(params.leftMargin, params.topMargin, params.rightMargin, baseBottomMargin);
 	}
 
 	private void updateSendEmptySearchBottomBar(boolean sendSearchQueryVisible) {
