@@ -4232,7 +4232,7 @@
     <string name="astro_eclipse_phase_partial">Частковае</string>
     <string name="astro_eclipse_not_visible_here">Не бачна з цэнтра карты•\nВышыня Сонца: %1$.1f°</string>
     <string name="astro_eclipse_not_visible_below_horizon">Не бачна з цэнтра карты •Сонца пад гарызонтам (%1$.1f°)</string>
-    <string name="astro_eclipse_local_status">%1s$s • %2$.1f%% зацемнена • Вышыня Сонца: %3$.1f°</string>
+    <string name="astro_eclipse_local_status">%1$s • %2$.1f%% зацемнена • Вышыня Сонца: %3$.1f°</string>
     <string name="astro_eclipse_calculating_local_state">Вылічэнне выгляду ў цэнтры карты…</string>
     <string name="astro_eclipse_timeline_description">Храналогія сонечнага зацьмення. Гартайце, каб змяніць мадэляваны час.</string>
     <string name="astro_eclipse_start">Пачаць</string>
