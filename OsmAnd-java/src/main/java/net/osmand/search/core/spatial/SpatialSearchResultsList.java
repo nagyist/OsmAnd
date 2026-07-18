@@ -554,7 +554,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				} else if (uniqueId != -1) {
 					uniqueIdsResults.put(uniqueId, s);
 				}
-				List<String> extraDuplicateKeys = s.extraDeduplicateKeys();
+				List<String> extraDuplicateKeys = s.extraDeduplicateKeys(ctx);
 				if (extraDuplicateKeys != null) {
 					for (String key : extraDuplicateKeys) {
 						if (extraIdsResults.containsKey(key)) {

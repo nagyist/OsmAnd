@@ -225,7 +225,6 @@ public class SpatialPoiSearch {
 						freq += fit;
 					}
 					fc.poiFrequencies.put(topValue.key, freq);
-					System.out.println(topValue.key + " " + freq + " " + allFreq);
 				}
 			}
 			SpatialPoiType indSubType = byKey.get(subType.name);

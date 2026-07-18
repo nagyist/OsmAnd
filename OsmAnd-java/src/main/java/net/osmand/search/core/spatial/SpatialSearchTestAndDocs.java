@@ -495,7 +495,9 @@ public class SpatialSearchTestAndDocs {
 //		query ="Lima Calle 20 San Isidro";
 //		query ="Calle 20 ";
 		
-		pattern = "Makby"; 
+//		pattern = "Map";
+//		query = "по."; //Поїхали з нами,  поехали с нами
+//		pattern = "Makby"; 
 //		location = new LatLon(53.8, 27.5);
 		// 20: 16 (brand/name Mac.by), 3 (no brand, name Mac.by), 1 (brand/name Мак бай, 13721164919) - Q118149500
 		// top_index_brand (2, 26): [Mak.by {Q118149500;Mak by;Makby;Мак бай} (25), // 0 - "Мак.Бай", "Мак.by", "Макby"

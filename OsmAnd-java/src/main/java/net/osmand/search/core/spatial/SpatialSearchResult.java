@@ -173,7 +173,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		return visibleLevel;
 	}
 
-	public List<String> extraDeduplicateKeys() {
+	public List<String> extraDeduplicateKeys(SpatialSearchContext ctx) {
 		List<String> result = null;
 		result = addResult(result, getWikidata());
 		result = addResult(result, getRouteId());
@@ -185,6 +185,12 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				if (name != null && link != null) {
 					result = addResult(result, name + "_" + link);
 				}
+			}
+		}
+		if (getFirstRef().atom.isPoiCategory()) {
+			SpatialPoiType type = ctx.poiSearch.getById((int) getFirstRef().atom.id);
+			if (type != null && type.wikidataId != null) {
+				result = addResult(result, type.wikidataId);
 			}
 		}
 		return result;
