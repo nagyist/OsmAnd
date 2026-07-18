@@ -22,10 +22,10 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 'tongass national forest', 'national', national forest'
 // UNIT TESTING: 'rue de l'eglise', 'rue de la', 'rue de la fen.', 'rû bas du rue'
 // UNIT TESTING: 'Venezia', 'Everest', 'Rio de Janeiro', 'остров Пасхи'
-// UNIT TESTING: Location - 100km <City> <Brand>, <City> + <Poi Type | Common word> - нова пошта 3 краматорск
-// UNIT TESTING: "Мигия озеро" (non freq-common word + enlarge), - partialMatch+partialExactMatch
-// UNIT TESTING: Calle 20 188 San Isidro Lima - 100 km away doesn't work
-// UNIT TESTING: no brand - by name - нова пошта
+
+// UNIT TESTING: 100km+ "Мигия озеро" (non freq-common word + enlarge), - partialMatch+partialExactMatch
+// UNIT TESTING: 100km+ Calle 20 188 San Isidro Lima 
+// UNIT TESTING: 100km+ нова пошта краматорськ  - no brand (3, 5) 5 (5 N7846074085, N1482296639)
 
 //////////// TESTING //////////
 // UNIT TESTING: Calle 20 (not enough objects - 'Lima 188', 'Calle 2', ' Calle 20') - Search doesn't work 10 km away! (LIVE)
@@ -43,23 +43,29 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 'Venezia Cannaregio Campo Saffa', 'Cannaregio 539D Campo Saffa', 'Venezia Cannaregio 539D'
 // UNIT TESTING: Gynaecologist - from all poi types should be result ! (not like old search)
 // UNIT TESTING: 'Kyiv Глушкова 1', 'Kyiv 1'
-// UNIT TESTING: нова пошта <street>, нова пошта <city>, just <post_ref> (нова пошта 3 краматорск), <>... 
+// UNIT TESTING: нова пошта <street>, нова пошта <city>, just <post_ref> (нова пошта 3 краматорск), 5 <>... 
 // UNIT TESTING: POI intersection (пузата хата mcdonal.) or (cafe/shop fuel in poland wihout cafe=yes)
+// UNIT TESTING: нова пошта краматорськ  - no brand !! (3 in ref, 5 in name) 5 (5 N7846074085, N1482296639)
+// UNIT TESTING: See makby below // 20: 16 (brand/name Mac.by), 3 (no brand, name Mac.by), ...
 
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
-// LIVE TEST: 25-та школа
-// TEST нова пошта 3, нова пошта краматорськ
-// TEST mihia lake,
+
+// TODO макбай, мак.бай (alt names) - Q118149500
+// TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
+// TODO TESTS
+// TODO no brand https://www.openstreetmap.org/node/1482296639
+
+// TEST mihia lake translations (category)
+// TODO TEST: 25-та школа
 
 // TEST New york with POI Refs ! (intersection)
-
-// TODO макбай, мак.бай - Q118149500
-// TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
+// TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ  (3, 5)  
 
 // TODO TEST: With all poi translation!
 // TODO TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
 // TODO TEST FIX: wilkes-barre
+
 // TODO ANALYZE: too many wiki places on streets?
 // TODO INDEX: highway=services (Not index)
 
@@ -72,7 +78,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 
 // TO DO Gateway
-// TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
+// TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
 // TODO REVIEW: Auto test New york, France, Italy (Slow?)
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
 // TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
@@ -374,7 +380,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа ";
 //		query = "Школа А+";
-//		query = "25-та school"; // 25-та школа
+		query = "25-та школа"; // 25-та школа, 25-та school
 		
 //		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25' // 63112526
 //		query = "ВЕЛОwatt";
@@ -488,6 +494,18 @@ public class SpatialSearchTestAndDocs {
 //		query ="Calle 20 188 San Isidro Lima"; // 1430799557
 //		query ="Lima Calle 20 San Isidro";
 //		query ="Calle 20 ";
+		
+		pattern = "Makby"; 
+//		location = new LatLon(53.8, 27.5);
+		// 20: 16 (brand/name Mac.by), 3 (no brand, name Mac.by), 1 (brand/name Мак бай, 13721164919) - Q118149500
+		// top_index_brand (2, 26): [Mak.by {Q118149500;Mak by;Makby;Мак бай} (25), // 0 - "Мак.Бай", "Мак.by", "Макby"
+//		query = "Mak.by"; // 21 - 16 + 1 + 3 + 1 poi type [Brand]
+//		query = "Mak By"; // 21 - 16 + 1 + 3 + 1 poi type
+//		query = "Мак бай"; // 18 - 16 + 1 (brand) + 1 poi type [only 6 by name]
+//		query = "Мак by";  // mix - 18 - 16 + 1 (brand) + 1 poi type [only 6 by name]
+//		query = "MakBy"; // 18 - 16 + 1 + 1 poi type
+//		query = "mcdonald's"; // 18 all synonym
+
 
 //		pattern ="usa_wilkes-barre.obf";
 //		pattern ="Us_penn";

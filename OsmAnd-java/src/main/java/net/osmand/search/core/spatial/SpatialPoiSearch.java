@@ -44,6 +44,7 @@ public class SpatialPoiSearch {
 	ReentrantReadWriteLock poiTypesIndexLock = new ReentrantReadWriteLock();
 	AtomicInteger ids = new AtomicInteger();
 	Map<String, SpatialPoiType> byKey = new ConcurrentHashMap<>();
+	Map<String, List<SpatialPoiType>> byWikidataKey = new ConcurrentHashMap<>();
 	Map<Integer, SpatialPoiType> byId = new ConcurrentHashMap<>();
 	
 	public static class SpatialPoiType {
@@ -52,6 +53,7 @@ public class SpatialPoiSearch {
 		final List<String> names = new ArrayList<String>();
 		final String key;
 		final int id;
+		String wikidataId;
 		List<AbstractPoiType> parentTypes;
 
 		public SpatialPoiType(AbstractPoiType pt, int id) {
@@ -153,6 +155,12 @@ public class SpatialPoiSearch {
 			SpatialSearchContext.checkPoiTypeId(poiType.id);
 			byId.put(poiType.id, poiType);
 			byKey.put(poiType.key, poiType);
+			if (poiType.wikidataId != null && poiType.wikidataId.length() > 0) {
+				if (!byWikidataKey.containsKey(poiType.wikidataId)) {
+					byWikidataKey.put(poiType.wikidataId, new ArrayList<>());
+				}
+				byWikidataKey.get(poiType.wikidataId).add(poiType);
+			}
 			for (String name : poiType.names) {
 				poiTypesIndex.put(name, poiType);
 			}
@@ -185,25 +193,39 @@ public class SpatialPoiSearch {
 			}
 			if (subType.isTopIndex()) {
 				List<String> possibleValues = subType.possibleValues;
+				List<String> wikidataIds = subType.wikidataIds;
+				TIntArrayList possibleValuesFreqs = subType.possibleValuesFreqs;
+				int allFreq = subType.frequency;
 				for (int k = 0; k < possibleValues.size(); k++) {
 					String topValueName = possibleValues.get(k);
 					String valueKey = TopIndexFilter.getValueKey(topValueName);
 					String fullKey = subType.name + "_" + valueKey;
+					String wikidataId = wikidataIds != null && k < wikidataIds.size() ? wikidataIds.get(k) : "";
+					int freq = possibleValuesFreqs != null && k < possibleValuesFreqs.size() ? possibleValuesFreqs.get(k) : 0;
 					SpatialPoiType topValue = byKey.get(fullKey);
 					if (topValue == null) {
-						String poiTranslation = poiTypes.getPoiTranslation(valueKey, false);
+//						String poiTranslation = poiTypes.getPoiTranslation(valueKey, false);
 						topValue = new SpatialPoiType(topValueName, fullKey, ids.getAndIncrement());
-						if (!topValueName.equalsIgnoreCase(poiTranslation) && poiTranslation != null) {
-							topValue.names.add(poiTranslation);
+						if (wikidataId.length() > 0) {
+							String[] otherNames = wikidataId.split(";");
+							topValue.wikidataId = otherNames[0];
+							for (int ts = 1; ts < otherNames.length; ts++) {
+								topValue.names.add(otherNames[ts]);
+							}
 						}
+						// not needed
+//						if (!topValueName.equalsIgnoreCase(poiTranslation) && poiTranslation != null) {
+//							topValue.names.add(poiTranslation);
+//						}
+						
 						addToIndex(topValueName, topValue);
 					}
-					int freq = subType.possibleValuesFreqs != null && k < subType.possibleValuesFreqs.size() ? subType.possibleValuesFreqs.get(k) : 0;
 					Integer fit = fc.poiFrequencies.get(topValue.key);
 					if (fit != null) {
 						freq += fit;
 					}
 					fc.poiFrequencies.put(topValue.key, freq);
+					System.out.println(topValue.key + " " + freq + " " + allFreq);
 				}
 			}
 			SpatialPoiType indSubType = byKey.get(subType.name);
@@ -227,6 +249,50 @@ public class SpatialPoiSearch {
 		}
 	}
 	
+	private void addPoiCategoryMatch(SpatialSearchContext ctx, SpatialPoiType a, SpatialSearchToken t,
+			Map<SpatialPoiType, PoiCatSearch> res) {
+		int total = 0;
+		for (SpatialSearchFileCache l : ctx.internalFile) {
+			if (l.poiFrequencies != null) {
+				Integer freq = l.poiFrequencies.get(a.key);
+				if (freq != null) {
+					total += freq;
+				}
+				if (a.singleType instanceof PoiFilter pf) {
+					for (PoiType p : pf.getPoiTypes()) {
+						freq = l.poiFrequencies.get(p.getKeyName());
+						if (freq != null) {
+							total += freq;
+						}
+					}
+				}
+				// additional could be on top
+//				if (a.parentTypes != null) {
+//					for (AbstractPoiType p : a.parentTypes) {
+//						freq = l.poiFrequencies.get(p.getKeyName());
+//						if (freq != null) {
+//							total += freq;
+//						}
+//					}
+//				}
+			}
+		}
+//		System.out.println(a.names + " " + a.key + " " + total);
+		PoiCatSearch cs = res.get(a);
+		if (cs == null) {
+			cs = new PoiCatSearch(a, new ArrayList<>(), new ArrayList<>(), total);
+			res.put(a, cs);
+		}
+		if (cs.tokens.contains(t)) {
+			return;
+		}
+		
+		NameIndexAtom atom = new NameIndexAtom(a.key, a.id, total);
+		cs.atoms.add(atom);
+		cs.tokens.add(t);
+		t.addPoiCategoryMatch(a.id);
+	}
+	
 	public void processPoiCategories(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
 		Map<SpatialPoiType, PoiCatSearch> res = new LinkedHashMap<>();
 		for (SpatialSearchToken t : tokens) {
@@ -247,47 +313,15 @@ public class SpatialPoiSearch {
 					}
 				}
 				if (match) {
-					int total = 0;
-					for (SpatialSearchFileCache l : ctx.internalFile) {
-						if (l.poiFrequencies != null) {
-							Integer freq = l.poiFrequencies.get(a.key);
-							if (freq != null) {
-								total += freq;
+					addPoiCategoryMatch(ctx, a, t, res);
+					if (a.wikidataId != null) {
+						List<SpatialPoiType> otherTypes = byWikidataKey.get(a.wikidataId);
+						for (SpatialPoiType otherA : otherTypes) {
+							if (otherA.id != a.id) {
+								addPoiCategoryMatch(ctx, otherA, t, res);
 							}
-							if (a.singleType instanceof PoiFilter pf) {
-								for (PoiType p : pf.getPoiTypes()) {
-									freq = l.poiFrequencies.get(p.getKeyName());
-									if (freq != null) {
-										total += freq;
-									}
-								}
-							}
-							// additional could be on top
-//							if (a.parentTypes != null) {
-//								for (AbstractPoiType p : a.parentTypes) {
-//									freq = l.poiFrequencies.get(p.getKeyName());
-//									if (freq != null) {
-//										total += freq;
-//									}
-//								}
-//							}
 						}
 					}
-//					System.out.println(a.names + " " + a.key + " " + total);
-					PoiCatSearch cs = res.get(a);
-					if (cs == null) {
-						cs = new PoiCatSearch(a, new ArrayList<>(), new ArrayList<>(), total);
-						res.put(a, cs);
-					}
-					if (cs.tokens.contains(t)) {
-						continue;
-					}
-					
-					NameIndexAtom atom = new NameIndexAtom(a.key, a.id, total);
-					cs.atoms.add(atom);
-					cs.tokens.add(t);
-					t.addPoiCategoryMatch(a.id);
-					
 				}
 			}
 		}
