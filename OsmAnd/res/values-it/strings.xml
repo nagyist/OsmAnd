@@ -1567,7 +1567,7 @@
     <string name="select_postcode">Cerca codice postale</string>
     <string name="shared_string_in_name">in %1$s</string>
     <string name="type_address">Scrivi l\'indirizzo</string>
-    <string name="animate_my_location">Simula la mia posizione</string>
+    <string name="animate_my_location">Spostamento fluido della mia posizione</string>
     <string name="shared_string_overview">Panoramica</string>
     <string name="show_from_zoom_level">Mostra dal livello di zoom</string>
     <string name="display_zoom_level">Mostra il livello di zoom: %1$s</string>
@@ -3707,7 +3707,7 @@
     <string name="precipitation_widget_desc">Mostra le precipitazioni del centro attuale della mappa.</string>
     <string name="temperature_widget_desc">Mostra la temperatura del centro attuale della mappa.</string>
     <string name="weather_pressure_hpa">hPa</string>
-    <string name="weather_pressure_inhg">mmHg</string>
+    <string name="weather_pressure_inhg">inHg</string>
     <string name="weather_pressure_mmhg">mmHg</string>
     <string name="location_simulation_speedup">Accelerazione della simulazione</string>
     <string name="map_widget_sunset_desc">Mostra l\'ora del prossimo tramonto o il tempo che manca al prossimo tramonto.</string>
@@ -4680,7 +4680,7 @@
     <string name="default_buttons_corners_original_description">Ogni pulsante mantiene il proprio raggio d\'angolo.</string>
     <string name="rendering_attr_showClimbingRoutes_description">Mostra i percorsi per l\'arrampicata</string>
     <string name="rendering_attr_showClimbingRoutes_name">Percorsi arrampicata</string>
-    <string name="display_distance_to_first_intermediate_summary">Mostra il tempo e la distanza per la prossima fermata. Disattiva l\'opzione per mostrare sempre i dettagli per la destinazione.</string>
+    <string name="display_distance_to_first_intermediate_summary">Mostra il tempo e la distanza per la prossima fermata. Disattiva l\'opzione per mostrare sempre i dettagli per la destinazione finale.</string>
     <string name="display_distance_to_first_intermediate">Mostra i dettagli del percorso per la prossima fermata</string>
     <string name="popular_places_nearby">Luoghi popolari nelle vicinanze</string>
     <string name="map_widget_route_information_desc">Visualizza l\'orario di arrivo stimato, il tempo di percorrenza rimanente e la distanza per l\'attuale percorso di navigazione.</string>
@@ -4708,7 +4708,7 @@
     <string name="shared_string_avg_speed">Velocità minima</string>
     <string name="ais_cpa_warning_time">Tempo di avviso prima del Punto di Avvicinamento più Vicino (PAV)</string>
     <string name="ais_cpa_warning_distance">Distanza di avviso per il Punto di Avvicinamento più Vicino (PAV)</string>
-    <string name="ais_cpa_warning_distance_description">Le imbarcazioni sono contrassegnate in rosso se il PAV è inferiore a questo valore e viene raggiunto nel prossimo futuro (vedere l\'impostazione Tempo di avviso per il raggiungimento del PAV).</string>
+    <string name="ais_cpa_warning_distance_description">Le imbarcazioni sono evidenziate in rosso se il CPA (Punto di minima distanza) è inferiore alla soglia definita e il TCPA (Tempo al CPA) rientra nel tempo di avviso impostato nell\'impostazione \'Tempo di avviso per il raggiungimento del CPA\'.</string>
     <string name="plugin_ais_tracker_name">Localizzatore di imbarcazioni AIS</string>
     <string name="plugin_ais_tracker_description">Visualizza le posizioni AIS e le informazioni sulle imbarcazioni circostanti. I dati AIS vengono ricevuti tramite rete da un ricevitore AIS esterno.</string>
     <string name="plugin_ais_tracker_disclaimer">ESCLUSIONE DI RESPONSABILITÀ\n\nQuesto plugin è un progetto amatoriale e non è progettato per essere affidabile e corretto. NON fare affidamento su questo software in alcun modo, né per la navigazione né per la sicurezza della vita.</string>
@@ -4729,7 +4729,7 @@
     <string name="shared_string_map_center">Centro della mappa</string>
     <string name="shared_string_manual">Manuale</string>
     <string name="show_image_previews">Mostra l\\\'immagine precedente</string>
-    <string name="quick_action_showhide_coordinates_grid_descr">Attiva la visibilità della griglia di coordinate sulla mappa.</string>
+    <string name="quick_action_showhide_coordinates_grid_descr">Inverti la visibilità della griglia di coordinate sulla mappa.</string>
     <string name="layer_coordinates_grid">Griglia delle coordinate</string>
     <string name="release_5_0">• Scopri i POI più quotati con la nuova modalità Esplora\n\n• Tutti i percorsi OSM, ora ricercabili! Escursionismo, ciclismo, MTB e altro\n\n• Il nuovo widget di navigazione combina la freccia di svolta e le istruzioni di navigazione\n\n• Widget di informazioni sul percorso attuale: visualizza ETA, orario di arrivo e distanza\n\n• Seleziona piste da sci e percorsi MTB sulla mappa per informazioni dettagliate\n\n• Possibilità di selezionare le dimensioni del widget per i pannelli sinistro e destro\n\n• Aggiunta griglia di coordinate con coordinate geografiche\n\n• Aggiunta possibilità di personalizzare l\'aspetto predefinito dei gruppi preferiti\n\n• Android Auto: visualizza ETA e distanza dal waypoint successivo; i nomi delle città ora compaiono nei risultati di ricerca\n\n• Le vette più importanti sono ora individuabili tramite mappa e ricerca\n\n• Altezze delle vette delle montagne in piedi\n\n• Aggiunto: falesie e aree di arrampicata sulla mappa\n\n• Migliorata la ricerca degli indirizzi negli Stati Uniti\n\n• Aggiunto TTS ebraico per la navigazione</string>
     <string name="equator">Equatore</string>
@@ -4792,7 +4792,7 @@
     <string name="battery_level">Livello batteria</string>
     <string name="set_parking_position">Imposta la posizione di parcheggio</string>
     <string name="set_work">Imposta lavoro</string>
-    <string name="ski_route_switch_style_description">Esplora posti per sciare e altro con lo stile mappa Winter and Ski.</string>
+    <string name="ski_route_switch_style_description">Esplora percorsi, piste e impianti sciistici con lo stile mappa Winter and Ski.</string>
     <string name="battery">batteria</string>
     <string name="sensor_data">Dati dei sensori</string>
     <string name="release_5_2">
