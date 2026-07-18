@@ -235,46 +235,8 @@ public class SpatialSearchContext {
 		// add partial once we read all files
 		for (SpatialSearchToken t : tokens) {
 			if (settings.OPTIM_READ_COMMON_WORDS_ATOMS || settings.OPTIM_READ_CATEGORY_WORD_ATOMS) {
-				List<PartialMatch> partialAtoms = t.getPartialExactMatch();
-				// 'haupstrasse' vs 'haupstrasse <specifier>'
-				if (partialAtoms.size() == 0) {
-					partialAtoms = t.getPartialMatch();
-				}
-				boolean partialAreSameFreq = partialAtoms.size() < t.atoms.size() / 2;
-				int nearbyLimit = Integer.MAX_VALUE;
-				if (!partialAreSameFreq) {
-					int[] cnts = new int[settings.OPTIM_LIMIT_RADIUS.length + 1];
-					TLongHashSet set = new TLongHashSet();
-					for (PartialMatch a : partialAtoms) {
-						if (set.add(a.atom().id)) {
-							cnts[a.atom().nearbyRadius]++;
-						}
-					}
-					nearbyLimit = 0;
-					int cnt = t.atoms.size();
-					while (nearbyLimit < cnts.length
-							&& cnts[nearbyLimit] + cnt < settings.OPTIM_READ_COMMON_WORDS_LIMIT) {
-						cnt += cnts[nearbyLimit];
-						nearbyLimit++;
-					}
-				}
-				for (int ind = 0; ind < partialAtoms.size(); ind++) {
-					PartialMatch pm = partialAtoms.get(ind);
-					NameIndexAtom atom = pm.atom();
-					if (atom.nearbyRadius >= nearbyLimit && atom.elo <= settings.MIN_ELO_RATING_TO_KEEP_IN_ATOM) {
-						continue;
-					}
-					List<SpatialSearchToken> otherTokens = pm.other();
-					boolean added = t.addAtom(atom);
-					if (added) {
-						if (otherTokens != null) {
-							for (SpatialSearchToken otherToken : otherTokens) {
-								otherToken.addAtom(new NameIndexAtom(atom));
-							}
-						}
-						addBuildingRefAtoms(t, tokens, otherTokens, pm.nonNumericMatch(), atom);
-					}
-				}
+				addPartialMatch(t, t.getPartialExactMatch());
+				addPartialMatch(t, t.getPartialMatch());
 				t.clearPartialAtoms();
 			}
 		}
@@ -287,6 +249,45 @@ public class SpatialSearchContext {
 			stats.sub1PoiNameBoundaryTime.finish();
 		}
 		
+	}
+
+	private void addPartialMatch(SpatialSearchToken t, List<PartialMatch> partialAtoms) {
+		// 'haupstrasse' vs 'haupstrasse <specifier>'
+		boolean partialAreSameFreq = partialAtoms.size() < t.atoms.size() / 2;
+		int nearbyLimit = Integer.MAX_VALUE;
+		if (!partialAreSameFreq) {
+			int[] cnts = new int[settings.OPTIM_LIMIT_RADIUS.length + 1];
+			TLongHashSet set = new TLongHashSet();
+			for (PartialMatch a : partialAtoms) {
+				if (set.add(a.atom().id)) {
+					cnts[a.atom().nearbyRadius]++;
+				}
+			}
+			nearbyLimit = 0;
+			int cnt = t.atoms.size();
+			while (nearbyLimit < cnts.length
+					&& cnts[nearbyLimit] + cnt < settings.OPTIM_READ_COMMON_WORDS_LIMIT) {
+				cnt += cnts[nearbyLimit];
+				nearbyLimit++;
+			}
+		}
+		for (int ind = 0; ind < partialAtoms.size(); ind++) {
+			PartialMatch pm = partialAtoms.get(ind);
+			NameIndexAtom atom = pm.atom();
+			if (atom.nearbyRadius >= nearbyLimit && atom.elo <= settings.MIN_ELO_RATING_TO_KEEP_IN_ATOM) {
+				continue;
+			}
+			List<SpatialSearchToken> otherTokens = pm.other();
+			boolean added = t.addAtom(atom);
+			if (added) {
+				if (otherTokens != null) {
+					for (SpatialSearchToken otherToken : otherTokens) {
+						otherToken.addAtom(new NameIndexAtom(atom));
+					}
+				}
+				addBuildingRefAtoms(t, tokens, otherTokens, pm.nonNumericMatch(), atom);
+			}
+		}
 	}
 	
 

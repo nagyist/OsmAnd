@@ -23,11 +23,12 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 'rue de l'eglise', 'rue de la', 'rue de la fen.', 'rû bas du rue'
 // UNIT TESTING: 'Venezia', 'Everest', 'Rio de Janeiro', 'остров Пасхи'
 // UNIT TESTING: Location - 100km <City> <Brand>, <City> + <Poi Type | Common word> - нова пошта 3 краматорск
-// UNIT TESTING: "Мигия озеро" (non freq-common word + enlarge), no branhd - нова пошта
+// UNIT TESTING: "Мигия озеро" (non freq-common word + enlarge), - partialMatch+partialExactMatch
 // UNIT TESTING: Calle 20 188 San Isidro Lima - 100 km away doesn't work
+// UNIT TESTING: no brand - by name - нова пошта
 
 //////////// TESTING //////////
-// UNIT TESTING: Calle 20 (not enough objects - 'Lima 188', 'Calle 2', ' Calle 20') - Search doesn't work 10 km away! (LIVE) 
+// UNIT TESTING: Calle 20 (not enough objects - 'Lima 188', 'Calle 2', ' Calle 20') - Search doesn't work 10 km away! (LIVE)
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
 // UNIT TESTING: 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak!
 // "2.Sokak", "2 Sokak", "Sokak 2", "2. Sokak", "32/2 Sokak" + housenumber (?),  2/1 21038 Sokak, Sokak 23018. Balikesir, 2301. Sokak
@@ -47,12 +48,18 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
-// TEST mihia lake, нова пошта 3, нова пошта краматорськ 
 // LIVE TEST: 25-та школа
+// TEST нова пошта 3, нова пошта краматорськ
+// TEST mihia lake,
+
+// TEST New york with POI Refs ! (intersection)
+
+// TODO макбай, мак.бай - Q118149500
+// TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
 
 // TODO TEST: With all poi translation!
-// TODO FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
-// TODO Tests 3-4
+// TODO TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
+// TODO TEST FIX: wilkes-barre
 // TODO ANALYZE: too many wiki places on streets?
 // TODO INDEX: highway=services (Not index)
 
@@ -65,7 +72,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 
 // TO DO Gateway
-// TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
+// TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
 // TODO REVIEW: Auto test New york, France, Italy (Slow?)
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
 // TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
@@ -90,7 +97,6 @@ import net.osmand.util.SearchAlgorithms;
 
 /////////////// EXTRA FEATURES ///////////////
 // TODO FORBID (slow): to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
-// TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
 // TODO Suggestion based on common suffixes
 // TODO Store and test conscription number for some cities - issue (RZR)
@@ -321,11 +327,11 @@ public class SpatialSearchTestAndDocs {
 //		query = "Aquarium";
 //		query = "Fuel diesel";
 		
-//		location = new LatLon(48, 30);
+		location = new LatLon(48, 31);
 		// "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
-//		pattern = "Ukraine_mykolayiv_europe.";
-//		query = "Мигия озеро";
-//		query = "water"; 
+		pattern = "Ukraine_";
+		query = "Мигия озеро";
+//		query = "Мигия water"; 
 		
 //		location = new LatLon(48.75, 37.5);
 //		query = "нова пошта 3 краматорськ"; // (1482296639) 
@@ -483,6 +489,12 @@ public class SpatialSearchTestAndDocs {
 //		query ="Lima Calle 20 San Isidro";
 //		query ="Calle 20 ";
 
+//		pattern ="usa_wilkes-barre.obf";
+//		pattern ="Us_penn";
+		// TODO bug
+//		query = "226 Wilkes-Barre Township Boulevard Wilkes-Barre";
+//		query = "226 Wilkes-Barre Township Boulevard ";// 116894954
+		
 		long t = System.nanoTime();
 
 		List<BinaryMapIndexReader> ls = new ArrayList<BinaryMapIndexReader>();
