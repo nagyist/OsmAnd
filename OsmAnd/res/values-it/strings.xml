@@ -5041,11 +5041,11 @@
         <item quantity="many">%d oggetti</item>
         <item quantity="other">%d oggetti</item>
     </plurals>
-    <string name="astro_search_type_in_location">%1$@ in %2$@</string>
-    <string name="astro_search_in_location">In %1$@</string>
-    <string name="astro_search_rises_tomorrow">↗ %1$@ %2$@</string>
-    <string name="astro_search_sets_tomorrow">↘ %1$@ %2$@</string>
-    <string name="astro_search_rises_at">↗ Sorge %1$@</string>
+    <string name="astro_search_type_in_location">%1$s in %2$s</string>
+    <string name="astro_search_in_location">In %1$s</string>
+    <string name="astro_search_rises_tomorrow">↗ %1$s %2$s</string>
+    <string name="astro_search_sets_tomorrow">↘ %1$s %2$s</string>
+    <string name="astro_search_rises_at">↗ Sorge %1$s</string>
     <string name="astro_filter_naked_eye">Visibile ad occhio nudo</string>
     <string name="astro_filter_visible_tonight">Visibile stanotte</string>
     <string name="astro_filter_visible_now">Visibile ora</string>
