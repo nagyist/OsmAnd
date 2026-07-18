@@ -5121,7 +5121,7 @@
     <string name="backup_deleting_all_data">Eliminazione di tutti i dati…</string>
     <string name="astro_my_data_no_daily_paths_description">Abilita un percorso giornaliero per un oggetto dal suo menu contestuale per visualizzarlo qui</string>
     <string name="astro_search_never_rises">↓ Non sorge mai</string>
-    <string name="astro_search_sets_at">↘ Tramonta %1$@</string>
+    <string name="astro_search_sets_at">↘ Tramonta %1$s</string>
     <string name="astro_sort_rises_soonest">Sorge prima</string>
     <string name="astro_sort_faintest_first">Più debole prima</string>
     <string name="astro_sort_brightest_first">Più luminoso prima</string>
