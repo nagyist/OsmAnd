@@ -47,28 +47,24 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: POI intersection (пузата хата mcdonal.) or (cafe/shop fuel in poland wihout cafe=yes)
 // UNIT TESTING: нова пошта краматорськ  - no brand !! (3 in ref, 5 in name) 5 (5 N7846074085, N1482296639)
 // UNIT TESTING: See makby below // 20: 16 (brand/name Mac.by), 3 (no brand, name Mac.by), ...
+// SAME DEDUPLICATE:  Same mabky brand langs - 'Поїхали з нами' / 'Поехали с нами'
 
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 
-// TODO макбай, мак.бай (alt names) - Q118149500
-// TODO DEDUPLICATE: brand langs - 'Поїхали з нами' / 'Поехали с нами'
-// TODO TESTS
-// TODO no brand https://www.openstreetmap.org/node/1482296639
+// TODO TESTS unit - 2 Partial match...
+// TODO TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
+// TODO TEST FIX: wilkes-barre
+// TODO TEST: 25-та школа
 
 // TEST mihia lake translations (category)
-// TODO TEST: 25-та школа
+// TODO TEST: With all poi translation!
 
 // TEST New york with POI Refs ! (intersection)
 // TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ  (3, 5)  
 
-// TODO TEST: With all poi translation!
-// TODO TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
-// TODO TEST FIX: wilkes-barre
-
 // TODO ANALYZE: too many wiki places on streets?
 // TODO INDEX: highway=services (Not index)
-
 // TODO no intersection in that case "rue de la" - for very common words if we have enough results?
 
 // TO DO Ivan
@@ -87,7 +83,7 @@ import net.osmand.util.SearchAlgorithms;
 //        Foothill Boulevard x Golden State Road x Los Angeles x United states of America
 
 // TODO WEB - RZR
-// - FIXME Bug web by brand - post 
+// - FIXME Bug web by brand - nova posta on map 
 // - Highlight ref matching, interpolation (somehow) with braces?
 // - Poi category + geo object (name of geobject, dist? and relocate)
 // - Autosuggestions (postpone?)

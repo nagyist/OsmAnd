@@ -236,7 +236,9 @@ public class SpatialSearchContext {
 		for (SpatialSearchToken t : tokens) {
 			if (settings.OPTIM_READ_COMMON_WORDS_ATOMS || settings.OPTIM_READ_CATEGORY_WORD_ATOMS) {
 				addPartialMatch(t, t.getPartialExactMatch());
-				addPartialMatch(t, t.getPartialMatch());
+//				if(t.getPartialExactMatch().size() == 0) {
+					addPartialMatch(t, t.getPartialMatch());
+//				}
 				t.clearPartialAtoms();
 			}
 		}
