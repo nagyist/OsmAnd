@@ -29,6 +29,7 @@ import net.osmand.util.SearchAlgorithms;
 
 //////////// TESTING //////////
 // UNIT TESTING: not tested postcode Match (reuse existing tests - USA, Huns) - '324d 1186rz amstelveen logger' - 4 matched (add test to search postcode, postcode + city)
+// UNIT TESTING '14871 Pennsylvania Avenue 1842', '14871 Pennsylvania Avenue Pine City' ('8832kd Huns' ok)
 // UNIT TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border) - Add missing border
 // UNIT TESTING: Calle 20 (not enough objects - 'Lima 188', 'Calle 2', ' Calle 20') - Search doesn't work 10 km away! (LIVE)
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
@@ -53,7 +54,6 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
-// UNIT TESTING '14871 Pennsylvania Avenue 1842', '14871 Pennsylvania Avenue Pine City' ('8832kd Huns' ok)
 
 // TODO TESTING FIX: wilkes-barre
 // TODO New york: 4 ave 8 (broken)
@@ -264,8 +264,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75'
 //		query = "PA 21";  // 1336083883 DATA 'PA21' (+!'PA 21', +'PA-21',+'PA21') 
 		
-		pattern = "Map";
-		query = "14871 Bly Road";
+		pattern = "Us_penn";
+//		pattern = "Map";
+//		query = "14871 Bly Road";
 		query = "Pennsylvania 1282 14871";
 //		query = "14871 Pennsylvania Avenue Pine City";
 //		query = "14871 Pennsylvania Avenue";

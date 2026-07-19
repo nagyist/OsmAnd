@@ -422,6 +422,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			return partial1;
 		}
 		if (interpolation != null) {
+			if (query.size() > 1) {
+				atom.matchExtraWord = -1;
+			}
 			return interpolation;
 		}
 		if (partial2 != null) {
