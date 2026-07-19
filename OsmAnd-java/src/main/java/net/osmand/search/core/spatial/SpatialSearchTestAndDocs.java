@@ -18,17 +18,18 @@ import net.osmand.util.SearchAlgorithms;
 
 //////////// LIVE TESTING //////////
 // UNIT TESTING: Fix 36K national park - live test? (don't index small islands > 100 POI !!!)
-// UNIT TESTING: Limit results "Gate" - "Gate D18"... ?
+// UNIT TESTING: "Gate D18"... (too many results check Limit results "Gate")?
 // UNIT TESTING: 'tongass national forest', 'national', national forest'
-// UNIT TESTING: 'rue de l'eglise', 'rue de la', 'rue de la fen.', 'rû bas du rue'
+// UNIT TESTING: 'rue de l'eglise', 'rue de la', 'rue de la fen.', 'rû bas du rue' (too many results) 
 // UNIT TESTING: 'Venezia', 'Everest', 'Rio de Janeiro', 'остров Пасхи'
-
+// UNIT TESTING: 25-та школа (keep failing too many results)
 // UNIT TESTING: 100km+ "Мигия озеро" (non freq-common word + enlarge), - partialMatch+partialExactMatch
 // UNIT TESTING: 100km+ Calle 20 188 San Isidro Lima 
 // UNIT TESTING: 100km+ нова пошта краматорськ  - no brand (3, 5) 5 (5 N7846074085, N1482296639)
 
 //////////// TESTING //////////
 // UNIT TESTING: not tested postcode Match (reuse existing tests - USA, Huns) - '324d 1186rz amstelveen logger' - 4 matched (add test to search postcode, postcode + city)
+// UNIT TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border) - Add missing border
 // UNIT TESTING: Calle 20 (not enough objects - 'Lima 188', 'Calle 2', ' Calle 20') - Search doesn't work 10 km away! (LIVE)
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
 // UNIT TESTING: 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak!
@@ -51,20 +52,14 @@ import net.osmand.util.SearchAlgorithms;
 // SAME DEDUPLICATE:  Same mabky brand langs - 'Поїхали з нами' / 'Поехали с нами'
 
 ////////// IN PROGRESS //////////
-/// 
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 
-// UNIT TESTING Map Regenerate '14871 Pennsylvania Avenue 1842', '14871 Pennsylvania Avenue Pine City' ('8832kd Huns' ok)
-// TESTING : 25-та школа
-// TESTING FIX: wilkes-barre
+// TODO UNIT TESTING Map Regenerate '14871 Pennsylvania Avenue 1842', '14871 Pennsylvania Avenue Pine City' ('8832kd Huns' ok)
+// TODO TESTING FIX: wilkes-barre
+// TODO New york: 4 ave 8 (broken)
+// TODO TESTS unit Estrado x 2nd street
 
-// TODO Test 
-// TODO TESTS unit - 2 Partial match... : Estrado x 2nd street
-// TODO TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
-// TODO TEST: With all poi translation! (Myhiia lake, water, озеро)
-
-// TEST New york with POI Refs ! (intersection)
-// TODO no intersection in that case "rue de la" - for very common words if we have enough results?
+// TODO TEST: Poi translations! (Myhiia lake, water, озеро)
 
 // TO DO Ivan
 // TODO ANALYZE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
@@ -78,9 +73,6 @@ import net.osmand.util.SearchAlgorithms;
 // TODO REVIEW: Auto test New york, France, Italy (Slow?)
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
 // TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
-// SLOW: 
-//       "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
-//        Foothill Boulevard x Golden State Road x Los Angeles x United states of America
 
 // TODO WEB - RZR
 // - FIXME Bug web by brand - redirect search
@@ -91,7 +83,6 @@ import net.osmand.util.SearchAlgorithms;
 // - Production - check time & memory - tune params?
 // - CANCEL ! (slow queries for server)
 // - Poi translation provider
-// TODO INDEX: highway=services (Not index)
 
 // TODO ANDROID - Convert to old results
 // - Integrate (include regions.ocbf) on client
@@ -100,6 +91,9 @@ import net.osmand.util.SearchAlgorithms;
 
 /////////////// EXTRA FEATURES ///////////////
 // TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ 3, Нова Пошта (№5 not searchable by common words / name)
+// SLOW: "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
+//       "Foothill Boulevard" x "Golden State Road" x "Los Angeles" x "United states of America"
+// TODO INDEX: highway=services (Not index)
 // TODO FORBID (slow): to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
 // TODO Suggestion based on common suffixes
@@ -115,7 +109,6 @@ import net.osmand.util.SearchAlgorithms;
 // TODO English postcodes
 // TODO Precise Boundary 'Chernihiv sport life' mostly Kyiv - check precise boundary for filter
 // TODO Short word split "Ro-ki" vs "Roki" 
-
 
 public class SpatialSearchTestAndDocs {
 
@@ -228,8 +221,6 @@ public class SpatialSearchTestAndDocs {
 //		query = "Salt Lake City Pennsylvania Street";
 //		query = "West Valley City";
 		
-//		pattern = "Map";
-//		query = "14871 Bly Road";
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 //		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
 //		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; // 50193098, 26283396442
@@ -273,9 +264,15 @@ public class SpatialSearchTestAndDocs {
 //		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75'
 //		query = "PA 21";  // 1336083883 DATA 'PA21' (+!'PA 21', +'PA-21',+'PA21') 
 		
+		pattern = "Map";
+		query = "14871 Bly Road";
+		query = "Pennsylvania 1282 14871";
+//		query = "14871 Pennsylvania Avenue Pine City";
+//		query = "14871 Pennsylvania Avenue";
 //		pattern = "Us_texas";
-//		pattern2 = "regions";
-//		query = "Avenue G, Dickinson TX";
+//		query = "Avenue G, Dickinson"; // 26308264745
+//		query = "2419 Avenue G, Dickinson, TX USA";
+//		query = "2419 Avenue G, Dickinson, 77539 TX USA";
 //		query = "TX";
 
 //		pattern = "Liechtenstein_europe.obf";
@@ -323,7 +320,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-//		pattern = "Ukraine_";
+		pattern = "Ukraine_";
 		
 		// poi types
 //		location = new LatLon(50.436423, 30.508097);
@@ -359,7 +356,7 @@ public class SpatialSearchTestAndDocs {
 //		location = new LatLon(50.4631,30.4553);
 //		settings.OPTIM_READ_COMMON_WORDS_ATOMS = true;
 //		query = "mcdonald's";
-//		query = "Kyiv Глушкова 1"; // vs 'Kyiv 1'
+//		query = "Kyiv 1"; // vs 'Kyiv 1' 'Kyiv Глушкова 1'
 //		query = "нова пошта Бульварно Кудрявська";
 //		query = "Бульварно-кудрявс.";
 //		query = "Ukraine kyiv saks.";
@@ -450,6 +447,7 @@ public class SpatialSearchTestAndDocs {
 		// Cannaregio 539D Campo Saffa, Venezia Cannaregio Campo Saffa  , 
 //		query = "Venezia Cannaregio Campo Saffa ";
 //		query = "Cannaregio 539D Campo Saffa";
+//		query = "Venezia Cannaregio 539D Campo Saffa";
 //		query = "Campo Saffa";
 		
 //		pattern = "France_ile-de-france";

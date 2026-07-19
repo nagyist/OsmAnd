@@ -42,13 +42,6 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		int surplusWords = 0;
 		for (int i = 0; i < parent.tCount; i++) {
 			NameIndexAtom atom = parent.linearResults.get(parentInd * parentList.tCount + i);
-			if (atom.bldObject != null && atom.bldObject.getId() != null) {
-				if(atom.bldObject.getId().longValue() == SpatialSearchResultsList.PARTIAL_ID_MATCH) {
-					surplusWords--;
-				} else if(atom.bldObject.getId().longValue() == SpatialSearchResultsList.SURPLUS_ID_MATCH) {
-					surplusWords++;
-				}
-			}
 			if (atom.matchExtraWord != 0) {
 				surplusWords += atom.matchExtraWord;
 			}

@@ -360,10 +360,20 @@ public class SpatialTextSearch {
 
 	private SpatialSearchResultsList reevalWithExtendedBoundary(SpatialSearchContext ctx, BitSet goal, List<SpatialSearchToken> tokens) throws IOException {
 		// Extend boundary for united states addresses (use 50 km radius)
+		enlargeBoundaries(ctx, tokens);
+		SpatialSearchResultsList goalRes = new SpatialSearchResultsList();
+		for (int i = goal.nextSetBit(0); i >= 0; i = goal.nextSetBit(i + 1)) {
+			SpatialSearchToken token = tokens.get(i);
+			goalRes = new SpatialSearchResultsList(ctx, token, goalRes);
+		}
+		return goalRes;
+	}
+
+	private void enlargeBoundaries(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
 		int enlarge = 0;
 		for (SpatialSearchToken t : tokens) {
 			for (NameIndexAtom a : t.atoms) {
-				if (a.isBoundary() || a.isCityVillage()) {
+				if (a.isBoundary() || a.isCityVillage() || a.isPostcode()) {
 					double val = ctx.settings.evalEnlargeBoundary(ctx.settings.ENLARGE_BOUNDARIES, 
 							a.coords.dimensionInM());
 					if (val > 0) {
@@ -377,12 +387,6 @@ public class SpatialTextSearch {
 		if (ctx.stats.printLogs) { 
 			System.out.println("Enlarged boundaries " + enlarge);
 		}
-		SpatialSearchResultsList goalRes = new SpatialSearchResultsList();
-		for (int i = goal.nextSetBit(0); i >= 0; i = goal.nextSetBit(i + 1)) {
-			SpatialSearchToken token = tokens.get(i);
-			goalRes = new SpatialSearchResultsList(ctx, token, goalRes);
-		}
-		return goalRes;
 	}
 
 	List<SpatialSearchResultsList> findObjCombinationsSimpleIteration(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
