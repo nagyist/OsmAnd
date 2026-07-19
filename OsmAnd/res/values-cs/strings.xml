@@ -1519,7 +1519,7 @@
     <string name="shared_string_color">Barva</string>
     <string name="max_speed">Maximální rychlost</string>
     <string name="average_speed">Průměrná rychlost</string>
-    <string name="add_new_folder">Přidat nový adresář</string>
+    <string name="add_new_folder">Přidat novou složku</string>
     <string name="points_delete_multiple">Smazat %1$d bodů\?</string>
     <string name="shared_string_gpx_track">Trasa</string>
     <string name="routing_attr_relief_smoothness_factor_hills_name">Kopcovitý</string>
@@ -5266,4 +5266,9 @@
     <string name="route_calculation_calculating_route">Vypočítává se trasa...</string>
     <string name="route_calculation_calculating_fast_route">Vypočítává se nejrychlejší trasa...</string>
     <string name="route_calculation_using_fast_algorithm">S využitím algoritmu pro rychlé směrování.</string>
+    <string name="astro_show_map">Zobrazit mapu</string>
+    <string name="astro_hide_map">Skrýt mapu</string>
+    <string name="astro_map_center_location">Střed mapy: %1$s</string>
+    <string name="astro_solar_eclipse">Zatmění slunce</string>
+    <string name="astro_solar_eclipse_subtitle">Prozkoumejte celosvětová zatmění slunce</string>
 </resources>
