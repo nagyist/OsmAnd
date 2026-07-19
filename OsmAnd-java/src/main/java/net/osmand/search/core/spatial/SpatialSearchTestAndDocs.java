@@ -28,6 +28,7 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 100km+ нова пошта краматорськ  - no brand (3, 5) 5 (5 N7846074085, N1482296639)
 
 //////////// TESTING //////////
+// UNIT TESTING: estrado boundaries needed
 // UNIT TESTING: not tested postcode Match (reuse existing tests - USA, Huns) - '324d 1186rz amstelveen logger' - 4 matched (add test to search postcode, postcode + city)
 // UNIT TESTING '14871 Pennsylvania Avenue 1842', '14871 Pennsylvania Avenue Pine City' ('8832kd Huns' ok)
 // UNIT TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border) - Add missing border
@@ -53,12 +54,9 @@ import net.osmand.util.SearchAlgorithms;
 // SAME DEDUPLICATE:  Same mabky brand langs - 'Поїхали з нами' / 'Поехали с нами'
 
 ////////// IN PROGRESS //////////
+
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
-
-// TODO TESTING FIX: wilkes-barre
 // TODO New york: 4 ave 8 (broken)
-// TODO TESTS unit Estrado x 2nd street
-
 // TODO TEST: Poi translations! (Myhiia lake, water, озеро)
 
 // TO DO Ivan
@@ -264,10 +262,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75'
 //		query = "PA 21";  // 1336083883 DATA 'PA21' (+!'PA 21', +'PA-21',+'PA21') 
 		
-		pattern = "Us_penn";
+//		pattern = "Us_penn";
 //		pattern = "Map";
 //		query = "14871 Bly Road";
-		query = "Pennsylvania 1282 14871";
+//		query = "Pennsylvania 1282 14871";
 //		query = "14871 Pennsylvania Avenue Pine City";
 //		query = "14871 Pennsylvania Avenue";
 //		pattern = "Us_texas";
@@ -292,8 +290,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 
-//		pattern = "Netherlands_";
+		pattern = "Netherlands_";
 //		location = new LatLon(52.2827, 4.8601);
+		query = "harderwijk estrado"; // 't2+0-w2-oth1-tp4' t2+0-w2-oth2-tp0  
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "8832kd";
@@ -407,7 +406,7 @@ public class SpatialSearchTestAndDocs {
 //		settings.ALLOW_HOUSE_POI_TYPE_INTERSECTION = false;
 //		query = "Shell 2 Rožňavská";
 		
-//		pattern = "Us_new-york_new"; // new-york, new-jersey
+		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		pattern = "Us_new-"; 
 //		location = new LatLon(40.78035, -73.96572); // central park
 //		location = new LatLon(40.64946, -74.00682); // brooklyn
@@ -417,7 +416,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "New York 55 st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 		// 40.64946, -74.00682 - unit test '4th av', '4 ave', '4th avenue' 241843204, 247910224, 85393997 (..) brooklyn - not 48
 		// 40.78035, -73.96572 - unit test '4th av', '4 ave', '4th avenue'  - 85393997 Park avenue
-//		query = "New York 4 av 8"; 
+//		query = "New York 4 av 8";
+		query = "4 av 8";
 //		query = "New York 4 av"; // 160947243
 //		query = "57th street"; // central park - 265345338 east, 86216906 west, ()66926268 (west)?),
 //		query = "57 street"; // central park - 265345338 east, 86216906 west, ()66926268 (west)?),
