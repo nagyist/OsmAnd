@@ -3507,6 +3507,8 @@ You need to activate the sensor so OsmAnd can find it.</string>
     <string name="rendering_attr_surface_grass_paver_name">Grass paver</string>
     <string name="rendering_attr_surface_ground_name">Ground</string>
     <string name="rendering_attr_surface_dirt_name">Dirt</string>
+    <string name="rendering_attr_surface_clay_name">Clay</string>
+    <string name="rendering_attr_surface_laterite_name">Laterite</string>
     <string name="rendering_attr_surface_mud_name">Mud</string>
     <string name="rendering_attr_surface_ice_name">Ice</string>
     <string name="rendering_attr_surface_salt_name">Salt</string>
