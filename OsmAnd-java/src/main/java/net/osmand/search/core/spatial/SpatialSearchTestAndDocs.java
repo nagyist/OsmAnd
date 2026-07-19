@@ -56,9 +56,6 @@ import net.osmand.util.SearchAlgorithms;
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 
-// TODO New york: 4 ave 8 (broken)
-// TODO Poi translations! (Myhiia lake, water, озеро)
-
 // TO DO Ivan
 // TODO ANALYZE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
@@ -91,6 +88,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ 3, Нова Пошта (№5 not searchable by common words / name)
 // SLOW: "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
 //       "Foothill Boulevard" x "Golden State Road" x "Los Angeles" x "United states of America"
+// TODO 4 ave 8 paterson - order of assigned numbers to bdl ref
 // TODO INDEX: highway=services (Not index)
 // TODO FORBID (slow): to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
@@ -174,7 +172,7 @@ public class SpatialSearchTestAndDocs {
 		SpatialTextSearchSettings settings = SpatialTextSearchSettings.defaultSettings();
 		File folder = new File(System.getProperty("maps.dir"));
 		LatLon location = null;
-		String pattern = "Germany_b";
+		String pattern = "Germany_bad";
 //		pattern = "Map";
 		String pattern2 = ".....";
 		String query = "Berlin hauptstrasse"; // slow
@@ -184,6 +182,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
 //		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
 		query = "24 Kelterstraße Kernen im Remstal";
+		query = "2/1 Rathausplatz Esslingen am Neckar"; // not correct
 		
 		// poi filter
 //		location = new LatLon(52.50805, 13.38176);
@@ -290,9 +289,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 
-		pattern = "Netherlands_";
+//		pattern = "Netherlands_";
 //		location = new LatLon(52.2827, 4.8601);
-		query = "harderwijk estrado"; // 't2+0-w2-oth1-tp4' t2+0-w2-oth2-tp0  
+//		query = "harderwijk estrado"; // 't2+0-w2-oth1-tp4' t2+0-w2-oth2-tp0  
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "8832kd";
@@ -407,8 +406,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Shell 2 Rožňavská";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-		pattern = "Us_new-"; 
-		location = new LatLon(40.78035, -73.96572); // central park
+//		pattern = "Us_new-"; 
+//		location = new LatLon(40.78035, -73.96572); // central park
 //		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
@@ -417,13 +416,15 @@ public class SpatialSearchTestAndDocs {
 		// 40.64946, -74.00682 - unit test '4th av', '4 ave', '4th avenue' 241843204, 247910224, 85393997 (..) brooklyn - not 48
 		// 40.78035, -73.96572 - unit test '4th av', '4 ave', '4th avenue'  - 85393997 Park avenue
 //		query = "New York 4 av 8";
-		query = "4 ave 8";
+//		query = "New York av 8";
+//		query = "4 ave 8";
 //		query = "New York 4 av"; // 160947243
 //		query = "57th street"; // central park - 265345338 east, 86216906 west, ()66926268 (west)?),
 //		query = "57 street"; // central park - 265345338 east, 86216906 west, ()66926268 (west)?),
 //		query = "new york 57th street manhattan";
 //		query = "4th ave"; //  unit '4 ave'
-//		query = "4th ave 8 paterson"; //  wrong city...
+//		query = "4th ave 8 paterson"; //  wrong city... 26240861988
+//		query = "4 ave 8 paterson"; //  To fix 26240861988
 //		query = "little creek"; // little creek
 		// Result 4 - 40.8407, -74.0954 [[4th, 8] Building 2 4th Street (26238417818) 40.8441 -74.0910 , [ave, paterson] STREET_TYPE Paterson Avenue (651531238) 40.8374 -74.0997 ]
 		

@@ -345,7 +345,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				skipResults.put(indx, true);
 			} else {
 				// assign buildings
-				bldRefObj.bldObject = bldObj;
+				if (bldRefObj.bldObject == null || 
+						bldRefObj.bldObject.getName().length() < bldObj.getName().length()) {
+					bldRefObj.bldObject = bldObj;
+				}
 				if (matchExtraWord[0] != 0) {
 					surplusWords.put(indx, matchExtraWord[0]);
 				}
