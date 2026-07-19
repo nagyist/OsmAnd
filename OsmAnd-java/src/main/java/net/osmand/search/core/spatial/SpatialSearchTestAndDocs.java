@@ -57,10 +57,10 @@ import net.osmand.util.SearchAlgorithms;
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 
 // TO DO Ivan
-// TODO ANALYZE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
-// TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
+// TODO ANALYZE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
 // TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Aleja Bohaterów)
+// TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 
 // TO DO Gateway
@@ -208,7 +208,7 @@ public class SpatialSearchTestAndDocs {
 //		Search Stats 925.5 ms - read 799.8 ms atoms (tokens 442.5 ms, obj 16.3 ms), match 280.5 ms, comp 149.5 ms
 		
 //		pattern = "Us_utah";
-//		pattern = "Us_penn";
+//		location = new LatLon(40.7640, -111.8643);
 //		pattern2 = "Us_new-york_syracuse";
 //		pattern2 = "Us_virg";
 //		pattern = "Map";
@@ -218,6 +218,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Salt Lake City Pennsylvania Street";
 //		query = "West Valley City";
 		
+//		pattern = "Us_penn";
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 //		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
 //		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; // 50193098, 26283396442
@@ -405,9 +406,9 @@ public class SpatialSearchTestAndDocs {
 //		settings.ALLOW_HOUSE_POI_TYPE_INTERSECTION = false;
 //		query = "Shell 2 Rožňavská";
 		
-//		pattern = "Us_new-york_new"; // new-york, new-jersey
-		pattern = "Us_new-"; 
-//		location = new LatLon(40.78035, -73.96572); // central park
+		pattern = "Us_new-york_new"; // new-york, new-jersey
+//		pattern = "Us_new-"; 
+		location = new LatLon(40.78035, -73.96572); // central park
 //		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
@@ -415,16 +416,16 @@ public class SpatialSearchTestAndDocs {
 //		query = "New York 55 st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 		// 40.64946, -74.00682 - unit test '4th av', '4 ave', '4th avenue' 241843204, 247910224, 85393997 (..) brooklyn - not 48
 		// 40.78035, -73.96572 - unit test '4th av', '4 ave', '4th avenue'  - 85393997 Park avenue
-//		query = "New York 4 av 8";
+		query = "New York 4 av 8";
 //		query = "New York av 8";
 //		query = "4 ave 8";
 //		query = "New York 4 av"; // 160947243
-//		query = "57th street"; // central park - 265345338 east, 86216906 west, ()66926268 (west)?),
-//		query = "57 street"; // central park - 265345338 east, 86216906 west, ()66926268 (west)?),
+//		query = "57th street"; // central park - 265345338 east, 86216906 west, (266926268 (west)?),
+//		query = "57 street"; // central park - 265345338 east, 86216906 west, (26926268 (west)?),
 //		query = "new york 57th street manhattan";
 //		query = "4th ave"; //  unit '4 ave'
 //		query = "4th ave 8 paterson"; //  wrong city... 26240861988
-		query = "4 8 ave paterson"; //  '8 4 ave paterson' ok, '4 ave 8 paterson' not ok To fix 26240861988
+//		query = "4 8 ave paterson"; //  '8 4 ave paterson' ok, '4 ave 8 paterson' not ok To fix 26240861988
 //		query = "little creek"; // little creek
 		// Result 4 - 40.8407, -74.0954 [[4th, 8] Building 2 4th Street (26238417818) 40.8441 -74.0910 , [ave, paterson] STREET_TYPE Paterson Avenue (651531238) 40.8374 -74.0997 ]
 		

@@ -418,16 +418,21 @@ public class SpatialTextSearch {
 	
 	int VERBOSE_RADIUS = -1;
 	private StringBuilder tokenStats(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
-		StringBuilder s = new StringBuilder(" tokens: ");
+		StringBuilder s = new StringBuilder(" ");
 		for (SpatialSearchToken t : tokens) {
 			int[] cnts = new int[ctx.settings.OPTIM_LIMIT_RADIUS.length + 1];
+			int[] bcnts = new int[ctx.settings.OPTIM_LIMIT_RADIUS.length + 1];
 			TLongHashSet set = new TLongHashSet();
 			for (NameIndexAtom a : t.atoms) {
 				if (set.add(a.id)) {
 					cnts[a.nearbyRadius]++;
+					if(a.isBoundary() || a.isCityVillage() || a.isPostcode()) {
+						bcnts[a.nearbyRadius]++;
+					}
 				}
 			}
-			s.append(String.format("'%s' %s, ", t.word, Arrays.toString(cnts)));
+			String token = String.format("   - '%s' (%d)", t.word, t.originalOrder + 1);
+			s.append(String.format("\n%-25s %-30s %s", token, Arrays.toString(cnts), Arrays.toString(bcnts)));
 		}
 		// very verbose for debugging
 		if (VERBOSE_RADIUS >= 0) {
@@ -462,12 +467,13 @@ public class SpatialTextSearch {
 		ctx.processPoiCategories();
 		ctx.readAtoms();
 		ctx.stats.step1Atoms.finish();
-		if (ctx.stats.printLogs) {
-			System.out.printf("'%s' - %s\n", input, tokenStats(ctx, res.tokens).toString());
-		}
 
 		// 3. sort tokens
 		sortTokens(res.tokens);
+		if (ctx.stats.printLogs) {
+			System.out.printf("Token stats '%s' (counts, boundaries): %s\n", input, tokenStats(ctx, res.tokens).toString());
+		}
+
 
 		// 4. find combinations
 		ctx.stats.step2Compute.start();

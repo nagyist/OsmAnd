@@ -154,7 +154,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		if (ctx.settings.SEARCH_BUILDINGS) {
-			Map<String, Building> bldCheckCache = new HashMap<>();
+			Map<String, BuildingCache> bldCheckCache = new HashMap<>();
 			for (int indx = 0; indx < getCombinations(); indx++) {
 				if (!skipResults.contains(indx)) {
 					calcBuilding(ctx, indx, missingTokens, bldCheckCache);
@@ -189,11 +189,17 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					skipResults.put(indx, true);
 					return;
 				}
-				poiAtom = linearResults.get(indx * tCount + amenityTokenInd);
-				if (!poiAtom.isPOI()) {
+				NameIndexAtom psAtom = linearResults.get(indx * tCount + amenityTokenInd);
+				if (!psAtom.isPOI()) {
 					// return but not skip! (street or poi category)
 					return;
 				}
+				if (poiAtom != null && psAtom.id != poiAtom.id) {
+					// mix of 2 refs
+					skipResults.put(indx, true);
+					return;
+				}
+				poiAtom = psAtom;
 				if (poiAtom != null && poiAtom.id == refAtom.id && poiAtom.object instanceof Amenity as) {
 					String ref = as.getAdditionalInfo("ref");
 					if (ref == null) {
@@ -220,16 +226,19 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		if (queryRef != null) {
 			Set<String> querySetRef = SearchAlgorithms.getBuildingCompareSet(queryRef, tempBuildNames1);
-			boolean match = false;
+			int match = -1;
 			if (objectRef != null && objectRef.size() > 0) {
 				if (objectRef.equals(querySetRef)) {
-					match = true;
+					match = 0;
 				} else if (querySetRef.size() == objectRef.size() + 1 && querySetRef.containsAll(objectRef)) {
-					match = true;
+					match = 1;
 				}
 			}
-			if (match) {
+			if (match >= 0) {
 				extraNameMatch.put(indx, queryRef);
+				if(match > 0) {
+					surplusWords.put(indx, -1);
+				}
 			} else {
 				skipResults.put(indx, true);
 			}
@@ -291,8 +300,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 	}
 	
+	private record BuildingCache(Building bld, int indx, LatLon loc, int surplus) {
+		
+	}
 	private void calcBuilding(SpatialSearchContext ctx, int indx, List<SpatialSearchToken> missingTokens,
-			Map<String, Building> bldCheckCache) {
+			Map<String, BuildingCache> bldCheckCache) {
 		List<NameIndexAtom> blds = new ArrayList<>();
 		String searchKey = "";
 		NameIndexAtom noBldStreet = null; 
@@ -325,35 +337,38 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		// check many buildings on same street possibly unit or ref
 		if (blds.size() > 0) {
-			int[] matchExtraWord = new int[1];
 			NameIndexAtom bldRefObj = blds.get(0);
 			String bldName = searchKey.trim();
 			String cacheKey = bldRefObj.id + " " + bldName;
-			Building bldObj = null;
+			BuildingCache bldObj = null;
 			if (bldCheckCache.containsKey(cacheKey)) {
 				bldObj = bldCheckCache.get(cacheKey);
 			} else {
-				bldObj = checkBuilding(ctx, bldRefObj, (Street) bldRefObj.object, bldName, matchExtraWord);
-//				if (bldObj == null) {
+				int[] matchExtraWord = new int[1];
+				Building bldres = checkBuilding(ctx, bldRefObj, (Street) bldRefObj.object, bldName, matchExtraWord);
+				LatLon loc = null;
+				if (bldres != null) {
+					loc = bldres.isInterpolation() ? bldres.getLocation(bldres.interpolation(bldName)) : null;
+//					System.out.printf("Building found [%d] '%s' -'%s': %s\n", matchExtraWord[0], bldres, bldName, bldRefObj.object);
+				} else {
 //					System.out.printf("No building '%s': %s\n", bldName, bldRefObj.object + " " + ((Street) bldRefObj.object).getBuildings());
-//				} else {
-//					System.out.printf("Building found [%d] '%s' -'%s': %s\n", matchExtraWord[0],  bldObj, bldName, bldRefObj.object);
-//				}
+				}
+				bldObj = new BuildingCache(bldres, indx, loc, matchExtraWord[0]);
 				bldCheckCache.put(cacheKey, bldObj);
 			}
-			if (bldObj == null) {
+			if (bldObj.bld == null) {
 				skipResults.put(indx, true);
 			} else {
 				// assign buildings
 				if (bldRefObj.bldObject == null || 
-						bldRefObj.bldObject.getName().length() < bldObj.getName().length()) {
-					bldRefObj.bldObject = bldObj;
+						bldRefObj.bldObject.getName().length() < bldObj.bld.getName().length()) {
+					bldRefObj.bldObject = bldObj.bld;
 				}
-				if (matchExtraWord[0] != 0) {
-					surplusWords.put(indx, matchExtraWord[0]);
+				if (bldObj.surplus != 0) {
+					surplusWords.put(indx, bldObj.surplus);
 				}
-				if (bldObj.isInterpolation()) {
-					preciseLocations.put(indx, bldObj.getLocation(bldObj.interpolation(bldName)));
+				if (bldObj.loc != null) {
+					preciseLocations.put(indx, bldObj.loc);
 					extraNameMatch.put(indx, bldName);
 				}
 			}
