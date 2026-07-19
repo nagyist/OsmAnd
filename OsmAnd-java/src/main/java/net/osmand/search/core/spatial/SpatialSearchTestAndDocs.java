@@ -43,7 +43,7 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING (school): "Школа 25 Володимирська вулиця" "андріівський узвіз Школа "
 // UNIT TESTING (by id): O128894
 // UNIT TESTING: POI Name / Type + Address - Shell 2 Rožňavská
-// UNIT TESTING: 4av - 'New York 4 av 8', '4 av', '4 avenue 8', '4th ave', '4th ave 8 paterson'
+// UNIT TESTING: 4av - 'New York 4 av 8', '4 av', '4 avenue 8', '4th ave', '8 4 ave paterson' (26240861988)
 // UNIT TESTING: 'Venezia Cannaregio Campo Saffa', 'Cannaregio 539D Campo Saffa', 'Venezia Cannaregio 539D'
 // UNIT TESTING: Gynaecologist - from all poi types should be result ! (not like old search)
 // UNIT TESTING: 'Kyiv Глушкова 1', 'Kyiv 1'
@@ -88,7 +88,6 @@ import net.osmand.util.SearchAlgorithms;
 // TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ 3, Нова Пошта (№5 not searchable by common words / name)
 // SLOW: "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
 //       "Foothill Boulevard" x "Golden State Road" x "Los Angeles" x "United states of America"
-// TODO 4 ave 8 paterson - order of assigned numbers to bdl ref
 // TODO INDEX: highway=services (Not index)
 // TODO FORBID (slow): to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
@@ -104,6 +103,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO Auto-Corrections
 // TODO English postcodes
 // TODO Precise Boundary 'Chernihiv sport life' mostly Kyiv - check precise boundary for filter
+// TODO '4 ave 8 paterson' (OK - '8 4 ave paterson', '4th ave 8 paterson' play order of assigned numbers to bdl ref)
 // TODO Short word split "Ro-ki" vs "Roki" 
 
 public class SpatialSearchTestAndDocs {
@@ -406,7 +406,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Shell 2 Rožňavská";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-//		pattern = "Us_new-"; 
+		pattern = "Us_new-"; 
 //		location = new LatLon(40.78035, -73.96572); // central park
 //		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
@@ -424,7 +424,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "new york 57th street manhattan";
 //		query = "4th ave"; //  unit '4 ave'
 //		query = "4th ave 8 paterson"; //  wrong city... 26240861988
-//		query = "4 ave 8 paterson"; //  To fix 26240861988
+		query = "4 8 ave paterson"; //  '8 4 ave paterson' ok, '4 ave 8 paterson' not ok To fix 26240861988
 //		query = "little creek"; // little creek
 		// Result 4 - 40.8407, -74.0954 [[4th, 8] Building 2 4th Street (26238417818) 40.8441 -74.0910 , [ave, paterson] STREET_TYPE Paterson Avenue (651531238) 40.8374 -74.0997 ]
 		
