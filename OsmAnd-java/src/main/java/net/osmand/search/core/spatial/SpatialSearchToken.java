@@ -224,12 +224,13 @@ public class SpatialSearchToken {
 				// select shortest available version
 				int res = Integer.compare(atom.otherWordsCnt + atom.otherFoundCnt,
 						existing.otherWordsCnt + existing.otherFoundCnt);
+				boolean replace = res < 0;
 				if (res == 0) {
 					// '2 south 2nd street' vs '25 садова вулиця' (25-та) -
 					// replace street (has number in name) with building
-					res = -Boolean.compare(atom.isBuilding(), existing.isBuilding());
+					replace = !atom.isBuilding() && existing.isBuilding(); 
+//					res = -Boolean.compare(atom.isBuilding(), existing.isBuilding());
 				}
-				boolean replace = res < 0;
 				if (replace) {
 					atom.indexInToken = existing.indexInToken;
 					index.put(atom.id, atom);

@@ -412,6 +412,7 @@ public class SpatialTextSearch {
 	}
 	
 	
+	int VERBOSE_RADIUS = -1;
 	private StringBuilder tokenStats(SpatialSearchContext ctx, List<SpatialSearchToken> tokens) {
 		StringBuilder s = new StringBuilder(" tokens: ");
 		for (SpatialSearchToken t : tokens) {
@@ -423,6 +424,18 @@ public class SpatialTextSearch {
 				}
 			}
 			s.append(String.format("'%s' %s, ", t.word, Arrays.toString(cnts)));
+		}
+		// very verbose for debugging
+		if (VERBOSE_RADIUS >= 0) {
+			for (SpatialSearchToken t : tokens) {
+				System.out.println("---------\nToken " + t.word);
+				for (NameIndexAtom a : t.atoms) {
+					if (!a.isPOI()) {
+						continue;
+					}
+					System.out.println(a);
+				}
+			}
 		}
 		return s;
 	}

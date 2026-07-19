@@ -50,24 +50,20 @@ import net.osmand.util.SearchAlgorithms;
 // SAME DEDUPLICATE:  Same mabky brand langs - 'Поїхали з нами' / 'Поехали с нами'
 
 ////////// IN PROGRESS //////////
+/// 
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 
 // TODO TESTS unit - 2 Partial match...
 // TODO TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
 // TODO TEST FIX: wilkes-barre
 // TODO TEST: 25-та школа
-
-// TEST mihia lake translations (category)
-// TODO TEST: With all poi translation!
-
+// TODO TEST: With all poi translation! (Myhiia lake, water, озеро)
 // TEST New york with POI Refs ! (intersection)
-// TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ  (3, 5)  
 
-// TODO ANALYZE: too many wiki places on streets?
-// TODO INDEX: highway=services (Not index)
 // TODO no intersection in that case "rue de la" - for very common words if we have enough results?
 
 // TO DO Ivan
+// TODO ANALYZE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал" zzzzzzzzzzzzz`?
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
 // TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Aleja Bohaterów)
@@ -83,7 +79,7 @@ import net.osmand.util.SearchAlgorithms;
 //        Foothill Boulevard x Golden State Road x Los Angeles x United states of America
 
 // TODO WEB - RZR
-// - FIXME Bug web by brand - nova posta on map 
+// - FIXME Bug web by brand - redirect search
 // - Highlight ref matching, interpolation (somehow) with braces?
 // - Poi category + geo object (name of geobject, dist? and relocate)
 // - Autosuggestions (postpone?)
@@ -91,6 +87,7 @@ import net.osmand.util.SearchAlgorithms;
 // - Production - check time & memory - tune params?
 // - CANCEL ! (slow queries for server)
 // - Poi translation provider
+// TODO INDEX: highway=services (Not index)
 
 // TODO ANDROID - Convert to old results
 // - Integrate (include regions.ocbf) on client
@@ -98,6 +95,7 @@ import net.osmand.util.SearchAlgorithms;
 // - Memory Speed performance comparison (new / old / server)  
 
 /////////////// EXTRA FEATURES ///////////////
+// TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ 3, Нова Пошта (№5 not searchable by common words / name)
 // TODO FORBID (slow): to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
 // TODO Suggestion based on common suffixes
@@ -329,15 +327,14 @@ public class SpatialSearchTestAndDocs {
 //		query = "Aquarium";
 //		query = "Fuel diesel";
 		
-		location = new LatLon(48, 31);
+//		location = new LatLon(48, 31);
 		// "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
-		pattern = "Ukraine_";
-		query = "Мигия озеро";
+//		pattern = "Ukraine_";
+//		query = "Мигия озеро";
 //		query = "Мигия water"; 
 		
 //		location = new LatLon(48.75, 37.5);
-//		query = "нова пошта 3 краматорськ"; // (1482296639) 
-		// no brand - no search 7846074085; TODO Wait + limit map
+//		query = "нова пошта 3 краматорськ"; // (1482296639, 5 7846074085) 
 //		query = "Нова пошта 3 харків";
 //		query = "Нова пошта харків";
 		
@@ -364,7 +361,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
 //		query = "2га Нова вулиця"; 
 //		query = "2 нова вулиця"; // '"25-та вулиця", "25та вулиця", "25 та вулиця", "25 вулиця" (NOT FIRST) - '25-та Садова вулиця' 150768561
-//		query = "25 садова вулиця"; // 150768561 28256
+		query = "25 садова вулиця"; // 150768561 28256
 //		query = "саксаг. 63 28"; // 129-Б, 129б 63/28, 63, 63-28  +'саксаг. 63 28'
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";
@@ -376,7 +373,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "андріівський узвіз Школа "; // ALWAYS_READ_COMMON_WORDS_ATOMS = true
 //		query = "Школа ";
 //		query = "Школа А+";
-		query = "25-та школа"; // 25-та школа, 25-та school
+//		query = "25-та школа"; // 25-та школа, 25-та school
 		
 //		query = "школа №25"; // test '№25', '25'? -- 'школа', 'школа №25', 'школа 25' // 63112526
 //		query = "ВЕЛОwatt";
@@ -493,7 +490,8 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Map";
 //		query = "по."; //Поїхали з нами,  поехали с нами
-//		pattern = "Makby"; 
+//		pattern = "Makby";
+//		pattern = "Belarus_min";
 //		location = new LatLon(53.8, 27.5);
 		// 20: 16 (brand/name Mac.by), 3 (no brand, name Mac.by), 1 (brand/name Мак бай, 13721164919) - Q118149500
 		// top_index_brand (2, 26): [Mak.by {Q118149500;Mak by;Makby;Мак бай} (25), // 0 - "Мак.Бай", "Мак.by", "Макby"

@@ -404,9 +404,6 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		Building partial1 = null;
 		double distExact = 0;
 		Building exact = null;
-		if(street.getName().startsWith("2nd south street")) {
-			System.out.println(street + " check ?? " + bld);
-		}
 		Set<String> query = SearchAlgorithms.getBuildingCompareSet(bld, tempBuildNames1);
 		for (Building b : street.getBuildings()) {
 			if (b.isInterpolation()) {
@@ -639,9 +636,15 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				if (level > limitIntersection) {
 					return;
 				}
+				
 				boolean acceptIntersection = acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
-//				long intId = atom.id + parent.getRawAtomsSumId(parentIndx);
-//				System.out.println(intId + " " + atom + " " + parent.getRawAtoms(parentIndx) + " == " + acceptIntersection);
+//				if(atom.id %0xffff == 46566l) {
+//					long intId = atom.id + parent.getRawAtomsSumId(parentIndx);
+//					System.out.println(intId + " " + atom + " " + parent.getRawAtoms(parentIndx) + " == " + acceptIntersection );
+//					if (parent.getRawAtoms(parentIndx).get(0).id % 0xffff == 54443) {
+//						acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
+//					}
+//				}
 				if (acceptIntersection) {
 					TIntArrayList c = intersections[level];
 					if (typeIntersection[0] == 2) {
@@ -670,6 +673,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					(System.nanoTime() - nt) / 1e6, sizes, originalLimit, res.size() / 3, newLevel,  
 					token.originalWord, token.atoms.size(),
 					parent.wordTokens(), parent.getCombinations());
+				
 			}
 			limitIntersection = newLevel;
 			TIntIterator it = res.iterator();
@@ -677,8 +681,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				int parentIndx = it.next();
 				int indxAtom = it.next();
 				int type = it.next();
-//				System.out.println(token.atoms.get(indxAtom) + " " + parent.getRawAtoms(parentIndx) + " ");
 				addResult(parent, parentIndx, token.atoms.get(indxAtom), type);
+//				System.out.println(getRawAtoms(getCombinations() - 1));
 			}
 			
 			
@@ -800,6 +804,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		NameIndexAtom poiType = a.isPoiCategory() ? a : null;
 		SpatialSearchToken poiTypeToken = tokens[0];
+		boolean duplicateWord = false;
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 			if (pa.id == a.id) {
@@ -816,7 +821,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 			// check that token is reused in parent
 			// ignore every object that has this name already (except duplicate words && numbers assigned to building)
-			if (!tokens[0].word.equals(parent.tokens[i].word)) {
+			if (!tokens[0].word.equals(parent.tokens[i].word) && !duplicateWord) {
 				NameIndexAtom existing = parent.tokens[i].index.get(a.id);
 				if (existing != null && !existing.isBuilding()) {
 					return false;
@@ -825,6 +830,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				if (existing != null && !existing.isBuilding()) {
 					return false;
 				}
+			} else {
+				duplicateWord = true;
 			}
 			if (pa.atomicObject()) {
 				atomObjs.put(pa.id, pa);
