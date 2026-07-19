@@ -521,10 +521,7 @@ public class SpatialSearchToken {
 		final int nearbyRadius;
 		TIntArrayList poiTypes;
 		int elo;
-		
 		NameIndexAtom sameNameAreaObj;
-
-		int matchExtraWord;
 
 		NameIndexAtom(String name, long id, int total) {
 			this(name, SpatialSearchToken.POI_CATEGORY_TYPE, id, 0, null, false, -total, total,

@@ -18,6 +18,7 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.binary.BinaryMapPoiReaderAdapter;
+import net.osmand.binary.ObfConstants;
 import net.osmand.data.Amenity;
 import net.osmand.data.Building;
 import net.osmand.data.LatLon;
@@ -50,6 +51,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	TIntObjectHashMap<Boolean> skipResults = new TIntObjectHashMap<>();
 	Map<Integer, LatLon> preciseLocations = new HashMap<>();
 	Map<Integer, String> extraNameMatch = new HashMap<>();
+	Map<Integer, Integer> surplusWords = new HashMap<>();
 	List<SpatialSearchResult> finalResult = null;
 	
 	List<String> tempBuildNames1 = new ArrayList<String>();
@@ -323,6 +325,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		// check many buildings on same street possibly unit or ref
 		if (blds.size() > 0) {
+			int[] matchExtraWord = new int[1];
 			NameIndexAtom bldRefObj = blds.get(0);
 			String bldName = searchKey.trim();
 			String cacheKey = bldRefObj.id + " " + bldName;
@@ -330,13 +333,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			if (bldCheckCache.containsKey(cacheKey)) {
 				bldObj = bldCheckCache.get(cacheKey);
 			} else {
-				bldRefObj.matchExtraWord = 0;
-				bldObj = checkBuilding(ctx, bldRefObj, (Street) bldRefObj.object, bldName);
-				if (bldObj == null) {
+				bldObj = checkBuilding(ctx, bldRefObj, (Street) bldRefObj.object, bldName, matchExtraWord);
+//				if (bldObj == null) {
 //					System.out.printf("No building '%s': %s\n", bldName, bldRefObj.object + " " + ((Street) bldRefObj.object).getBuildings());
-				} else {
-//					System.out.printf("Building found '%s' -'%s': %s\n", bldObj, bldName, bldRefObj.object);
-				}
+//				} else {
+//					System.out.printf("Building found [%d] '%s' -'%s': %s\n", matchExtraWord[0],  bldObj, bldName, bldRefObj.object);
+//				}
 				bldCheckCache.put(cacheKey, bldObj);
 			}
 			if (bldObj == null) {
@@ -344,6 +346,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			} else {
 				// assign buildings
 				bldRefObj.bldObject = bldObj;
+				if (matchExtraWord[0] != 0) {
+					surplusWords.put(indx, matchExtraWord[0]);
+				}
 				if (bldObj.isInterpolation()) {
 					preciseLocations.put(indx, bldObj.getLocation(bldObj.interpolation(bldName)));
 					extraNameMatch.put(indx, bldName);
@@ -354,7 +359,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	
-	private Building checkBuilding(SpatialSearchContext ctx, NameIndexAtom atom, Street street, String bld) {
+	private Building checkBuilding(SpatialSearchContext ctx, NameIndexAtom atom, Street street, String bld, int[] matchExtraWord) {
 		Building interpolation = null;
 		Building partial2 = null;
 		double distPartial1 = 0;
@@ -417,18 +422,18 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		if (partial1 != null) {
 			if (tempBuildNames1.size() > query.size()) {
-				atom.matchExtraWord = -1; 
+				matchExtraWord[0] = -1; 
 			}
 			return partial1;
 		}
 		if (interpolation != null) {
 			if (query.size() > 1) {
-				atom.matchExtraWord = -1;
+				matchExtraWord[0] = -1;
 			}
 			return interpolation;
 		}
 		if (partial2 != null) {
-			atom.matchExtraWord = -1;
+			matchExtraWord[0] = -1;
 			return partial2;
 		}
 		return null;
@@ -484,7 +489,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		finalResult = new ArrayList<>(tileIds.size());
 		for (int i = 0; i < tileIds.size(); i++) {
 			if (!skipResults.containsKey(i)) {
-				finalResult.add(new SpatialSearchResult(this, i, preciseLocations.get(i), extraNameMatch.get(i)));
+				finalResult.add(new SpatialSearchResult(this, i, preciseLocations.get(i), extraNameMatch.get(i),
+						surplusWords.get(i)));
 			}
 		}		
 		finalResult = sortResults(ctx, finalResult, deduplicate);

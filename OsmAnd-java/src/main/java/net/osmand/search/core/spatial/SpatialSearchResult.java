@@ -34,17 +34,17 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	final int ZOOM_SIMILARITY_10_KM = 12 - 8; // 2 symbols - tile z=12
 	final int ZOOM_SIMILARITY_1_KM = 15 - 8; // 3 symbols
 	
-	SpatialSearchResult(SpatialSearchResultsList parentList, int parentInd, LatLon preciseLatlon, String extraName) {
+	SpatialSearchResult(SpatialSearchResultsList parentList, int parentInd, LatLon preciseLatlon, String extraName,
+			Integer surplusWords) {
 		this.parentInd = parentInd;
 		this.parent = parentList;
 		this.preciseLatlon = preciseLatlon;
 		this.extraNameMatch = extraName;
-		int surplusWords = 0;
 		for (int i = 0; i < parent.tCount; i++) {
 			NameIndexAtom atom = parent.linearResults.get(parentInd * parentList.tCount + i);
-			if (atom.matchExtraWord != 0) {
-				surplusWords += atom.matchExtraWord;
-			}
+//			if (atom.matchExtraWord != 0) {
+//				surplusWords += atom.matchExtraWord;
+//			}
 			SpatialSearchToken token = parent.tokens[i];
 			SpatialSearchResultRef ref = null;
 			// find same object or object & parent 
@@ -65,7 +65,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			}
 			ref.tokens.add(token);
 		}
-		this.surplusWords = surplusWords;
+		this.surplusWords = surplusWords != null ? surplusWords : 0;
 		sortObjects();
 	}
 	
