@@ -28,6 +28,7 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 100km+ нова пошта краматорськ  - no brand (3, 5) 5 (5 N7846074085, N1482296639)
 
 //////////// TESTING //////////
+// UNIT TESTING: not tested postcode Match (reuse existing tests - USA, Huns) - '324d 1186rz amstelveen logger' - 4 matched (add test to search postcode, postcode + city)
 // UNIT TESTING: Calle 20 (not enough objects - 'Lima 188', 'Calle 2', ' Calle 20') - Search doesn't work 10 km away! (LIVE)
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
 // UNIT TESTING: 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak!
@@ -53,17 +54,20 @@ import net.osmand.util.SearchAlgorithms;
 /// 
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 
-// TODO TESTS unit - 2 Partial match...
-// TODO TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
-// TODO TEST FIX: wilkes-barre
-// TODO TEST: 25-та школа
-// TODO TEST: With all poi translation! (Myhiia lake, water, озеро)
-// TEST New york with POI Refs ! (intersection)
+// UNIT TESTING Map Regenerate '14871 Pennsylvania Avenue 1842', '14871 Pennsylvania Avenue Pine City' ('8832kd Huns' ok)
+// TESTING : 25-та школа
+// TESTING FIX: wilkes-barre
 
+// TODO Test 
+// TODO TESTS unit - 2 Partial match... : Estrado x 2nd street
+// TODO TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border)
+// TODO TEST: With all poi translation! (Myhiia lake, water, озеро)
+
+// TEST New york with POI Refs ! (intersection)
 // TODO no intersection in that case "rue de la" - for very common words if we have enough results?
 
 // TO DO Ivan
-// TODO ANALYZE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал" zzzzzzzzzzzzz`?
+// TODO ANALYZE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
 // TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Aleja Bohaterów)
@@ -111,7 +115,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO English postcodes
 // TODO Precise Boundary 'Chernihiv sport life' mostly Kyiv - check precise boundary for filter
 // TODO Short word split "Ro-ki" vs "Roki" 
-// TODO Support postcode search - 14871 Pennsylvania Avenue Pine City
+
 
 public class SpatialSearchTestAndDocs {
 
@@ -223,6 +227,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Salt Lake City Lake";
 //		query = "Salt Lake City Pennsylvania Street";
 //		query = "West Valley City";
+		
+//		pattern = "Map";
+//		query = "14871 Bly Road";
 //		query = "USA Salt Lake City Pennsylvania Street 41";
 //		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
 //		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; // 50193098, 26283396442
@@ -266,9 +273,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "PA 75"; // Yes - ('PA 75', 'PA-75'), YES - 'PA75'
 //		query = "PA 21";  // 1336083883 DATA 'PA21' (+!'PA 21', +'PA-21',+'PA21') 
 		
-		pattern = "Us_texas";
+//		pattern = "Us_texas";
 //		pattern2 = "regions";
-		query = "Avenue G, Dickinson TX";
+//		query = "Avenue G, Dickinson TX";
 //		query = "TX";
 
 //		pattern = "Liechtenstein_europe.obf";
@@ -291,6 +298,7 @@ public class SpatialSearchTestAndDocs {
 //		location = new LatLon(52.2827, 4.8601);
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
+//		query = "8832kd";
 //		query = "Huns Huns 39a-MLN 8832kd"; // Húns Húns 37482484
 //		query = "11-NUON leons";
 //		pattern2 = "Gb_england";
@@ -315,7 +323,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-		pattern = "Ukraine_";
+//		pattern = "Ukraine_";
 		
 		// poi types
 //		location = new LatLon(50.436423, 30.508097);
@@ -361,7 +369,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "2 га Нова вулиця"; // unit test '2га' +, '2-га', '2', '2 га' (partial) unit test (260537333, 104438019)
 //		query = "2га Нова вулиця"; 
 //		query = "2 нова вулиця"; // '"25-та вулиця", "25та вулиця", "25 та вулиця", "25 вулиця" (NOT FIRST) - '25-та Садова вулиця' 150768561
-		query = "25 садова вулиця"; // 150768561 28256
+//		query = "25 садова вулиця"; // 150768561 28256
 //		query = "саксаг. 63 28"; // 129-Б, 129б 63/28, 63, 63-28  +'саксаг. 63 28'
 //		query = "саксаг. 63/28, 2";
 //		query = "саксаг. 63/28 подъезд 2";

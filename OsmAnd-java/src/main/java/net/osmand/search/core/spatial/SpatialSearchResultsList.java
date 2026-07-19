@@ -638,10 +638,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 				
 				boolean acceptIntersection = acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
-//				if(atom.id %0xffff == 46566l) {
+//				if (atom.id % 0xffff == 35857 || atom.id % 0xffff == 29743) {
 //					long intId = atom.id + parent.getRawAtomsSumId(parentIndx);
 //					System.out.println(intId + " " + atom + " " + parent.getRawAtoms(parentIndx) + " == " + acceptIntersection );
-//					if (parent.getRawAtoms(parentIndx).get(0).id % 0xffff == 54443) {
+//					if (parent.getRawAtoms(parentIndx).get(0).id % 0xffff == 29743) {
 //						acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
 //					}
 //				}
