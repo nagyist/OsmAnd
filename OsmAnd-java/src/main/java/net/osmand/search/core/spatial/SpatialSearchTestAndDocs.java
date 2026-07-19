@@ -53,8 +53,8 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
+// UNIT TESTING '14871 Pennsylvania Avenue 1842', '14871 Pennsylvania Avenue Pine City' ('8832kd Huns' ok)
 
-// TODO UNIT TESTING Map Regenerate '14871 Pennsylvania Avenue 1842', '14871 Pennsylvania Avenue Pine City' ('8832kd Huns' ok)
 // TODO TESTING FIX: wilkes-barre
 // TODO New york: 4 ave 8 (broken)
 // TODO TESTS unit Estrado x 2nd street
@@ -200,7 +200,7 @@ public class SpatialSearchTestAndDocs {
 		// Weberstraße (33164748) 49.2041 10.7035,  Von-Weber-Straße (4648613942) 49.5609 10.8685
 //		query = "Weber Straße"; // +4648613942, +33164748
 //		query = "WeberStraße";  // +33164748, +4648613942
-		query = "Von Weberstraße"; // +4648613942
+//		query = "Von Weberstraße"; // +4648613942
 //		location = new LatLon(48.8315, 9.3155 );
 //		query = "53 Langestraße Waiblingen"; // OK - 48.8315 9.3155 !
 //		query = "69 Daimler Straße Stuttgart"; //  (Daimlerstraße) 107868593 48.8015 9.2224 // 69
@@ -320,7 +320,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Ukraine_kyiv-city";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-		pattern = "Ukraine_";
+//		pattern = "Ukraine_";
 		
 		// poi types
 //		location = new LatLon(50.436423, 30.508097);

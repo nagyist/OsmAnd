@@ -388,15 +388,15 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	public static String compareKeyString(SpatialSearchResult o) {
 		int e = (o.getRating() - o.parent.MIN_ELO_RATING) / 64;
 		String elo = e > 0 ? "-"+e+"elo" : "";
-		return String.format("t%d-w%d+%d-oth%d%s-tp%d", o.parent.tCount, o.objs.size(), o.surplusWords,
+		return String.format("t%d+%d-w%d-oth%d%s-tp%d", o.parent.tCount, o.surplusWords, o.objs.size(), 
 				Math.min(o.sumOther(), 3), elo, o.sumTypeOrder());
 	}
 	
 	public static long compareKey(SpatialSearchResult o) {
 		long key = 0;
 		key = addCompareKey(key, 6, -o.parent.tCount); // 6 bit - 64
-		key = addCompareKey(key, 6, o.objs.size()); // 6 bit - 64
 		key = addCompareKey(key, 3, -o.surplusWords); // 3 bit - 8
+		key = addCompareKey(key, 6, o.objs.size()); // 6 bit - 64
 		key = addCompareKey(key, 3, Math.min(o.sumOther(), 3)); // 3 bit - 3
 		key = addCompareKey(key, 6, -(o.getRating() - o.parent.MIN_ELO_RATING) / 64); // 6 bit - 64 - group by 64 bucket
 		key = addCompareKey(key, 6, -o.sumTypeOrder()); // 6 bit - 64
@@ -409,11 +409,11 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		if (res != 0) {
 			return res;
 		}
-		res = Integer.compare(o1.objs.size(), o2.objs.size());
+		res = -Integer.compare(o1.surplusWords, o2.surplusWords); // buildings 18 matches 18 B
 		if (res != 0) {
 			return res;
 		}
-		res = -Integer.compare(o1.surplusWords, o2.surplusWords); // buildings 18 matches 18 B
+		res = Integer.compare(o1.objs.size(), o2.objs.size());
 		if (res != 0) {
 			return res;
 		}
