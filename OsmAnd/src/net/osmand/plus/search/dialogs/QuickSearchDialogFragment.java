@@ -1500,12 +1500,6 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 	@Override
 	public void onStart() {
 		super.onStart();
-		Dialog dialog = getDialog();
-		Window window = dialog != null ? dialog.getWindow() : null;
-		if (window != null) {
-			window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
-			window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-		}
 		if (isSearchHidden()) {
 			hide();
 			restoreToolbar();
