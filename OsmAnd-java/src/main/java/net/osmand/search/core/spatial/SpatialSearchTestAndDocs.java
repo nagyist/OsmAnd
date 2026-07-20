@@ -10,7 +10,9 @@ import net.osmand.data.City;
 import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.map.OsmandRegions;
+import net.osmand.osm.AbstractPoiType;
 import net.osmand.osm.MapPoiTypes;
+import net.osmand.osm.MapPoiTypes.PoiTranslator;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchResults;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.SearchAlgorithms;
@@ -479,7 +481,7 @@ public class SpatialSearchTestAndDocs {
 		pattern2 = "Ukraine_";
 		location = new LatLon(48, 31);
 		settings.DEDUPLICATE_RES = false;
-		query = "Berlin hotel";
+		query = "готель";
 //		pattern = "Italy_";
 //		query = "о. Пасхи"; // o
 //		query = "остров Пасхи"; // o. -> остров - not supported data need to be updated
@@ -537,7 +539,9 @@ public class SpatialSearchTestAndDocs {
 
 //		settings.OPTIM_DELETE_EMBEDDED_BOUNDARIES = false;
 //		settings.DEDUPLICATE_RES = false;
-		SpatialPoiSearch poiSearch = new SpatialPoiSearch(MapPoiTypes.getDefault());
+		MapPoiTypes poiTypes = MapPoiTypes.getDefault();
+		poiTypes.setPoiTranslator(new TestPoiTranslator());
+		SpatialPoiSearch poiSearch = new SpatialPoiSearch(poiTypes);
 		SpatialSearchContext searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
 		SpatialSearchResults rs = a.searchTest(query, searchContext, 10000);
 		SpatialSearchResult mainResult = rs.getFirstResult();
@@ -600,6 +604,50 @@ public class SpatialSearchTestAndDocs {
 				}
 				System.out.println(out);
 			}
+		}
+	}
+	
+	private static class TestPoiTranslator implements PoiTranslator {
+		
+		@Override
+		public String getTranslation(String keyName) {
+			if (keyName.equals("hotel")) {
+				return "отель";
+			}
+			return null;
+		}
+		
+		@Override
+		public String getTranslation(AbstractPoiType type) {
+			return getTranslation(type.getKeyName());
+		}
+		
+		@Override
+		public String getSynonyms(String keyName) {
+			if (keyName.equals("hotel")) {
+				return "отель;готель;гатэль";
+			}
+			return null;
+		}
+		
+		@Override
+		public String getSynonyms(AbstractPoiType type) {
+			return getSynonyms(type.getKeyName());
+		}
+		
+		@Override
+		public String getEnTranslation(String keyName) {
+			return null;
+		}
+		
+		@Override
+		public String getEnTranslation(AbstractPoiType type) {
+			return null;
+		}
+		
+		@Override
+		public String getAllLanguagesTranslationSuffix() {
+			return "";
 		}
 	}
 	

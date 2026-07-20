@@ -146,7 +146,7 @@ public class SpatialPoiSearch {
 				break;
 			}
 			String synonyms = pt.getSynonyms();
-			if (Algorithms.isEmpty(synonyms)) {
+			if (!Algorithms.isEmpty(synonyms)) {
 				split = synonyms.split(";");
 				for (String tr : split) {
 					if (tr.trim().length() > 0) {
