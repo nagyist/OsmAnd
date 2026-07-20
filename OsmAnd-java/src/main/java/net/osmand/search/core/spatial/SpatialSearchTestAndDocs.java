@@ -74,15 +74,13 @@ import net.osmand.util.SearchAlgorithms;
 // - Highlight ref matching, interpolation (somehow) with braces?
 // - Poi category + geo object (name of geobject, dist? and relocate)
 // - Poi translation provider
-// - PRODUCTION - check time & memory - tune params?
-// - Multithread pool
-// - CANCEL ! (slow queries for server)
+// - PRODUCTION - Multithread / Progress / Cancel !! - check time & memory - tune params?
 // - Autosuggestions (postpone?)
 
 // TODO ANDROID - Convert to old results
 // - Integrate (include regions.ocbf) on client
-// - Progress / cancel
-// - Memory Speed performance comparison (new / old / server)  
+// - Memory Speed performance comparison (new / old / server)
+// - Cancel
 
 /////////////// EXTRA FEATURES ///////////////
 // TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ 3, Нова Пошта (№5 not searchable by common words / name)

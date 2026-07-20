@@ -30,6 +30,7 @@ import net.osmand.data.Amenity;
 import net.osmand.data.LatLon;
 import net.osmand.map.OsmandRegions;
 import net.osmand.osm.MapPoiTypes;
+import net.osmand.search.core.spatial.SpatialSearchContext.SpatialSearchStats;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialSearchToken.PartialMatch;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
@@ -223,6 +224,8 @@ public class SpatialTextSearch {
 		public List<SpatialSearchResult> mainResults;
 
 		public List<SpatialSearchResultsList> combinations;
+
+		public SpatialSearchStats stats;
 		
 		public SpatialSearchResult getFirstResult() {
 			return mainResults == null || mainResults.size() == 0 ? null : 
@@ -492,6 +495,7 @@ public class SpatialTextSearch {
 			combineSortFilterResults(ctx, res);
 		}
 		ctx.stats.step3Sort.finish();
+		res.stats = ctx.stats;
 		return res;
 	}
 
