@@ -32,8 +32,6 @@ import net.osmand.map.OsmandRegions;
 import net.osmand.osm.MapPoiTypes;
 import net.osmand.search.core.spatial.SpatialSearchContext.SpatialSearchStats;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
-import net.osmand.search.core.spatial.SpatialSearchToken.PartialMatch;
-import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 

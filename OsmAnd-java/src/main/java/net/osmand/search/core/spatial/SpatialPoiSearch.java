@@ -34,6 +34,7 @@ import net.osmand.search.core.TopIndexFilter;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchFileCache;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchGlobalCache;
+import net.osmand.util.Algorithms;
 import net.osmand.util.MapUtils;
 import net.osmand.util.SearchAlgorithms;
 
@@ -141,6 +142,17 @@ public class SpatialPoiSearch {
 			String[] split = pt.getTranslation().split(";");
 			for (String tr : split) {
 				poiType.names.add(SearchAlgorithms.alignChars(tr.trim()));
+				// only first
+				break;
+			}
+			String synonyms = pt.getSynonyms();
+			if (Algorithms.isEmpty(synonyms)) {
+				split = synonyms.split(";");
+				for (String tr : split) {
+					if (tr.trim().length() > 0) {
+						poiType.names.add(SearchAlgorithms.alignChars(tr.trim()));
+					}
+				}
 			}
 		}
 		addToIndex(basePoiName, poiType);
@@ -195,7 +207,7 @@ public class SpatialPoiSearch {
 				List<String> possibleValues = subType.possibleValues;
 				List<String> wikidataIds = subType.wikidataIds;
 				TIntArrayList possibleValuesFreqs = subType.possibleValuesFreqs;
-				int allFreq = subType.frequency;
+//				int allFreq = subType.frequency;
 				for (int k = 0; k < possibleValues.size(); k++) {
 					String topValueName = possibleValues.get(k);
 					String valueKey = TopIndexFilter.getValueKey(topValueName);

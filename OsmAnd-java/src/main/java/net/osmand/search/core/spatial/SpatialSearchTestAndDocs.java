@@ -56,25 +56,28 @@ import net.osmand.util.SearchAlgorithms;
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 
-// TO DO Ivan
-// TODO DEDUPLICATE: Test wiki / travel maps / seamarks map
-// TODO ANALYZE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
+// AUTO TEST
+// TODO Hotel berlin!
+// TODO REVIEW: Auto test New york, France, Italy (Slow?)
 // TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
+
+// TO DO Ivan
+// DEDUPLICATE: Test wiki / travel maps / seamarks map
+// ANALYZE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 
 // TO DO Gateway
 // TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
-// TODO REVIEW: Auto test New york, France, Italy (Slow?)
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
 // TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
 
 // TODO WEB - RZR
-// - FIXME open brand / category - redirect search
+// - Open brand / category - redirect search
 // - Highlight ref matching, interpolation (somehow) with braces?
 // - Poi category + geo object (name of geobject, dist? and relocate)
+// - Production - Multithread / Progress / Cancel - check time & memory - tune params
 // - Poi translation provider
-// - PRODUCTION - Multithread / Progress / Cancel !! - check time & memory - tune params?
 // - Autosuggestions (postpone?)
 
 // TODO ANDROID - Convert to old results
@@ -86,9 +89,9 @@ import net.osmand.util.SearchAlgorithms;
 // TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ 3, Нова Пошта (№5 not searchable by common words / name)
 // SLOW: "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
 //       "Foothill Boulevard" x "Golden State Road" x "Los Angeles" x "United states of America"
-// TODO INDEX: highway=services (Not index)
 // TODO FORBID (slow): to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
+// TODO INDEX: highway=services (Not index)
 // TODO Suggestion based on common suffixes
 // TODO Store and test conscription number for some cities - issue (RZR)
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
@@ -332,7 +335,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		location = new LatLon(48, 31);
 		// "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
-		pattern = "Ukraine_";
+//		pattern = "Ukraine_";
 //		query = "Мигия озеро";
 //		query = "Мигия water"; 
 		
@@ -472,8 +475,11 @@ public class SpatialSearchTestAndDocs {
 //		query = "Golden State Road Foothill Boulevard Sylmar USA";
 
 		
-//		pattern = "World_basemap_2";
-//		pattern2 = "Ukraine";
+		pattern = "World_basemap_2";
+		pattern2 = "Ukraine_";
+		location = new LatLon(48, 31);
+		settings.DEDUPLICATE_RES = false;
+		query = "Berlin hotel";
 //		pattern = "Italy_";
 //		query = "о. Пасхи"; // o
 //		query = "остров Пасхи"; // o. -> остров - not supported data need to be updated
