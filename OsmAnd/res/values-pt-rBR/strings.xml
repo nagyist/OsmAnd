@@ -4836,7 +4836,7 @@
     <string name="battery_saving_mode">Modo de economia de bateria</string>
     <string name="graph_axis">Eixo do gráfico</string>
     <string name="y_axis_description">Selecione até duas opções para o eixo Y.</string>
-    <string name="route_roundabout_exit">Saia em %1$d</string>
+    <string name="route_roundabout_exit">Tome a %1$d saída</string>
     <string name="rendering_attr_alpineHiking_name">Grau de dificuldade das trilhas de caminhada</string>
     <string name="app_mode_suv">SUV</string>
     <string name="quick_action_previous_screen_desc">Um botão de alternância para navegar para a tela anterior.</string>
