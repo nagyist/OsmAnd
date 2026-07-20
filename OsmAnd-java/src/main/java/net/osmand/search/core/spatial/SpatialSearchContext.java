@@ -16,6 +16,8 @@ import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
+import net.osmand.IProgress;
+import net.osmand.ResultMatcher;
 import net.osmand.binary.Abbreviations;
 import net.osmand.binary.BinaryMapAddressReaderAdapter.CityBlocks;
 import net.osmand.binary.BinaryMapIndexReader;
@@ -56,6 +58,8 @@ public class SpatialSearchContext {
 	final SpatialPoiSearch poiSearch;
 	final SpatialTextSearchSettings settings;
 	final SpatialSearchStats stats = new SpatialSearchStats();
+	
+	public ResultMatcher<SpatialSearchResult> progress;
 
 	List<SpatialSearchToken> tokens = null; // non initiatilized
 	Set<String> commonlyUsedWords = new HashSet<String>();

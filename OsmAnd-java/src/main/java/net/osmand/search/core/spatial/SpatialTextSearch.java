@@ -130,11 +130,11 @@ public class SpatialTextSearch {
 		public int LIMIT_ATOMIC_OBJECTS = 2;
 
 		// Limit evaluation intersection for unique objects
-		public int LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS = 1000;
+		public int LIMIT_STOP_GOALS_ANY_LEVEL_WHEN_REACHED_RES = 1000;
 		// if there are >= 10 results matching 5 words, 4 words match won't be considered
-		public int LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS = 1; // could be 3
-		// don't go level-2 if there are on level matching results
-		public int LIMIT_GOAL_LEVEL_2 = 1;
+		public int LIMIT_STOP_GOALS_LEVEL_1__WHEN_REACHED_RES = 1; // could be 3
+		// overall max without results (evaluate maximum 3 missing words)
+		public int MAX_TOTAL_LIMIT_GOAL_LEVEL = 3;
 		
 		// Hide results under SHOW MORE
 		public int[] SHOW_MORE_WORDS_COUNT = new int[] {3, 20, 100};
@@ -287,30 +287,21 @@ public class SpatialTextSearch {
 		goals.add(mainGoal);
 
 		int uniqueObjects = 0;
-		int depth = mainGoal.length();
-		int maxDepth = 0;
+		int depth1WithResults = 0;
 		while (!goals.isEmpty()) {
 			BitSet goal = goals.removeFirst();
 			if (!evaluated.add(goal)) {
 				continue;
 			}
-			// stop on level - 2
-			if (maxDepth == 0) {
-				if (uniqueObjects >= ctx.settings.LIMIT_GOAL_LEVEL_2) {
-					maxDepth = depth;
-				}
-			} else if (goal.length() <= maxDepth - 2) {
+			if (ctx.progress != null && ctx.progress.isCancelled()) {
+				break;
+			} else if (goal.length() < mainGoal.length() - ctx.settings.MAX_TOTAL_LIMIT_GOAL_LEVEL) {
+				break;
+			} else if (uniqueObjects >= ctx.settings.LIMIT_STOP_GOALS_ANY_LEVEL_WHEN_REACHED_RES) {
+				break;
+			} else if (goal.length() < depth1WithResults) {
 				break;
 			}
-			// stop with condition on level - 1
-			if (goal.length() < depth) {
-				if (ctx.settings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS > 0
-						&& uniqueObjects >= ctx.settings.LIMIT_GOAL_NEXT_LEVEL_MAX_UNIQUE_OBJECTS) {
-					break;
-				}
-				depth = goal.length();
-			}
-
 			SpatialSearchResultsList goalRes = cache.get(goal);
 //			System.out.println("EVALUATE GOAL " + goal + " " + (goalRes == null));
 			if (goalRes == null) {
@@ -338,12 +329,17 @@ public class SpatialTextSearch {
 				res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
 			}
 			if (res.size() > 0) {
+				if (ctx.progress != null) {
+					for (SpatialSearchResult p : res) {
+						ctx.progress.publish(p);
+					}
+				}
 				uniqueObjects += res.size();
 				fullResult.add(goalRes);
-				if (ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS > 0
-						&& uniqueObjects >= ctx.settings.LIMIT_ALL_GOALS_MAX_UNIQUE_OBJECTS) {
-					break;
-				}
+				
+			}
+			if(uniqueObjects >= ctx.settings.LIMIT_STOP_GOALS_LEVEL_1__WHEN_REACHED_RES && depth1WithResults == 0) {
+				depth1WithResults = goal.length();
 			}
 			BitSet nextGoal = (BitSet) goal.clone();
 			for (int i = nextGoal.length(); (i = nextGoal.previousSetBit(i - 1)) >= 0;) {

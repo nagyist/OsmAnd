@@ -70,14 +70,14 @@ import net.osmand.util.SearchAlgorithms;
 // TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
 
 // TODO WEB - RZR
-// - FIXME Bug web by brand - redirect search
+// - FIXME open brand / category - redirect search
 // - Highlight ref matching, interpolation (somehow) with braces?
 // - Poi category + geo object (name of geobject, dist? and relocate)
-// - Autosuggestions (postpone?)
-// - Multithread pool
-// - Production - check time & memory - tune params?
-// - CANCEL ! (slow queries for server)
 // - Poi translation provider
+// - PRODUCTION - check time & memory - tune params?
+// - Multithread pool
+// - CANCEL ! (slow queries for server)
+// - Autosuggestions (postpone?)
 
 // TODO ANDROID - Convert to old results
 // - Integrate (include regions.ocbf) on client
@@ -334,7 +334,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		location = new LatLon(48, 31);
 		// "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
-//		pattern = "Ukraine_";
+		pattern = "Ukraine_";
 //		query = "Мигия озеро";
 //		query = "Мигия water"; 
 		
@@ -350,7 +350,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Cafe";
 //		query = "Aquarium.";
 //		query = "Veget.";
-//		query = "Mcdonald's";
+		query = "Mcdonalds";
 //		query = "Stomat.";
 		
 //		location = new LatLon(50.4631,30.4553);
@@ -406,8 +406,8 @@ public class SpatialSearchTestAndDocs {
 //		settings.ALLOW_HOUSE_POI_TYPE_INTERSECTION = false;
 //		query = "Shell 2 Rožňavská";
 		
-		pattern = "Us_new-york_new"; // new-york, new-jersey
-//		pattern = "Us_new-"; 
+//		pattern = "Us_new-york_new"; // new-york, new-jersey
+		pattern = "Us_new-"; 
 		location = new LatLon(40.78035, -73.96572); // central park
 //		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
