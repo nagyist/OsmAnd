@@ -58,7 +58,9 @@ import net.osmand.util.SearchAlgorithms;
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // REVIEW: Auto test New york, France, Italy (Slow?)
-// TODO Hotel berlin
+// UNIT TESTING + LIVE TESTING
+
+// TODO Hotel berlin, Ресторан Antwerpen,
 
 // TODO DEDUPLICATE: Merge suburb+city same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
@@ -466,7 +468,8 @@ public class SpatialSearchTestAndDocs {
 		pattern2 = "Ukraine_";
 		location = new LatLon(48, 31);
 		settings.DEDUPLICATE_RES = false;
-		query = "гатэль";
+		query = "Кафе Antwerpen ";
+		query = "Ресторан Antwerpen ";
 //		pattern = "Italy_";
 //		query = "о. Пасхи"; // o
 //		query = "остров Пасхи"; // o. -> остров - not supported data need to be updated
@@ -610,6 +613,10 @@ public class SpatialSearchTestAndDocs {
 		public String getSynonyms(String keyName) {
 			if (keyName.equals("hotel")) {
 				return "отель;готель;гатэль";
+			} else if (keyName.equals("cafe")) {
+				return "кафе";
+			} else if (keyName.equals("restaurant")) {
+				return "ресторан";
 			}
 			return null;
 		}
