@@ -191,7 +191,24 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 			}
 		}
-		
+		// filter incomplete brand name if there are enough results
+		for (int indx = 0; indx < getCombinations(); indx++) {
+			if (!skipResults.contains(indx)) {
+				int poiTypeT = 0;
+				NameIndexAtom poiType = null;
+				for (int i = 0; i < tCount; i++) {
+					NameIndexAtom atom = linearResults.get(indx * tCount + i);
+					if(atom.isPoiCategory()) {
+						poiTypeT++;
+						poiType = atom;
+					}
+				}
+				if (poiTypeT > 0 && tCount > 1 && 
+						ctx.poiSearch.getById((int) poiType.id).tokensInName > poiTypeT) {
+					skipResults.put(indx, true);
+				}
+			}
+		}
 		ctx.stats.sub2LoadObjectsBldTime.finish();
 	}
 
@@ -798,12 +815,16 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		// 4. New intersection check the limits
 		HashMap<Long, NameIndexAtom> atomObjs = new HashMap<>(4);
+		// we check that poi category is complete in the end 
 		boolean poiCategoryOnMatchingWord = false;
+		boolean poiCategoryOnNumber = false;
 		if (a.atomicObject()) {
 			atomObjs.put(a.id, a);
 		}
 		if (!a.isPoiCategory()) {
 			poiCategoryOnMatchingWord |= token.hasPoiCategoryKeys();
+		} else {
+			poiCategoryOnNumber = token.likelyPartOfBuilding() || token.getMainNumber() > 0;
 		}
 		NameIndexAtom poiType = a.isPoiCategory() ? a : null;
 		SpatialSearchToken poiTypeToken = tokens[0];
@@ -836,8 +857,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			} else {
 				duplicateWord = true;
 			}
+			SpatialSearchToken parentToken = parent.tokens[i];
 			if (!pa.isPoiCategory()) {
-				poiCategoryOnMatchingWord |= parent.tokens[i].hasPoiCategoryKeys();
+				poiCategoryOnMatchingWord |= parentToken.hasPoiCategoryKeys();
+			} else {
+				poiCategoryOnNumber |= parentToken.likelyPartOfBuilding() || parentToken.getMainNumber() > 0;
 			}
 			if (pa.atomicObject()) {
 				atomObjs.put(pa.id, pa);
@@ -861,24 +885,26 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			if (poiTypeToken.incomplete) {
 				return false;
 			}
-			if (!p.isPOI() || p.poiTypes == null) {
-				return false;
-			}
-			boolean match = false;
-			for (int k = 0; k < p.poiTypes.size(); k++) {
-				int pType = p.poiTypes.get(k);
-//					if ( pType == poiType.id) {
-//					match = true; // should be handled by atom associated directly
-//					break;
-//					}
-				if (ctx.poiSearch.getById(pType).isPlace()) {
-					match = true;
-					break;
+			if (p.isPOI()) {
+				if (p.poiTypes == null) {
+					return false;
 				}
-			}
-			if (!match) {
+				boolean match = false;
+				for (int k = 0; k < p.poiTypes.size(); k++) {
+					int pType = p.poiTypes.get(k);
+//					if ( pType == poiType.id) { should be handled by atom associated directly
+					if (ctx.poiSearch.getById(pType).isPlace()) {
+						match = true;
+						break;
+					}
+				}
+				if (!match) {
+					return false;
+				}
+			} else if (p.isBuilding() || poiCategoryOnNumber) {
 				return false;
 			}
+
 		}
 		if (atomObjs.size() > 1) {
 			Iterator<NameIndexAtom> it = atomObjs.values().iterator();

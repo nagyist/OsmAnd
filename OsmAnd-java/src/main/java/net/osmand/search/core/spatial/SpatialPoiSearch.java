@@ -54,6 +54,7 @@ public class SpatialPoiSearch {
 		final List<String> names = new ArrayList<String>();
 		final String key;
 		final int id;
+		int tokensInName = 0;
 		boolean place;
 		String wikidataId;
 		List<AbstractPoiType> parentTypes;
@@ -97,6 +98,14 @@ public class SpatialPoiSearch {
 				return true;
 			}
 			return false;
+		}
+
+		public void addName(String name) {
+			List<String> nms = SearchAlgorithms.splitAndNormalize(name, false);
+			if (tokensInName == 0 || nms.size() < tokensInName) {
+				tokensInName = nms.size();
+			}
+			names.add(name);
 		}
 		
 	}
@@ -149,7 +158,7 @@ public class SpatialPoiSearch {
 		if (!basePoiName.equals(pt.getTranslation())) {
 			String[] split = pt.getTranslation().split(";");
 			for (String tr : split) {
-				poiType.names.add(SearchAlgorithms.alignChars(tr.trim()));
+				poiType.addName(SearchAlgorithms.alignChars(tr.trim()));
 				// only first
 				break;
 			}
@@ -159,7 +168,7 @@ public class SpatialPoiSearch {
 			String[] split = synonyms.split(";");
 			for (String tr : split) {
 				if (tr.trim().length() > 0) {
-					poiType.names.add(SearchAlgorithms.alignChars(tr.trim()));
+					poiType.addName(SearchAlgorithms.alignChars(tr.trim()));
 				}
 			}
 		}
@@ -168,7 +177,7 @@ public class SpatialPoiSearch {
 
 
 	private void addToIndex(String basePoiName, SpatialPoiType poiType) {
-		poiType.names.add(basePoiName);
+		poiType.addName(basePoiName);
 		WriteLock wl = poiTypesIndexLock.writeLock();
 		try {
 			wl.lock();
@@ -230,7 +239,7 @@ public class SpatialPoiSearch {
 							String[] otherNames = wikidataId.split(";");
 							topValue.wikidataId = otherNames[0];
 							for (int ts = 1; ts < otherNames.length; ts++) {
-								topValue.names.add(otherNames[ts]);
+								topValue.addName(otherNames[ts]);
 							}
 						}
 						// not needed

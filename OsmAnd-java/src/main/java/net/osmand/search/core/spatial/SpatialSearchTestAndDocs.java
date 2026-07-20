@@ -466,11 +466,16 @@ public class SpatialSearchTestAndDocs {
 		
 		pattern = "World_basemap_mini";
 		pattern2 = "Ukraine_";
-		location = new LatLon(48, 31);
-		settings.DEDUPLICATE_RES = false;
+		location = new LatLon(50, 30);
+//		settings.DEDUPLICATE_RES = false;
+		// TODO Unit test
 		query = "Кафе Antwerpen ";
 		query = "Ресторан Antwerpen ";
-		query = "Cafe Бровари";
+//		query = "Hotel Berlin";
+//		query = "Cafe вулиця Саксаганського";
+//		query = "нова пошта вулиця Саксаганського"; // brand + 
+//		query = "нова вулиця Саксаганського"; // no brand
+		
 //		pattern = "Italy_";
 //		query = "о. Пасхи"; // o
 //		query = "остров Пасхи"; // o. -> остров - not supported data need to be updated

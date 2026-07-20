@@ -116,6 +116,10 @@ public class SpatialSearchToken {
 		}
 	}
 	
+	public int getMainNumber() {
+		return mainNumber;
+	}
+	
 	public boolean likelyPartOfBuilding() {
 		return Abbreviations.likelyPartOfBuilding(word, bldWordSplit);
 	}
