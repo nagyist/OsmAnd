@@ -106,11 +106,17 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		for (Map.Entry<Integer, TLongHashSet> poiBoxEntry : poiBboxes.entrySet()) {
+			if (ctx.isCancelled()) {
+				return;
+			}
 			ctx.readPOIBboxes(poiBoxEntry.getKey(), poiBoxEntry.getValue());
 		}
 		TLongArrayList lst = new TLongArrayList(lstMap.keySet());
 		lst.sort(); // sort is not correct for file ind last bits >>> 12 
 		for(int i = 0; i < lst.size(); i++) {
+			if(ctx.isCancelled()) {
+				return;
+			}
 			long id = lst.get(i);
 			if (type == SpatialSearchToken.POI_TYPE) {
 				cache.put(id, ctx.readPoiObject(id, cache));
@@ -127,6 +133,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	}
 	
 	public void loadObjects(SpatialSearchContext ctx) throws IOException {
+		if (ctx.isCancelled()) {
+			return;
+		}
 		TLongObjectHashMap<MapObject> cache = new TLongObjectHashMap<MapObject>();
 		loadObjects(ctx, SpatialSearchToken.POI_TYPE, cache);
 		cache.clear();
@@ -145,9 +154,15 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 	public void loadObjectsAndCalcBuildings(SpatialSearchContext ctx) throws IOException {
 		ctx.stats.sub2LoadObjectsBldTime.start();
 		loadObjects(ctx);
+		if (ctx.isCancelled()) {
+			return;
+		}
 		List<SpatialSearchToken> missingTokens = getMissingTokens(ctx);
 		if (ctx.settings.SEARCH_POI_REF) {
 			for (int indx = 0; indx < getCombinations(); indx++) {
+				if (ctx.isCancelled()) {
+					return;
+				}
 				if (!skipResults.contains(indx)) {
 					checkAmenityRef(missingTokens, indx);
 				}
@@ -156,6 +171,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		if (ctx.settings.SEARCH_BUILDINGS) {
 			Map<String, BuildingCache> bldCheckCache = new HashMap<>();
 			for (int indx = 0; indx < getCombinations(); indx++) {
+				if (ctx.isCancelled()) {
+					return;
+				}
 				if (!skipResults.contains(indx)) {
 					calcBuilding(ctx, indx, missingTokens, bldCheckCache);
 				}
@@ -166,6 +184,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		if (ctx.settings.SEARCH_STREET_INTERSECTIONS) {
 			for (int indx = 0; indx < getCombinations(); indx++) {
+				if (ctx.isCancelled()) {
+					return;
+				}
 				if (!skipResults.contains(indx)) {
 					calcStreetIntersections(ctx, indx);
 				}

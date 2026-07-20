@@ -293,7 +293,7 @@ public class SpatialTextSearch {
 			if (!evaluated.add(goal)) {
 				continue;
 			}
-			if (ctx.progress != null && ctx.progress.isCancelled()) {
+			if (ctx.resultMatcher != null && ctx.resultMatcher.isCancelled()) {
 				break;
 			} else if (goal.length() < mainGoal.length() - ctx.settings.MAX_TOTAL_LIMIT_GOAL_LEVEL) {
 				break;
@@ -321,25 +321,34 @@ public class SpatialTextSearch {
 					}
 				}
 			}
+			if (ctx.isCancelled()) {
+				break;
+			}
 			goalRes.loadObjectsAndCalcBuildings(ctx);
 			List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
 			if (goal.equals(mainGoal) && res.size() == 0) {
 				goalRes = reevalWithExtendedBoundary(ctx, goal, tokens);
+				if (ctx.isCancelled()) {
+					break;
+				}
 				goalRes.loadObjectsAndCalcBuildings(ctx);
 				res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
 			}
 			if (res.size() > 0) {
-				if (ctx.progress != null) {
+				if (ctx.resultMatcher != null) {
 					for (SpatialSearchResult p : res) {
-						ctx.progress.publish(p);
+						ctx.resultMatcher.publish(p);
 					}
 				}
 				uniqueObjects += res.size();
 				fullResult.add(goalRes);
 				
 			}
-			if(uniqueObjects >= ctx.settings.LIMIT_STOP_GOALS_LEVEL_1__WHEN_REACHED_RES && depth1WithResults == 0) {
+			if (uniqueObjects >= ctx.settings.LIMIT_STOP_GOALS_LEVEL_1__WHEN_REACHED_RES && depth1WithResults == 0) {
 				depth1WithResults = goal.length();
+			}
+			if (ctx.isCancelled()) {
+				break;
 			}
 			BitSet nextGoal = (BitSet) goal.clone();
 			for (int i = nextGoal.length(); (i = nextGoal.previousSetBit(i - 1)) >= 0;) {
