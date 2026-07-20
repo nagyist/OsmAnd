@@ -74,7 +74,8 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			Collections.sort(r.tokens, (o1, o2) -> Integer.compare(o1.originalOrder, o2.originalOrder));
 		}
 		Collections.sort(objs, (o1, o2) -> {
-			int r = Integer.compare(o1.typeOrder(SpatialSearchResultRef.MAX_TYPE_ORDER), o2.typeOrder(SpatialSearchResultRef.MAX_TYPE_ORDER));
+			int r = Integer.compare(o1.typeOrder(SpatialSearchResultRef.MAX_TYPE_ORDER), 
+					o2.typeOrder(SpatialSearchResultRef.MAX_TYPE_ORDER));
 			if (r != 0) {
 				return r;
 			}
@@ -130,7 +131,12 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 
 	public boolean hasPoiTypes() {
-		return objs.stream().anyMatch(r -> r.atom.isPoiCategory());
+		for (SpatialSearchResultRef r : objs) {
+			if (r.isPoiCategory()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public List<SpatialPoiType> getPoiTypes(SpatialPoiSearch poiSearch) {
@@ -276,19 +282,24 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		public boolean extraNameRelated() {
 			return atom.buildingOrRefInd >= 0;
 		}
+
+		public boolean isPoiCategory() {
+			return atom.isPoiCategory();
+		}
 		
 		public int typeOrder(int min) {
-			if (atom.isBuilding()) {
+			if (atom.isPoiCategory()) {
+				// push to first token
+				return -2;
+			} else if (atom.isBuilding()) {
 				return -1;
 			} else if (atom.isPOI()) {
 				return 0;
 			} else if (atom.isStreet()) {
 				return 1;
-			} else if (atom.isPoiCategory()) {
-				return 2;
-			} else if(atom.isPostcode()) {
+			} else if (atom.isPostcode()) {
 				return 3;
-			} else if(atom.isBoundary()) {
+			} else if (atom.isBoundary()) {
 				return min < 4 ? 4 : MAX_TYPE_ORDER;
 			}
 			// all cities, villages, hamlets
@@ -405,7 +416,11 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 	
 	public static int compare(SpatialSearchResult o1, SpatialSearchResult o2, LatLon center) {
-		int res = -Integer.compare(o1.parent.tCount, o2.parent.tCount);
+		int res = -Boolean.compare(o1.hasPoiTypes(), o2.hasPoiTypes());
+		if (res != 0) {
+			return res;
+		}
+		res = -Integer.compare(o1.parent.tCount, o2.parent.tCount);
 		if (res != 0) {
 			return res;
 		}

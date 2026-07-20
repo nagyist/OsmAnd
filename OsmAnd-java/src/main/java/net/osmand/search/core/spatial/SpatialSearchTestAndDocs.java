@@ -464,12 +464,13 @@ public class SpatialSearchTestAndDocs {
 //		query = "Golden State Road Foothill Boulevard Sylmar USA";
 
 		
-		pattern = "World_basemap_2";
+		pattern = "World_basemap_mini";
 		pattern2 = "Ukraine_";
 		location = new LatLon(48, 31);
 		settings.DEDUPLICATE_RES = false;
 		query = "Кафе Antwerpen ";
 		query = "Ресторан Antwerpen ";
+		query = "Cafe Бровари";
 //		pattern = "Italy_";
 //		query = "о. Пасхи"; // o
 //		query = "остров Пасхи"; // o. -> остров - not supported data need to be updated

@@ -54,6 +54,7 @@ public class SpatialPoiSearch {
 		final List<String> names = new ArrayList<String>();
 		final String key;
 		final int id;
+		boolean place;
 		String wikidataId;
 		List<AbstractPoiType> parentTypes;
 
@@ -69,6 +70,10 @@ public class SpatialPoiSearch {
 			this.key = key;
 			this.id = id;
 			this.poiAdditional = additional;
+		}
+		
+		public boolean isPlace() {
+			return place;
 		}
 
 		public String getKey() {
@@ -134,6 +139,9 @@ public class SpatialPoiSearch {
 		}
 		String basePoiName = poiTypes.getBasePoiName(pt);
 		SpatialPoiType poiType = new SpatialPoiType(pt, ids.getAndIncrement());
+		if (pt instanceof PoiType poitype) {
+			poiType.place = "place".equals(poitype.getOsmTag());
+		}
 		if (parent != null) {
 			poiType.parentTypes = new ArrayList<>();
 			poiType.parentTypes.add(parent);

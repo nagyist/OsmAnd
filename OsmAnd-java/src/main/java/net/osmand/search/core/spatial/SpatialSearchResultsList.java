@@ -23,6 +23,7 @@ import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
 import net.osmand.data.Street;
 import net.osmand.search.core.HashQuadTree;
+import net.osmand.search.core.spatial.SpatialPoiSearch.SpatialPoiType;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.Algorithms;
@@ -638,11 +639,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 				
 				boolean acceptIntersection = false;
+				acceptIntersection = acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
 //				long intId = atom.id + parent.getRawAtomsSumId(parentIndx);
 //				if (intId == 81305567235l) {
 //					System.out.println(intId + " " + atom + " " + parent.getRawAtoms(parentIndx) + " == " + acceptIntersection);
 //				}
-				acceptIntersection = acceptIntersection(ctx, parent, parentIndx, token, atom, typeIntersection);
 				if (acceptIntersection) {
 					TIntArrayList c = intersections[level];
 					if (typeIntersection[0] == 2) {
@@ -797,8 +798,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		}
 		// 4. New intersection check the limits
 		HashMap<Long, NameIndexAtom> atomObjs = new HashMap<>(4);
+		boolean poiCategoryOnMatchingWord = false;
 		if (a.atomicObject()) {
 			atomObjs.put(a.id, a);
+		}
+		if (!a.isPoiCategory()) {
+			poiCategoryOnMatchingWord |= token.hasPoiCategoryKeys();
 		}
 		NameIndexAtom poiType = a.isPoiCategory() ? a : null;
 		SpatialSearchToken poiTypeToken = tokens[0];
@@ -813,7 +818,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 					poiType = pa;
 					poiTypeToken = parent.tokens[i];
 				} else {
-					// no 2 poi categories
+					// no 2 poi categories for now (vegan cafe)
 					return false;
 				}
 			}
@@ -831,6 +836,9 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			} else {
 				duplicateWord = true;
 			}
+			if (!pa.isPoiCategory()) {
+				poiCategoryOnMatchingWord |= parent.tokens[i].hasPoiCategoryKeys();
+			}
 			if (pa.atomicObject()) {
 				atomObjs.put(pa.id, pa);
 			}
@@ -843,6 +851,10 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 //				return false;
 //			}
 		}
+		if (poiType != null && poiCategoryOnMatchingWord) {
+			// don't add intersection poi type on common word (not search apple city)
+			return false;
+		}
 		// investigate to find types
 		if (poiType != null && atomObjs.size() > 0) {
 			NameIndexAtom p = atomObjs.values().iterator().next();
@@ -854,7 +866,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 			boolean match = false;
 			for (int k = 0; k < p.poiTypes.size(); k++) {
-				if (p.poiTypes.get(k) == poiType.id) {
+				int pType = p.poiTypes.get(k);
+//					if ( pType == poiType.id) {
+//					match = true; // should be handled by atom associated directly
+//					break;
+//					}
+				if (ctx.poiSearch.getById(pType).isPlace()) {
 					match = true;
 					break;
 				}
