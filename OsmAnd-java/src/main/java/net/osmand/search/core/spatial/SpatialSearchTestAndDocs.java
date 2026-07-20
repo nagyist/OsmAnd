@@ -54,18 +54,17 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: нова пошта краматорськ  - no brand !! (3 in ref, 5 in name) 5 (5 N7846074085, N1482296639)
 // UNIT TESTING: See makby below // 20: 16 (brand/name Mac.by), 3 (no brand, name Mac.by), ...
 // SAME DEDUPLICATE:  Same mabky brand langs - 'Поїхали з нами' / 'Поехали с нами'
+// UNIT TESTING: <POI Category> + Object - "Cafe вулиця Саксаганського", restaurant Antwerpen , Postcode + Type, 1181ZM cafe
+//               Hotel Berlin, see below, "нова пошта вулиця Саксаганського", "нова вулиця Саксаганського"; // brand +
 
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // REVIEW: Auto test New york, France, Italy (Slow?)
-// UNIT TESTING + LIVE TESTING
-
-// TODO Hotel berlin, Ресторан Antwerpen,
 
 // TODO DEDUPLICATE: Merge suburb+city same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TEST DEDUPLICATE:  wiki / travel maps / seamarks map
-// TODO DEDUPICATE? too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
+// TODO DEDUPICATE? too many hxouses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 
 // TO DO Gateway
@@ -468,13 +467,16 @@ public class SpatialSearchTestAndDocs {
 		pattern2 = "Ukraine_";
 		location = new LatLon(50, 30);
 //		settings.DEDUPLICATE_RES = false;
-		// TODO Unit test
-		query = "Кафе Antwerpen ";
-		query = "Ресторан Antwerpen ";
+//		query = "Кафе Antwerpen ";
+//		query = "Ресторан Antwerpen ";
+//		query = "Cafe Gulliver";
 //		query = "Hotel Berlin";
 //		query = "Cafe вулиця Саксаганського";
 //		query = "нова пошта вулиця Саксаганського"; // brand + 
 //		query = "нова вулиця Саксаганського"; // no brand
+		
+		query = "1181ZM cafe"; // TEST missing pois (postcode) 
+		pattern2 = "Map";
 		
 //		pattern = "Italy_";
 //		query = "о. Пасхи"; // o

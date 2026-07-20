@@ -419,6 +419,13 @@ public abstract class MapObject implements Comparable<MapObject> {
 		}
 	}
 
+	protected QuadRect getMinBbox(LatLon ll) {
+		double d = 0.002;
+		QuadRect qr = new QuadRect(ll.getLongitude() - d, ll.getLatitude() + d, 
+				ll.getLongitude() + d, ll.getLatitude() - d);
+		return qr;
+	}
+	
 	public static boolean isNameLangTag(String tag) {
 		if (tag.startsWith("name:")) {
 			// languages code <= 3

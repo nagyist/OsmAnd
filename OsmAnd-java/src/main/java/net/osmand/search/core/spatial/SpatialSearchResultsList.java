@@ -798,7 +798,6 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		if (typeIntersection[0] >= 0) {
 			return true;
 		}
-		
 		typeIntersection[0] = 0;
 		// 3. Precise intersection
 		// no cache for parent now needed
@@ -847,11 +846,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			// ignore every object that has this name already (except duplicate words && numbers assigned to building)
 			if (!tokens[0].word.equals(parent.tokens[i].word) && !duplicateWord) {
 				NameIndexAtom existing = parent.tokens[i].index.get(a.id);
-				if (existing != null && !existing.isBuilding()) {
+				if (existing != null && !existing.isBuilding() && !existing.isPOIRef()) {
 					return false;
 				}
 				existing = tokens[0].index.get(pa.id);
-				if (existing != null && !existing.isBuilding()) {
+				if (existing != null && !existing.isBuilding() && !existing.isPOIRef()) {
 					return false;
 				}
 			} else {
@@ -875,6 +874,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 //				return false;
 //			}
 		}
+
 		if (poiType != null && poiCategoryOnMatchingWord) {
 			// don't add intersection poi type on common word (not search apple city)
 			return false;

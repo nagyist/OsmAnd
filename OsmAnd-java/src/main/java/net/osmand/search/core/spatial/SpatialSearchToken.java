@@ -597,6 +597,10 @@ public class SpatialSearchToken {
 		public boolean isPOI() {
 			return type == POI_TYPE || type == POI_REF_TYPE;
 		}
+		
+		public boolean isPOIRef() {
+			return type == POI_REF_TYPE;
+		}
 
 		public String typeStr() {
 			String typeS = "";
