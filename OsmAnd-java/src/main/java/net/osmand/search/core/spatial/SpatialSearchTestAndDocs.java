@@ -30,32 +30,28 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 100km+ нова пошта краматорськ  - no brand (3, 5) 5 (5 N7846074085, N1482296639)
 
 //////////// TESTING //////////
-// UNIT TESTING: estrado boundaries needed
-// UNIT TESTING: not tested postcode Match (reuse existing tests - USA, Huns) - '324d 1186rz amstelveen logger' - 4 matched (add test to search postcode, postcode + city)
-// UNIT TESTING '14871 Pennsylvania Avenue 1842', '14871 Pennsylvania Avenue Pine City' ('8832kd Huns' ok)
-// UNIT TEST FIX: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border) - Add missing border
-// UNIT TESTING: Calle 20 (not enough objects - 'Lima 188', 'Calle 2', ' Calle 20') - Search doesn't work 10 km away! (LIVE)
-// UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
+// UNIT TESTING: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border) - Add missing border
 // UNIT TESTING: 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak!
 // "2.Sokak", "2 Sokak", "Sokak 2", "2. Sokak", "32/2 Sokak" + housenumber (?),  2/1 21038 Sokak, Sokak 23018. Balikesir, 2301. Sokak
-// UNIT TESTING: Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA
-// UNIT TESTING (future): 763 Ro-Ki Boulevard Nichols
-// UNIT TESTING: "саксаг. Володимирська"; // intersection
-// UNIT TESTING (or any other): саксаг. 63/28, 2 (ref + 2 +house), саксаг. 28, 2, саксаг. 63
-// UNIT TESTING (school): "Школа 25 Володимирська вулиця" "андріівський узвіз Школа "
-// UNIT TESTING (by id): O128894
-// UNIT TESTING: POI Name / Type + Address - Shell 2 Rožňavská
 // UNIT TESTING: 4av - 'New York 4 av 8', '4 av', '4 avenue 8', '4th ave', '8 4 ave paterson' (26240861988)
-// UNIT TESTING: 'Venezia Cannaregio Campo Saffa', 'Cannaregio 539D Campo Saffa', 'Venezia Cannaregio 539D'
-// UNIT TESTING: Gynaecologist - from all poi types should be result ! (not like old search)
-// UNIT TESTING: 'Kyiv Глушкова 1', 'Kyiv 1'
+// UNIT TESTING: (venezia district-street) 'Venezia Cannaregio Campo Saffa', 'Cannaregio 539D Campo Saffa', 'Venezia Cannaregio 539D'
+// UNIT TESTING: 'Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA' (duplicate words) res - 39.963028, -75.174270
+// UNIT TESTING: "саксаг. Володимирська"; // street intersection
+// UNIT TESTING: (2 house + ref) 'саксаг. 63/28, 2' (ref + 2 +house), 'саксаг. 28', 'саксаг. 63', 'саксаг. 63/28'
+// UNIT TESTING: (school): "Школа 25 Володимирська вулиця" "андріівський узвіз Школа "
+// UNIT TESTING: (by id): O128894
+// UNIT TESTING: (poi additional germany) Gynaecologist - from all poi types should be result ! (not like old search)
+// UNIT TESTING: (City + House +- Street) 'Kyiv Глушкова 1', 'Kyiv 1'
+// UNIT TESTING: POI intersection 'fuel mcdonalds', 'cafe fuel', 'fuel burger'
 // UNIT TESTING: нова пошта <street>, нова пошта <city>, just <post_ref> (нова пошта 3 краматорск), 5 <>... 
-// UNIT TESTING: POI intersection (пузата хата mcdonal.) or (cafe/shop fuel in poland wihout cafe=yes)
 // UNIT TESTING: нова пошта краматорськ  - no brand !! (3 in ref, 5 in name) 5 (5 N7846074085, N1482296639)
-// UNIT TESTING: See makby below // 20: 16 (brand/name Mac.by), 3 (no brand, name Mac.by), ...
-// SAME DEDUPLICATE:  Same mabky brand langs - 'Поїхали з нами' / 'Поехали с нами'
+// UNIT TESTING: Brands See makby queries and file! // 20: 16 (brand/name Mac.by), 3 (no brand, name Mac.by), ...
+// UNIT TESTING: Deduplicate brands by search 'по.' (search) - results brand langs - 'Поїхали з нами' / 'Поехали с нами'
+// UNIT TESTING: POI Name / Type + Address - 'Shell 2 Rožňavská'
 // UNIT TESTING: <POI Category> + Object - "Cafe вулиця Саксаганського", restaurant Antwerpen , Postcode + Type, 1181ZM cafe
 //               Hotel Berlin, see below, "нова пошта вулиця Саксаганського", "нова вулиця Саксаганського"; // brand +
+// UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
+// UNIT TESTING: (failing) 763 Ro-Ki Boulevard Nichols
 
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
@@ -64,7 +60,7 @@ import net.osmand.util.SearchAlgorithms;
 // TODO DEDUPLICATE: Merge suburb+city same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 // TEST DEDUPLICATE:  wiki / travel maps / seamarks map
-// TODO DEDUPICATE? too many hxouses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
+// TODO DEDUPLICATE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 
 // TO DO Gateway
@@ -463,9 +459,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Golden State Road Foothill Boulevard Sylmar USA";
 
 		
-		pattern = "World_basemap_mini";
-		pattern2 = "Ukraine_";
-		location = new LatLon(50, 30);
+//		pattern = "World_basemap_mini";
+//		pattern2 = "Ukraine_";
+//		location = new LatLon(50, 30);
 //		settings.DEDUPLICATE_RES = false;
 //		query = "Кафе Antwerpen ";
 //		query = "Ресторан Antwerpen ";
