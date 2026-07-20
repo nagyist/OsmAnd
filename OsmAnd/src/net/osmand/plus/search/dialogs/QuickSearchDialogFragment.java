@@ -2874,7 +2874,7 @@ public class QuickSearchDialogFragment extends BaseFullScreenDialogFragment impl
 		sendEmptySearchText.setVisibility(sendSearchQueryVisible ? View.VISIBLE : View.GONE);
 		sendEmptySearchButton.setVisibility(sendSearchQueryVisible ? View.VISIBLE : View.GONE);
 		sendEmptySearchBottomBarVisible = sendSearchQueryVisible;
-		updateFabMargins();
+		updateShowOnMapFab();
 	}
 
 	@Override
