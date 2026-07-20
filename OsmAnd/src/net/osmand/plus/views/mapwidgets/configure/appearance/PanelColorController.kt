@@ -4,11 +4,11 @@ import androidx.annotation.ColorInt
 import androidx.fragment.app.FragmentActivity
 import net.osmand.plus.OsmandApplication
 import net.osmand.plus.R
-import net.osmand.plus.Version
 import net.osmand.plus.activities.MapActivity
 import net.osmand.plus.chooseplan.ChoosePlanFragment
 import net.osmand.plus.configmap.MapColorPaletteController
 import net.osmand.plus.configmap.MapColorPaletteFragment
+import net.osmand.plus.inapp.InAppPurchaseUtils
 import net.osmand.plus.settings.backend.ApplicationMode
 import net.osmand.plus.settings.enums.ScreenLayoutMode
 import net.osmand.plus.utils.AndroidUtils
@@ -72,7 +72,7 @@ class PanelColorController private constructor(
 
 	override fun isColorSelectionAvailable(): Boolean {
 		return target != PanelColorTarget.BACKGROUND
-				|| Version.isPaidVersion(app)
+				|| InAppPurchaseUtils.isCustomWidgetBackgroundColorAvailable(app)
 	}
 
 	override fun getUnavailableIconId(): Int = R.drawable.ic_action_widget_colored

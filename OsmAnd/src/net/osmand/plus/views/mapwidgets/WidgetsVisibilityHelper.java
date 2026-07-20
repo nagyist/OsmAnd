@@ -73,11 +73,6 @@ public class WidgetsVisibilityHelper {
 		return getAppearancePreviewPanel() != null;
 	}
 
-	public boolean shouldHidePanelInAppearancePreview(@NonNull WidgetsPanel panel) {
-		WidgetsPanel previewPanel = getAppearancePreviewPanel();
-		return previewPanel != null && previewPanel != panel;
-	}
-
 	public boolean shouldShowQuickActionButton() {
 		return isQuickActionLayerOn()
 				&& !isInConfigureMapOptionMode()

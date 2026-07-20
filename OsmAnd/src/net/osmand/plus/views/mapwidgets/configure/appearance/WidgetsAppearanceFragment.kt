@@ -1,11 +1,11 @@
 package net.osmand.plus.views.mapwidgets.configure.appearance
 
 import android.graphics.PorterDuff
+import android.graphics.Rect
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.widget.ImageButton
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.appcompat.widget.Toolbar
@@ -18,6 +18,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import net.osmand.plus.R
 import net.osmand.plus.activities.MapActivity
 import net.osmand.plus.base.BaseFullScreenFragment
+import net.osmand.plus.inapp.InAppPurchaseHelper.InAppPurchaseListener
 import net.osmand.plus.profiles.SelectCopyAppModeBottomSheet
 import net.osmand.plus.profiles.SelectCopyAppModeBottomSheet.CopyAppModePrefsListener
 import net.osmand.plus.settings.backend.ApplicationMode
@@ -27,6 +28,7 @@ import net.osmand.plus.utils.ColorUtilities
 import net.osmand.plus.utils.InsetTarget
 import net.osmand.plus.utils.InsetTargetsCollection
 import net.osmand.plus.utils.InsetsUtils
+import net.osmand.plus.views.controls.MapHudLayout
 import net.osmand.plus.views.mapwidgets.TopToolbarController.TopToolbarControllerType
 import net.osmand.plus.views.mapwidgets.WidgetsPanel
 import net.osmand.plus.views.mapwidgets.configure.dialogs.ConfigureScreenFragment.SCREEN_LAYOUT_MODE
@@ -35,7 +37,8 @@ import net.osmand.plus.widgets.popup.PopUpMenu
 import net.osmand.plus.widgets.popup.PopUpMenuDisplayData
 import net.osmand.plus.widgets.popup.PopUpMenuItem
 
-class WidgetsAppearanceFragment : BaseFullScreenFragment(), CopyAppModePrefsListener {
+class WidgetsAppearanceFragment : BaseFullScreenFragment(), CopyAppModePrefsListener,
+	InAppPurchaseListener {
 
 	companion object {
 		val TAG: String = WidgetsAppearanceFragment::class.java.simpleName
@@ -75,7 +78,6 @@ class WidgetsAppearanceFragment : BaseFullScreenFragment(), CopyAppModePrefsList
 	private lateinit var viewPager: ViewPager2
 	private lateinit var toolbarTitle: TextViewEx
 	private var previewActive = false
-	private var previewPreDrawListener: ViewTreeObserver.OnPreDrawListener? = null
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -107,8 +109,11 @@ class WidgetsAppearanceFragment : BaseFullScreenFragment(), CopyAppModePrefsList
 		setupToolbar(view)
 		setupTabLayout()
 
-		view.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-			schedulePreviewGeometrySync()
+		view.findViewById<View>(R.id.map_preview_area).addOnLayoutChangeListener {
+			_, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+			if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
+				refreshPreview(false)
+			}
 		}
 		return view
 	}
@@ -128,65 +133,45 @@ class WidgetsAppearanceFragment : BaseFullScreenFragment(), CopyAppModePrefsList
 		previewActive = true
 		mapActivity.disableDrawer()
 		mapActivity.hideTopToolbar(TopToolbarControllerType.SUGGEST_MAP)
-		schedulePreviewGeometrySync()
+		view?.findViewById<View>(R.id.map_preview_area)?.post {
+			refreshPreview(true)
+		}
 	}
 
 	override fun onPause() {
 		previewActive = false
-		removePreviewPreDrawListener()
 		super.onPause()
 		val mapActivity = activity as? MapActivity ?: return
 		mapActivity.enableDrawer()
-		MapHudPreviewPadding.reset(mapActivity)
+		mapActivity.findViewById<MapHudLayout>(R.id.map_hud_layout)?.clearExternalVisibleArea()
+		refreshMapWidgetPanels()
+		refreshMapControlButtons()
 		mapActivity.refreshMap()
 	}
 
-	private fun updateMapHudPadding(): Boolean {
+	private fun updateMapHudVisibleArea(): Boolean {
 		val mapActivity = activity as? MapActivity ?: return false
-		val view = view ?: return false
-		return MapHudPreviewPadding.update(mapActivity,
-			view.findViewById(R.id.appbar), view.findViewById(R.id.bottom_sheet))
+		val previewArea = view?.findViewById<View>(R.id.map_preview_area) ?: return false
+		if (previewArea.width <= 0 || previewArea.height <= 0) {
+			return false
+		}
+		val visibleArea = Rect()
+		if (!previewArea.getGlobalVisibleRect(visibleArea)) {
+			return false
+		}
+		val mapHudLayout = mapActivity.findViewById<MapHudLayout>(R.id.map_hud_layout) ?: return false
+		return mapHudLayout.setExternalVisibleArea(visibleArea)
 	}
 
-	private fun schedulePreviewGeometrySync() {
-		if (!previewActive || previewPreDrawListener != null) {
+	private fun refreshPreview(force: Boolean) {
+		if (!previewActive) {
 			return
 		}
-		val root = view ?: return
-		val listener = object : ViewTreeObserver.OnPreDrawListener {
-			private var panelsSynchronized = false
-
-			override fun onPreDraw(): Boolean {
-				if (!previewActive || view !== root) {
-					removePreviewPreDrawListener(root)
-					return true
-				}
-				if (updateMapHudPadding()) {
-					panelsSynchronized = false
-					return false
-				}
-				if (!panelsSynchronized) {
-					panelsSynchronized = true
-					refreshMapWidgetPanels()
-					refreshMapControlButtons()
-					(activity as? MapActivity)?.refreshMap()
-					return false
-				}
-				removePreviewPreDrawListener(root)
-				return true
-			}
+		if (updateMapHudVisibleArea() || force) {
+			refreshMapWidgetPanels()
+			refreshMapControlButtons()
+			(activity as? MapActivity)?.refreshMap()
 		}
-		previewPreDrawListener = listener
-		root.viewTreeObserver.addOnPreDrawListener(listener)
-	}
-
-	private fun removePreviewPreDrawListener(root: View? = view) {
-		val listener = previewPreDrawListener ?: return
-		val observer = root?.viewTreeObserver
-		if (observer != null && observer.isAlive) {
-			observer.removeOnPreDrawListener(listener)
-		}
-		previewPreDrawListener = null
 	}
 
 	override fun onSaveInstanceState(outState: Bundle) {
@@ -221,7 +206,7 @@ class WidgetsAppearanceFragment : BaseFullScreenFragment(), CopyAppModePrefsList
 				selectedPanel = WidgetsPanel.entries[position]
 				updateToolbarTitle()
 				if (previewActive) {
-					schedulePreviewGeometrySync()
+					refreshPreview(true)
 				} else {
 					refreshMapWidgetPanels()
 				}
@@ -323,6 +308,19 @@ class WidgetsAppearanceFragment : BaseFullScreenFragment(), CopyAppModePrefsList
 				fragment.updateContent()
 			}
 		}
+	}
+
+	override fun onGetItems() {
+		onPurchaseStateChanged()
+	}
+
+	override fun onItemPurchased(sku: String?, active: Boolean) {
+		onPurchaseStateChanged()
+	}
+
+	private fun onPurchaseStateChanged() {
+		app.panelAppearanceSettingsManager.refreshPurchaseState()
+		onAppearanceChanged()
 	}
 
 	private fun refreshMapWidgetAppearance() {

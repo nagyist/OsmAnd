@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.ListUpdateCallback;
 
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
-import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.OsmandSettings;
@@ -29,11 +28,11 @@ import net.osmand.plus.settings.enums.ThemeUsageContext;
 import net.osmand.plus.utils.ColorUtilities;
 import net.osmand.plus.utils.InsetsUtils;
 import net.osmand.plus.utils.UiUtilities;
+import net.osmand.plus.views.mapwidgets.WidgetsPanel;
 import net.osmand.plus.views.mapwidgets.appearance.ResolvedPanelAppearance;
 import net.osmand.plus.views.layers.base.OsmandMapLayer.DrawSettings;
 import net.osmand.plus.views.mapwidgets.MapWidgetInfo;
 import net.osmand.plus.views.mapwidgets.MapWidgetRegistry;
-import net.osmand.plus.views.mapwidgets.WidgetsPanel;
 import net.osmand.plus.views.mapwidgets.widgetinterfaces.ISupportMultiRow;
 import net.osmand.plus.views.mapwidgets.widgetinterfaces.ISupportWidgetResizing;
 import net.osmand.plus.views.mapwidgets.widgets.MapWidget;
@@ -52,6 +51,7 @@ public class VerticalWidgetPanel extends LinearLayoutEx implements WidgetsContai
 	private final List<Row> visibleRows = new ArrayList<>();
 	private boolean topPanel;
 	private boolean nightMode;
+	private boolean visibilityAllowed = true;
 	@NonNull
 	private PanelBackgroundMode backgroundMode = PanelBackgroundMode.DEFAULT;
 	private boolean backgroundOpaque;
@@ -129,17 +129,12 @@ public class VerticalWidgetPanel extends LinearLayoutEx implements WidgetsContai
 		ViewCompat.setElevation(this, isAnyRowVisible() && backgroundOpaque ? 5f : 0);
 	}
 
-	private boolean isHiddenInAppearancePreview() {
-		Context context = getContext();
-		if (context instanceof MapActivity mapActivity) {
-			WidgetsPanel panel = topPanel ? WidgetsPanel.TOP : WidgetsPanel.BOTTOM;
-			return mapActivity.getWidgetsVisibilityHelper().shouldHidePanelInAppearancePreview(panel);
-		}
-		return false;
+	public void setVisibilityAllowed(boolean visibilityAllowed) {
+		this.visibilityAllowed = visibilityAllowed;
 	}
 
 	private void updateVisibility() {
-		boolean isAnyRowVisible = isAnyRowVisible() && !isHiddenInAppearancePreview();
+		boolean isAnyRowVisible = isAnyRowVisible() && visibilityAllowed;
 		AndroidUiHelper.updateVisibility(this, isAnyRowVisible);
 
 		for (VerticalPanelVisibilityListener listener : visibilityListeners) {

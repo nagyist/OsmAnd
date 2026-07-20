@@ -165,7 +165,7 @@ public class OsmandApplication extends MultiDexApplication {
 	private final LocaleHelper localeHelper = new LocaleHelper(this);
 	private final ToastHelper toastHelper = new ToastHelper(this);
 	private final CoordinateFormatHelper coordinateFormatHelper = new CoordinateFormatHelper(this);
-	private PanelAppearanceSettingsManager panelAppearanceSettingsManager;
+	PanelAppearanceSettingsManager panelAppearanceSettingsManager;
 
 	// start variables
 	ResourceManager resourceManager;
@@ -268,7 +268,6 @@ public class OsmandApplication extends MultiDexApplication {
 		appCustomization = new OsmAndAppCustomization();
 		appCustomization.setup(this);
 		settings = appCustomization.getOsmandSettings();
-		panelAppearanceSettingsManager = new PanelAppearanceSettingsManager(this, settings);
 		appInitializer.initVariables();
 		if (appInitializer.isAppVersionChanged() && appInitializer.getPrevAppVersion() < AppVersionUpgradeOnInit.VERSION_2_3) {
 			settings.freezeExternalStorageDirectory();
@@ -444,9 +443,7 @@ public class OsmandApplication extends MultiDexApplication {
 
 	public synchronized void setSettings(OsmandSettings settings) {
 		this.settings = settings;
-		if (panelAppearanceSettingsManager == null) {
-			panelAppearanceSettingsManager = new PanelAppearanceSettingsManager(this, settings);
-		} else {
+		if (panelAppearanceSettingsManager != null) {
 			panelAppearanceSettingsManager.updateSettings(settings);
 		}
 		PluginsHelper.initPlugins(this);

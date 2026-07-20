@@ -350,7 +350,9 @@ public class AppVersionUpgradeOnInit {
 					migrateCoordinateFormatSettings(settings);
 				}
 				if (prevAppVersion < VERSION_5_4_01) {
-					migrateTransparentWidgetsToPanelsAppearance();
+					app.getAppInitializer().addOnStartListener(
+							init -> migrateTransparentWidgetsToPanelsAppearance()
+					);
 				}
 				startPrefs.edit().putInt(VERSION_INSTALLED_NUMBER, lastVersion).commit();
 				startPrefs.edit().putString(VERSION_INSTALLED, Version.getFullVersion(app)).commit();

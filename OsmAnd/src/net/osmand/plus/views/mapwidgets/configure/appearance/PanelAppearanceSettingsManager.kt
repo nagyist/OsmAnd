@@ -2,7 +2,7 @@ package net.osmand.plus.views.mapwidgets.configure.appearance
 
 import net.osmand.StateChangedListener
 import net.osmand.plus.OsmandApplication
-import net.osmand.plus.Version
+import net.osmand.plus.inapp.InAppPurchaseUtils
 import net.osmand.plus.settings.backend.ApplicationMode
 import net.osmand.plus.settings.backend.OsmandSettings
 import net.osmand.plus.settings.enums.PanelBackgroundMode
@@ -46,6 +46,8 @@ class PanelAppearanceSettingsManager(
 	private val previewSession = AtomicReference<PreviewSession?>()
 	private val settingsByPanel = EnumMap<WidgetsPanel, PanelAppearanceSettings>(WidgetsPanel::class.java)
 	private val listeners = CopyOnWriteArrayList<Listener>()
+	private var customWidgetBackgroundColorAvailable =
+		InAppPurchaseUtils.isCustomWidgetBackgroundColorAvailable(app)
 
 	private val preferenceListener = StateChangedListener<Any?> { notifyChanged(ChangeOrigin.COMMITTED) }
 	private val appModeListener = StateChangedListener<ApplicationMode> { notifyChanged(ChangeOrigin.COMMITTED) }
@@ -78,7 +80,18 @@ class PanelAppearanceSettingsManager(
 		settingsByPanel.clear()
 		previewSession.set(null)
 		registerSettings()
+		customWidgetBackgroundColorAvailable =
+			InAppPurchaseUtils.isCustomWidgetBackgroundColorAvailable(app)
 		notifyChanged(ChangeOrigin.COMMITTED)
+	}
+
+	@Synchronized
+	fun refreshPurchaseState() {
+		val available = InAppPurchaseUtils.isCustomWidgetBackgroundColorAvailable(app)
+		if (customWidgetBackgroundColorAvailable != available) {
+			customWidgetBackgroundColorAvailable = available
+			notifyChanged(ChangeOrigin.COMMITTED)
+		}
 	}
 
 	operator fun get(panel: WidgetsPanel): PanelAppearanceSettings =
@@ -133,7 +146,7 @@ class PanelAppearanceSettingsManager(
 		var state = (if (includePreview) getPreviewState(panel, appMode, layoutMode) else null)
 			?: get(panel).readState(appMode, layoutMode)
 		if (state.backgroundMode == PanelBackgroundMode.CUSTOM
-				&& !Version.isPaidVersion(app)) {
+				&& !InAppPurchaseUtils.isCustomWidgetBackgroundColorAvailable(app)) {
 			state = state.copy(backgroundMode = PanelBackgroundMode.DEFAULT)
 		}
 		return PanelAppearanceResolver.resolve(

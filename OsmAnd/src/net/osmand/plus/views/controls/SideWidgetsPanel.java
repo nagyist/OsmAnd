@@ -29,7 +29,6 @@ import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback;
 
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
-import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.settings.enums.PanelsLayoutMode;
@@ -64,6 +63,7 @@ public class SideWidgetsPanel extends FrameLayoutEx implements WidgetsContainer 
 	private boolean rightSide;
 	private boolean selfShowAllowed;
 	private boolean selfVisibilityChanging;
+	private boolean visibilityAllowed = true;
 	private final boolean layoutRtl;
 
 	private ViewPager2 viewPager;
@@ -73,25 +73,6 @@ public class SideWidgetsPanel extends FrameLayoutEx implements WidgetsContainer 
 	private Insets insets;
 	private int screenWidth = -1;
 	private int screenHeight = -1;
-	@Nullable
-	private View availableBoundsView;
-	private boolean pageSizeUpdateScheduled;
-	private final Runnable pageSizeUpdateRunnable = () -> {
-		pageSizeUpdateScheduled = false;
-		if (getVisibility() == VISIBLE) {
-			wrapContentAroundPage(null);
-		}
-	};
-	private final View.OnLayoutChangeListener availableBoundsChangeListener =
-			(view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-				int width = right - left;
-				int height = bottom - top;
-				int oldWidth = oldRight - oldLeft;
-				int oldHeight = oldBottom - oldTop;
-				if (width != oldWidth || height != oldHeight) {
-					schedulePageSizeUpdate();
-				}
-			};
 
 	public SideWidgetsPanel(@NonNull Context context) {
 		this(context, null);
@@ -195,26 +176,17 @@ public class SideWidgetsPanel extends FrameLayoutEx implements WidgetsContainer 
 		return new WidgetsPagerAdapter(getContext(), panel);
 	}
 
-	private boolean isHiddenInAppearancePreview() {
-		Context context = getContext();
-		if (context instanceof MapActivity mapActivity) {
-			WidgetsPanel panel = rightSide ? WidgetsPanel.RIGHT : WidgetsPanel.LEFT;
-			return mapActivity.getWidgetsVisibilityHelper().shouldHidePanelInAppearancePreview(panel);
-		}
-		return false;
+	public void setVisibilityAllowed(boolean visibilityAllowed) {
+		this.visibilityAllowed = visibilityAllowed;
 	}
 
 	public void update(@Nullable DrawSettings drawSettings) {
 		adapter.updateIfNeeded();
-		boolean show = hasVisibleContent() && selfShowAllowed && !isHiddenInAppearancePreview();
+		boolean show = hasVisibleContent() && selfShowAllowed && visibilityAllowed;
 		selfVisibilityChanging = true;
 		boolean visibilityChanged = AndroidUiHelper.updateVisibility(this, show);
-		if (visibilityChanged) {
-			if (show) {
-				schedulePageSizeUpdate();
-			} else {
-				selfShowAllowed = true;
-			}
+		if (visibilityChanged && !show) {
+			selfShowAllowed = true;
 		}
 		wrapContentAroundPage(null);
 		selfVisibilityChanging = false;
@@ -406,33 +378,6 @@ public class SideWidgetsPanel extends FrameLayoutEx implements WidgetsContainer 
 				viewPager.setLayoutParams(pagerParams);
 			}
 		}
-	}
-
-	private void schedulePageSizeUpdate() {
-		if (!pageSizeUpdateScheduled) {
-			pageSizeUpdateScheduled = post(pageSizeUpdateRunnable);
-		}
-	}
-
-	@Override
-	protected void onAttachedToWindow() {
-		super.onAttachedToWindow();
-		if (getParent() instanceof View parentView) {
-			availableBoundsView = parentView;
-			parentView.addOnLayoutChangeListener(availableBoundsChangeListener);
-		}
-		schedulePageSizeUpdate();
-	}
-
-	@Override
-	protected void onDetachedFromWindow() {
-		if (availableBoundsView != null) {
-			availableBoundsView.removeOnLayoutChangeListener(availableBoundsChangeListener);
-			availableBoundsView = null;
-		}
-		removeCallbacks(pageSizeUpdateRunnable);
-		pageSizeUpdateScheduled = false;
-		super.onDetachedFromWindow();
 	}
 
 	@Nullable

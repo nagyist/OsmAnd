@@ -16,9 +16,9 @@ import androidx.annotation.StringRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.widget.ImageViewCompat
 import net.osmand.plus.R
-import net.osmand.plus.Version
 import net.osmand.plus.activities.MapActivity
 import net.osmand.plus.base.BaseOsmAndFragment
+import net.osmand.plus.inapp.InAppPurchaseUtils
 import net.osmand.plus.palette.view.PaletteElements
 import net.osmand.plus.settings.backend.ApplicationMode
 import net.osmand.plus.settings.enums.PanelBackgroundMode
@@ -98,6 +98,10 @@ class PanelAppearanceFragment : BaseOsmAndFragment() {
 		textColorButton = view.findViewById(R.id.text_color_button)
 		secondaryTextColorButton = view.findViewById(R.id.secondary_text_color_button)
 		backgroundColorButton = view.findViewById(R.id.background_color_button)
+		view.findViewById<TextView>(R.id.parameters_description).text = getString(
+			R.string.panel_appearance_original_description,
+			getString(R.string.shared_string_original)
+		)
 		updateContent()
 		return view
 	}
@@ -300,7 +304,7 @@ class PanelAppearanceFragment : BaseOsmAndFragment() {
 
 	private fun showBackgroundColorMenu(anchorView: View) {
 		val pref = appearanceSettings.getBackgroundModePref(layoutMode)
-		val customAvailable = Version.isPaidVersion(app)
+		val customAvailable = InAppPurchaseUtils.isCustomWidgetBackgroundColorAvailable(app)
 		val items = PanelBackgroundMode.entries.map { mode ->
 			val builder = PopUpMenuItem.Builder(app)
 				.setTitleId(mode.titleId)

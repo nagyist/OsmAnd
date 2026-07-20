@@ -432,10 +432,30 @@ public class MapInfoLayer extends OsmandMapLayer implements ICoveredScreenRectPr
 	}
 
 	private void updateMainWidgetPanels() {
+		updatePanelVisibilityPolicy();
 		leftWidgetsPanel.update(drawSettings);
 		rightWidgetsPanel.update(drawSettings);
 		topWidgetsPanel.update(drawSettings);
 		bottomWidgetsPanel.update(drawSettings);
+	}
+
+	private void updatePanelVisibilityPolicy() {
+		MapActivity activity = getMapActivity();
+		WidgetsPanel previewPanel = activity != null
+				? activity.getWidgetsVisibilityHelper().getAppearancePreviewPanel()
+				: null;
+		if (leftWidgetsPanel != null) {
+			leftWidgetsPanel.setVisibilityAllowed(previewPanel == null || previewPanel == WidgetsPanel.LEFT);
+		}
+		if (rightWidgetsPanel != null) {
+			rightWidgetsPanel.setVisibilityAllowed(previewPanel == null || previewPanel == WidgetsPanel.RIGHT);
+		}
+		if (topWidgetsPanel != null) {
+			topWidgetsPanel.setVisibilityAllowed(previewPanel == null || previewPanel == WidgetsPanel.TOP);
+		}
+		if (bottomWidgetsPanel != null) {
+			bottomWidgetsPanel.setVisibilityAllowed(previewPanel == null || previewPanel == WidgetsPanel.BOTTOM);
+		}
 	}
 
 	private void scheduleWidgetAppearanceRefresh() {
@@ -452,6 +472,7 @@ public class MapInfoLayer extends OsmandMapLayer implements ICoveredScreenRectPr
 
 	public void updateVerticalPanels() {
 		updateWidgetsInfo(drawSettings);
+		updatePanelVisibilityPolicy();
 
 		if (topWidgetsPanel != null) {
 			topWidgetsPanel.update(drawSettings);
@@ -644,10 +665,7 @@ public class MapInfoLayer extends OsmandMapLayer implements ICoveredScreenRectPr
 			updateColorShadowsOfText();
 			updateWidgetsInfo(drawSettings);
 
-			leftWidgetsPanel.update(drawSettings);
-			rightWidgetsPanel.update(drawSettings);
-			topWidgetsPanel.update(drawSettings);
-			bottomWidgetsPanel.update(drawSettings);
+			updateMainWidgetPanels();
 			topToolbarView.updateInfo();
 			alarmWidget.updateInfo(drawSettings, false);
 			speedometerWidget.updateInfo(drawSettings);
