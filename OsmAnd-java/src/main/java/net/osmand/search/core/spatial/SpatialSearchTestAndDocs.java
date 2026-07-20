@@ -475,8 +475,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "нова пошта вулиця Саксаганського"; // brand + 
 //		query = "нова вулиця Саксаганського"; // no brand
 		
-		query = "1181ZM cafe"; // TEST missing pois (postcode) 
-		pattern2 = "Map";
+		// NL amstelveen
+//		query = "1181ZM cafe"; // TEST missing pois (postcode) 
 		
 //		pattern = "Italy_";
 //		query = "о. Пасхи"; // o
