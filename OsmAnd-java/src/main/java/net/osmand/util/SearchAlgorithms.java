@@ -45,7 +45,7 @@ public class SearchAlgorithms {
         return new CodePointPrefixMatch(leftOffset, rightOffset, commonPrefixCodePointLength);
     }
 
-    private static List<String> split(String name) {
+    public static List<String> split(String name) {
         int prev = -1;
         List<String> namesToAdd = new ArrayList<String>();
         for (int i = 0; i <= name.length(); ) {

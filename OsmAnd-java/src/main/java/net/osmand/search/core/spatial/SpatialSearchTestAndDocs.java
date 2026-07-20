@@ -169,6 +169,8 @@ public class SpatialSearchTestAndDocs {
 		query = "24 Kelterstraße Kernen im Remstal";
 		query = "2/1 Rathausplatz Esslingen am Neckar"; // not correct
 		
+		pattern = "Map";
+		query = "5 to go";
 		// poi filter
 //		location = new LatLon(52.50805, 13.38176);
 //		settings.SEARCH_POI = false;
@@ -194,7 +196,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Us_utah";
 //		location = new LatLon(40.7640, -111.8643);
-		pattern2 = "Us_new-york_syracuse";
+//		pattern2 = "Us_new-york_syracuse";
 //		pattern2 = "Us_virg";
 //		pattern = "Map";
 //		query = "Salt Lake City Pennsylvania Place UT USA";
@@ -202,10 +204,10 @@ public class SpatialSearchTestAndDocs {
 //		query = "Salt Lake City Lake";
 //		query = "Salt Lake City Pennsylvania Street";
 //		query = "West Valley City";
-		query = "2110 College Avenue Elmira";
+//		query = "2110 College Avenue Elmira";
 		
 //		pattern = "Us_penn";
-//		query = "USA Salt Lake City Pennsylvania Street 41";
+//		query = "USA Salt Lake City Pennsylvania Street 41"6
 //		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
 //		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; // 50193098, 26283396442
 //		query = "Pennsylvania Avenue Philadelphia PA USA"; 
@@ -553,8 +555,8 @@ public class SpatialSearchTestAndDocs {
 		}
 //		settings.OPTIM_DELETE_POI_SAME_AS_CITY_STREET = false;
 //		settings.DEDUPLICATE_RES = true;
-//		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
-//		a.searchTest(query, searchContext, 8000);
+		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
+		a.searchTest(query, searchContext, 8000);
 	}
 
 	private static void testDeduplication(String[] args) throws IOException, InterruptedException {

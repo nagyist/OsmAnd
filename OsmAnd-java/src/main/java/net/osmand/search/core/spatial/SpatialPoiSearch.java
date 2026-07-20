@@ -101,13 +101,13 @@ public class SpatialPoiSearch {
 		}
 
 		public void addName(String name) {
-			List<String> nms = SearchAlgorithms.splitAndNormalize(name, false);
-			if (nms.size() == 1 && SearchAlgorithms.isNumber2Letters(nms.get(0))) {
-				// don't add brands with name like house number (very confusing)
-				return;
-			}
+			List<String> nms = SearchAlgorithms.split(name);
 			if (tokensInName == 0 || nms.size() < tokensInName) {
 				tokensInName = nms.size();
+			}
+			if (nms.size() > tokensInName) {
+				// very likely buggy name
+				return;
 			}
 			names.add(name);
 		}
