@@ -794,7 +794,28 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				}
 			}
 		}
+		SpatialSearchToken poiTypeToken = tokens[0];
+		NameIndexAtom poiType = a.isPoiCategory() ? a : null;
+		boolean buildingPresent = a.isBuilding();
+		for (int i = 0; parent != null && i < parent.tCount; i++) {
+			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
+			if(pa.isBuilding()) {
+				buildingPresent = true;
+			} else if (pa.isPoiCategory()) {
+				if (poiType == null || pa.id == poiType.id) {
+					poiType = pa;
+					poiTypeToken = parent.tokens[i];
+				} else {
+					// no 2 poi categories for now (vegan cafe)
+					return false;
+				}
+			}
+		}
+		if (poiType != null && buildingPresent) {
+			return false;
+		}
 		// speed up for same id checks
+		// strangely enough it affects results on duplicate words (buildings - unit test)...
 		if (typeIntersection[0] >= 0) {
 			return true;
 		}
@@ -825,22 +846,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		} else {
 			poiCategoryOnNumber = token.likelyPartOfBuilding() || token.getMainNumber() > 0;
 		}
-		NameIndexAtom poiType = a.isPoiCategory() ? a : null;
-		SpatialSearchToken poiTypeToken = tokens[0];
+		
 		boolean duplicateWord = false;
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
 			if (pa.id == a.id) {
 				continue;
-			}
-			if (pa.isPoiCategory()) {
-				if (poiType == null || pa.id == poiType.id) {
-					poiType = pa;
-					poiTypeToken = parent.tokens[i];
-				} else {
-					// no 2 poi categories for now (vegan cafe)
-					return false;
-				}
 			}
 			// check that token is reused in parent
 			// ignore every object that has this name already (except duplicate words && numbers assigned to building)
@@ -901,7 +912,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				if (!match) {
 					return false;
 				}
-			} else if (p.isBuilding() || poiCategoryOnNumber) {
+			} else if (poiCategoryOnNumber) {
 				return false;
 			}
 

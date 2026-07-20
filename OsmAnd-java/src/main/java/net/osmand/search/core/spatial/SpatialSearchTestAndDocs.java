@@ -194,7 +194,7 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "Us_utah";
 //		location = new LatLon(40.7640, -111.8643);
-//		pattern2 = "Us_new-york_syracuse";
+		pattern2 = "Us_new-york_syracuse";
 //		pattern2 = "Us_virg";
 //		pattern = "Map";
 //		query = "Salt Lake City Pennsylvania Place UT USA";
@@ -202,6 +202,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Salt Lake City Lake";
 //		query = "Salt Lake City Pennsylvania Street";
 //		query = "West Valley City";
+		query = "2110 College Avenue Elmira";
 		
 //		pattern = "Us_penn";
 //		query = "USA Salt Lake City Pennsylvania Street 41";
@@ -335,7 +336,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Cafe";
 //		query = "Aquarium.";
 //		query = "Veget.";
-		query = "Mcdonalds";
+//		query = "Mcdonalds";
 //		query = "Stomat.";
 		
 //		location = new LatLon(50.4631,30.4553);
@@ -392,8 +393,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "Shell 2 Rožňavská";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
-		pattern = "Us_new-"; 
-		location = new LatLon(40.78035, -73.96572); // central park
+//		pattern = "Us_new-"; 
+//		location = new LatLon(40.78035, -73.96572); // central park
 //		location = new LatLon(40.64946, -74.00682); // brooklyn
 //		location = new LatLon(40.64946, -73.50682);
 //		query = "New York The plaza";
@@ -401,7 +402,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "New York 55 st"; // 'NY s.' - 0.5s 100k, 'NY st' - 2s (700k)
 		// 40.64946, -74.00682 - unit test '4th av', '4 ave', '4th avenue' 241843204, 247910224, 85393997 (..) brooklyn - not 48
 		// 40.78035, -73.96572 - unit test '4th av', '4 ave', '4th avenue'  - 85393997 Park avenue
-		query = "New York 4 av 8";
+//		query = "New York 4 av 8";
 //		query = "New York av 8";
 //		query = "4 ave 8";
 //		query = "New York 4 av"; // 160947243
