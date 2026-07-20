@@ -57,16 +57,13 @@ import net.osmand.util.SearchAlgorithms;
 
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
+// REVIEW: Auto test New york, France, Italy (Slow?)
+// TODO Hotel berlin
 
-// AUTO TEST
-// TODO Hotel berlin!
-// TODO REVIEW: Auto test New york, France, Italy (Slow?)
-// TODO DEDUPLICATE: same location (5-10m) 2 streets different cities (Aleja Bohaterów)
+// TODO DEDUPLICATE: Merge suburb+city same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
-
-// TO DO Ivan
-// DEDUPLICATE: Test wiki / travel maps / seamarks map
-// ANALYZE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
+// TEST DEDUPLICATE:  wiki / travel maps / seamarks map
+// TODO DEDUPICATE? too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 
 // TO DO Gateway
@@ -74,18 +71,6 @@ import net.osmand.util.SearchAlgorithms;
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
 // TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
 
-// TODO WEB - RZR
-// - Open brand / category - redirect search
-// - Highlight ref matching, interpolation (somehow) with braces?
-// - Poi category + geo object (name of geobject, dist? and relocate)
-// - Production - Multithread / Progress / Cancel - check time & memory - tune params
-// - Poi translation provider
-// - Autosuggestions (postpone?)
-
-// TODO ANDROID - Convert to old results
-// - Integrate (include regions.ocbf) on client
-// - Memory Speed performance comparison (new / old / server)
-// - Cancel
 
 /////////////// EXTRA FEATURES ///////////////
 // TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ 3, Нова Пошта (№5 not searchable by common words / name)
@@ -481,7 +466,7 @@ public class SpatialSearchTestAndDocs {
 		pattern2 = "Ukraine_";
 		location = new LatLon(48, 31);
 		settings.DEDUPLICATE_RES = false;
-		query = "готель";
+		query = "гатэль";
 //		pattern = "Italy_";
 //		query = "о. Пасхи"; // o
 //		query = "остров Пасхи"; // o. -> остров - not supported data need to be updated
@@ -520,7 +505,6 @@ public class SpatialSearchTestAndDocs {
 
 //		pattern ="usa_wilkes-barre.obf";
 //		pattern ="Us_penn";
-		// TODO bug
 //		query = "226 Wilkes-Barre Township Boulevard Wilkes-Barre";
 //		query = "226 Wilkes-Barre Township Boulevard ";// 116894954
 		
