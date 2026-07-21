@@ -203,8 +203,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				String token = "";
 				for (int i = 0; i < tCount; i++) {
 					NameIndexAtom atom = linearResults.get(indx * tCount + i);
-					if(atom.isPoiCategory()) {
-						token += " " + tokens[i];
+					if (atom.isPoiCategory()) {
+						token += tokens[i] + " ";
 						poiTypeTokens++;
 						poiType = atom;
 					}
