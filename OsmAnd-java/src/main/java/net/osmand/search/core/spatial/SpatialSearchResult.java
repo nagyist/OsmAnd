@@ -118,7 +118,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		if (unitedObject != null) {
 			return unitedObject.getSyntheticAmenity();
 		}
-		for (SpatialSearchResultRef ref : objs) {
+		for (SpatialSearchResultRef ref  : objs) {
 			if (ref.atom.bldObject != null) {
 				return ref.atom.bldObject;
 			}
