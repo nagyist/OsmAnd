@@ -508,6 +508,9 @@ public class SpatialTextSearch {
 		}
 		ctx.stats.step3Sort.finish();
 		res.stats = ctx.stats;
+		if (ctx.stats.printLogs) {
+			System.out.println(ctx.stats);
+		}
 		return res;
 	}
 

@@ -61,6 +61,7 @@ import net.osmand.util.SearchAlgorithms;
 // REVIEW: Auto test New york, France, Italy (Slow?)
 
 // TODO Auto tests
+// 1 W& W
 
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 // TEST DEDUPLICATE: wiki / travel maps / seamarks map
@@ -166,11 +167,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "Berlin";
 //		query = "Kelterstraße Kernen im Remstal";
 //		query = "3 Hofäckerstraße Kernen im Remstal";
-		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
+//		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
 //		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
 //		query = "24 Kelterstraße Kernen im Remstal";
 //		query = "2/1 Rathausplatz Esslingen am Neckar"; // not correct
-		query = "9 Neustädter Straße Korb";
+//		query = "9 Neustädter Straße Korb";
+		query = "14/1 J.-F.-Weishaar-Straße Korb";
 		
 //		pattern = "Map";
 //		query = "5 to go";
