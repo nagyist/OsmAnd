@@ -316,9 +316,9 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-		pattern = "Ukraine_kyiv";
+//		pattern = "Ukraine_kyiv";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-//		pattern = "Ukraine_";
+		pattern = "Ukraine_";
 		
 		// poi types
 //		location = new LatLon(50.436423, 30.508097);
@@ -573,16 +573,16 @@ public class SpatialSearchTestAndDocs {
 			}
 		}
 		boolean testOldPoiSeerch = true;
-		String cat = "cafe";
+		String cat = "ice_rink"; // ice_rink, cafe
 		if (testOldPoiSeerch) {
 			long nt = System.nanoTime();
 			SpatialPoiType type = poiSearch.getByKey(cat); // ice_rink, cafe
 			int limit = 50_000;
-			int radius = 20_000; // 500_000;
+			int radius = 500_000; // 500_000;
 			LatLon loc = new LatLon(50, 30);
 			QuadRect bbox = new QuadRect(29, 51, 32, 49);
 			int z = 12;// 12
-			boolean bboxLoad = true;
+			boolean bboxLoad = false;
 			List<Amenity> poiRes;
 			if (bboxLoad) {
 				poiRes = poiSearch.loadPOIObjects(searchContext, type, bbox, z, limit);
@@ -603,6 +603,7 @@ public class SpatialSearchTestAndDocs {
 		}
 //		settings.OPTIM_DELETE_POI_SAME_AS_CITY_STREET = false;
 		settings = SpatialTextSearchSettings.searchPoiByCategorySettings();
+		settings.DEDUPLICATE_RES = false;
 		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
 		a.searchTest(NameIndexReader.POI_CATEGORY_PREFIX + cat, searchContext, 50);
 	}

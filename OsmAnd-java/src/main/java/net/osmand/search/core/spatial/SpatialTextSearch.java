@@ -496,7 +496,11 @@ public class SpatialTextSearch {
 		res.input = input;
 		
 		// 1. prepare tokens
-		res.tokens = splitWords(ctx, input);
+		if (ctx.settings.SEARCH_ONLY_POI_BY_CATEGORY) {
+			res.tokens = Collections.singletonList(new SpatialSearchToken(0, input, input, 1));
+		} else {
+			res.tokens = splitWords(ctx, input);
+		}
 		
 		// 2. read atoms & poi categories
 		ctx.stats.step1Atoms.start();
