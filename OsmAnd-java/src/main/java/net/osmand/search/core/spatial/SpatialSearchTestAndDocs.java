@@ -573,19 +573,20 @@ public class SpatialSearchTestAndDocs {
 			}
 		}
 		boolean testOldPoiSeerch = true;
-		String cat = "ice_rink"; // ice_rink, cafe
+		String cat = "cafe"; // ice_rink, cafe, aquarium
+		int poiZoom = 10;// 12
+		QuadRect bbox = new QuadRect(29, 51, 32, 49); // zoom = 9
+//		QuadRect bbox = new QuadRect(21, 51, 37, 45); // zoom = 7
 		if (testOldPoiSeerch) {
 			long nt = System.nanoTime();
 			SpatialPoiType type = poiSearch.getByKey(cat); // ice_rink, cafe
 			int limit = 50_000;
 			int radius = 500_000; // 500_000;
 			LatLon loc = new LatLon(50, 30);
-			QuadRect bbox = new QuadRect(29, 51, 32, 49);
-			int z = 12;// 12
-			boolean bboxLoad = false;
+			boolean bboxLoad = true;
 			List<Amenity> poiRes;
 			if (bboxLoad) {
-				poiRes = poiSearch.loadPOIObjects(searchContext, type, bbox, z, limit);
+				poiRes = poiSearch.loadPOIObjects(searchContext, type, bbox, poiZoom, limit);
 			} else {
 				poiRes = poiSearch.loadPOIObjects(searchContext, type, loc, radius, limit);
 			}
@@ -602,10 +603,10 @@ public class SpatialSearchTestAndDocs {
 					searchContext.stats.poiByTypeBboxes, searchContext.stats.poiByTypeBytes / 1024);
 		}
 //		settings.OPTIM_DELETE_POI_SAME_AS_CITY_STREET = false;
-		settings = SpatialTextSearchSettings.searchPoiByCategorySettings();
-		settings.DEDUPLICATE_RES = false;
+		settings = SpatialTextSearchSettings.searchPoiByCategorySettings(poiZoom, bbox);
+//		settings.DEDUPLICATE_RES = false;
 		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
-		a.searchTest(NameIndexReader.POI_CATEGORY_PREFIX + cat, searchContext, 50);
+		a.searchTest(NameIndexReader.POI_CATEGORY_PREFIX + cat, searchContext, 10);
 	}
 
 	private static void testDeduplication(String[] args) throws IOException, InterruptedException {
