@@ -52,19 +52,18 @@ import net.osmand.util.SearchAlgorithms;
 //               Hotel Berlin, see below, "нова пошта вулиця Саксаганського", "нова вулиця Саксаганського"; // brand +
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
 // UNIT TESTING: (failing) 763 Ro-Ki Boulevard Nichols
-
+// UNIT TESTING: City > Boundary + location? Format strings (City > Boundary)...
+// NO TESTING  :.. Amenity bbox (merge on search for category)
 ////////// IN PROGRESS //////////
+
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // REVIEW: Auto test New york, France, Italy (Slow?)
-// DEDUPLICATE: Merge suburb+city same location (5-10m) 2 streets different cities (Aleja Bohaterów)
-// City > Boundary + location
-// Result Amenity bbox (merge on category)
 
-// TODO Harderwijk - Q58931 (2712801 < 46280889)  FIX Missing Node id
+// TODO DEDUPLICATE: Venezia - 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 
-// TODO HOTEL Amsterdam ?
+// TODO HOTEL Amsterdam ? (radius)
 // TODO Okko Brand names
-// TODO DEDUPLICATE: Venezia, Bratislava, Amsterdam? - 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
+// TODO Kava Kyiv
 
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 // TEST DEDUPLICATE:  wiki / travel maps / seamarks map
@@ -473,14 +472,15 @@ public class SpatialSearchTestAndDocs {
 //		query = "Golden State Road Foothill Boulevard Sylmar USA";
 
 		
-//		pattern = "World_basemap_mini";
-//		pattern2 = "Ukraine_";
-//		location = new LatLon(50, 30);
+		pattern = "World_basemap_mini";
+		pattern2 = "Ukraine_";
+		location = new LatLon(50, 30);
 //		settings.DEDUPLICATE_RES = false;
 //		query = "Кафе Antwerpen ";
 //		query = "Ресторан Antwerpen ";
 //		query = "Cafe Gulliver";
-//		query = "Hotel Berlin";
+//		query = "Hotel amsterdam";
+		query = "Venezia";
 //		query = "Cafe вулиця Саксаганського";
 //		query = "нова пошта вулиця Саксаганського"; // brand + 
 //		query = "нова вулиця Саксаганського"; // no brand

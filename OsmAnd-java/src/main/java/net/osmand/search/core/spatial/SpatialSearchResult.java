@@ -330,8 +330,8 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			r += getWikidata() + " ";
 		}
 		// only for test getBBox31
-//		if (getBBox31() != null) {
-//			int[] bb = getBBox31();
+//		if (getViewBBox31() != null) {
+//			int[] bb = getViewBBox31();
 //			r += String.format("`%.4f, %.4f, %.4f, %.4f`", MapUtils.get31LongitudeX(bb[0]),
 //					MapUtils.get31LatitudeY(bb[1]), MapUtils.get31LongitudeX(bb[2]), MapUtils.get31LatitudeY(bb[3]));
 //		}
