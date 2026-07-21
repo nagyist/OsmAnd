@@ -544,7 +544,7 @@ public class SpatialTextSearch {
 				}
 				long nextKey = SpatialSearchResult.compareKey(r);
 				if (cKey != nextKey) {
-					if (lind < limits.length && ind >= limits[lind]) {
+					if (lind < limits.length && ind >= limits[lind] && !r.isPoiCategory()) {
 						level++;
 						ind = 0;
 						if (lind < limits.length - 1) {
