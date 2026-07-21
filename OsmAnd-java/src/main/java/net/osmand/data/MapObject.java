@@ -253,8 +253,12 @@ public abstract class MapObject implements Comparable<MapObject> {
 
 	@Override
 	public String toString() {
-		return getClass().getSimpleName() + " " + name + "(" + (id == null || id < 0 ? id
-				: ObfConstants.getOsmIdFromMapObjectId(id)) + ")";
+		// no ternary here: mixing Long and long operands unboxes a null id and throws NPE
+		Long osmId = id;
+		if (id != null && id >= 0) {
+			osmId = ObfConstants.getOsmIdFromMapObjectId(id);
+		}
+		return getClass().getSimpleName() + " " + name + "(" + osmId + ")";
 	}
 
 	@Override
