@@ -56,29 +56,22 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: City > Boundary + location? Format strings (City > Boundary)...
 // UNIT TESTING: (Deduplicate categories brand id) - "okko", "ОККО" - (split 2 maps one without brand id one with)
 // NO TESTING  :.. Amenity bbox (merge on search for category)
+// REVIEWED TESTS OK '237 S Mountain Blvd Mountain Top', '276 East End Centre Wilkes-Barre', '401 Market Street Kingston', '155 Park Avenue Wilkes-Barre' (13 place)
 ////////// IN PROGRESS //////////
 
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // REVIEW: Auto test New york, France, Italy (Slow?)
 
-// TODO Auto tests
-// TODO 1 W& W
-// TODO 237 S Mountain Blvd Mountain Top
-// TODO 276 East End Centre Wilkes-Barre
-// TODO 155 Park Avenue Wilkes-Barre
-// TODO 401 Market Street Kingston
-// TODO Compare key https://test.osmand.net/map/search/result/?query=28+Paul+Road+Waverly#13/42.0473808/-76.5673843
-
-// TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
-// TEST DEDUPLICATE: wiki / travel maps / seamarks map
-// TODO DEDUPLICATE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
-// TO DO Gateway
+// TODO 1 W&W
 // TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
 // TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
-
+// TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
+// TODO DEDUPLICATE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
+// TEST DEDUPLICATE: wiki / travel maps / seamarks map
 
 /////////////// EXTRA FEATURES ///////////////
+// TODO Common words skip sorting ... '155 Park Avenue Wilkes-Barre' - 13 place
 // TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ 3, Нова Пошта (№5 not searchable by common words / name)
 // SLOW: "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
 //       "Foothill Boulevard" x "Golden State Road" x "Los Angeles" x "United states of America"
@@ -166,19 +159,20 @@ public class SpatialSearchTestAndDocs {
 		SpatialTextSearchSettings settings = SpatialTextSearchSettings.defaultSettings();
 		File folder = new File(System.getProperty("maps.dir"));
 		LatLon location = null;
-		String pattern = "Germany_bad";
+		String pattern = "Germany_b";
 //		pattern = "Map";
 		String pattern2 = ".....";
 		String query = "Berlin hauptstrasse"; // slow
 //		query = "Berlin";
 //		query = "Kelterstraße Kernen im Remstal";
 //		query = "3 Hofäckerstraße Kernen im Remstal";
-//		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
+		location = new LatLon(48.88223, 9.18768);
+		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
 //		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
 //		query = "24 Kelterstraße Kernen im Remstal";
 //		query = "2/1 Rathausplatz Esslingen am Neckar"; // not correct
 //		query = "9 Neustädter Straße Korb";
-		query = "14/1 J.-F.-Weishaar-Straße Korb";
+//		query = "14/1 J.-F.-Weishaar-Straße Korb";
 
 		
 //		pattern = "Map";
