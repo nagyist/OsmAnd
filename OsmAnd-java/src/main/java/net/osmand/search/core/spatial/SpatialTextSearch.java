@@ -339,6 +339,7 @@ public class SpatialTextSearch {
 			}
 			if (res.size() > 0) {
 				if (ctx.resultMatcher != null) {
+					// optional ...
 					for (SpatialSearchResult p : res) {
 						ctx.resultMatcher.publish(p);
 					}
@@ -512,12 +513,18 @@ public class SpatialTextSearch {
 
 	private void combineSortFilterResults(SpatialSearchContext ctx, SpatialSearchResults res) throws IOException {
 		SpatialSearchResultsList main = res.combinations.get(0);
+		int mainLength = main.getTokenCount();
 		for (SpatialSearchResultsList m : res.combinations) {
 			List<SpatialSearchResult> lst = m.getFinalResult();
 			if (lst == null) {
 				lst = m.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
 			}
-			res.mainResults.addAll(lst);
+			for (SpatialSearchResult r : lst) {
+				if (r.isPoiCategory() && m.getTokenCount() < mainLength) {
+					continue;
+				}
+				res.mainResults.add(r);
+			}
 		}
 		res.mainResults = main.sortResults(ctx, res.mainResults, ctx.settings.DEDUPLICATE_RES);
 		int limitPoiCat = ctx.settings.DEV_PRINT_POI_CAT_LIMIT;

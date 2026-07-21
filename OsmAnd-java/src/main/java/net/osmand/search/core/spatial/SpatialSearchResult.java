@@ -583,6 +583,9 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		if (mapObject != null) {
 			return mapObject.getWikidata();
 		} 
+		if (ctx == null || ctx.poiSearch == null) {
+			return null;
+		}
 		SpatialPoiType cat = getPoiCategory(ctx.poiSearch);
 		if (cat != null) {
 			if (cat.wikidataId != null) {
