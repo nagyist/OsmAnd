@@ -58,15 +58,14 @@ import net.osmand.util.SearchAlgorithms;
 // REVIEW: Auto test New york, France, Italy (Slow?)
 // DEDUPLICATE: Merge suburb+city same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // City > Boundary + location
+// Result Amenity bbox (merge on category)
 
-// TODO Harderwijk - Q58931 (2712801 < 46280889)  FIX
-// TODO Result Amenity bbox (merge on category)
+// TODO Harderwijk - Q58931 (2712801 < 46280889)  FIX Missing Node id
+
+// TODO HOTEL Amsterdam ?
+// TODO Okko Brand names
 // TODO DEDUPLICATE: Venezia, Bratislava, Amsterdam? - 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
 
-// TODO Okko Brand names
-
-
-// TODO Harderwijk City (46280889) missing Q58931 - Node
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 // TEST DEDUPLICATE:  wiki / travel maps / seamarks map
 // TODO DEDUPLICATE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
@@ -286,12 +285,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "Vaduz ";
 //		query = "Jugendheim Malbun";
 
-		pattern = "Netherlands_";
+//		pattern = "Netherlands_";
 //		location = new LatLon(52.2827, 4.8601);
 //		query = "harderwijk estrado"; // 't2+0-w2-oth1-tp4' t2+0-w2-oth2-tp0
 //		query = "harderwijk";
-//		query = "cafe amsterdam";
-		query = "hotel amsterdam";
+//		query = "cafe harderwijk";
+//		query = "hotel amsterdam";
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "8832kd";

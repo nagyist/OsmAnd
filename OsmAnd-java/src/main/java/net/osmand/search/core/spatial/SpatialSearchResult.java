@@ -259,12 +259,18 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		MapObject object = getFirstRefObject(false);
 		MapObject otherObj = other.getFirstRefObject(false);
 		if (otherObj == null) {
-			if(object == null) {
-				// poi category bbox
+			// poi category search find bbox that has a point on merge (not necessary sameobject)
+			if (object == null) {
 				MapObject targetObject = getReferenceObject();
 				MapObject refObject = other.getReferenceObject();
-				if (targetObject instanceof Amenity a && a.getBbox31() == null && refObject != null) {
-					a.setBbox31(refObject.getBbox31());
+				if (targetObject instanceof Amenity a && a.getBbox31() == null && 
+						refObject != null && a.getLocation() != null) {
+					int[] bbox31 = refObject.getBbox31();
+					int y = MapUtils.get31TileNumberY(a.getLocation().getLatitude());
+					int x = MapUtils.get31TileNumberX(a.getLocation().getLongitude());
+					if (bbox31 != null && bbox31[0] <= x && bbox31[2] >= x && bbox31[1] <= y && bbox31[3] >= y) {
+						a.setBbox31(refObject.getBbox31());
+					}
 				}
 			}
 			return; // nothing to merge
@@ -320,10 +326,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	@Override
 	public String toString() {
 		String r = "";
+		if (getWikidata() != null) {
+			r += getWikidata() + " ";
+		}
 		// only for test getBBox31
-//		if (getWikidata() != null) {
-//			r += getWikidata() + " ";
-//		}
 //		if (getBBox31() != null) {
 //			int[] bb = getBBox31();
 //			r += String.format("`%.4f, %.4f, %.4f, %.4f`", MapUtils.get31LongitudeX(bb[0]),
