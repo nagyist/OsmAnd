@@ -1002,6 +1002,7 @@ public class Amenity extends MapObject {
 		this.bbox31 = bbox31;
 	}
 	
+	@Override
 	public int[] getBbox31() {
 		return bbox31;
 	}

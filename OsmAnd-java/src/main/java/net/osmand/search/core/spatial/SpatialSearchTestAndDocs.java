@@ -56,8 +56,8 @@ import net.osmand.util.SearchAlgorithms;
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // REVIEW: Auto test New york, France, Italy (Slow?)
+// DEDUPLICATE: Merge suburb+city same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 
-// TODO DEDUPLICATE: Merge suburb+city same location (5-10m) 2 streets different cities (Aleja Bohaterów)
 // TODO Harderwijk - Q58931 (2712801 < 46280889)
 // TODO Result Amenity bbox (merge on category) 
 // TODO City > Boundary ? location
@@ -392,12 +392,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-		pattern = "Slovakia";
+//		pattern = "Slovakia";
 //		pattern2 = "World_";
 //		query = "Bratislava Billa";
 //		settings.DEDUPLICATE_RES = false;
 //		settings.ALLOW_HOUSE_POI_TYPE_INTERSECTION = false;
-		query = "Shell 2 Rožňavská";
+//		query = "Shell 2 Rožňavská";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		pattern = "Us_new-"; 

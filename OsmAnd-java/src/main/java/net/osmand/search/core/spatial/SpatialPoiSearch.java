@@ -401,9 +401,8 @@ public class SpatialPoiSearch {
 	}
 
 
-	public List<Amenity> loadPOIObjects(SpatialSearchContext ctx, long id, LatLon latLon, int radMeters, int limit)
+	public List<Amenity> loadPOIObjects(SpatialSearchContext ctx, SpatialPoiType spt , LatLon latLon, int radMeters, int limit)
 			throws IOException {
-		final SpatialPoiType spt = byId.get((int) id);
 		List<Amenity> results = new ArrayList<Amenity>();
 		int[] alimit = new int[] { limit };
 		if (spt != null && ctx.files != null) {

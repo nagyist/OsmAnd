@@ -86,20 +86,13 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		});
 	}
 
-	public SpatialSearchResultRef getFirstRef() {
+	SpatialSearchResultRef getFirstRef() {
 		if (objs.size() > 0) {
 			return objs.get(0);
 		}
 		return null;
 	}
 	
-	public MapObject getFirstObject() {
-		if (unitedObject != null) {
-			return unitedObject.getSyntheticAmenity();
-		}
-		return getFirstRefObject();
-	}
-
 	private MapObject getFirstRefObject() {
 		if (objs.size() > 0) {
 			SpatialSearchResultRef o = objs.get(0);
@@ -121,6 +114,37 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		return null;
 	}
 	
+	public MapObject getReferenceObject() {
+		if (unitedObject != null) {
+			return unitedObject.getSyntheticAmenity();
+		}
+		for (SpatialSearchResultRef ref : objs) {
+			if (ref.atom.bldObject != null) {
+				return ref.atom.bldObject;
+			}
+			return ref.atom.object;
+		}
+		return null;
+	}
+
+	
+	public int[] getBBox31() {
+		MapObject obj = getReferenceObject();
+		if (obj != null) {
+			return obj.getBbox31();
+		}
+		return null;
+	}
+	
+	/**
+	 * @return main object location (if search is poi category use getReferenceObject)
+	 */
+	public MapObject getMainObject() {
+		if (unitedObject != null) {
+			return unitedObject.getSyntheticAmenity();
+		}
+		return getFirstRefObject();
+	}
 	
 	public List<MapObject> getObjects() {
 		// street & building overlap same object so filter them 
@@ -143,6 +167,13 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
 	public boolean isPoiCategory() {
 		return !objs.isEmpty() && objs.get(0).isPoiCategory();
+	}
+	
+	public SpatialPoiType getPoiCategory(SpatialPoiSearch poiSearch) {
+		if (!objs.isEmpty() && objs.get(0).isPoiCategory()) {
+			return poiSearch.getById((int) objs.get(0).atom.id);
+		}
+		return null;
 	}
 
 	public List<SpatialPoiType> getPoiTypes(SpatialPoiSearch poiSearch) {
@@ -182,7 +213,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		List<String> result = null;
 		result = addResult(result, getWikidata());
 		result = addResult(result, getRouteId());
-		MapObject mapObject = getFirstObject();		
+		MapObject mapObject = getFirstRefObject();		
 		if (mapObject instanceof Amenity amenity) {
 			if (amenity.getType().getKeyName().equals("natural")) {
 				String name = SearchAlgorithms.normalizeToken(SearchAlgorithms.alignChars(amenity.getName()));
@@ -196,11 +227,9 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			result = addResult(result, (extraNameMatch != null ?  extraNameMatch : b.getName())
 					+ "_" + getShortLink(ZOOM_SIMILARITY_10_M));
 		}
-		if (getFirstRef().atom.isPoiCategory()) {
-			SpatialPoiType type = ctx.poiSearch.getById((int) getFirstRef().atom.id);
-			if (type != null && type.wikidataId != null) {
-				result = addResult(result, type.wikidataId);
-			}
+		SpatialPoiType type = getPoiCategory(ctx.poiSearch);
+		if (type != null && type.wikidataId != null) {
+			result = addResult(result, type.wikidataId);
 		}
 		return result;
 	}
@@ -471,7 +500,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 			return res;
 		}
 		
-		if (o1.getFirstObject() instanceof Amenity a1 && o2.getFirstObject() instanceof Amenity a2) {
+		if (o1.getFirstRefObject() instanceof Amenity a1 && o2.getFirstRefObject() instanceof Amenity a2) {
 			int i1 = FILTER_DUPLICATE_POI_SUBTYPE.indexOf(a1.getSubType());
 			int i2 = FILTER_DUPLICATE_POI_SUBTYPE.indexOf(a2.getSubType());
 			res = Integer.compare(i1, i2);
@@ -501,21 +530,19 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	public int compareTo(SpatialSearchResult o) {
 		return compare(this, o, null);
 	}
+	
+	
 
 	private String getWikidata() {
-		MapObject mapObject = getFirstObject();
+		MapObject mapObject = getFirstRefObject();
 		if (mapObject != null) {
-			if (mapObject instanceof Amenity amenity) {
-				return amenity.getWikidata();
-			}
 			return mapObject.getWikidata();
 		}
 		return null;
 	}
 
 	private String getRouteId() {
-		MapObject obj = getFirstObject();
-		if (obj instanceof Amenity amenity) {
+		if (getFirstRefObject() instanceof Amenity amenity) {
 			return amenity.getRouteId();
 		}
 		return null;

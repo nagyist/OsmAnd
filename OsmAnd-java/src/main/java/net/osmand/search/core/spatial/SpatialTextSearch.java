@@ -30,6 +30,7 @@ import net.osmand.data.Amenity;
 import net.osmand.data.LatLon;
 import net.osmand.map.OsmandRegions;
 import net.osmand.osm.MapPoiTypes;
+import net.osmand.search.core.spatial.SpatialPoiSearch.SpatialPoiType;
 import net.osmand.search.core.spatial.SpatialSearchContext.SpatialSearchStats;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.util.MapUtils;
@@ -536,11 +537,12 @@ public class SpatialTextSearch {
 	}
 
 	private int printPoiCategory(SpatialSearchContext ctx, int limitPoiCat, SpatialSearchResult r) throws IOException {
-		if (r.getFirstRef() != null && r.getFirstRef().atom.isPoiCategory()) {
+		SpatialPoiType type = r.getPoiCategory(ctx.poiSearch);
+		if (type != null) {
 			long nt = System.nanoTime();
-			System.out.printf("Loading poi type '%s' - limit %d...\n", r.getFirstRef().atom.name, limitPoiCat);
+			System.out.printf("Loading poi type '%s' - limit %d...\n", type.key, limitPoiCat);
 			LatLon latLon = r.getLatLon();
-			List<Amenity> interRes = ctx.poiSearch.loadPOIObjects(ctx, r.getFirstRef().atom.id,
+			List<Amenity> interRes = ctx.poiSearch.loadPOIObjects(ctx, type,
 					latLon == null ? ctx.location : latLon, ctx.settings.DEV_PRINT_POI_CAT_RADIUS_KM * 1000, limitPoiCat);
 			for (Amenity a : interRes) {
 				double dist = ctx.location == null ? 0 : MapUtils.getDistance(ctx.location, a.getLocation());
