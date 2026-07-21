@@ -328,7 +328,8 @@ public class SpatialTextSearch {
 			}
 			goalRes.loadObjectsAndCalcBuildings(ctx);
 			List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
-			if (goal.equals(mainGoal) && res.size() == 0) {
+			int uniq = uniqueResults(res);
+			if (goal.equals(mainGoal) && uniq == 0) {
 				goalRes = reevalWithExtendedBoundary(ctx, goal, tokens);
 				if (ctx.isCancelled()) {
 					break;
@@ -342,7 +343,7 @@ public class SpatialTextSearch {
 						ctx.resultMatcher.publish(p);
 					}
 				}
-				uniqueObjects += res.size();
+				uniqueObjects += uniq;
 				fullResult.add(goalRes);
 				
 			}
@@ -363,6 +364,17 @@ public class SpatialTextSearch {
 			}
 		}
 		return fullResult;
+	}
+
+
+	private int uniqueResults(List<SpatialSearchResult> res) {
+		int c = 0;
+		for (SpatialSearchResult r : res) {
+			if (!r.isPoiCategory()) {
+				c++;
+			}
+		}
+		return c;
 	}
 
 	private SpatialSearchResultsList reevalWithExtendedBoundary(SpatialSearchContext ctx, BitSet goal, List<SpatialSearchToken> tokens) throws IOException {
