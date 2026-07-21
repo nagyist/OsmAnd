@@ -73,6 +73,8 @@ public class SideWidgetsPanel extends FrameLayoutEx implements WidgetsContainer 
 	private Insets insets;
 	private int screenWidth = -1;
 	private int screenHeight = -1;
+	@Nullable
+	private ResolvedPanelAppearance appliedAppearance;
 	private boolean pageSizeUpdateScheduled;
 	private final Runnable pageSizeUpdateRunnable = () -> {
 		pageSizeUpdateScheduled = false;
@@ -250,11 +252,24 @@ public class SideWidgetsPanel extends FrameLayoutEx implements WidgetsContainer 
 
 	@Override
 	public void applyPanelAppearance(@NonNull ResolvedPanelAppearance appearance) {
+		boolean geometryChanged = hasGeometryChanged(appliedAppearance, appearance);
+		appliedAppearance = appearance;
 		this.nightMode = appearance.getNightMode();
 		borderPaint.setColor(appearance.getPanelBorderColor());
 		updateDots();
-		schedulePageSizeUpdate();
+		if (geometryChanged) {
+			schedulePageSizeUpdate();
+		}
 		invalidate();
+	}
+
+	private static boolean hasGeometryChanged(@Nullable ResolvedPanelAppearance previous,
+	                                          @NonNull ResolvedPanelAppearance current) {
+		return previous == null
+				|| previous.getSizeMode() != current.getSizeMode()
+				|| previous.getIconMode() != current.getIconMode()
+				|| previous.getBoldText() != current.getBoldText()
+				|| previous.getBackground().getMode() != current.getBackground().getMode();
 	}
 
 	@Override
