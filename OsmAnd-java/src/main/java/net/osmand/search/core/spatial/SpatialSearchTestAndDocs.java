@@ -289,8 +289,9 @@ public class SpatialSearchTestAndDocs {
 		pattern = "Netherlands_";
 //		location = new LatLon(52.2827, 4.8601);
 //		query = "harderwijk estrado"; // 't2+0-w2-oth1-tp4' t2+0-w2-oth2-tp0
-		query = "harderwijk";
-//		query = "amsterdam";
+//		query = "harderwijk";
+//		query = "cafe amsterdam";
+		query = "hotel amsterdam";
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "8832kd";

@@ -272,7 +272,14 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		MapObject object = getFirstRefObject(false);
 		MapObject otherObj = other.getFirstRefObject(false);
 		if (otherObj == null) {
-			// TODO poi category bbox
+			if(object == null) {
+				// poi category bbox
+				MapObject targetObject = getReferenceObject();
+				MapObject refObject = other.getReferenceObject();
+				if (targetObject instanceof Amenity a && a.getBbox31() == null && refObject != null) {
+					a.setBbox31(refObject.getBbox31());
+				}
+			}
 			return; // nothing to merge
 		} 
 		if (object instanceof Amenity a && unitedObject == null) {
@@ -579,7 +586,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	
 
 	private String getWikidata() {
-		MapObject mapObject = getFirstRefObject(false); // TODO
+		MapObject mapObject = getFirstRefObject(true); 
 		if (mapObject != null) {
 			return mapObject.getWikidata();
 		}
