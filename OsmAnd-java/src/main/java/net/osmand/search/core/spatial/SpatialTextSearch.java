@@ -544,7 +544,7 @@ public class SpatialTextSearch {
 				}
 				long nextKey = SpatialSearchResult.compareKey(r);
 				if (cKey != nextKey) {
-					if (lind < limits.length && ind >= limits[lind] && !r.isPoiCategory()) {
+					if (lind < limits.length && ind >= limits[lind]) {
 						level++;
 						ind = 0;
 						if (lind < limits.length - 1) {
@@ -555,7 +555,9 @@ public class SpatialTextSearch {
 					cKey = nextKey;
 				}
 				r.visibleLevel = level;
-				ind++;
+				if (!r.isPoiCategory()) {
+					ind++;
+				}
 			}
 		}
 	}
