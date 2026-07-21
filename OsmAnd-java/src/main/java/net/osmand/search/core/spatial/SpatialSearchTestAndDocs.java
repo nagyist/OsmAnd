@@ -57,18 +57,14 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: (Deduplicate categories brand id) - "okko", "ОККО" - (split 2 maps one without brand id one with)
 // NO TESTING  :.. Amenity bbox (merge on search for category)
 ////////// IN PROGRESS //////////
-
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // REVIEW: Auto test New york, France, Italy (Slow?)
-// Okko Brand names
 
 // TODO Auto tests
-// TODO озеро мигия
 
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
-// TEST DEDUPLICATE:  wiki / travel maps / seamarks map
+// TEST DEDUPLICATE: wiki / travel maps / seamarks map
 // TODO DEDUPLICATE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
-
 // TO DO Gateway
 // TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
@@ -167,13 +163,14 @@ public class SpatialSearchTestAndDocs {
 //		pattern = "Map";
 		String pattern2 = ".....";
 		String query = "Berlin hauptstrasse"; // slow
-		query = "Berlin";
+//		query = "Berlin";
 //		query = "Kelterstraße Kernen im Remstal";
 //		query = "3 Hofäckerstraße Kernen im Remstal";
-//		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
+		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
 //		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
-		query = "24 Kelterstraße Kernen im Remstal";
-		query = "2/1 Rathausplatz Esslingen am Neckar"; // not correct
+//		query = "24 Kelterstraße Kernen im Remstal";
+//		query = "2/1 Rathausplatz Esslingen am Neckar"; // not correct
+//		query = "9 Aldersbachz"; 
 		
 //		pattern = "Map";
 //		query = "5 to go";
@@ -212,7 +209,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "West Valley City";
 //		query = "2110 College Avenue Elmira";
 		
-		pattern = "Us_penn";
+//		pattern = "Us_penn";
 //		query = "USA Salt Lake City Pennsylvania Street 41"6
 //		query = "Pennsylvania Avenue Pennsylvania USA"; // 31372516
 //		query = "Pennsylvania Avenue Philadelphia Pennsylvania USA"; // 50193098, 26283396442
@@ -226,9 +223,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "301 East Second Street Corning"; // "301 East 2nd Street Corning"
 //		query = "763 Ro-Ki Boulevard Nichols"; // NO FIX yet: Roki is very short to be fixed same as Weber-Strasse
 		// Important unit test
-		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
+//		query = "2 South 2nd Street Saint Clair"; // to fix street matched twice 40.7194 -76.1904 // UNIT TEST !!! (25 street)
 //		query = "South 2nd Street 2 Saint Clair"; // to fix street matched twice
-		query = "226 Wilkes-Barre Township Boulevard Wilkes-Barre"; // fixed type order
+//		query = "226 Wilkes-Barre Township Boulevard Wilkes-Barre"; // fixed type order
 //		query = "5676 US-15 Montgomery"; // Test 3 matched (not 2) - Data "US 15"
 //		location = new LatLon(42.0061257, -76.5464141);
 //		query = "38 Orange Street Waverly";
@@ -639,6 +636,8 @@ public class SpatialSearchTestAndDocs {
 				return "отель;готель;гатэль";
 			} else if (keyName.equals("cafe")) {
 				return "кафе";
+			} else if (keyName.equals("rugby_union")) {
+				return "rugby 9";
 			} else if (keyName.equals("water_lake")) {
 				return "озеро";
 			} else if (keyName.equals("restaurant")) {

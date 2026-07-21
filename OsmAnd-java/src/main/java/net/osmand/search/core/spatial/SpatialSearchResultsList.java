@@ -191,24 +191,32 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		// filter incomplete brand name if there are enough results
+		filterIncompleteBrands(ctx);
+		ctx.stats.sub2LoadObjectsBldTime.finish();
+	}
+
+	private void filterIncompleteBrands(SpatialSearchContext ctx) {
 		for (int indx = 0; indx < getCombinations(); indx++) {
 			if (!skipResults.contains(indx)) {
-				int poiTypeT = 0;
+				int poiTypeTokens = 0;
 				NameIndexAtom poiType = null;
+				String token = "";
 				for (int i = 0; i < tCount; i++) {
 					NameIndexAtom atom = linearResults.get(indx * tCount + i);
 					if(atom.isPoiCategory()) {
-						poiTypeT++;
+						token += " " + tokens[i];
+						poiTypeTokens++;
 						poiType = atom;
 					}
 				}
-				if (poiTypeT > 0 && tCount > 1 && 
-						ctx.poiSearch.getById((int) poiType.id).tokensInName > poiTypeT) {
+				if (poiTypeTokens > 0 && tCount > 1 && 
+						ctx.poiSearch.getById((int) poiType.id).tokensInName > poiTypeTokens) {
+					skipResults.put(indx, true);
+				}  else if(tCount > 1 && poiTypeTokens == 1 && SearchAlgorithms.isNumber2Letters(token)) {
 					skipResults.put(indx, true);
 				}
 			}
 		}
-		ctx.stats.sub2LoadObjectsBldTime.finish();
 	}
 
 	private void checkAmenityRef(List<SpatialSearchToken> missingTokens, int indx) {
