@@ -5209,4 +5209,7 @@
     <string name="astro_show_eclipse_on_map_loading">Recherche de l\'ombre de l\'éclipse…</string>
     <string name="astro_eclipse_map_error">L\'ombre de l\'éclipse n\'est pas disponible pour le moment.</string>
     <string name="astro_eclipse_safety_warning">Ne regardez jamais directement le Soleil sans équipement de protection adapté. Les horaires des éclipses sont donnés à titre indicatif.</string>
+    <string name="astro_lunar_eclipse">Éclipse lunaire</string>
+    <string name="astro_lunar_eclipse_subtitle">Découvrez les éclipses lunaires dans le monde entier</string>
+    <string name="astro_previous_lunar_eclipse">Éclipse lunaire précédente</string>
 </resources>
