@@ -5236,4 +5236,7 @@
     <string name="duplicate_map_standard_exists_desc">Vous disposez déjà de la carte standard pour %1$s. Le téléchargement de la carte « routes uniquement » entraînera une duplication des données et pourrait nuire aux performances.\n\nLe remplacement supprimera les données de recherche d\'adresses et de points d\'intérêt incluses dans la carte standard.</string>
     <string name="duplicate_map_road_only_exists_desc">Vous disposez déjà de la carte « routes uniquement » pour %1$s. Le téléchargement de la carte standard entraînerait une duplication des données et pourrait nuire aux performances.</string>
     <string name="duplicate_map_replace_with_standard">Remplacer par la version standard</string>
+    <string name="duplicate_map_replace_with_road">Remplacer par la version routière uniquement</string>
+    <string name="rendering_attr_surface_clay_name">Argile</string>
+    <string name="rendering_attr_surface_laterite_name">Latérite</string>
 </resources>
