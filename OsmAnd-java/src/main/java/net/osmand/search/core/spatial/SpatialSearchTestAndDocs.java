@@ -28,6 +28,7 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 100km+ "Мигия озеро" (non freq-common word + enlarge), - partialMatch+partialExactMatch
 // UNIT TESTING: 100km+ Calle 20 188 San Isidro Lima 
 // UNIT TESTING: 100km+ нова пошта краматорськ  - no brand (3, 5) 5 (5 N7846074085, N1482296639)
+// UNIT TESTING: Venezia (Changed map data 2 Wikidataids)!, So city on first with good elo rating (Test other top visited cities)
 
 //////////// TESTING //////////
 // UNIT TESTING: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border) - Add missing border
@@ -53,17 +54,16 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
 // UNIT TESTING: (failing) 763 Ro-Ki Boulevard Nichols
 // UNIT TESTING: City > Boundary + location? Format strings (City > Boundary)...
+// UNIT TESTING: (Deduplicate categories brand id) - "okko", "ОККО" - (split 2 maps one without brand id one with)
 // NO TESTING  :.. Amenity bbox (merge on search for category)
 ////////// IN PROGRESS //////////
 
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // REVIEW: Auto test New york, France, Italy (Slow?)
+// Okko Brand names
 
-// TODO DEDUPLICATE: Venezia - 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
-
-// TODO HOTEL Amsterdam ? (radius)
-// TODO Okko Brand names
-// TODO Kava Kyiv
+// TODO Auto tests
+// TODO Kava Kyiv (Хлібна Кава fuel)
 
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 // TEST DEDUPLICATE:  wiki / travel maps / seamarks map
@@ -331,10 +331,12 @@ public class SpatialSearchTestAndDocs {
 		
 //		location = new LatLon(48, 31);
 		// "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
-//		pattern = "Ukraine_";
-//		query = "Мигия озеро";
+		location = new LatLon(50.4355, 30.6473); 
+		pattern = "Ukraine_";
+
+		query = "Мигия озеро";
 //		query = "Мигия water"; 
-		
+//		query = "fuel Хлібна Кава"; 
 //		location = new LatLon(48.75, 37.5);
 //		query = "нова пошта 3 краматорськ"; // (1482296639, 5 7846074085) 
 //		query = "Нова пошта 3 харків";
@@ -472,15 +474,16 @@ public class SpatialSearchTestAndDocs {
 //		query = "Golden State Road Foothill Boulevard Sylmar USA";
 
 		
-		pattern = "World_basemap_mini";
-		pattern2 = "Ukraine_";
-		location = new LatLon(50, 30);
+//		pattern = "World_basemap_mini";
+//		pattern2 = "Ukraine_";
+//		location = new LatLon(50, 30);
 //		settings.DEDUPLICATE_RES = false;
 //		query = "Кафе Antwerpen ";
 //		query = "Ресторан Antwerpen ";
 //		query = "Cafe Gulliver";
 //		query = "Hotel amsterdam";
-		query = "Venezia";
+//		query = "ОККО"; // "okko", "ОККО"
+//		query = "Venezia";
 //		query = "Cafe вулиця Саксаганського";
 //		query = "нова пошта вулиця Саксаганського"; // brand + 
 //		query = "нова вулиця Саксаганського"; // no brand
@@ -603,7 +606,7 @@ public class SpatialSearchTestAndDocs {
 		if (rs.mainResults != null) {
 			for (SpatialSearchResult s : rs.mainResults) {
 				MapObject unitedObject = s.unitedObject.getSyntheticAmenity();
-				String out = s.toString();
+				String out = s.toString(searchContext);
 				if (unitedObject != null) {
 					out += " United:" + unitedObject.toString();
 				}

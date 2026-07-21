@@ -596,7 +596,8 @@ public class SpatialTextSearch {
 					System.out.println(".............");
 					break;
 				}
-				System.out.printf("Result %d (%s) - %s\n", r.matchedTokens(), SpatialSearchResult.compareKeyString(r), r);
+				System.out.printf("Result %d (%s) - %s\n", r.matchedTokens(), SpatialSearchResult.compareKeyString(r), 
+						r.toString(ctx));
 			}
 			System.out.printf("------ ALL %d results ------- \n ", all);
 			System.out.println("---------------------------------------");

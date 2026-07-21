@@ -222,7 +222,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 
 	public List<String> extraDeduplicateKeys(SpatialSearchContext ctx) {
 		List<String> result = null;
-		result = addResult(result, getWikidata());
+		result = addResult(result, getWikidata(ctx));
 		result = addResult(result, getRouteId());
 		MapObject mapObject = getFirstRefObject(true);		
 		if (mapObject instanceof Amenity amenity) {
@@ -237,10 +237,6 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		if(mapObject instanceof Building b) {
 			result = addResult(result, (extraNameMatch != null ?  extraNameMatch : b.getName())
 					+ "_" + getShortLink(ZOOM_SIMILARITY_10_M));
-		}
-		SpatialPoiType type = getPoiCategory(ctx.poiSearch);
-		if (type != null && type.wikidataId != null) {
-			result = addResult(result, type.wikidataId);
 		}
 		return result;
 	}
@@ -322,12 +318,16 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		}
 		return -1;
 	}
-
+	
 	@Override
 	public String toString() {
+		return toString(null);
+	}
+	
+	public String toString(SpatialSearchContext ctx) {
 		String r = "";
-		if (getWikidata() != null) {
-			r += getWikidata() + " ";
+		if (getWikidata(ctx) != null) {
+			r += getWikidata(ctx) + " ";
 		}
 		// only for test getBBox31
 //		if (getViewBBox31() != null) {
@@ -578,10 +578,18 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	
 	
 
-	private String getWikidata() {
+	private String getWikidata(SpatialSearchContext ctx) {
 		MapObject mapObject = getFirstRefObject(true); 
 		if (mapObject != null) {
 			return mapObject.getWikidata();
+		} 
+		SpatialPoiType cat = getPoiCategory(ctx.poiSearch);
+		if (cat != null) {
+			if (cat.wikidataId != null) {
+//				System.out.println(cat.key + " " + cat.wikidataId);
+//				return "TYPE_" + cat.wikidataId;
+				return cat.wikidataId;
+			}
 		}
 		return null;
 	}
