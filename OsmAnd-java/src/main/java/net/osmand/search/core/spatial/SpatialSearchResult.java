@@ -1,10 +1,12 @@
 package net.osmand.search.core.spatial;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import net.osmand.binary.ObfConstants;
 import net.osmand.data.Amenity;
 import net.osmand.data.BaseDetailsObject;
+import net.osmand.data.Building;
 import net.osmand.data.City;
 import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
@@ -25,7 +27,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	final String extraNameMatch; // refs and interpolation
 	final int surplusWords; // negative some building numbers not found, positive some extra tokens matched
 	int visibleLevel;
-	public MapObject unitedObject;
+	public BaseDetailsObject unitedObject;
 	int biggestCityType = -1;
 
 	private static final List<String> FILTER_DUPLICATE_POI_SUBTYPE = new ArrayList<String>(
@@ -33,6 +35,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	final int ZOOM_SIMILARITY_70_KM = 9 - 8; // 1 symbol - tile z=9 - 1 pixel of z=1
 	final int ZOOM_SIMILARITY_10_KM = 12 - 8; // 2 symbols - tile z=12
 	final int ZOOM_SIMILARITY_1_KM = 15 - 8; // 3 symbols
+	final int ZOOM_SIMILARITY_10_M = 18 - 8; // 4 symbols
 	
 	SpatialSearchResult(SpatialSearchResultsList parentList, int parentInd, LatLon preciseLatlon, String extraName,
 			Integer surplusWords) {
@@ -91,6 +94,13 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 	
 	public MapObject getFirstObject() {
+		if (unitedObject != null) {
+			return unitedObject.getSyntheticAmenity();
+		}
+		return getFirstRefObject();
+	}
+
+	private MapObject getFirstRefObject() {
 		if (objs.size() > 0) {
 			SpatialSearchResultRef o = objs.get(0);
 			if (o.atom.bldObject != null) {
@@ -101,29 +111,30 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		return null;
 	}
 	
-	public List<MapObject> getAllObjects() {
-		if (objs.isEmpty()) {
-			return new ArrayList<>();
-		}
-		List<MapObject> result = new ArrayList<>();
-		for (SpatialSearchResultRef ref : objs) {
-			if (ref.atom.bldObject != null) {
-				result.add(ref.atom.bldObject);
-			} 
-			if (ref.atom.object != null) {
-				result.add(ref.atom.object);
+	@SuppressWarnings("unchecked")
+	private <T> T getMatchRefObject(Class<T> cl) {
+		for (SpatialSearchResultRef r : objs) {
+			if (cl.isInstance(r.atom.object)) {
+				return (T) r.atom.object;
 			}
 		}
-		return result;
+		return null;
 	}
 	
+	
 	public List<MapObject> getObjects() {
+		// street & building overlap same object so filter them 
 		List<MapObject> o = new ArrayList<>();
+		MapObject firstRefObject = null;
+		if (unitedObject != null) {
+			firstRefObject = getFirstRefObject();
+			o.add(unitedObject.getSyntheticAmenity());
+		}
 		for (SpatialSearchResultRef r : objs) {
-			if (r.atom.bldObject != null) {
+			if (r.atom.bldObject != null && r.atom.bldObject != firstRefObject) {
 				o.add(r.atom.bldObject);
 			}
-			if (r.atom.object != null && !o.contains(r.atom.object)) {
+			if (r.atom.object != null && r.atom.object != firstRefObject && !o.contains(r.atom.object)) {
 				o.add(r.atom.object);
 			}
 		}
@@ -181,6 +192,10 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 				}
 			}
 		}
+		if(mapObject instanceof Building b) {
+			result = addResult(result, (extraNameMatch != null ?  extraNameMatch : b.getName())
+					+ "_" + getShortLink(ZOOM_SIMILARITY_10_M));
+		}
 		if (getFirstRef().atom.isPoiCategory()) {
 			SpatialPoiType type = ctx.poiSearch.getById((int) getFirstRef().atom.id);
 			if (type != null && type.wikidataId != null) {
@@ -201,39 +216,41 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 	}
 
 	public void addExtraResult(SpatialSearchResult other, String lang) {
-		MapObject object = getFirstObject();
-		MapObject otherObj = other.getFirstObject();
+		MapObject object = getFirstRefObject();
+		MapObject otherObj = other.getFirstRefObject();
 		if (otherObj == null) {
+			// TODO poi category bbox
 			return; // nothing to merge
+		} 
+		if (object instanceof Amenity a && unitedObject == null) {
+			unitedObject = new BaseDetailsObject(a, lang);
 		}
-		
-		BaseDetailsObject baseDetails = new BaseDetailsObject(lang);
-		baseDetails.addObject(unitedObject);
-		baseDetails.addObject(object);
-		baseDetails.addObject(otherObj);
-		Amenity united = baseDetails.getSyntheticAmenity();
-		if (united.getType() != null) {
-			// Amenity united
-			if (object != null) {
-				united.copyNames(object);
-			}
-			united.copyNames(otherObj);
-			unitedObject = united;
+		if (unitedObject != null) {
+			unitedObject.addObject(otherObj);
+		} else if (otherObj instanceof Amenity a) {
+			unitedObject = new BaseDetailsObject(a, lang);
+			// here we merge city, building,
+			unitedObject.addObject(object);
 		} else {
-			// MapObject united
-			if (unitedObject == null && object != null) {
-				unitedObject = object;
+			// case 2 objects are not amenities (same buildings)
+			if (object instanceof Building && otherObj instanceof Building) {
+				Street s1 = getMatchRefObject(Street.class);
+				Street s2 = other.getMatchRefObject(Street.class);
+				// add suburb city part to first item
+				if (s1 != null && s2 != null && !s1.getCity().getName().equals(s2.getCity().getName()) && 
+						!s1.getName().contains("(")) {
+					s1.setName(s1.getName() + " (" + s2.getCity().getName() + ")");
+					Map<String, String> namesMap = s1.getNamesMap(true);
+					Iterator<Entry<String, String>> it = namesMap.entrySet().iterator();
+					while(it.hasNext()) {
+						Entry<String, String> e = it.next();
+						s1.setName(e.getKey(), e.getValue() + " (" + s2.getCity().getName() + ")");
+					}
+				}
 			}
-			if (unitedObject != null) {
-				unitedObject.copyNames(otherObj);
-			} else {
-				unitedObject = otherObj;
-			}
-		}
-		if (unitedObject.getLocation() == null) {
-			unitedObject.setLocation(otherObj.getLocation());
 		}
 	}
+
 	
 	public long getIdDeduplication() {
 		if (!objs.isEmpty()) {

@@ -58,10 +58,15 @@ import net.osmand.util.SearchAlgorithms;
 // REVIEW: Auto test New york, France, Italy (Slow?)
 
 // TODO DEDUPLICATE: Merge suburb+city same location (5-10m) 2 streets different cities (Aleja Bohaterów)
+// TODO Harderwijk - Q58931 (2712801 < 46280889)
+// TODO Result Amenity bbox (merge on category) 
+// TODO City > Boundary ? location
+
 // TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
+
+// TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 // TEST DEDUPLICATE:  wiki / travel maps / seamarks map
 // TODO DEDUPLICATE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
-// TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 
 // TO DO Gateway
 // TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
@@ -387,12 +392,12 @@ public class SpatialSearchTestAndDocs {
 //		query = "Holmby road 18 B"; // 'Holmby 18 B', 'Holmby 18-B', 'Holmby 18B'
 //		query = "Holmby Melbourne 18B";
 		
-//		pattern = "Slovakia";
+		pattern = "Slovakia";
 //		pattern2 = "World_";
 //		query = "Bratislava Billa";
 //		settings.DEDUPLICATE_RES = false;
 //		settings.ALLOW_HOUSE_POI_TYPE_INTERSECTION = false;
-//		query = "Shell 2 Rožňavská";
+		query = "Shell 2 Rožňavská";
 		
 //		pattern = "Us_new-york_new"; // new-york, new-jersey
 //		pattern = "Us_new-"; 
@@ -433,13 +438,14 @@ public class SpatialSearchTestAndDocs {
 		// +[Venezia, Cannaregio, 539D , Campo Saffa], +[Venezia Cannaregio 539D ] -[Venezia 539D  Campo Saffa] - expected
 //		pattern = "Italy_ven";
 //		pattern = "Map";
-//		pattern2 = "World_basemap_2";
+		pattern2 = "World_basemap_2";
 		// ! unit test - search full address ! no double 539d (no intersectoin)
 		// Cannaregio 539D Campo Saffa, Venezia Cannaregio Campo Saffa  , 
 //		query = "Venezia Cannaregio Campo Saffa ";
 //		query = "Cannaregio 539D Campo Saffa";
 //		query = "Venezia Cannaregio 539D Campo Saffa";
 //		query = "Campo Saffa";
+		query = "Venezia";
 		
 //		pattern = "France_ile-de-france";
 //		pattern = "France_";
@@ -555,8 +561,8 @@ public class SpatialSearchTestAndDocs {
 		}
 //		settings.OPTIM_DELETE_POI_SAME_AS_CITY_STREET = false;
 //		settings.DEDUPLICATE_RES = true;
-		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
-		a.searchTest(query, searchContext, 8000);
+//		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
+//		a.searchTest(query, searchContext, 8000);
 	}
 
 	private static void testDeduplication(String[] args) throws IOException, InterruptedException {
@@ -591,7 +597,7 @@ public class SpatialSearchTestAndDocs {
 		SpatialSearchResults rs = a.searchTest(query, searchContext, 1000);
 		if (rs.mainResults != null) {
 			for (SpatialSearchResult s : rs.mainResults) {
-				MapObject unitedObject = s.unitedObject;
+				MapObject unitedObject = s.unitedObject.getSyntheticAmenity();
 				String out = s.toString();
 				if (unitedObject != null) {
 					out += " United:" + unitedObject.toString();
