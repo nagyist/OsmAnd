@@ -200,11 +200,11 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			if (!skipResults.contains(indx)) {
 				int poiTypeTokens = 0;
 				NameIndexAtom poiType = null;
-				String token = "";
+				boolean partOnBuilding = false;
 				for (int i = 0; i < tCount; i++) {
 					NameIndexAtom atom = linearResults.get(indx * tCount + i);
 					if (atom.isPoiCategory()) {
-						token += tokens[i] + " ";
+						partOnBuilding |= tokens[i].likelyPartOfBuilding() || tokens[i].getMainNumber() > 0;
 						poiTypeTokens++;
 						poiType = atom;
 					}
@@ -212,7 +212,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				if (poiTypeTokens > 0 && tCount > 1 && 
 						ctx.poiSearch.getById((int) poiType.id).tokensInName > poiTypeTokens) {
 					skipResults.put(indx, true);
-				}  else if(tCount > 1 && poiTypeTokens == 1 && SearchAlgorithms.isNumber2Letters(token)) {
+				}  else if(tCount > 1 && poiTypeTokens == 1 && partOnBuilding) {
 					skipResults.put(indx, true);
 				}
 			}
@@ -806,7 +806,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		boolean buildingPresent = a.isBuilding();
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
-			if(pa.isBuilding()) {
+			if (pa.isBuilding()) {
 				buildingPresent = true;
 			} else if (pa.isPoiCategory()) {
 				if (poiType == null || pa.id == poiType.id) {
@@ -822,7 +822,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			return false;
 		}
 		// speed up for same id checks
-		// strangely enough it affects results on duplicate words (buildings - unit test)...
+		// It affects correctness [results on duplicate words (buildings - unit test) see below] 
 		if (typeIntersection[0] >= 0) {
 			return true;
 		}
@@ -864,6 +864,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			// ignore every object that has this name already (except duplicate words && numbers assigned to building)
 			if (!tokens[0].word.equals(parent.tokens[i].word) && !duplicateWord) {
 				NameIndexAtom existing = parent.tokens[i].index.get(a.id);
+				// it might be duplicate word which is not explored yet see test 'SW Summit Valley Ln, Lee's Summit'
+				// 'valley' x 'ln' x 'lee' (already has combination of 2) x 'summit' (breaks here) 'summit'
 				if (existing != null && !existing.isBuilding() && !existing.isPOIRef()) {
 					return false;
 				}

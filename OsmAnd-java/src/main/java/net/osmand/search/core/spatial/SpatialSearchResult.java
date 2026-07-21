@@ -305,7 +305,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		if (!objs.isEmpty()) {
 			SpatialSearchResultRef first = objs.get(0);
 			// street intersection (!) or building interpolation
-			if (preciseLatlon != null) {
+			if (preciseLatlon != null && !first.isPoiCategory()) {
 				int y31 = MapUtils.get31TileNumberY(preciseLatlon.getLatitude());
 				int x31 = MapUtils.get31TileNumberX(preciseLatlon.getLongitude());
 				long id = HashQuadTree.encodeTileId31(19, x31, y31);
@@ -590,8 +590,7 @@ public class SpatialSearchResult implements Comparable<SpatialSearchResult> {
 		if (cat != null) {
 			if (cat.wikidataId != null) {
 //				System.out.println(cat.key + " " + cat.wikidataId);
-//				return "TYPE_" + cat.wikidataId;
-				return cat.wikidataId;
+				return "TYPE_" + cat.wikidataId;
 			}
 		}
 		return null;

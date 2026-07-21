@@ -170,7 +170,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
 //		query = "24 Kelterstraße Kernen im Remstal";
 //		query = "2/1 Rathausplatz Esslingen am Neckar"; // not correct
-//		query = "9 Aldersbachz"; 
+		query = "9 Neustädter Straße Korb";
 		
 //		pattern = "Map";
 //		query = "5 to go";
@@ -638,6 +638,8 @@ public class SpatialSearchTestAndDocs {
 				return "кафе";
 			} else if (keyName.equals("rugby_union")) {
 				return "rugby 9";
+			} else if (keyName.equals("9pin")) {
+				return "9 pin;bowl";
 			} else if (keyName.equals("water_lake")) {
 				return "озеро";
 			} else if (keyName.equals("restaurant")) {
