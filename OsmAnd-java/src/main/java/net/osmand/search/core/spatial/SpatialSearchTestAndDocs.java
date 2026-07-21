@@ -17,7 +17,6 @@ import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchResults;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.SearchAlgorithms;
 
-
 //////////// LIVE TESTING //////////
 // UNIT TESTING: Fix 36K national park - live test? (don't index small islands > 100 POI !!!)
 // UNIT TESTING: "Gate D18"... (too many results check Limit results "Gate")?
@@ -57,12 +56,10 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: (Deduplicate categories brand id) - "okko", "ОККО" - (split 2 maps one without brand id one with)
 // NO TESTING  :.. Amenity bbox (merge on search for category)
 // REVIEWED TESTS OK '237 S Mountain Blvd Mountain Top', '276 East End Centre Wilkes-Barre', '401 Market Street Kingston', '155 Park Avenue Wilkes-Barre' (13 place)
-////////// IN PROGRESS //////////
 
+////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // REVIEW: Auto test New york, France, Italy (Slow?)
-
-// TODO 1 W&W
 // TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
 // TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
@@ -71,13 +68,13 @@ import net.osmand.util.SearchAlgorithms;
 // TEST DEDUPLICATE: wiki / travel maps / seamarks map
 
 /////////////// EXTRA FEATURES ///////////////
+// TODO INDEX: highway=services (Not index)
 // TODO Common words skip sorting ... '155 Park Avenue Wilkes-Barre' - 13 place
 // TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ 3, Нова Пошта (№5 not searchable by common words / name)
 // SLOW: "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
 //       "Foothill Boulevard" x "Golden State Road" x "Los Angeles" x "United states of America"
 // TODO FORBID (slow): to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
-// TODO INDEX: highway=services (Not index)
 // TODO Suggestion based on common suffixes
 // TODO Store and test conscription number for some cities - issue (RZR)
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
@@ -166,7 +163,7 @@ public class SpatialSearchTestAndDocs {
 //		query = "Berlin";
 //		query = "Kelterstraße Kernen im Remstal";
 //		query = "3 Hofäckerstraße Kernen im Remstal";
-		location = new LatLon(48.88223, 9.18768);
+//		location = new LatLon(48.88223, 9.18768);
 		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
 //		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
 //		query = "24 Kelterstraße Kernen im Remstal";

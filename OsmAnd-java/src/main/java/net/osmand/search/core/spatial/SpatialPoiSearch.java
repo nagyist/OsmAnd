@@ -413,7 +413,7 @@ public class SpatialPoiSearch {
 
 	private List<BinaryMapIndexReader> filterByRadius(LatLon l, int rad, List<BinaryMapIndexReader> oFiles,
 			List<BinaryMapIndexReader> res) {
-		QuadRect rect = MapUtils.calculateBbox(rad, l);
+		QuadRect rect = MapUtils.calculate31BboxUsingRhumb(rad, l);
 		Iterator<BinaryMapIndexReader> it = oFiles.iterator();
 		while (it.hasNext()) {
 			BinaryMapIndexReader next = it.next();
@@ -425,85 +425,14 @@ public class SpatialPoiSearch {
 		return res;
 	}
 
-
-	public List<Amenity> loadPOIObjects(SpatialSearchContext ctx, SpatialPoiType spt , LatLon latLon, int radMeters, int limit)
-			throws IOException {
+	public List<Amenity> loadPOIObjects(SpatialSearchContext ctx, SpatialPoiType spt,  LatLon latLon, int radMeters,
+			int limit) throws IOException {
 		List<Amenity> results = new ArrayList<Amenity>();
-		int[] alimit = new int[] { limit };
 		if (spt != null && ctx.files != null) {
-			SearchPoiTypeFilter typeFilter = spt.poiAdditional != null ? null : new SearchPoiTypeFilter() {
-
-				@Override
-				public boolean accept(PoiCategory type, String subcategory) {
-					if (spt.key.equals(type.getKeyName()) || spt.key.equals(subcategory)) {
-						return true;
-					}
-					if (spt.parentTypes != null) {
-						for (AbstractPoiType a : spt.parentTypes) {
-							if (a.getKeyName().equals(type.getKeyName()) || a.getKeyName().equals(subcategory)) {
-								return true;
-							}
-						}
-					}
-					return false;
-				}
-
-				@Override
-				public boolean isEmpty() {
-					return false;
-				}
-			};
-			SearchPoiAdditionalFilter addFilter = spt.poiAdditional == null ? null : new SearchPoiAdditionalFilter() {
-
-				@Override
-				public String getName() {
-					return spt.names.get(0);
-				}
-
-				@Override
-				public String getIconResource() {
-					return null;
-				}
-
-				@Override
-				public boolean accept(PoiSubType poiSubType, String value) {
-//					spt.key.startsWith(poiSubType.name)
-					if (spt.poiAdditional.equals(value)) {
-						return true;
-					}
-					return false;
-				}
-			};
-			ResultMatcher<Amenity> matcher = new ResultMatcher<Amenity>() {
-
-				@Override
-				public boolean publish(Amenity object) {
-					if (spt.parentTypes != null) {
-						boolean match = object.getAdditionalInfo(spt.key) != null;
-						if (!match) {
-							return false;
-						}
-					}
-					if (alimit[0] > 0) {
-						alimit[0]--;
-					}
-					results.add(object);
-					return false;
-				}
-
-				@Override
-				public boolean isCancelled() {
-					return false; // allow to read all for proper sorting
-//					return alimit[0] == 0;
-				}
-			};
-			SearchRequest<Amenity> req = BinaryMapIndexReader.buildSearchPoiRequest(
-					0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE, -1, typeFilter, addFilter, matcher);
-			if (latLon != null) {
-				QuadRect qr = MapUtils.calculateBbox(radMeters, latLon);
-				req = BinaryMapIndexReader.buildSearchPoiRequest((int) qr.left, (int) qr.right, (int) qr.top,
-						(int) qr.bottom, -1, typeFilter, addFilter, matcher);
-			}
+			int[] alimit = new int[] { limit };
+			QuadRect rect = MapUtils.calculate31BboxUsingRhumb(radMeters, latLon);
+			SearchRequest<Amenity> req = prepareRequest(spt, results, (int) rect.left, (int) rect.top, (int) rect.right,
+					(int) rect.bottom, alimit);
 			List<BinaryMapIndexReader> oFiles = new LinkedList<BinaryMapIndexReader>(ctx.files);
 			iterateSearch(ctx, req, filterByRadius(latLon, 5_000, oFiles, new ArrayList<BinaryMapIndexReader>()));
 			if (alimit[0] != 0 && radMeters > 5_000) {
@@ -514,6 +443,82 @@ public class SpatialPoiSearch {
 			}
 		}
 		return results;
+	}
+
+
+	private SearchRequest<Amenity> prepareRequest(SpatialPoiType spt, List<Amenity> results, int sleft, int stop, int sright,
+			int sbottom, int[] alimit) {
+		SearchPoiTypeFilter typeFilter = spt.poiAdditional != null ? null : new SearchPoiTypeFilter() {
+
+			@Override
+			public boolean accept(PoiCategory type, String subcategory) {
+				if (spt.key.equals(type.getKeyName()) || spt.key.equals(subcategory)) {
+					return true;
+				}
+				if (spt.parentTypes != null) {
+					for (AbstractPoiType a : spt.parentTypes) {
+						if (a.getKeyName().equals(type.getKeyName()) || a.getKeyName().equals(subcategory)) {
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+
+			@Override
+			public boolean isEmpty() {
+				return false;
+			}
+		};
+		SearchPoiAdditionalFilter addFilter = spt.poiAdditional == null ? null : new SearchPoiAdditionalFilter() {
+
+			@Override
+			public String getName() {
+				return spt.names.get(0);
+			}
+
+			@Override
+			public String getIconResource() {
+				return null;
+			}
+
+			@Override
+			public boolean accept(PoiSubType poiSubType, String value) {
+//					spt.key.startsWith(poiSubType.name)
+				if (spt.poiAdditional.equals(value)) {
+					return true;
+				}
+				return false;
+			}
+		};
+		ResultMatcher<Amenity> matcher = new ResultMatcher<Amenity>() {
+
+			@Override
+			public boolean publish(Amenity object) {
+				if (spt.parentTypes != null) {
+					boolean match = object.getAdditionalInfo(spt.key) != null;
+					if (!match) {
+						return false;
+					}
+				}
+				if (alimit[0] > 0) {
+					alimit[0]--;
+				}
+				results.add(object);
+				return false;
+			}
+
+			@Override
+			public boolean isCancelled() {
+				return false; // allow to read all for proper sorting
+//					return alimit[0] == 0;
+			}
+		};
+		SearchRequest<Amenity> req = BinaryMapIndexReader.buildSearchPoiRequest(
+				0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE, -1, typeFilter, addFilter, matcher);
+			req = BinaryMapIndexReader.buildSearchPoiRequest((int) sleft, (int) sright, (int) stop,
+					sbottom, -1, typeFilter, addFilter, matcher);
+		return req;
 	}
 
 

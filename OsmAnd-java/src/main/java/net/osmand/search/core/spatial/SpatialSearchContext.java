@@ -159,7 +159,7 @@ public class SpatialSearchContext {
 	}
 	
 	public static int[] calculateBbox(int radiusMeters, LatLon l) {
-		QuadRect qr = MapUtils.calculateBbox(radiusMeters, l);
+		QuadRect qr = MapUtils.calculate31BboxUsingRhumb(radiusMeters, l);
 		int[] bbox31 = new int[4];
 //		System.out.printf("Bbox limit: %.4f %.4f - %.4f %.4f\n", northWest.getLatitude(), northWest.getLongitude(),
 //				southEast.getLatitude(), southEast.getLongitude());

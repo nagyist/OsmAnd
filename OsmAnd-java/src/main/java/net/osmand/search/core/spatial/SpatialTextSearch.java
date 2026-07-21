@@ -468,6 +468,10 @@ public class SpatialTextSearch {
 		}
 		return s;
 	}
+	
+	public void initContext(SpatialSearchContext ctx) throws IOException {
+		ctx.initFiles(cache);
+	}
 
 	public SpatialSearchResults searchAPI(String input, SpatialSearchContext ctx) throws IOException {
 		ctx.stats.requestTime.start();
