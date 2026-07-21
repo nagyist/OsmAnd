@@ -222,6 +222,8 @@ public class SpatialSearchContext {
 		}
 	}
 
+	
+	
 	void readAtoms() throws IOException {
 		int indxInd = 0;
 		
@@ -435,6 +437,9 @@ public class SpatialSearchContext {
 			}
 		});
 		for (SpatialSearchToken t : tokens) {
+			if (settings.SEARCH_ONLY_POI_BY_CATEGORY && indx.poiRegion == null) {
+				continue;
+			}
 			List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
 			if (matchedPrefixes == null) {
 				stats.sub1FileAtomsTime.start();

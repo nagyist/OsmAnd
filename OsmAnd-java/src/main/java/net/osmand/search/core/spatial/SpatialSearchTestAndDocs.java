@@ -6,13 +6,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.osmand.binary.BinaryMapIndexReader;
+import net.osmand.binary.NameIndexReader;
+import net.osmand.data.Amenity;
 import net.osmand.data.City;
 import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
+import net.osmand.data.QuadRect;
 import net.osmand.map.OsmandRegions;
 import net.osmand.osm.AbstractPoiType;
 import net.osmand.osm.MapPoiTypes;
 import net.osmand.osm.MapPoiTypes.PoiTranslator;
+import net.osmand.search.core.spatial.SpatialPoiSearch.SpatialPoiType;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchResults;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.SearchAlgorithms;
@@ -312,13 +316,14 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-//		pattern = "Ukraine_kyiv-city";
+		pattern = "Ukraine_kyiv";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
 //		pattern = "Ukraine_";
 		
 		// poi types
 //		location = new LatLon(50.436423, 30.508097);
 //		settings.SEARCH_POI = false;
+//		query =  NameIndexReader.POI_CATEGORY_PREFIX + "cafe";
 //		settings.DEV_PRINT_POI_CAT_LIMIT = 1000; 
 //		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 10;
 //		query = "Cafe Fuel";
@@ -567,10 +572,39 @@ public class SpatialSearchTestAndDocs {
 				System.out.println("Suggest search other region - " + bbox);
 			}
 		}
+		boolean testOldPoiSeerch = true;
+		String cat = "cafe";
+		if (testOldPoiSeerch) {
+			long nt = System.nanoTime();
+			SpatialPoiType type = poiSearch.getByKey(cat); // ice_rink, cafe
+			int limit = 50_000;
+			int radius = 20_000; // 500_000;
+			LatLon loc = new LatLon(50, 30);
+			QuadRect bbox = new QuadRect(29, 51, 32, 49);
+			int z = 12;// 12
+			boolean bboxLoad = true;
+			List<Amenity> poiRes;
+			if (bboxLoad) {
+				poiRes = poiSearch.loadPOIObjects(searchContext, type, bbox, z, limit);
+			} else {
+				poiRes = poiSearch.loadPOIObjects(searchContext, type, loc, radius, limit);
+			}
+			int ind = 0;
+			for (Amenity rr : poiRes) {
+				System.out.println(rr + " " + rr.getLocation());
+				if (ind++ > 10) {
+					System.out.println("...");
+					break;
+				}
+			}
+			System.out.printf("Loaded %d pois %.1f ms (%.1f ms, %d tiles, %,d KB)\n", poiRes.size(),
+					(System.nanoTime() - nt) / 1e6, searchContext.stats.poiByTypeTime.ms(),
+					searchContext.stats.poiByTypeBboxes, searchContext.stats.poiByTypeBytes / 1024);
+		}
 //		settings.OPTIM_DELETE_POI_SAME_AS_CITY_STREET = false;
-//		settings.DEDUPLICATE_RES = true;
-//		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
-//		a.searchTest(query, searchContext, 8000);
+		settings = SpatialTextSearchSettings.searchPoiByCategorySettings();
+		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
+		a.searchTest(NameIndexReader.POI_CATEGORY_PREFIX + cat, searchContext, 50);
 	}
 
 	private static void testDeduplication(String[] args) throws IOException, InterruptedException {

@@ -15,8 +15,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.set.hash.TLongHashSet;
 import net.osmand.ResultMatcher;
 import net.osmand.binary.BinaryMapIndexReader;
+import net.osmand.binary.BinaryMapPoiReaderAdapter;
 import net.osmand.binary.BinaryMapIndexReader.SearchPoiAdditionalFilter;
 import net.osmand.binary.BinaryMapIndexReader.SearchPoiTypeFilter;
 import net.osmand.binary.BinaryMapIndexReader.SearchRequest;
@@ -30,6 +32,7 @@ import net.osmand.osm.MapPoiTypes;
 import net.osmand.osm.PoiCategory;
 import net.osmand.osm.PoiFilter;
 import net.osmand.osm.PoiType;
+import net.osmand.search.core.HashQuadTree;
 import net.osmand.search.core.TopIndexFilter;
 import net.osmand.search.core.spatial.SpatialSearchToken.NameIndexAtom;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchFileCache;
@@ -425,6 +428,18 @@ public class SpatialPoiSearch {
 		return res;
 	}
 
+	public List<Amenity> loadPOIObjects(SpatialSearchContext ctx, SpatialPoiType spt, QuadRect r, int zoom, int limit) throws IOException {
+		List<Amenity> results = new ArrayList<Amenity>();
+		if (spt != null && ctx.files != null) {
+			int[] alimit = new int[] { limit };
+			SearchRequest<Amenity> req = prepareRequest(spt, results, MapUtils.get31TileNumberX(r.left),
+					MapUtils.get31TileNumberY(r.top), MapUtils.get31TileNumberX(r.right),
+					MapUtils.get31TileNumberY(r.bottom), zoom, alimit);
+			iterateSearch(ctx, req, ctx.files, true);
+		}
+		return results;
+	}
+	
 	public List<Amenity> loadPOIObjects(SpatialSearchContext ctx, SpatialPoiType spt,  LatLon latLon, int radMeters,
 			int limit) throws IOException {
 		List<Amenity> results = new ArrayList<Amenity>();
@@ -432,14 +447,14 @@ public class SpatialPoiSearch {
 			int[] alimit = new int[] { limit };
 			QuadRect rect = MapUtils.calculate31BboxUsingRhumb(radMeters, latLon);
 			SearchRequest<Amenity> req = prepareRequest(spt, results, (int) rect.left, (int) rect.top, (int) rect.right,
-					(int) rect.bottom, alimit);
+					(int) rect.bottom, -1, alimit);
 			List<BinaryMapIndexReader> oFiles = new LinkedList<BinaryMapIndexReader>(ctx.files);
-			iterateSearch(ctx, req, filterByRadius(latLon, 5_000, oFiles, new ArrayList<BinaryMapIndexReader>()));
+			iterateSearch(ctx, req, filterByRadius(latLon, 5_000, oFiles, new ArrayList<BinaryMapIndexReader>()), false);
 			if (alimit[0] != 0 && radMeters > 5_000) {
-				iterateSearch(ctx, req, filterByRadius(latLon, 50_000, oFiles, new ArrayList<BinaryMapIndexReader>()));
+				iterateSearch(ctx, req, filterByRadius(latLon, 50_000, oFiles, new ArrayList<BinaryMapIndexReader>()), false);
 			}
 			if (alimit[0] != 0 && radMeters > 50_000) {
-				iterateSearch(ctx, req, oFiles);
+				iterateSearch(ctx, req, oFiles, false);
 			}
 		}
 		return results;
@@ -447,7 +462,7 @@ public class SpatialPoiSearch {
 
 
 	private SearchRequest<Amenity> prepareRequest(SpatialPoiType spt, List<Amenity> results, int sleft, int stop, int sright,
-			int sbottom, int[] alimit) {
+			int sbottom, int zoom, int[] alimit) {
 		SearchPoiTypeFilter typeFilter = spt.poiAdditional != null ? null : new SearchPoiTypeFilter() {
 
 			@Override
@@ -517,14 +532,17 @@ public class SpatialPoiSearch {
 		SearchRequest<Amenity> req = BinaryMapIndexReader.buildSearchPoiRequest(
 				0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE, -1, typeFilter, addFilter, matcher);
 			req = BinaryMapIndexReader.buildSearchPoiRequest((int) sleft, (int) sright, (int) stop,
-					sbottom, -1, typeFilter, addFilter, matcher);
+					sbottom, zoom, typeFilter, addFilter, matcher);
 		return req;
 	}
 
 
-	private void iterateSearch(SpatialSearchContext ctx, SearchRequest<Amenity> req, List<BinaryMapIndexReader> res)
-			throws IOException {
+	private void iterateSearch(SpatialSearchContext ctx, SearchRequest<Amenity> req, List<BinaryMapIndexReader> res,
+			boolean check) throws IOException {
 		for (BinaryMapIndexReader bir : res) {
+			if (check && !bir.containsPoiData(req.getLeft(), req.getTop(), req.getRight(), req.getBottom())) {
+				continue;
+			}
 			ctx.stats.poiByTypeTime.start();
 			long br = bir.getBytesRead();
 			bir.searchPoi(req);
