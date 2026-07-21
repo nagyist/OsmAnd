@@ -76,6 +76,10 @@ public class SpatialPoiSearch {
 		public boolean isPlace() {
 			return place;
 		}
+		
+		public String getWikidataId() {
+			return wikidataId;
+		}
 
 		public String getKey() {
 			return key;

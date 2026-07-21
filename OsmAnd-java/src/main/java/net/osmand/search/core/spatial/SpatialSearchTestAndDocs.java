@@ -63,7 +63,7 @@ import net.osmand.util.SearchAlgorithms;
 // Okko Brand names
 
 // TODO Auto tests
-// TODO Kava Kyiv (Хлібна Кава fuel)
+// TODO озеро мигия
 
 // TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
 // TEST DEDUPLICATE:  wiki / travel maps / seamarks map
@@ -332,9 +332,11 @@ public class SpatialSearchTestAndDocs {
 //		location = new LatLon(48, 31);
 		// "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
 		location = new LatLon(50.4355, 30.6473); 
+//		settings.OPTIM_READ_CATEGORY_WORD_ATOMS = false;
+//		settings.OPTIM_READ_COMMON_WORDS_LIMIT = 10000;
 		pattern = "Ukraine_";
-
-		query = "Мигия озеро";
+		query = "Мигия озеро ";
+		
 //		query = "Мигия water"; 
 //		query = "fuel Хлібна Кава"; 
 //		location = new LatLon(48.75, 37.5);
@@ -476,13 +478,14 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "World_basemap_mini";
 //		pattern2 = "Ukraine_";
+		pattern2 = "Belarus";
 //		location = new LatLon(50, 30);
 //		settings.DEDUPLICATE_RES = false;
 //		query = "Кафе Antwerpen ";
 //		query = "Ресторан Antwerpen ";
 //		query = "Cafe Gulliver";
 //		query = "Hotel amsterdam";
-//		query = "ОККО"; // "okko", "ОККО"
+		query = "ОККО"; // "okko", "ОККО"
 //		query = "Venezia";
 //		query = "Cafe вулиця Саксаганського";
 //		query = "нова пошта вулиця Саксаганського"; // brand + 
@@ -636,6 +639,8 @@ public class SpatialSearchTestAndDocs {
 				return "отель;готель;гатэль";
 			} else if (keyName.equals("cafe")) {
 				return "кафе";
+			} else if (keyName.equals("water_lake")) {
+				return "озеро";
 			} else if (keyName.equals("restaurant")) {
 				return "ресторан";
 			}
