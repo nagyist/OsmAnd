@@ -470,6 +470,7 @@ public class SpatialTextSearch {
 	}
 
 	public SpatialSearchResults searchAPI(String input, SpatialSearchContext ctx) throws IOException {
+		ctx.stats.requestTime.start();
 		SpatialSearchResults res = new SpatialSearchResults();
 		if (ctx.settings.SEARCH_SUGGESTION && !input.endsWith(CollatorStringMatcher.INCOMPLETE_DOT + "") && 
 				!input.endsWith(" ")) {
@@ -507,6 +508,7 @@ public class SpatialTextSearch {
 			combineSortFilterResults(ctx, res);
 		}
 		ctx.stats.step3Sort.finish();
+		ctx.stats.requestTime.finish();
 		res.stats = ctx.stats;
 		if (ctx.stats.printLogs) {
 			System.out.println(ctx.stats);
@@ -596,9 +598,8 @@ public class SpatialTextSearch {
 	}
 
 	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx, int limitPrint) throws IOException {
-		ctx.stats.requestTime.start();
+		
 		SpatialSearchResults res = searchAPI(input, ctx);
-		ctx.stats.requestTime.finish();
 		if (res.mainResults != null && res.mainResults.size() > 0) {
 			System.out.println("--------");
 			System.out.printf("Main: %s\n", res.combinations.get(0));
