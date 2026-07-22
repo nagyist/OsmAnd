@@ -96,10 +96,12 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 				poiBboxes.get(indInd).add(HashQuadTree.encodeTileId31(BinaryMapPoiReaderAdapter.EVAL_TAG_GROUP_ZOOM,
 						a.coords.x16 << 15, a.coords.y16 << 15));
 			}
-			if (a.type == type || (type == SpatialSearchToken.ALL_CITY_TYPE && a.type != SpatialSearchToken.POI_TYPE
-					&& a.type != SpatialSearchToken.STREET_TYPE && a.type != SpatialSearchToken.POI_CATEGORY_TYPE)) {
+			if (type == SpatialSearchToken.STREET_TYPE && a.isStreetBuilding()) {
 				lstMap.put(a.id, a.parentid);
-			} else if(type == SpatialSearchToken.ALL_CITY_TYPE && a.type == SpatialSearchToken.STREET_TYPE) {
+			} else if (a.type == type || (type == SpatialSearchToken.ALL_CITY_TYPE && !a.isPOI()
+					&& !a.isStreetBuilding() && !a.isPoiCategory())) {
+				lstMap.put(a.id, a.parentid);
+			} else if (type == SpatialSearchToken.ALL_CITY_TYPE && a.isStreetBuilding()) {
 				lstMap.put(a.parentid, (long) 0);
 			}
 		}
@@ -191,24 +193,32 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			}
 		}
 		// filter incomplete brand name if there are enough results
+		filterIncompleteBrands(ctx);
+		ctx.stats.sub2LoadObjectsBldTime.finish();
+	}
+
+	private void filterIncompleteBrands(SpatialSearchContext ctx) {
 		for (int indx = 0; indx < getCombinations(); indx++) {
 			if (!skipResults.contains(indx)) {
-				int poiTypeT = 0;
+				int poiTypeTokens = 0;
 				NameIndexAtom poiType = null;
+				boolean partOnBuilding = false;
 				for (int i = 0; i < tCount; i++) {
 					NameIndexAtom atom = linearResults.get(indx * tCount + i);
-					if(atom.isPoiCategory()) {
-						poiTypeT++;
+					if (atom.isPoiCategory()) {
+						partOnBuilding |= tokens[i].likelyPartOfBuilding() || tokens[i].getMainNumber() > 0;
+						poiTypeTokens++;
 						poiType = atom;
 					}
 				}
-				if (poiTypeT > 0 && tCount > 1 && 
-						ctx.poiSearch.getById((int) poiType.id).tokensInName > poiTypeT) {
+				if (poiTypeTokens > 0 && tCount > 1 && 
+						ctx.poiSearch.getById((int) poiType.id).tokensInName > poiTypeTokens) {
+					skipResults.put(indx, true);
+				}  else if(tCount > 1 && poiTypeTokens == 1 && partOnBuilding) {
 					skipResults.put(indx, true);
 				}
 			}
 		}
-		ctx.stats.sub2LoadObjectsBldTime.finish();
 	}
 
 	private void checkAmenityRef(List<SpatialSearchToken> missingTokens, int indx) {
@@ -798,7 +808,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 		boolean buildingPresent = a.isBuilding();
 		for (int i = 0; parent != null && i < parent.tCount; i++) {
 			NameIndexAtom pa = parent.linearResults.get(pindx * parent.tCount + i);
-			if(pa.isBuilding()) {
+			if (pa.isBuilding()) {
 				buildingPresent = true;
 			} else if (pa.isPoiCategory()) {
 				if (poiType == null || pa.id == poiType.id) {
@@ -814,7 +824,7 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			return false;
 		}
 		// speed up for same id checks
-		// strangely enough it affects results on duplicate words (buildings - unit test)...
+		// It affects correctness [results on duplicate words (buildings - unit test) see below] 
 		if (typeIntersection[0] >= 0) {
 			return true;
 		}
@@ -856,6 +866,8 @@ public class SpatialSearchResultsList implements Comparable<SpatialSearchResults
 			// ignore every object that has this name already (except duplicate words && numbers assigned to building)
 			if (!tokens[0].word.equals(parent.tokens[i].word) && !duplicateWord) {
 				NameIndexAtom existing = parent.tokens[i].index.get(a.id);
+				// it might be duplicate word which is not explored yet see test 'SW Summit Valley Ln, Lee's Summit'
+				// 'valley' x 'ln' x 'lee' (already has combination of 2) x 'summit' (breaks here) 'summit'
 				if (existing != null && !existing.isBuilding() && !existing.isPOIRef()) {
 					return false;
 				}

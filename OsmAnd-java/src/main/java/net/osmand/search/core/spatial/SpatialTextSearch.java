@@ -75,6 +75,8 @@ public class SpatialTextSearch {
 		public boolean SEARCH_POI_REF = true;
 		public boolean SUGGEST_SEARCH_POI_CATEGORY_WITH_REF = true;
 		
+		public boolean SEARCH_ONLY_POI_BY_CATEGORY = false; // replacement to search by category
+		
 		// performance tested (we need to turn on for <POI + Address> search)
 		public boolean ALLOW_HOUSE_POI_TYPE_INTERSECTION = true;
 		// no intersection recorded but streets are nearby
@@ -164,6 +166,16 @@ public class SpatialTextSearch {
 		
 		public static SpatialTextSearchSettings defaultSettings() {
 			return new SpatialTextSearchSettings();
+		}
+		
+		public static SpatialTextSearchSettings searchPoiByCategorySettings() {
+			SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
+			settings.ALLOW_HOUSE_POI_TYPE_INTERSECTION = false;
+			settings.SEARCH_ADDR = false;
+			settings.SEARCH_POI = true;
+			settings.SEARCH_POI_CATEGORIES = false;
+			settings.SEARCH_ONLY_POI_BY_CATEGORY = true;
+			return settings;
 		}
 		 
 		public static SpatialTextSearchSettings suggestionSettings() {
@@ -328,7 +340,8 @@ public class SpatialTextSearch {
 			}
 			goalRes.loadObjectsAndCalcBuildings(ctx);
 			List<SpatialSearchResult> res = goalRes.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
-			if (goal.equals(mainGoal) && res.size() == 0) {
+			int uniq = uniqueResults(res);
+			if (goal.equals(mainGoal) && uniq == 0) {
 				goalRes = reevalWithExtendedBoundary(ctx, goal, tokens);
 				if (ctx.isCancelled()) {
 					break;
@@ -338,11 +351,12 @@ public class SpatialTextSearch {
 			}
 			if (res.size() > 0) {
 				if (ctx.resultMatcher != null) {
+					// optional ...
 					for (SpatialSearchResult p : res) {
 						ctx.resultMatcher.publish(p);
 					}
 				}
-				uniqueObjects += res.size();
+				uniqueObjects += uniq;
 				fullResult.add(goalRes);
 				
 			}
@@ -363,6 +377,17 @@ public class SpatialTextSearch {
 			}
 		}
 		return fullResult;
+	}
+
+
+	private int uniqueResults(List<SpatialSearchResult> res) {
+		int c = 0;
+		for (SpatialSearchResult r : res) {
+			if (!r.isPoiCategory()) {
+				c++;
+			}
+		}
+		return c;
 	}
 
 	private SpatialSearchResultsList reevalWithExtendedBoundary(SpatialSearchContext ctx, BitSet goal, List<SpatialSearchToken> tokens) throws IOException {
@@ -455,8 +480,13 @@ public class SpatialTextSearch {
 		}
 		return s;
 	}
+	
+	public void initContext(SpatialSearchContext ctx) throws IOException {
+		ctx.initFiles(cache);
+	}
 
 	public SpatialSearchResults searchAPI(String input, SpatialSearchContext ctx) throws IOException {
+		ctx.stats.requestTime.start();
 		SpatialSearchResults res = new SpatialSearchResults();
 		if (ctx.settings.SEARCH_SUGGESTION && !input.endsWith(CollatorStringMatcher.INCOMPLETE_DOT + "") && 
 				!input.endsWith(" ")) {
@@ -466,7 +496,11 @@ public class SpatialTextSearch {
 		res.input = input;
 		
 		// 1. prepare tokens
-		res.tokens = splitWords(ctx, input);
+		if (ctx.settings.SEARCH_ONLY_POI_BY_CATEGORY) {
+			res.tokens = Collections.singletonList(new SpatialSearchToken(0, input, input, 1));
+		} else {
+			res.tokens = splitWords(ctx, input);
+		}
 		
 		// 2. read atoms & poi categories
 		ctx.stats.step1Atoms.start();
@@ -494,18 +528,28 @@ public class SpatialTextSearch {
 			combineSortFilterResults(ctx, res);
 		}
 		ctx.stats.step3Sort.finish();
+		ctx.stats.requestTime.finish();
 		res.stats = ctx.stats;
+		if (ctx.stats.printLogs) {
+			System.out.println(ctx.stats);
+		}
 		return res;
 	}
 
 	private void combineSortFilterResults(SpatialSearchContext ctx, SpatialSearchResults res) throws IOException {
 		SpatialSearchResultsList main = res.combinations.get(0);
+		int mainLength = main.getTokenCount();
 		for (SpatialSearchResultsList m : res.combinations) {
 			List<SpatialSearchResult> lst = m.getFinalResult();
 			if (lst == null) {
 				lst = m.sortResults(ctx, ctx.settings.DEDUPLICATE_RES);
 			}
-			res.mainResults.addAll(lst);
+			for (SpatialSearchResult r : lst) {
+				if (r.isPoiCategory() && m.getTokenCount() < mainLength) {
+					continue;
+				}
+				res.mainResults.add(r);
+			}
 		}
 		res.mainResults = main.sortResults(ctx, res.mainResults, ctx.settings.DEDUPLICATE_RES);
 		int limitPoiCat = ctx.settings.DEV_PRINT_POI_CAT_LIMIT;
@@ -531,7 +575,9 @@ public class SpatialTextSearch {
 					cKey = nextKey;
 				}
 				r.visibleLevel = level;
-				ind++;
+				if (!r.isPoiCategory()) {
+					ind++;
+				}
 			}
 		}
 	}
@@ -574,9 +620,8 @@ public class SpatialTextSearch {
 	}
 
 	public SpatialSearchResults searchTest(String input, SpatialSearchContext ctx, int limitPrint) throws IOException {
-		ctx.stats.requestTime.start();
+		
 		SpatialSearchResults res = searchAPI(input, ctx);
-		ctx.stats.requestTime.finish();
 		if (res.mainResults != null && res.mainResults.size() > 0) {
 			System.out.println("--------");
 			System.out.printf("Main: %s\n", res.combinations.get(0));
@@ -596,7 +641,8 @@ public class SpatialTextSearch {
 					System.out.println(".............");
 					break;
 				}
-				System.out.printf("Result %d (%s) - %s\n", r.matchedTokens(), SpatialSearchResult.compareKeyString(r), r);
+				System.out.printf("Result %d (%s) - %s\n", r.matchedTokens(), SpatialSearchResult.compareKeyString(r), 
+						r.toString(ctx));
 			}
 			System.out.printf("------ ALL %d results ------- \n ", all);
 			System.out.println("---------------------------------------");

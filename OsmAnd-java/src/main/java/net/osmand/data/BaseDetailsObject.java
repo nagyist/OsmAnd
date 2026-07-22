@@ -103,6 +103,7 @@ public class BaseDetailsObject {
 		if (bbox31 == null && object instanceof City c) {
 			// we don't support merge of cities direct but take bbox31
 			bbox31 = c.getBbox31();
+			return true;
 		} else if (bbox31 == null && object instanceof Street s) {
 			// we don't support merge of cities direct but take bbox31
 			QuadRect bb = s.getBboxPoints();
@@ -110,6 +111,7 @@ public class BaseDetailsObject {
 				bbox31 = new int[] { MapUtils.get31TileNumberX(bb.left), MapUtils.get31TileNumberY(bb.top),
 						MapUtils.get31TileNumberX(bb.right), MapUtils.get31TileNumberY(bb.bottom) };
 			}
+			return true;
 		}
 		if (!isSupportedObjectType(object)) {
 			return false;

@@ -6,17 +6,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.osmand.binary.BinaryMapIndexReader;
+import net.osmand.binary.NameIndexReader;
+import net.osmand.data.Amenity;
 import net.osmand.data.City;
 import net.osmand.data.LatLon;
 import net.osmand.data.MapObject;
+import net.osmand.data.QuadRect;
 import net.osmand.map.OsmandRegions;
 import net.osmand.osm.AbstractPoiType;
 import net.osmand.osm.MapPoiTypes;
 import net.osmand.osm.MapPoiTypes.PoiTranslator;
+import net.osmand.search.core.spatial.SpatialPoiSearch.SpatialPoiType;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialSearchResults;
 import net.osmand.search.core.spatial.SpatialTextSearch.SpatialTextSearchSettings;
 import net.osmand.util.SearchAlgorithms;
-
 
 //////////// LIVE TESTING //////////
 // UNIT TESTING: Fix 36K national park - live test? (don't index small islands > 100 POI !!!)
@@ -28,6 +31,7 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 100km+ "Мигия озеро" (non freq-common word + enlarge), - partialMatch+partialExactMatch
 // UNIT TESTING: 100km+ Calle 20 188 San Isidro Lima 
 // UNIT TESTING: 100km+ нова пошта краматорськ  - no brand (3, 5) 5 (5 N7846074085, N1482296639)
+// UNIT TESTING: Venezia (Changed map data 2 Wikidataids)!, So city on first with good elo rating (Test other top visited cities)
 
 //////////// TESTING //////////
 // UNIT TESTING: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border) - Add missing border
@@ -52,35 +56,29 @@ import net.osmand.util.SearchAlgorithms;
 //               Hotel Berlin, see below, "нова пошта вулиця Саксаганського", "нова вулиця Саксаганського"; // brand +
 // UNIT TESTING DEDUPLICATE: Street related to city or suburb what to show
 // UNIT TESTING: (failing) 763 Ro-Ki Boulevard Nichols
+// UNIT TESTING: City > Boundary + location? Format strings (City > Boundary)...
+// UNIT TESTING: (Deduplicate categories brand id) - "okko", "ОККО" - (split 2 maps one without brand id one with)
+// NO TESTING  :.. Amenity bbox (merge on search for category)
+// REVIEWED TESTS OK '237 S Mountain Blvd Mountain Top', '276 East End Centre Wilkes-Barre', '401 Market Street Kingston', '155 Park Avenue Wilkes-Barre' (13 place)
 
 ////////// IN PROGRESS //////////
 // REVIEW (index_words_dashboard - common озеро): POI / ADDRESS - France, Germany, US, Europe, China, Peru
 // REVIEW: Auto test New york, France, Italy (Slow?)
-// DEDUPLICATE: Merge suburb+city same location (5-10m) 2 streets different cities (Aleja Bohaterów)
-
-// TODO Harderwijk - Q58931 (2712801 < 46280889)
-// TODO Result Amenity bbox (merge on category) 
-// TODO City > Boundary ? location
-
-// TODO DEDUPLICATE: Venezia, Bratislava? - No place=city in POI is it on purpose ? 2 Wikidataids! Rating not merged. POI - relation/44741 (Q641), CITY - way/64778090 (Q33723961).
-
-// TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
-// TEST DEDUPLICATE:  wiki / travel maps / seamarks map
-// TODO DEDUPLICATE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
-
-// TO DO Gateway
 // TODO INDEX: Find POI Categories translations / synonyms via Common words - Стоматол., Dentist, Basilica 
 // TODO REVIEW: Abbrevations (synonyms / direction words) other languages?
 // TODO REVIEW: Analyze Abbrevations / common skip (abbrevations 1st=first)
-
+// TODO DEDUPLICATE: Index place=state, county.. + wikidata id for boundaries (regions.ocbf) & display them - analyze
+// TODO DEDUPLICATE: too many houses (duplicate names) in wiki maps - obstruct search by street "Ярославів Вал"`?
+// TEST DEDUPLICATE: wiki / travel maps / seamarks map
 
 /////////////// EXTRA FEATURES ///////////////
+// TODO INDEX: highway=services (Not index)
+// TODO Common words skip sorting ... '155 Park Avenue Wilkes-Barre' - 13 place
 // TODO 100km+: Calle 20 188 San Isidro Lima, mihia lake, нова пошта краматорськ 3, Нова Пошта (№5 not searchable by common words / name)
 // SLOW: "Travessa de Santo António" x "Rua Joaquim Ribeiro de Carvalho" x "portugal" (39.7412, -8.8012 Barreira Urbanização Vale da Cabrita))
 //       "Foothill Boulevard" x "Golden State Road" x "Los Angeles" x "United states of America"
 // TODO FORBID (slow): to interconnect tokens between 2 words - issue "<Street> <City> <Hno>"?
 // TODO Sorting before load objects (use elo and other buildings?) and limit results
-// TODO INDEX: highway=services (Not index)
 // TODO Suggestion based on common suffixes
 // TODO Store and test conscription number for some cities - issue (RZR)
 // TODO Search in large parks, neighborhood same as in boundaries (index bbox POI), residential way/56238205
@@ -162,20 +160,24 @@ public class SpatialSearchTestAndDocs {
 		SpatialTextSearchSettings settings = SpatialTextSearchSettings.defaultSettings();
 		File folder = new File(System.getProperty("maps.dir"));
 		LatLon location = null;
-		String pattern = "Germany_bad";
+		String pattern = "Germany_b";
 //		pattern = "Map";
 		String pattern2 = ".....";
 		String query = "Berlin hauptstrasse"; // slow
-		query = "Berlin";
+//		query = "Berlin";
 //		query = "Kelterstraße Kernen im Remstal";
 //		query = "3 Hofäckerstraße Kernen im Remstal";
-//		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
+//		location = new LatLon(48.88223, 9.18768);
+		query = "1 W&W Platz Kornwestheim"; // duplicate word new maps needed
 //		query = "1/1 Salierstraße Waiblingen"; // duplicate in house number priority 1st
-		query = "24 Kelterstraße Kernen im Remstal";
-		query = "2/1 Rathausplatz Esslingen am Neckar"; // not correct
+//		query = "24 Kelterstraße Kernen im Remstal";
+//		query = "2/1 Rathausplatz Esslingen am Neckar"; // not correct
+//		query = "9 Neustädter Straße Korb";
+//		query = "14/1 J.-F.-Weishaar-Straße Korb";
+
 		
-		pattern = "Map";
-		query = "5 to go";
+//		pattern = "Map";
+//		query = "5 to go";
 		// poi filter
 //		location = new LatLon(52.50805, 13.38176);
 //		settings.SEARCH_POI = false;
@@ -285,7 +287,10 @@ public class SpatialSearchTestAndDocs {
 
 //		pattern = "Netherlands_";
 //		location = new LatLon(52.2827, 4.8601);
-//		query = "harderwijk estrado"; // 't2+0-w2-oth1-tp4' t2+0-w2-oth2-tp0  
+//		query = "harderwijk estrado"; // 't2+0-w2-oth1-tp4' t2+0-w2-oth2-tp0
+//		query = "harderwijk";
+//		query = "cafe harderwijk";
+//		query = "hotel amsterdam";
 //		query = "1186RZ Logger 324D Amstelveen";
 //		query = "Farm";
 //		query = "8832kd";
@@ -311,13 +316,14 @@ public class SpatialSearchTestAndDocs {
 		
 //		pattern = "regions.ocbf" ;
 		
-//		pattern = "Ukraine_kyiv-city";
+//		pattern = "Ukraine_kyiv";
 //		pattern = "Test_Ukraine_kyiv-city_europe_12.obf";
-//		pattern = "Ukraine_";
+		pattern = "Ukraine_";
 		
 		// poi types
 //		location = new LatLon(50.436423, 30.508097);
 //		settings.SEARCH_POI = false;
+//		query =  NameIndexReader.POI_CATEGORY_PREFIX + "cafe";
 //		settings.DEV_PRINT_POI_CAT_LIMIT = 1000; 
 //		settings.DEV_PRINT_POI_CAT_RADIUS_KM = 10;
 //		query = "Cafe Fuel";
@@ -326,11 +332,16 @@ public class SpatialSearchTestAndDocs {
 //		query = "Fuel diesel";
 		
 //		location = new LatLon(48, 31);
-		// "Мигия water", "Мигия озеро", "род." (1019665295,(48.0217 30.9681),)
+		// "Мигия water", "Мигия озеро", "род." ( 1019665295 26382,(48.0217 30.9681),)
+//		location = new LatLon(50.4355, 30.6473); 
+//		settings.OPTIM_READ_CATEGORY_WORD_ATOMS = false;
+//		settings.OPTIM_READ_COMMON_WORDS_LIMIT = 10000;
 //		pattern = "Ukraine_";
-//		query = "Мигия озеро";
-//		query = "Мигия water"; 
 		
+//		location = new LatLon(48.020997, 30.968742);
+//		query = "Мигия озеро ";
+//		query = "Мигия water"; 
+//		query = "fuel Хлібна Кава"; 
 //		location = new LatLon(48.75, 37.5);
 //		query = "нова пошта 3 краматорськ"; // (1482296639, 5 7846074085) 
 //		query = "Нова пошта 3 харків";
@@ -438,14 +449,14 @@ public class SpatialSearchTestAndDocs {
 		// +[Venezia, Cannaregio, 539D , Campo Saffa], +[Venezia Cannaregio 539D ] -[Venezia 539D  Campo Saffa] - expected
 //		pattern = "Italy_ven";
 //		pattern = "Map";
-		pattern2 = "World_basemap_2";
+//		pattern2 = "World_basemap_2";
 		// ! unit test - search full address ! no double 539d (no intersectoin)
 		// Cannaregio 539D Campo Saffa, Venezia Cannaregio Campo Saffa  , 
 //		query = "Venezia Cannaregio Campo Saffa ";
 //		query = "Cannaregio 539D Campo Saffa";
 //		query = "Venezia Cannaregio 539D Campo Saffa";
 //		query = "Campo Saffa";
-		query = "Venezia";
+//		query = "Venezia";
 		
 //		pattern = "France_ile-de-france";
 //		pattern = "France_";
@@ -475,7 +486,9 @@ public class SpatialSearchTestAndDocs {
 //		query = "Кафе Antwerpen ";
 //		query = "Ресторан Antwerpen ";
 //		query = "Cafe Gulliver";
-//		query = "Hotel Berlin";
+//		query = "Hotel amsterdam";
+//		query = "ОККО"; // "okko", "ОККО"
+//		query = "Venezia";
 //		query = "Cafe вулиця Саксаганського";
 //		query = "нова пошта вулиця Саксаганського"; // brand + 
 //		query = "нова вулиця Саксаганського"; // no brand
@@ -559,10 +572,40 @@ public class SpatialSearchTestAndDocs {
 				System.out.println("Suggest search other region - " + bbox);
 			}
 		}
+		boolean testOldPoiSeerch = true;
+		String cat = "ice_rink"; // ice_rink, cafe
+		if (testOldPoiSeerch) {
+			long nt = System.nanoTime();
+			SpatialPoiType type = poiSearch.getByKey(cat); // ice_rink, cafe
+			int limit = 50_000;
+			int radius = 500_000; // 500_000;
+			LatLon loc = new LatLon(50, 30);
+			QuadRect bbox = new QuadRect(29, 51, 32, 49);
+			int z = 12;// 12
+			boolean bboxLoad = false;
+			List<Amenity> poiRes;
+			if (bboxLoad) {
+				poiRes = poiSearch.loadPOIObjects(searchContext, type, bbox, z, limit);
+			} else {
+				poiRes = poiSearch.loadPOIObjects(searchContext, type, loc, radius, limit);
+			}
+			int ind = 0;
+			for (Amenity rr : poiRes) {
+				System.out.println(rr + " " + rr.getLocation());
+				if (ind++ > 10) {
+					System.out.println("...");
+					break;
+				}
+			}
+			System.out.printf("Loaded %d pois %.1f ms (%.1f ms, %d tiles, %,d KB)\n", poiRes.size(),
+					(System.nanoTime() - nt) / 1e6, searchContext.stats.poiByTypeTime.ms(),
+					searchContext.stats.poiByTypeBboxes, searchContext.stats.poiByTypeBytes / 1024);
+		}
 //		settings.OPTIM_DELETE_POI_SAME_AS_CITY_STREET = false;
-//		settings.DEDUPLICATE_RES = true;
-//		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
-//		a.searchTest(query, searchContext, 8000);
+		settings = SpatialTextSearchSettings.searchPoiByCategorySettings();
+		settings.DEDUPLICATE_RES = false;
+		searchContext = new SpatialSearchContext(settings, ls, poiSearch, location);
+		a.searchTest(NameIndexReader.POI_CATEGORY_PREFIX + cat, searchContext, 50);
 	}
 
 	private static void testDeduplication(String[] args) throws IOException, InterruptedException {
@@ -598,7 +641,7 @@ public class SpatialSearchTestAndDocs {
 		if (rs.mainResults != null) {
 			for (SpatialSearchResult s : rs.mainResults) {
 				MapObject unitedObject = s.unitedObject.getSyntheticAmenity();
-				String out = s.toString();
+				String out = s.toString(searchContext);
 				if (unitedObject != null) {
 					out += " United:" + unitedObject.toString();
 				}
@@ -628,6 +671,12 @@ public class SpatialSearchTestAndDocs {
 				return "отель;готель;гатэль";
 			} else if (keyName.equals("cafe")) {
 				return "кафе";
+			} else if (keyName.equals("rugby_union")) {
+				return "rugby 9";
+			} else if (keyName.equals("9pin")) {
+				return "9 pin;bowl";
+			} else if (keyName.equals("water_lake")) {
+				return "озеро";
 			} else if (keyName.equals("restaurant")) {
 				return "ресторан";
 			}
