@@ -13,7 +13,8 @@ public class HashSkipTileQuadTree<T> {
 
 	public static final int MAX_ZOOM = 16;
 	public static final int MIN_ZOOM = 0;
-	public static final int[] INDEXED_ZOOMS = new int[] { 1, 3, 5, 8, 11, 14, 16 };
+	//public static final int[] INDEXED_ZOOMS = new int[] { 1, 3, 5, 8, 11, 14, 16 };
+	public static final int[] INDEXED_ZOOMS = new int[] { 3, 5, 8};
 
 	final List<TileEntry<T>> tileEntries = new ArrayList<>();
 	final ZoomBucket[] zoomBuckets = new ZoomBucket[MAX_ZOOM + 1];
@@ -119,6 +120,40 @@ public class HashSkipTileQuadTree<T> {
 				resetChildren(tree.subTree, level + 1, subBlockIdx);
 			}
 		}
+		
+		public int skipToTileId(int currentIndex, long targetTileId, SkipStats stats) {
+			if (nodes.length == 0)
+				return -1;
+
+			sync(currentIndex);
+			int bucketEndIndex = bucket.start + bucket.len;
+			for (int level = 0; level < nodes.length; level++) {
+				ZoomBucketIndexTree tree = nodes[level];
+				int blockIdx = blockIndices[level];
+
+				if (blockIdx < tree.tileIds.size()) {
+					int shift = (bucket.z - tree.indxZoom) * 2;
+					long targetParentAtLevel = targetTileId >> shift;
+					long currentBlockParent = tree.tileIds.get(blockIdx);
+
+					if (currentBlockParent < targetParentAtLevel) {
+						int levelEndIndex = (blockIdx + 1 < tree.skipIndexes.size())
+								? tree.skipIndexes.get(blockIdx + 1)
+								: bucketEndIndex;
+						int nextIndex = skipBlock(tree, level, level, levelEndIndex);
+						if (nextIndex > currentIndex) {
+							if (stats != null) {
+								stats.recordSkip(bucket.z, level, nextIndex - currentIndex, tree.indxZoom, 0, 0);
+							}
+							return nextIndex;
+						}
+					}
+				}
+			}
+
+			return -1;
+		}
+
 	}
 
 	public static class SkipStats {
@@ -153,7 +188,7 @@ public class HashSkipTileQuadTree<T> {
 		public void printStats(int totalBucketLen, int[] indexedZooms) {
 			System.out.println("=== TileIterator Skip Stats ===");
 			System.out.printf("Total bucket size  : %d\n", totalBucketLen);
-			System.out.printf("Inspected entries  : %d (%.2f%%)\n", inspectedEntries,
+			System.out.printf("Inspected entries  : %d (%.2f%%)\n", inspectedEntries.size(),
 					(double) inspectedEntries.size() / totalBucketLen * 100.0);
 			System.out.printf("Total skips count  : %d\n", totalSkipsCount);
 			System.out.printf("Total skipped items: %d\n", totalElementsSkipped);

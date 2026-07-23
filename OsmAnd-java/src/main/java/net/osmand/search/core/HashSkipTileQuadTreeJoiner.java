@@ -1,10 +1,11 @@
 package net.osmand.search.core;
 
 import java.util.List;
+
+import net.osmand.search.core.HashSkipTileQuadTree.SkipStats;
 import net.osmand.search.core.HashSkipTileQuadTree.TileEntry;
 import net.osmand.search.core.HashSkipTileQuadTree.ZoomBucket;
 import net.osmand.search.core.HashSkipTileQuadTree.ZoomBucketIndexTreeIterator;
-import net.osmand.util.MapUtils;
 
 /**
  * High-performance spatial join algorithm leveraging
@@ -60,133 +61,85 @@ public class HashSkipTileQuadTreeJoiner<T, R> {
 		if (b1 == null || b2 == null || b1.len == 0 || b2.len == 0) {
 			return;
 		}
+		ZoomBucketIndexTreeIterator itA = new ZoomBucketIndexTreeIterator(b1);
+	    ZoomBucketIndexTreeIterator itB = new ZoomBucketIndexTreeIterator(b2);
 
 		if (z1 > z2) {
-			this.<R, T>joinBucketsOrdered(b2, tree2.getTileEntries(), b1, tree1.getTileEntries(),
+			this.<R, T>joinBucketsOrdered(b2, tree2.getTileEntries(), itB, 
+					b1, tree1.getTileEntries(), itA,
 					(e2, e1) -> callback.onIntersection(e1, e2), stats2, stats1);
 		} else {
-			this.<T, R>joinBucketsOrdered(b1, tree1.getTileEntries(), b2, tree2.getTileEntries(), callback, stats1,
-					stats2);
+			this.<T, R>joinBucketsOrdered(b1, tree1.getTileEntries(), itA, b2, tree2.getTileEntries(), itB, callback, 
+					stats1, stats2);
 		}
 	}
 
-	/**
-	 * Core join method assuming bA.z <= bB.z. Utilizes ZoomBucketIndexTreeIterator
-	 * on bucket B to skip large non-intersecting tile blocks.
-	 */
-	private <A, B> void joinBucketsOrdered(ZoomBucket bA, List<TileEntry<A>> entriesA, ZoomBucket bB,
-			List<TileEntry<B>> entriesB, JoinCallback<A, B> callback, HashSkipTileQuadTree.SkipStats statsA,
-			HashSkipTileQuadTree.SkipStats statsB) {
-		int deltaZ = bB.z - bA.z; // deltaZ >= 0
-		int shiftBits = deltaZ * 2;
+	private <A, B> void joinBucketsOrdered(
+	        ZoomBucket bA, List<TileEntry<A>> entriesA, ZoomBucketIndexTreeIterator itA,
+	        ZoomBucket bB, List<TileEntry<B>> entriesB, ZoomBucketIndexTreeIterator itB,
+	        JoinCallback<A, B> callback, SkipStats statsA, SkipStats statsB) {
 
-		int iA = bA.start;
-		int endA = bA.start + bA.len;
+	    int zDiff = bB.z - bA.z; 
+	    int shiftBits = Math.abs(zDiff) * 2;
 
-		int iB = bB.start;
-		int endB = bB.start + bB.len;
+	    int iA = bA.start, endA = bA.start + bA.len;
+	    int iB = bB.start, endB = bB.start + bB.len;
 
-		// Iterator over higher-zoom tree nodes to enable indexed skips
-		ZoomBucketIndexTreeIterator treeItB = new ZoomBucketIndexTreeIterator(bB);
+	    while (iA < endA && iB < endB) {
+	        TileEntry<A> eA = entriesA.get(iA);
+	        TileEntry<B> eB = entriesB.get(iB);
+	        long codeA = eA.tileId;
+	        long codeB = eB.tileId;
 
-		while (iA < endA && iB < endB) {
-			TileEntry<A> eA = entriesA.get(iA);
-			long tileIdA = eA.tileId;
+	        // Приводим к общему уровню Z (к меньшему зуму)
+	        long normA = (zDiff < 0) ? (codeA >> shiftBits) : codeA;
+	        long normB = (zDiff > 0) ? (codeB >> shiftBits) : codeB;
 
-			TileEntry<B> eB = entriesB.get(iB);
-
-			// 1. Check tree index skip on Bucket B against current tile A's 31-bit BBox
-			int[] tileABBox31 = calculateTileBBox31(tileIdA, bA.z);
-			int newIB = treeItB.checkSkip(iB, eB.tileId, eB.z, tileABBox31, endB, statsB);
-
-			if (newIB >= 0) {
-				iB = newIB;
-				continue;
-			}
-
-			long parentTileIdB = eB.tileId >> shiftBits;
-
-			if (parentTileIdB < tileIdA) {
-				// eB lags behind eA spatially -> advance iB using next tile pointer
-				if (statsB != null) {
-					statsB.recordInspection(eB);
-				}
-				iB = eB.skipNextTileId > 0 ? eB.skipNextTileId : iB + 1;
-			} else if (parentTileIdB > tileIdA) {
-				// eB has passed eA spatially -> skip all entries in bA sharing current tileIdA
-				int nextIA = eA.skipNextTileId > 0 ? eA.skipNextTileId : iA + 1;
-				if (statsA != null) {
-					int skipped = nextIA - iA;
-					int tileX = (int) MapUtils.deinterleaveX(tileIdA);
-					int tileY = (int) MapUtils.deinterleaveY(tileIdA);
-					statsA.recordSkip(bA.z, 0, skipped, bA.z, tileX, tileY);
-				}
-				iA = nextIA;
-			} else {
-				// Match found! parentTileIdB == tileIdA
-				if (statsA != null) {
-					statsA.recordInspection(eA);
-				}
-
-				int matchStartB = iB;
-
-				// Iterate over all entries in Bucket A sharing tileIdA
-				while (iA < endA && entriesA.get(iA).tileId == tileIdA) {
-					TileEntry<A> curEA = entriesA.get(iA);
-					int curIB = matchStartB;
-
-					while (curIB < endB) {
-						TileEntry<B> curEB = entriesB.get(curIB);
-						long curParentB = curEB.tileId >> shiftBits;
-
-						if (curParentB != tileIdA) {
-							break; // End of matching parent tile scope
-						}
-
-						if (statsB != null) {
-							statsB.recordInspection(curEB);
-						}
-
-						// Precise 31-bit bounding box intersection check
-						if (intersectsBBox(curEA.bbox31, curEB.bbox31)) {
-							callback.onIntersection(curEA, curEB);
-						}
-
-						curIB++;
+	        if (normA == normB) {
+	            int endMatchB = iB;
+	            while (endMatchB < endB) {
+	                long cB = entriesB.get(endMatchB).tileId;
+	                long nB = (zDiff > 0) ? (cB >> shiftBits) : cB;
+					if (statsB != null) {
+						statsB.recordInspection(entriesB.get(endMatchB));
 					}
-					iA++;
-				}
+	                if (nB != normA) break;
+	                endMatchB++;
+	            }
 
-				// Advance iB past all entries matching current parentTileIdB
-				iB = advanceToNextParentTile(entriesB, matchStartB, endB, shiftBits, tileIdA);
-			}
-		}
-	}
+	            int currA = iA;
+	            while (currA < endA) {
+	                TileEntry<A> entryA = entriesA.get(currA);
+					if (statsA != null) {
+						statsA.recordInspection(entryA);
+					}
+	                long cA = entryA.tileId;
+	                long nA = (zDiff < 0) ? (cA >> shiftBits) : cA;
+	                if (nA != normA) break;
 
-	private <X> int advanceToNextParentTile(List<TileEntry<X>> entries, int start, int end, int shiftBits,
-			long currentParentTileId) {
-		int curr = start;
-		while (curr < end) {
-			long parentTileId = entries.get(curr).tileId >> shiftBits;
-			if (parentTileId != currentParentTileId) {
-				return curr;
-			}
-			curr = entries.get(curr).skipNextTileId > 0 ? entries.get(curr).skipNextTileId : curr + 1;
-		}
-		return end;
-	}
+	                for (int mB = iB; mB < endMatchB; mB++) {
+	                    TileEntry<B> entryB = entriesB.get(mB);
+	                    if (intersectsBBox(entryA.bbox31, entryB.bbox31)) {
+	                        callback.onIntersection(entryA, entryB);
+	                    }
+	                }
+	                currA++;
+	            }
 
-	private static int[] calculateTileBBox31(long tileId, int zoom) {
-		int shift = 31 - zoom;
-		int tileX = (int) MapUtils.deinterleaveX(tileId);
-		int tileY = (int) MapUtils.deinterleaveY(tileId);
-
-		int minX = tileX << shift;
-		int maxX = ((tileX + 1) << shift) - 1;
-		int minY = tileY << shift;
-		int maxY = ((tileY + 1) << shift) - 1;
-
-		return new int[] { minX, minY, maxX, maxY };
+	            iA = currA;
+	            iB = endMatchB;
+	        } else if (normA < normB) {
+	            itA.sync(iA);
+	            long targetA = (zDiff < 0) ? (normB << shiftBits) : normB;
+	            int nextA = itA.skipToTileId(iA, targetA, statsA);
+	            iA = (nextA > iA && nextA < endA) ? nextA : iA + 1;
+	        } else {
+	            itB.sync(iB);
+	            long targetB = (zDiff > 0) ? (normA << shiftBits) : normA;
+	            int nextB = itB.skipToTileId(iB, targetB, statsB);
+	            iB = (nextB > iB && nextB < endB) ? nextB : iB + 1;
+	        }
+	    }
 	}
 
 	private static boolean intersectsBBox(int[] a, int[] b) {
