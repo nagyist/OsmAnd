@@ -60,6 +60,7 @@ public class HashSkipTileQuadTreeRealDataTest {
         }
 
         System.out.println("=== 2. Integration Testing: HashSkipTileQuadTree.get(...) ===");
+        long nanoTime = System.nanoTime();
         Random rnd = new Random(RANDOM_SEED);
 
         for (int run = 1; run <= TEST_RUNS; run++) {
@@ -69,7 +70,7 @@ public class HashSkipTileQuadTreeRealDataTest {
 
             runGetMethodTest(tree, run, targetObject, targetBBox, sampleObjectsMap);
         }
-
+        System.out.printf("%.2f ms\n", (System.nanoTime() - nanoTime)/ 1e6);
         System.out.println("✅ ALL GET() TESTS PASSED SUCCESSFULLY!");
     }
 
@@ -112,7 +113,8 @@ public class HashSkipTileQuadTreeRealDataTest {
         }
 
         System.out.println("\n--- 2. INSPECTED OBJECTS WITH NAMES (STATS.INSPECTED_ENTRIES) ---");
-        for (int i = 0; i < stats.inspectedEntries.size(); i++) {
+        boolean printInsStats = false;
+        for (int i = 0; printInsStats && i < stats.inspectedEntries.size(); i++) {
             long inspectedId = stats.inspectedEntries.get(i);
             RealMapObject obj = sampleObjectsMap.get(inspectedId);
             String name = (obj != null) ? obj.regionName : "Unknown";
@@ -123,10 +125,11 @@ public class HashSkipTileQuadTreeRealDataTest {
         }
 
         System.out.println("\n--- 3. SKIPPED TILES DETAILED LIST ---");
-        for (int i = 0; i < stats.skipRecords.size(); i++) {
+        boolean printSkipStats = false;
+        for (int i = 0; printSkipStats && i < stats.skipRecords.size(); i++) {
             var rec = stats.skipRecords.get(i);
-            System.out.printf("  [%03d] Skipped tile z=%d x=%d y=%d (objects skipped %d)\n", 
-                    i + 1, rec.zoom(), rec.x(), rec.y(), rec.skippedElements());
+            System.out.printf("  [%03d] Skipped bucket=%d tile z=%d x=%d y=%d (objects skipped %d)\n", 
+                    i + 1, rec.bucketZoom(),  rec.zoom(), rec.x(), rec.y(), rec.skippedElements());
         }
 
         System.out.println("\n--- 4. DETAILED SKIP STATISTICS ---");
@@ -139,7 +142,7 @@ public class HashSkipTileQuadTreeRealDataTest {
             System.out.printf("  Level %d (Z%-2d): %d skips, %d items skipped\n", 
                     level, zoom, stats.skipsPerLevel[level], stats.elementsSkippedPerLevel[level]);
         }
-
+        
         if (!targetFoundInResults) {
             throw new AssertionError(String.format(
                 "❌ ERROR: Target object ID %d was NOT found in get() results!", targetObject.id

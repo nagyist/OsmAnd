@@ -42,8 +42,10 @@ public class HashSkipTileQuadTree<T> {
 
 		private final ZoomBucketIndexTree[] nodes;
 		private final int[] blockIndices;
+		private final ZoomBucket bucket;
 
 		public ZoomBucketIndexTreeIterator(ZoomBucket bucket) {
+			this.bucket = bucket;
 			int depth = bucket.indexedZooms.length;
 			this.nodes = new ZoomBucketIndexTree[depth];
 			this.blockIndices = new int[depth];
@@ -67,7 +69,7 @@ public class HashSkipTileQuadTree<T> {
 						int skipped = nextIndex - currentIndex;
 						int tileX = (int) MapUtils.deinterleaveX(parentTileId);
 						int tileY = (int) MapUtils.deinterleaveY(parentTileId);
-						stats.recordSkip(level, skipped, indxZoom, tileX, tileY);
+						stats.recordSkip(bucket.z, level, skipped, indxZoom, tileX, tileY);
 					}
 					return nextIndex;
 				}
@@ -123,7 +125,7 @@ public class HashSkipTileQuadTree<T> {
 	}
 
 	public static class SkipStats {
-		public record SkipRecord(int level, int zoom, int x, int y, int skippedElements) {
+		public record SkipRecord(int bucketZoom, int level, int zoom, int x, int y, int skippedElements) {
 		}
 
 		public TLongArrayList inspectedEntries = new TLongArrayList();
@@ -139,12 +141,12 @@ public class HashSkipTileQuadTree<T> {
 			this.elementsSkippedPerLevel = new long[levelsCount];
 		}
 
-		public void recordSkip(int level, int skippedElements, int zoom, int x, int y) {
+		public void recordSkip(int bucketZoom, int level, int skippedElements, int zoom, int x, int y) {
 			skipsPerLevel[level]++;
 			elementsSkippedPerLevel[level] += skippedElements;
 			totalSkipsCount++;
 			totalElementsSkipped += skippedElements;
-			skipRecords.add(new SkipRecord(level, zoom, x, y, skippedElements));
+			skipRecords.add(new SkipRecord(bucketZoom, level, zoom, x, y, skippedElements));
 		}
 
 		public void recordInspection(TileEntry<?> t) {
