@@ -11,15 +11,12 @@ import net.osmand.util.MapUtils;
 
 public class HashSkipTileQuadTree<T> {
 
-	public record QuadTreePair<T, R>(T o1, R o2) {
-	}
-
 	public static final int MAX_ZOOM = 16;
 	public static final int MIN_ZOOM = 0;
 	public static final int[] INDEXED_ZOOMS = new int[] { 1, 3, 5, 8, 11, 14, 16 };
 
-	private final List<TileEntry<T>> tileEntries = new ArrayList<>();
-	private final ZoomBucket[] zoomBuckets = new ZoomBucket[MAX_ZOOM + 1];
+	final List<TileEntry<T>> tileEntries = new ArrayList<>();
+	final ZoomBucket[] zoomBuckets = new ZoomBucket[MAX_ZOOM + 1];
 
 	public static class TileEntry<T> {
 		public final long objId;
@@ -404,6 +401,10 @@ public class HashSkipTileQuadTree<T> {
 			}
 		}
 		return res;
+	}
+
+	List<TileEntry<T>> getTileEntries() {
+		return tileEntries;
 	}
 
 }
