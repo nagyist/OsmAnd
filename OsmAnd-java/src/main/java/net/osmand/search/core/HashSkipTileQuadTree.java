@@ -15,7 +15,7 @@ public class HashSkipTileQuadTree<T> {
 
 	public static final int MAX_ZOOM = 16;
 	public static final int MIN_ZOOM = 0;
-	public static final int[] INDEXED_ZOOMS = new int[] { 5, 8, 11, 14, 16 };
+	public static final int[] INDEXED_ZOOMS = new int[] {3, 5, 8, 11, 14, 16 };
 	
 	private final List<TileEntry<T>> tileEntries = new ArrayList<>();
 	private final ZoomBucket[] zoomBuckets = new ZoomBucket[MAX_ZOOM + 1];
@@ -56,13 +56,18 @@ public class HashSkipTileQuadTree<T> {
 	        }
 		}
 		
-		public int checkSkip(int currentIndex, long tileId, int tileZoom, int[] queryBBox, int endIndex) {
+		public int checkSkip(int currentIndex, long tileId, int tileZoom, int[] queryBBox, int endIndex,
+				SkipStats stats) {
 			sync(currentIndex);
 			for (int level = 0; level < nodes.length; level++) {
 				int indxZoom = nodes[level].indxZoom;
 				long parentTileId = tileId >> ((tileZoom - indxZoom) * 2);
 				if (!intersectsTile(parentTileId, indxZoom, queryBBox)) {
-					return skipBlock(nodes[level], level, 0, endIndex);
+					int nextIndex = skipBlock(nodes[0], level, 0, endIndex);
+					if (stats != null) {
+	                    stats.recordSkip(level, nextIndex - currentIndex);
+	                }
+					return nextIndex;
 				}
 			}
 			return -1;
@@ -113,8 +118,46 @@ public class HashSkipTileQuadTree<T> {
 	            resetChildren(tree.subTree, level + 1, subBlockIdx);
 	        }
 	    }
+	}
+	
+	public static class SkipStats {
+	    public int inspectedEntries = 0;
+	    public int totalSkipsCount = 0;
+	    public long totalElementsSkipped = 0;
 
-		
+	    public final int[] skipsPerLevel;
+	    public final long[] elementsSkippedPerLevel;
+
+	    public SkipStats(int levelsCount) {
+	        this.skipsPerLevel = new int[levelsCount];
+	        this.elementsSkippedPerLevel = new long[levelsCount];
+	    }
+
+	    public void recordSkip(int level, int skippedElements) {
+	        skipsPerLevel[level]++;
+	        elementsSkippedPerLevel[level] += skippedElements;
+	        totalSkipsCount++;
+	        totalElementsSkipped += skippedElements;
+	    }
+
+	    public void recordInspection() {
+	        inspectedEntries++;
+	    }
+
+	    public void printStats(int totalBucketLen, int[] indexedZooms) {
+	        System.out.println("=== TileIterator Skip Stats ===");
+	        System.out.printf("Total bucket size  : %d\n", totalBucketLen);
+	        System.out.printf("Inspected entries  : %d (%.2f%%)\n", 
+	                inspectedEntries, (double) inspectedEntries / totalBucketLen * 100.0);
+	        System.out.printf("Total skips count  : %d\n", totalSkipsCount);
+	        System.out.printf("Total skipped items: %d\n", totalElementsSkipped);
+
+	        for (int level = 0; level < skipsPerLevel.length; level++) {
+	            int zoom = (indexedZooms != null && level < indexedZooms.length) ? indexedZooms[level] : level;
+	            System.out.printf("  Level %d (Z%d): %d skips, %d items skipped\n", 
+	                    level, zoom, skipsPerLevel[level], elementsSkippedPerLevel[level]);
+	        }
+	    }
 	}
 	
 	static class ZoomBucketIndexTree {
@@ -166,9 +209,6 @@ public class HashSkipTileQuadTree<T> {
 		
 		public ZoomBucketIndexTree indx = null;
 		
-		public TIntArrayList[] skipIndexes;
-		public TIntArrayList[] skipSubIndexes;
-		
 		ZoomBucket(int z, int start, int[] indexedZooms) {
 			this.z = z;
 			this.start = start;
@@ -177,8 +217,6 @@ public class HashSkipTileQuadTree<T> {
 				indx = new ZoomBucketIndexTree(0, indexedZooms);
 			}
 		}
-		
-	   
 	}
 
 
@@ -291,14 +329,17 @@ public class HashSkipTileQuadTree<T> {
 	    final ZoomBucketIndexTreeIterator treeIt;
 	    
 	    int currentIndex;
-	    private TileEntry<T> nextEntry;
+	    TileEntry<T> nextEntry;
+	    
+	    final SkipStats stats;
 
-	    public TileIterator(ZoomBucket bucket, int[] queryBBox) {
+	    public TileIterator(ZoomBucket bucket, int[] queryBBox, SkipStats stats) {
 	        this.bucket = bucket;
 	        this.queryBBox = queryBBox;
 	        this.currentIndex = bucket.start;
 	        this.endIndex = bucket.start + bucket.len;
 	        this.treeIt = new ZoomBucketIndexTreeIterator(bucket);
+			this.stats = stats;
 	        advance();
 	    }
 
@@ -321,13 +362,16 @@ public class HashSkipTileQuadTree<T> {
 	        nextEntry = null;
 			while (currentIndex < endIndex) {
 				TileEntry<T> entry = tileEntries.get(currentIndex);
-				int newIndex = treeIt.checkSkip(currentIndex, 
-						entry.tileId, entry.z, queryBBox, endIndex);
+				int newIndex = treeIt.checkSkip(currentIndex, entry.tileId, entry.z, queryBBox, endIndex, stats);
 				if (newIndex >= 0) {
 					currentIndex = newIndex;
 					continue;
 				}
-				// TODO check intersects tile to skip
+				stats.recordInspection();
+				if (!intersectsTile(entry.tileId, entry.z, queryBBox)) {
+				    currentIndex = entry.skipNextTileId > 0 ? entry.skipNextTileId : currentIndex + 1;
+				    continue;
+				}
 				if (intersectsBBox(entry.bbox31, queryBBox)) {
 					nextEntry = entry;
 					currentIndex++;
@@ -336,6 +380,11 @@ public class HashSkipTileQuadTree<T> {
 				currentIndex++;
 			}
 	    }
+	}
+
+
+	public ZoomBucket getZoomBucket(int z) {
+		return zoomBuckets[z];
 	}
 	
 }
