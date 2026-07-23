@@ -15,7 +15,7 @@ import net.osmand.binary.BinaryMapDataObject;
 import net.osmand.map.OsmandRegions;
 import net.osmand.search.core.HashSkipTileQuadTree.TileEntry;
 
-public class HashSkipTileQuadTreeRealDataTest {
+public class HSTQuadTreeRealDataTest {
 
     private static final int RANDOM_SEED = 42;
     private static final int TEST_RUNS = 3;

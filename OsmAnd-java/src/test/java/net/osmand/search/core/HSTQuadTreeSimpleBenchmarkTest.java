@@ -15,7 +15,7 @@ import net.osmand.binary.BinaryMapDataObject;
 import net.osmand.map.OsmandRegions;
 import net.osmand.search.core.HashSkipTileQuadTree.TileEntry;
 
-public class HashSkipTileQuadTreeBenchmarkTest {
+public class HSTQuadTreeSimpleBenchmarkTest {
 
     static class RealMapObject {
         final long id;
@@ -79,7 +79,6 @@ public class HashSkipTileQuadTreeBenchmarkTest {
 
         System.out.printf("=== 2. Benchmarking Intersection Search for %d Objects ===\n", sampleObjects.size());
 
-        // Прогрев JIT (Warmup)
         for (int i = 0; i < Math.min(100, sampleObjects.size()); i++) {
             HashSkipTileQuadTree.SkipStats dummyStats = new HashSkipTileQuadTree.SkipStats(HashSkipTileQuadTree.INDEXED_ZOOMS.length);
             tree.get(sampleObjects.get(i).bbox, dummyStats);
@@ -95,7 +94,6 @@ public class HashSkipTileQuadTreeBenchmarkTest {
         int maxInspectedEntries = 0;
         String maxInspectedObject = "";
 
-        // Проходим по каждому объекту
         for (RealMapObject targetObj : sampleObjects) {
             IntersectionStat stat = new IntersectionStat(targetObj);
             HashSkipTileQuadTree.SkipStats stats = new HashSkipTileQuadTree.SkipStats(HashSkipTileQuadTree.INDEXED_ZOOMS.length);
@@ -107,7 +105,6 @@ public class HashSkipTileQuadTreeBenchmarkTest {
             stat.searchTimeNs = elapsedNs;
             stat.inspectedEntriesCount = stats.inspectedEntries.size();
 
-            // Собираем уникальные пересечения (TileEntry могут дублироваться на разных тайлах)
             for (TileEntry<RealMapObject> entry : results) {
                 if (entry.objId != targetObj.id) { // исключаем самопересечение
                     if (stat.intersectedObjIds.add(entry.objId)) {
@@ -119,14 +116,12 @@ public class HashSkipTileQuadTreeBenchmarkTest {
 
             benchmarkResults.add(stat);
 
-            // Метрики времени
             totalSearchTimeNs += elapsedNs;
             if (elapsedNs > maxSearchTimeNs) {
                 maxSearchTimeNs = elapsedNs;
                 maxTimeObject = targetObj.regionName;
             }
 
-            // Метрики inspect
             totalInspectedEntries += stat.inspectedEntriesCount;
             if (stat.inspectedEntriesCount > maxInspectedEntries) {
                 maxInspectedEntries = stat.inspectedEntriesCount;
@@ -134,7 +129,6 @@ public class HashSkipTileQuadTreeBenchmarkTest {
             }
         }
 
-        // Вывод агрегированных показателей
         double totalTimeMs = totalSearchTimeNs / 1e6;
         double avgTimeMs = (totalSearchTimeNs / (double) sampleObjects.size()) / 1e6;
         double maxTimeMs = maxSearchTimeNs / 1e6;
@@ -186,6 +180,9 @@ public class HashSkipTileQuadTreeBenchmarkTest {
             String regionName = e.getKey();
             LinkedList<BinaryMapDataObject> lst = e.getValue();
             if (lst == null) continue;
+			if (regionName == null) {
+				continue;
+			}
 
             totalRegions++;
 
