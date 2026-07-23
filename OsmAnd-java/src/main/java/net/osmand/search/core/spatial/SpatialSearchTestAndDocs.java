@@ -37,20 +37,23 @@ import net.osmand.util.SearchAlgorithms;
 // UNIT TESTING: 2419 Avenue G, Dickinson, TX 77539, USA (FAILS border) - Add missing border
 // UNIT TESTING: 1. 2 Sokak (house) 2. 2 Sokak (street) 3. 2 <WORD> Sokak (street) or 3381/2 Sokak. 4. '2.Kadriye' (city) .. Sokak!
 // "2.Sokak", "2 Sokak", "Sokak 2", "2. Sokak", "32/2 Sokak" + housenumber (?),  2/1 21038 Sokak, Sokak 23018. Balikesir, 2301. Sokak
-// UNIT TESTING: 4av - 'New York 4 av 8', '4 av', '4 avenue 8', '4th ave', '8 4 ave paterson' (26240861988)
 // UNIT TESTING: (venezia district-street) 'Venezia Cannaregio Campo Saffa', 'Cannaregio 539D Campo Saffa', 'Venezia Cannaregio 539D'
 // UNIT TESTING: 'Pennsylvania Avenue Philadelphia Philadelphia County Pennsylvania USA' (duplicate words) res - 39.963028, -75.174270
+
+// UNIT TESTING: Brands See makby queries and file! // 20: 16 (brand/name Mac.by), 3 (no brand, name Mac.by), ...
+
 // UNIT TESTING: "саксаг. Володимирська"; // street intersection
 // UNIT TESTING: (2 house + ref) 'саксаг. 63/28, 2' (ref + 2 +house), 'саксаг. 28', 'саксаг. 63', 'саксаг. 63/28'
-// UNIT TESTING: (school): "Школа 25 Володимирська вулиця" "андріівський узвіз Школа "
+// UNIT TESTING: нова пошта <street>, нова пошта <city>, just <post_ref> (нова пошта 3 краматорск), 5 <>... 
+//               "Cafe вулиця Саксаганського", restaurant Antwerpen , "нова пошта вулиця Саксаганського", "нова вулиця Саксаганського"
+// UNIT TESTING: Deduplicate brands by search 'по.' (search) - results brand langs - 'Поїхали з нами' / 'Поехали с нами'
+// UNIT TESTING: нова пошта краматорськ  - no brand !! (3 in ref, 5 in name) 5 (5 N7846074085, N1482296639)
+
 // UNIT TESTING: (by id): O128894
 // UNIT TESTING: (poi additional germany) Gynaecologist - from all poi types should be result ! (not like old search)
-// UNIT TESTING: (City + House +- Street) 'Kyiv Глушкова 1', 'Kyiv 1'
 // UNIT TESTING: POI intersection 'fuel mcdonalds', 'cafe fuel', 'fuel burger'
-// UNIT TESTING: нова пошта <street>, нова пошта <city>, just <post_ref> (нова пошта 3 краматорск), 5 <>... 
-// UNIT TESTING: нова пошта краматорськ  - no brand !! (3 in ref, 5 in name) 5 (5 N7846074085, N1482296639)
-// UNIT TESTING: Brands See makby queries and file! // 20: 16 (brand/name Mac.by), 3 (no brand, name Mac.by), ...
-// UNIT TESTING: Deduplicate brands by search 'по.' (search) - results brand langs - 'Поїхали з нами' / 'Поехали с нами'
+
+// UNIT TESTING: New york The plaza 
 // UNIT TESTING: POI Name / Type + Address - 'Shell 2 Rožňavská'
 // UNIT TESTING: <POI Category> + Object - "Cafe вулиця Саксаганського", restaurant Antwerpen , Postcode + Type, 1181ZM cafe
 //               Hotel Berlin, see below, "нова пошта вулиця Саксаганського", "нова вулиця Саксаганського"; // brand +
