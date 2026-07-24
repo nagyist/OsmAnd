@@ -221,7 +221,7 @@ public class HSTQuadTreeJoinTest {
 		Collections.sort(sortedPairs);
 
 		System.out.println("=== SAMPLE TOP 20 INTERSECTING REGION PAIRS ===");
-		int limit = Math.min(20000, sortedPairs.size());
+		int limit = Math.min(5, sortedPairs.size());
 		for (int i = 0; i < limit; i++) {
 			PairResult pair = sortedPairs.get(i);
 			System.out.printf("%2d. %-30s <---> %-30s\n", i + 1, pair.name1, pair.name2);

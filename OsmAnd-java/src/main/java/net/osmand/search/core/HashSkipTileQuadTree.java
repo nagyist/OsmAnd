@@ -13,8 +13,9 @@ public class HashSkipTileQuadTree<T> {
 
 	public static final int DEFALT_MAX_ZOOM = 16;
 	public static final int DEFALT_MIN_ZOOM = 0;
-	//public static final int[] INDEXED_ZOOMS = new int[] { 1, 3, 5, 8, 11, 14, 16 };
-	public static final int[] DEFALT_INDEXED_ZOOMS = new int[] { 3, 5, 8};
+//	public static final int[] DEFAULT_INDEXED_ZOOMS = new int[] { 1, 3, 5, 8, 11, 14};
+	public static final int[] DEFAULT_INDEXED_ZOOMS = new int[] { 1, 3, 5, 8, 11};
+//	public static final int[] DEFAULT_INDEXED_ZOOMS = new int[] { 3, 5, 8};
 
 	final List<TileEntry<T>> tileEntries = new ArrayList<>();
 	final ZoomBucket[] zoomBuckets;
@@ -23,7 +24,7 @@ public class HashSkipTileQuadTree<T> {
 	final int[] indxZooms;
 	
 	public HashSkipTileQuadTree() {
-		this(DEFALT_MIN_ZOOM, DEFALT_MAX_ZOOM, DEFALT_INDEXED_ZOOMS);
+		this(DEFALT_MIN_ZOOM, DEFALT_MAX_ZOOM, DEFAULT_INDEXED_ZOOMS);
 	}
 	
 	public HashSkipTileQuadTree(int minZoom, int maxZoom, int[] indexedZooms) {
