@@ -544,7 +544,7 @@ public class MapUtils {
 	}
 	
 	public static long interleaveBitsFast(long x, long y) {
-	    return splitBits(x) | (splitBits(y) << 1);
+		return splitBits(y) | (splitBits(x) << 1);
 	}
 
 	private static long splitBits(long v) {
