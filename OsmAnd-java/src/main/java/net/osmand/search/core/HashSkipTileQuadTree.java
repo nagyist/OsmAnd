@@ -287,6 +287,10 @@ public class HashSkipTileQuadTree<T> {
 
 	public void addObject(T obj, int[] bbox31, long externalId) {
 		long objId = externalId == -1 ? tileEntries.size() : externalId;
+		addTileEntry(obj, bbox31, objId, getNativeZoom(bbox31));
+	}
+	
+	public int getNativeZoom(int[] bbox31) {
 		int targetZoom = maxZoom;
 		// Fit into 2x2 - maximum 4 tiles
 		while (targetZoom > minZoom) {
@@ -303,7 +307,7 @@ public class HashSkipTileQuadTree<T> {
 			}
 			targetZoom--;
 		}
-		addTileEntry(obj, bbox31, objId, targetZoom);
+		return targetZoom;
 	}
 
 	public static long encodeTileId(int x, int y) {
@@ -453,8 +457,12 @@ public class HashSkipTileQuadTree<T> {
 	}
 
 	public List<TileEntry<T>> get(int[] queryBBox, SkipStats stats) {
+		return get(queryBBox, minZoom, maxZoom, stats);
+	}
+	
+	public List<TileEntry<T>> get(int[] queryBBox, int minZ, int maxZ, SkipStats stats) {
 		List<TileEntry<T>> res = new ArrayList<>();
-		for (int z = minZoom; z <= maxZoom; z++) {
+		for (int z = minZ; z <= maxZ; z++) {
 			ZoomBucket zoomBucket = zoomBuckets[z];
 			if (zoomBucket != null) {
 				if (stats != null) {
@@ -472,5 +480,7 @@ public class HashSkipTileQuadTree<T> {
 	List<TileEntry<T>> getTileEntries() {
 		return tileEntries;
 	}
+
+	
 
 }

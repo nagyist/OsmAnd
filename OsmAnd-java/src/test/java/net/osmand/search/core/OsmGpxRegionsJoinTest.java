@@ -37,10 +37,11 @@ public class OsmGpxRegionsJoinTest {
 
 	public static String TAG_CONTAINS = null; // e.g. "amenity". Set to null to disable.
 
-	public static int START_YEAR = 0; // e.g. 2021. Set to 0 to disable.
-	public static int END_YEAR = 0;   // e.g. 2022. Set to 0 to disable.
+	public static int START_YEAR = 2020; // e.g. 2021. Set to 0 to disable.
+	public static int END_YEAR = 2025; // e.g. 2022. Set to 0 to disable.
 
-	// Geographic BBox filter: [minLat, minLon, maxLat, maxLon]. Set to null to disable.
+	// Geographic BBox filter: [minLat, minLon, maxLat, maxLon]. Set to null to
+	// disable.
 	public static double[] FILTER_BBOX = null; // e.g. new double[] {24.0, 120.0, 26.0, 122.0}
 
 	// =========================================================================
@@ -68,16 +69,16 @@ public class OsmGpxRegionsJoinTest {
 	}
 
 	static class TrackFilter {
-		public boolean test(String activity, double speedMps, String tags, String dateStr,
-							double minLat, double minLon, double maxLat, double maxLon) {
-			
+		public boolean test(String activity, double speedMps, String tags, String dateStr, double minLat, double minLon,
+				double maxLat, double maxLon) {
+
 			// 1. Activity filter
 			if (ALLOWED_ACTIVITIES != null && !ALLOWED_ACTIVITIES.isEmpty()) {
 				if (!ALLOWED_ACTIVITIES.contains(activity)) {
 					return false;
 				}
 			}
-			
+
 			// 2. Max speed filter (Convert MAX_SPEED_KMH -> m/s)
 			if (MAX_SPEED_KMH > 0) {
 				double maxSpeedMps = MAX_SPEED_KMH / 3.6;
@@ -85,14 +86,14 @@ public class OsmGpxRegionsJoinTest {
 					return false;
 				}
 			}
-			
+
 			// 3. Tags filter
 			if (TAG_CONTAINS != null && !TAG_CONTAINS.isEmpty()) {
 				if (tags == null || !tags.contains(TAG_CONTAINS)) {
 					return false;
 				}
 			}
-			
+
 			// 4. Date filter (parse year from "YYYY-MM-DD ..." format)
 			if (START_YEAR > 0 || END_YEAR > 0) {
 				if (dateStr == null || dateStr.length() < 4) {
@@ -129,7 +130,8 @@ public class OsmGpxRegionsJoinTest {
 	}
 
 	public static void main(String[] args) throws Exception {
-		File file = new File(System.getProperty("maps") != null ? System.getProperty("maps") : ".", "osm_gpx_data.csv.gz");
+		File file = new File(System.getProperty("maps") != null ? System.getProperty("maps") : ".",
+				"osm_gpx_data.csv.gz");
 
 		if (!file.exists()) {
 			System.err.println("File not found: " + file.getAbsolutePath());
@@ -140,20 +142,20 @@ public class OsmGpxRegionsJoinTest {
 
 		HashSkipTileQuadTree<GpxTrackObject> tracksTree = new HashSkipTileQuadTree<>();
 		System.out.printf("=== 1. Reading max %d tracks from %s ===\n", LIMIT_TRACKS, file.getName());
-		
+
 		long startCsv = System.currentTimeMillis();
 		int loadedTracksCount = loadGpxTracks(file, tracksTree, LIMIT_TRACKS, filter);
 		long tracksBuildStart = System.nanoTime();
 		tracksTree.build();
 		long tracksBuildMs = (System.nanoTime() - tracksBuildStart) / 1_000_000;
 
-		System.out.printf("Loaded %d tracks in %d ms (Tree build time: %d ms)\n\n", 
-				loadedTracksCount, System.currentTimeMillis() - startCsv, tracksBuildMs);
+		System.out.printf("Loaded %d tracks in %d ms (Tree build time: %d ms)\n\n", loadedTracksCount,
+				System.currentTimeMillis() - startCsv, tracksBuildMs);
 
 		HashSkipTileQuadTree<HSTQuadTreeJoinTest.RealMapObject> regionsTree = new HashSkipTileQuadTree<>();
 		System.out.println("=== 2. Loading OsmAnd Regions ===");
 		long startRegions = System.currentTimeMillis();
-		
+
 		OsmandRegions or = new OsmandRegions(null);
 		Map<String, LinkedList<BinaryMapDataObject>> obj = or.cacheAllCountries();
 		loadOsmandRegions(or, obj, regionsTree);
@@ -161,12 +163,22 @@ public class OsmGpxRegionsJoinTest {
 		long regionsBuildStart = System.nanoTime();
 		regionsTree.build();
 		long regionsBuildMs = (System.nanoTime() - regionsBuildStart) / 1_000_000;
-		System.out.printf("Loaded OsmAnd Regions in %d ms (Tree build time: %d ms)\n\n", 
+		System.out.printf("Loaded OsmAnd Regions in %d ms (Tree build time: %d ms)\n\n",
 				System.currentTimeMillis() - startRegions, regionsBuildMs);
 
+		List<Map.Entry<String, Set<String>>> sortedRegions = benchmarkIntersection(tracksTree, loadedTracksCount,
+				regionsTree);
+//		benchmarkQueryByBboxPerRegion(sortedRegions, obj, tracksTree);
+//		benchmarkTrackTileDensityPerRegion(sortedRegions, obj, tracksTree);
+		System.out.println(sortedRegions.size());
+	}
+
+	private static List<Map.Entry<String, Set<String>>> benchmarkIntersection(
+			HashSkipTileQuadTree<GpxTrackObject> tracksTree, int loadedTracksCount,
+			HashSkipTileQuadTree<HSTQuadTreeJoinTest.RealMapObject> regionsTree) {
 		System.out.println("=== 3. Executing Spatial Join (Tracks x Regions) ===");
-		HashSkipTileQuadTreeJoiner<GpxTrackObject, HSTQuadTreeJoinTest.RealMapObject> joiner =
-				new HashSkipTileQuadTreeJoiner<>(tracksTree, regionsTree);
+		HashSkipTileQuadTreeJoiner<GpxTrackObject, HSTQuadTreeJoinTest.RealMapObject> joiner = new HashSkipTileQuadTreeJoiner<>(
+				tracksTree, regionsTree);
 
 		HashSkipTileQuadTree.SkipStats stats1 = new HashSkipTileQuadTree.SkipStats(tracksTree);
 		HashSkipTileQuadTree.SkipStats stats2 = new HashSkipTileQuadTree.SkipStats(regionsTree);
@@ -225,19 +237,22 @@ public class OsmGpxRegionsJoinTest {
 				sampleCount++;
 			}
 
-			System.out.printf("%3d. %-32s | Count: %-5d | Examples: %s\n", 
-					i + 1, regionName, tracks.size(), examplesBuilder.toString());
+			System.out.printf("%3d. %-32s | Count: %-5d | Examples: %s\n", i + 1, regionName, tracks.size(),
+					examplesBuilder.toString());
 		}
+		return sortedRegions;
 	}
 
-	private static int loadGpxTracks(File gzFile, HashSkipTileQuadTree<GpxTrackObject> tree, int limit, TrackFilter filter) throws Exception {
+	private static int loadGpxTracks(File gzFile, HashSkipTileQuadTree<GpxTrackObject> tree, int limit,
+			TrackFilter filter) throws Exception {
 		int count = 0;
 
 		try (GZIPInputStream gis = new GZIPInputStream(new FileInputStream(gzFile));
-			 BufferedReader reader = new BufferedReader(new InputStreamReader(gis, StandardCharsets.UTF_8))) {
+				BufferedReader reader = new BufferedReader(new InputStreamReader(gis, StandardCharsets.UTF_8))) {
 
-			String headerLine = reader.readLine(); 
-			if (headerLine == null) return 0;
+			String headerLine = reader.readLine();
+			if (headerLine == null)
+				return 0;
 
 			String line;
 			int lineNum = 0;
@@ -246,13 +261,14 @@ public class OsmGpxRegionsJoinTest {
 				if (++lineNum % 50000 == 0) {
 					System.out.printf("Read %d lines...\n", lineNum);
 				}
-				if (cols.length < 24) continue;
+				if (cols.length < 24)
+					continue;
 
 				try {
 					long id = Long.parseLong(cols[0]);
 					String dateStr = cols[2];
 					String name = cols[3];
-					
+
 					double minLat = Double.parseDouble(cols[9]);
 					double minLon = Double.parseDouble(cols[10]);
 					double maxLon = Double.parseDouble(cols[11]);
@@ -262,7 +278,8 @@ public class OsmGpxRegionsJoinTest {
 					String activity = cols[14];
 					double speed = cols[15].isEmpty() ? 0.0 : Double.parseDouble(cols[15]);
 
-					if (filter != null && !filter.test(activity, speed, tags, dateStr, minLat, minLon, maxLat, maxLon)) {
+					if (filter != null
+							&& !filter.test(activity, speed, tags, dateStr, minLat, minLon, maxLat, maxLon)) {
 						continue;
 					}
 
@@ -286,17 +303,19 @@ public class OsmGpxRegionsJoinTest {
 	}
 
 	private static void loadOsmandRegions(OsmandRegions or, Map<String, LinkedList<BinaryMapDataObject>> objMap,
-										  HashSkipTileQuadTree<HSTQuadTreeJoinTest.RealMapObject> regionsTree) {
+			HashSkipTileQuadTree<HSTQuadTreeJoinTest.RealMapObject> regionsTree) {
 		long objectIdCounter = 0;
 
 		for (Map.Entry<String, LinkedList<BinaryMapDataObject>> entry : objMap.entrySet()) {
 			String regionName = entry.getKey();
 			LinkedList<BinaryMapDataObject> list = entry.getValue();
-			if (list == null || regionName == null) continue;
+			if (list == null || regionName == null)
+				continue;
 
 			for (BinaryMapDataObject o : list) {
 				int[] coordinates = o.getCoordinates();
-				if (coordinates == null || coordinates.length < 2) continue;
+				if (coordinates == null || coordinates.length < 2)
+					continue;
 
 				int minX = Integer.MAX_VALUE;
 				int minY = Integer.MAX_VALUE;
@@ -312,15 +331,91 @@ public class OsmGpxRegionsJoinTest {
 					maxY = Math.max(maxY, y);
 				}
 
-				if (minX > maxX || minY > maxY) continue;
+				if (minX > maxX || minY > maxY)
+					continue;
 
 				int[] bbox = new int[] { minX, minY, maxX, maxY };
 				long currentId = ++objectIdCounter;
 				String dwName = or.getDownloadName(o);
 
-				HSTQuadTreeJoinTest.RealMapObject realObj = new HSTQuadTreeJoinTest.RealMapObject(currentId, regionName, dwName, o, bbox);
+				HSTQuadTreeJoinTest.RealMapObject realObj = new HSTQuadTreeJoinTest.RealMapObject(currentId, regionName,
+						dwName, o, bbox);
 				regionsTree.addObject(realObj, bbox, currentId);
 			}
+		}
+	}
+
+	static void benchmarkQueryByBboxPerRegion(List<Map.Entry<String, Set<String>>> sortedRegions,
+			Map<String, LinkedList<BinaryMapDataObject>> regionsMap, HashSkipTileQuadTree<GpxTrackObject> tracksTree) {
+
+		System.out.println("\n=========================================================================");
+		System.out.println("            QUERY BY BBOX BENCHMARK (TOP 200 REGIONS BY ZOOM)            ");
+		System.out.println("=========================================================================");
+
+		int topLimit = Math.min(PRINT_TOP_REGIONS, sortedRegions.size());
+
+		for (int i = 0; i < topLimit; i++) {
+			String countryName = sortedRegions.get(i).getKey();
+			LinkedList<BinaryMapDataObject> list = regionsMap.get(countryName);
+
+			if (list == null || list.isEmpty()) {
+				continue;
+			}
+
+			int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+			int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+
+			for (BinaryMapDataObject o : list) {
+				int[] coordinates = o.getCoordinates();
+				if (coordinates == null)
+					continue;
+				for (int j = 0; j < coordinates.length; j += 2) {
+					int x = coordinates[j];
+					int y = coordinates[j + 1];
+					minX = Math.min(minX, x);
+					maxX = Math.max(maxX, x);
+					minY = Math.min(minY, y);
+					maxY = Math.max(maxY, y);
+				}
+			}
+
+			if (minX > maxX || minY > maxY)
+				continue;
+			int[] queryBBox = new int[] { minX, minY, maxX, maxY };
+
+			HashSkipTileQuadTree.SkipStats totalStats = new HashSkipTileQuadTree.SkipStats(tracksTree);
+			long startTotal = System.nanoTime();
+			List<HashSkipTileQuadTree.TileEntry<GpxTrackObject>> totalEntries = tracksTree.get(queryBBox, totalStats);
+			double totalTimeMs = (System.nanoTime() - startTotal) / 1e6;
+
+			Set<Long> uniqueTrackIds = new HashSet<>();
+			if (totalEntries != null) {
+				for (HashSkipTileQuadTree.TileEntry<GpxTrackObject> entry : totalEntries) {
+					uniqueTrackIds.add(entry.obj.id);
+				}
+			}
+
+			StringBuilder zoomsBreakdown = new StringBuilder();
+			for (int z = 3; z <= 16; z++) {
+				HashSkipTileQuadTree.SkipStats zStats = new HashSkipTileQuadTree.SkipStats(tracksTree);
+				long startZ = System.nanoTime();
+
+				List<HashSkipTileQuadTree.TileEntry<GpxTrackObject>> zEntries = tracksTree.get(queryBBox, z, z, zStats);
+				if (zEntries != null && !zEntries.isEmpty()) {
+					if (zoomsBreakdown.length() > 0) {
+						zoomsBreakdown.append(" | ");
+					}
+					Set<Long> zUnique = new HashSet<>();
+					for (HashSkipTileQuadTree.TileEntry<GpxTrackObject> e : zEntries) {
+						zUnique.add(e.obj.id);
+					}
+					zoomsBreakdown.append(
+							String.format("z=%d: %,d (%.1fms)", z, zUnique.size(), (System.nanoTime() - startZ) / 1e6));
+				}
+			}
+
+			System.out.printf("%-35s | Tracks: %,d (Entries: %,d, %.1f ms) | %s\n", countryName, uniqueTrackIds.size(),
+					totalEntries != null ? totalEntries.size() : 0, totalTimeMs, zoomsBreakdown.toString());
 		}
 	}
 
@@ -342,5 +437,156 @@ public class OsmGpxRegionsJoinTest {
 		}
 		result.add(sb.toString().trim());
 		return result.toArray(new String[0]);
+	}
+
+	static void benchmarkTrackTileDensityPerRegion(List<Map.Entry<String, Set<String>>> sortedRegions,
+			Map<String, LinkedList<BinaryMapDataObject>> regionsMap, HashSkipTileQuadTree<GpxTrackObject> tracksTree) {
+
+		// Shift parameter: includes tracks from higher zoom levels up to (Z + SHIFT_Z)
+		final int SHIFT_Z = 2;
+
+		System.out.println("\n=========================================================================================================");
+		System.out.println("                 TRACK-TILE DENSITY BENCHMARK BY REGION (ZOOMS 3 to 16)                                  ");
+		System.out.println("=========================================================================================================");
+
+		int topLimit = Math.min(PRINT_TOP_REGIONS, sortedRegions.size());
+
+		class RegionDensityStat {
+			String countryName;
+			int uniqueTracksCount;
+			long trackTilesZ16;
+			long countryTilesZ16;
+			double densityZ16;
+			String zoomBreakdownStr;
+		}
+
+		List<RegionDensityStat> regionStats = new ArrayList<>();
+
+		for (int i = 0; i < topLimit; i++) {
+			String countryName = sortedRegions.get(i).getKey();
+			LinkedList<BinaryMapDataObject> list = regionsMap.get(countryName);
+
+			if (list == null || list.isEmpty()) {
+				continue;
+			}
+
+			// 1. Calculate the bounding box for the entire country/region
+			int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+			int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+
+			for (BinaryMapDataObject o : list) {
+				int[] coordinates = o.getCoordinates();
+				if (coordinates == null)
+					continue;
+				for (int j = 0; j < coordinates.length; j += 2) {
+					int x = coordinates[j];
+					int y = coordinates[j + 1];
+					minX = Math.min(minX, x);
+					maxX = Math.max(maxX, x);
+					minY = Math.min(minY, y);
+					maxY = Math.max(maxY, y);
+				}
+			}
+
+			if (minX > maxX || minY > maxY)
+				continue;
+			int[] countryBBox31 = new int[] { minX, minY, maxX, maxY };
+
+			// 2. Fetch all unique GPX tracks located inside the region's BBox
+			List<HashSkipTileQuadTree.TileEntry<GpxTrackObject>> totalEntries = tracksTree.get(countryBBox31, null);
+			if (totalEntries == null || totalEntries.isEmpty()) {
+				continue;
+			}
+
+			Map<Long, GpxTrackObject> uniqueTracks = new HashMap<>();
+			for (HashSkipTileQuadTree.TileEntry<GpxTrackObject> entry : totalEntries) {
+				uniqueTracks.put(entry.obj.id, entry.obj);
+			}
+
+			int totalTrackCount = uniqueTracks.size();
+			if (totalTrackCount == 0)
+				continue;
+
+			// 3. Determine the native zoom level for each track in the quad-tree index
+			Map<GpxTrackObject, Integer> trackNativeZoomMap = new HashMap<>();
+			for (GpxTrackObject track : uniqueTracks.values()) {
+				int nativeZ = tracksTree.getNativeZoom(track.bbox);
+				trackNativeZoomMap.put(track, nativeZ);
+			}
+
+			// 4. Calculate TrackTiles, CountryTiles, and Density per zoom level [3..16]
+			long[] trackTilesPerZoom = new long[17];
+			long[] countryTilesPerZoom = new long[17];
+
+			for (int z = 3; z <= 16; z++) {
+				int shift = 31 - z;
+
+				// 4a. Convert 31-bit country BBox coordinates to tile counts at Zoom Z
+				long cMinX = countryBBox31[0] >> shift;
+				long cMinY = countryBBox31[1] >> shift;
+				long cMaxX = countryBBox31[2] >> shift;
+				long cMaxY = countryBBox31[3] >> shift;
+				countryTilesPerZoom[z] = Math.max(1, (cMaxX - cMinX + 1)) * Math.max(1, (cMaxY - cMinY + 1));
+
+				// 4b. Calculate track tiles considering only tracks with nativeZ <= (z +
+				// SHIFT_Z)
+				long currentZoomTrackTiles = 0;
+				int maxAllowedZoom = z + SHIFT_Z;
+
+				for (Map.Entry<GpxTrackObject, Integer> entry : trackNativeZoomMap.entrySet()) {
+					int nativeZ = entry.getValue();
+
+					// Exclude tracks that reside on zoom levels deeper than (z + SHIFT_Z)
+					if (nativeZ <= maxAllowedZoom) {
+						int[] tBbox = entry.getKey().bbox;
+						long tMinX = tBbox[0] >> shift;
+						long tMinY = tBbox[1] >> shift;
+						long tMaxX = tBbox[2] >> shift;
+						long tMaxY = tBbox[3] >> shift;
+
+						long tilesX = Math.max(1, tMaxX - tMinX + 1);
+						long tilesY = Math.max(1, tMaxY - tMinY + 1);
+						currentZoomTrackTiles += (tilesX * tilesY);
+					}
+				}
+				trackTilesPerZoom[z] = currentZoomTrackTiles;
+			}
+
+			// 5. Build detailed per-zoom breakdown string
+			StringBuilder zoomsBreakdown = new StringBuilder();
+			for (int z = 3; z <= 16; z++) {
+				long trTiles = trackTilesPerZoom[z];
+				long cTiles = countryTilesPerZoom[z];
+				double density = cTiles > 0 ? (double) trTiles / cTiles : 0.0;
+
+				if (zoomsBreakdown.length() > 0) {
+					zoomsBreakdown.append(" | ");
+				}
+				zoomsBreakdown.append(String.format("Z=%d: %.1f (%,d/%,d)", z, density, trTiles, cTiles));
+			}
+
+			RegionDensityStat stat = new RegionDensityStat();
+			stat.countryName = countryName;
+			stat.uniqueTracksCount = totalTrackCount;
+			stat.trackTilesZ16 = trackTilesPerZoom[16];
+			stat.countryTilesZ16 = countryTilesPerZoom[16];
+			stat.densityZ16 = countryTilesPerZoom[16] > 0 ? (double) trackTilesPerZoom[16] / countryTilesPerZoom[16]
+					: 0.0;
+			stat.zoomBreakdownStr = zoomsBreakdown.toString();
+
+			regionStats.add(stat);
+		}
+
+		// 6. Sort regions by Density at Z=16 in descending order
+		regionStats.sort((r1, r2) -> Double.compare(r2.densityZ16, r1.densityZ16));
+
+		// 7. Print formatted benchmark table
+		for (int i = 0; i < regionStats.size(); i++) {
+			RegionDensityStat stat = regionStats.get(i);
+			System.out.printf(
+					"%3d. %-28s | Tracks: %,5d | TrackTilesZ16: %,8d | RegionTilesZ16: %,10d | DensityZ16: %.1f | %s\n",
+					i + 1, stat.countryName, stat.uniqueTracksCount, stat.trackTilesZ16, stat.countryTilesZ16,
+					stat.densityZ16, stat.zoomBreakdownStr);
+		}
 	}
 }
