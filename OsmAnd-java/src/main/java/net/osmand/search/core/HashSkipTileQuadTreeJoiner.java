@@ -6,6 +6,7 @@ import net.osmand.search.core.HashSkipTileQuadTree.SkipStats;
 import net.osmand.search.core.HashSkipTileQuadTree.TileEntry;
 import net.osmand.search.core.HashSkipTileQuadTree.ZoomBucket;
 import net.osmand.search.core.HashSkipTileQuadTree.ZoomBucketIndexTreeIterator;
+import static net.osmand.search.core.HashSkipTileQuadTree.encodeTileId;
 
 /**
  * High-performance spatial join algorithm leveraging
@@ -124,9 +125,15 @@ public class HashSkipTileQuadTreeJoiner<T, R> {
 
 	                for (int mB = iB; mB < endMatchB; mB++) {
 	                    TileEntry<B> entryB = entriesB.get(mB);
-	                    if (HashSkipTileQuadTree.intersectsBBox(entryA.bbox31, entryB.bbox31)) {
-	                        callback.onIntersection(entryA, entryB);
-	                    }
+						if (HashSkipTileQuadTree.intersectsBBox(entryA.bbox31, entryB.bbox31)) {
+							int px = Math.max(entryA.bbox31[0], entryB.bbox31[0]);
+							int py = Math.max(entryA.bbox31[1], entryB.bbox31[1]);
+							long intersectAId = encodeTileId(px >> (31 - entryA.z), py >> (31 - entryA.z));
+							long intersectBId = encodeTileId(px >> (31 - entryB.z), py >> (31 - entryB.z));
+							if (intersectAId == entryA.tileId && intersectBId == entryB.tileId) {
+								callback.onIntersection(entryA, entryB);
+							}
+						}
 	                }
 	                currA++;
 	            }
