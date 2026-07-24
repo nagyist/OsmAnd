@@ -35,12 +35,12 @@ public class HashSkipTileQuadTreeJoiner<T, R> {
 	 */
 	public void joinAllBuckets(JoinCallback<T, R> callback, HashSkipTileQuadTree.SkipStats stats1,
 			HashSkipTileQuadTree.SkipStats stats2) {
-		for (int z1 = HashSkipTileQuadTree.MIN_ZOOM; z1 <= HashSkipTileQuadTree.MAX_ZOOM; z1++) {
+		for (int z1 = tree1.minZoom; z1 <= tree1.maxZoom; z1++) {
 			ZoomBucket b1 = tree1.getZoomBucket(z1);
 			if (b1 == null || b1.len == 0) {
 				continue;
 			}
-			for (int z2 = HashSkipTileQuadTree.MIN_ZOOM; z2 <= HashSkipTileQuadTree.MAX_ZOOM; z2++) {
+			for (int z2 = tree1.minZoom; z2 <= tree2.maxZoom; z2++) {
 				ZoomBucket b2 = tree2.getZoomBucket(z2);
 				if (b2 == null || b2.len == 0) {
 					continue;
@@ -60,6 +60,12 @@ public class HashSkipTileQuadTreeJoiner<T, R> {
 
 		if (b1 == null || b2 == null || b1.len == 0 || b2.len == 0) {
 			return;
+		}
+		if (stats1 != null) {
+			stats1.totalSize(b1.len);
+		}
+		if (stats2 != null) {
+			stats2.totalSize(b1.len);
 		}
 		ZoomBucketIndexTreeIterator itA = new ZoomBucketIndexTreeIterator(b1);
 	    ZoomBucketIndexTreeIterator itB = new ZoomBucketIndexTreeIterator(b2);
@@ -91,7 +97,6 @@ public class HashSkipTileQuadTreeJoiner<T, R> {
 	        long codeA = eA.tileId;
 	        long codeB = eB.tileId;
 
-	        // Приводим к общему уровню Z (к меньшему зуму)
 	        long normA = (zDiff < 0) ? (codeA >> shiftBits) : codeA;
 	        long normB = (zDiff > 0) ? (codeB >> shiftBits) : codeB;
 

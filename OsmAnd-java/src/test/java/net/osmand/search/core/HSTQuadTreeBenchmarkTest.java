@@ -87,7 +87,7 @@ public class HSTQuadTreeBenchmarkTest {
         // Warmup JIT
         for (int i = 0; i < Math.min(100, sampleObjects.size()); i++) {
             RealMapObject o = sampleObjects.get(i);
-            HashSkipTileQuadTree.SkipStats dummyStats = new HashSkipTileQuadTree.SkipStats(HashSkipTileQuadTree.INDEXED_ZOOMS.length);
+            HashSkipTileQuadTree.SkipStats dummyStats = new HashSkipTileQuadTree.SkipStats(tree);
             tree.get(o.bbox, dummyStats);
             or.query(o.bbox[0], o.bbox[2], o.bbox[1], o.bbox[3]);
         }
@@ -113,7 +113,7 @@ public class HSTQuadTreeBenchmarkTest {
             int[] bbox = targetObj.bbox;
 
             // 1. HashSkipTileQuadTree Search
-            HashSkipTileQuadTree.SkipStats stats = new HashSkipTileQuadTree.SkipStats(HashSkipTileQuadTree.INDEXED_ZOOMS.length);
+            HashSkipTileQuadTree.SkipStats stats = new HashSkipTileQuadTree.SkipStats(tree);
             long treeStartNs = System.nanoTime();
             List<TileEntry<RealMapObject>> treeResults = tree.get(bbox, stats);
             long treeElapsedNs = System.nanoTime() - treeStartNs;

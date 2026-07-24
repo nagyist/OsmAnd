@@ -10,14 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 
 import net.osmand.binary.BinaryMapDataObject;
 import net.osmand.map.OsmandRegions;
 import net.osmand.search.core.HashSkipTileQuadTree.TileEntry;
 import net.osmand.util.Algorithms;
 
-public class HashSkipTileQuadTreeJoinTest {
+public class HSTQuadTreeJoinTest {
 
 	static class RealMapObject {
 		final long id;
@@ -45,13 +44,13 @@ public class HashSkipTileQuadTreeJoinTest {
 		final String name2;
 
 		PairResult(String name1, String name2) {
-			if (name1.compareTo(name2) <= 0) {
-				this.name1 = name1;
-				this.name2 = name2;
-			} else {
+//			if (name1.compareTo(name2) <= 0) {
+//				this.name1 = name1;
+//				this.name2 = name2;
+//			} else {
 				this.name1 = name2;
 				this.name2 = name1;
-			}
+//			}
 		}
 
 		@Override
@@ -90,9 +89,9 @@ public class HashSkipTileQuadTreeJoinTest {
 
 		System.out.println("Building QuadTree hierarchy...");
 		long buildStart = System.nanoTime();
-		tree.build();
+		int size = tree.build();
 		long buildTimeMs = (System.nanoTime() - buildStart) / 1_000_000;
-		System.out.printf("QuadTree build completed in %d ms.\n\n", buildTimeMs);
+		System.out.printf("QuadTree build completed - results %d in %d ms.\n\n", size, buildTimeMs);
 
 		if (sampleObjects.isEmpty()) {
 			System.err.println("No map objects loaded!");
@@ -106,10 +105,8 @@ public class HashSkipTileQuadTreeJoinTest {
 
 		HashSkipTileQuadTreeJoiner<RealMapObject, RealMapObject> joiner = new HashSkipTileQuadTreeJoiner<>(tree, tree);
 
-		HashSkipTileQuadTree.SkipStats stats1 = new HashSkipTileQuadTree.SkipStats(
-				HashSkipTileQuadTree.INDEXED_ZOOMS.length);
-		HashSkipTileQuadTree.SkipStats stats2 = new HashSkipTileQuadTree.SkipStats(
-				HashSkipTileQuadTree.INDEXED_ZOOMS.length);
+		HashSkipTileQuadTree.SkipStats stats1 = new HashSkipTileQuadTree.SkipStats(tree);
+		HashSkipTileQuadTree.SkipStats stats2 = new HashSkipTileQuadTree.SkipStats(tree);
 
 		Set<PairResult> joinerPairs = new HashSet<>();
 
@@ -142,8 +139,7 @@ public class HashSkipTileQuadTreeJoinTest {
 		long baselineStartNs = System.nanoTime();
 
 		for (RealMapObject targetObj : sampleObjects) {
-			HashSkipTileQuadTree.SkipStats queryStats = new HashSkipTileQuadTree.SkipStats(
-					HashSkipTileQuadTree.INDEXED_ZOOMS.length);
+			HashSkipTileQuadTree.SkipStats queryStats = new HashSkipTileQuadTree.SkipStats(tree);
 			List<TileEntry<RealMapObject>> results = tree.get(targetObj.bbox, queryStats);
 
 			for (TileEntry<RealMapObject> entry : results) {
@@ -156,8 +152,8 @@ public class HashSkipTileQuadTreeJoinTest {
 				}
 			}
 		}
-		stats1.printStats(0, null);
-		stats2.printStats(0, null);
+		stats1.printStats();
+		stats2.printStats();
 		long baselineElapsedNs = System.nanoTime() - baselineStartNs;
 		double baselineTimeMs = baselineElapsedNs / 1e6;
 
@@ -225,7 +221,7 @@ public class HashSkipTileQuadTreeJoinTest {
 		Collections.sort(sortedPairs);
 
 		System.out.println("=== SAMPLE TOP 20 INTERSECTING REGION PAIRS ===");
-		int limit = Math.min(20, sortedPairs.size());
+		int limit = Math.min(20000, sortedPairs.size());
 		for (int i = 0; i < limit; i++) {
 			PairResult pair = sortedPairs.get(i);
 			System.out.printf("%2d. %-30s <---> %-30s\n", i + 1, pair.name1, pair.name2);

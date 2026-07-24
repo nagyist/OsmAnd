@@ -49,7 +49,6 @@ public class HSTQuadTreeSimpleBenchmarkTest {
 
         @Override
         public int compareTo(IntersectionStat o) {
-            // Сортировка по убыванию количества пересечений
             return Integer.compare(o.intersectedObjIds.size(), this.intersectedObjIds.size());
         }
     }
@@ -80,7 +79,7 @@ public class HSTQuadTreeSimpleBenchmarkTest {
         System.out.printf("=== 2. Benchmarking Intersection Search for %d Objects ===\n", sampleObjects.size());
 
         for (int i = 0; i < Math.min(100, sampleObjects.size()); i++) {
-            HashSkipTileQuadTree.SkipStats dummyStats = new HashSkipTileQuadTree.SkipStats(HashSkipTileQuadTree.INDEXED_ZOOMS.length);
+            HashSkipTileQuadTree.SkipStats dummyStats = new HashSkipTileQuadTree.SkipStats(tree);
             tree.get(sampleObjects.get(i).bbox, dummyStats);
         }
 
@@ -96,7 +95,7 @@ public class HSTQuadTreeSimpleBenchmarkTest {
 
         for (RealMapObject targetObj : sampleObjects) {
             IntersectionStat stat = new IntersectionStat(targetObj);
-            HashSkipTileQuadTree.SkipStats stats = new HashSkipTileQuadTree.SkipStats(HashSkipTileQuadTree.INDEXED_ZOOMS.length);
+            HashSkipTileQuadTree.SkipStats stats = new HashSkipTileQuadTree.SkipStats(tree);
 
             long startNs = System.nanoTime();
             List<TileEntry<RealMapObject>> results = tree.get(targetObj.bbox, stats);
@@ -106,7 +105,7 @@ public class HSTQuadTreeSimpleBenchmarkTest {
             stat.inspectedEntriesCount = stats.inspectedEntries.size();
 
             for (TileEntry<RealMapObject> entry : results) {
-                if (entry.objId != targetObj.id) { // исключаем самопересечение
+                if (entry.objId != targetObj.id) { 
                     if (stat.intersectedObjIds.add(entry.objId)) {
                         RealMapObject matchedObj = sampleObjectsMap.get(entry.objId);
                         stat.intersectedNames.add(matchedObj != null ? matchedObj.regionName : "Unknown");

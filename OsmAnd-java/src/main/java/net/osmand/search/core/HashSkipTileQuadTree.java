@@ -11,13 +11,28 @@ import net.osmand.util.MapUtils;
 
 public class HashSkipTileQuadTree<T> {
 
-	public static final int MAX_ZOOM = 16;
-	public static final int MIN_ZOOM = 0;
+	public static final int DEFALT_MAX_ZOOM = 16;
+	public static final int DEFALT_MIN_ZOOM = 0;
 	//public static final int[] INDEXED_ZOOMS = new int[] { 1, 3, 5, 8, 11, 14, 16 };
-	public static final int[] INDEXED_ZOOMS = new int[] { 3, 5, 8};
+	public static final int[] DEFALT_INDEXED_ZOOMS = new int[] { 3, 5, 8};
 
 	final List<TileEntry<T>> tileEntries = new ArrayList<>();
-	final ZoomBucket[] zoomBuckets = new ZoomBucket[MAX_ZOOM + 1];
+	final ZoomBucket[] zoomBuckets;
+	final int minZoom;
+	final int maxZoom;
+	final int[] indxZooms;
+	
+	public HashSkipTileQuadTree() {
+		this(DEFALT_MIN_ZOOM, DEFALT_MAX_ZOOM, DEFALT_INDEXED_ZOOMS);
+	}
+	
+	public HashSkipTileQuadTree(int minZoom, int maxZoom, int[] indexedZooms) {
+		this.minZoom = minZoom;
+		this.maxZoom = maxZoom;
+		this.indxZooms = indexedZooms;
+		zoomBuckets = new ZoomBucket[maxZoom + 1];
+	}
+	
 
 	public static class TileEntry<T> {
 		public final long objId;
@@ -164,13 +179,16 @@ public class HashSkipTileQuadTree<T> {
 		public List<SkipRecord> skipRecords = new ArrayList<>();
 		public int totalSkipsCount = 0;
 		public long totalElementsSkipped = 0;
+		public int totalBucketLen = 0;
 
 		public final int[] skipsPerLevel;
 		public final long[] elementsSkippedPerLevel;
+		public int[] indexedZooms;
 
-		public SkipStats(int levelsCount) {
-			this.skipsPerLevel = new int[levelsCount];
-			this.elementsSkippedPerLevel = new long[levelsCount];
+		public SkipStats(HashSkipTileQuadTree<?> tree) {
+			this.indexedZooms = tree.indxZooms;
+			this.skipsPerLevel = new int[indexedZooms.length];
+			this.elementsSkippedPerLevel = new long[indexedZooms.length];
 		}
 
 		public void recordSkip(int bucketZoom, int level, int skippedElements, int zoom, int x, int y) {
@@ -184,8 +202,12 @@ public class HashSkipTileQuadTree<T> {
 		public void recordInspection(TileEntry<?> t) {
 			inspectedEntries.add(t.objId);
 		}
+		
+		public void totalSize(int len) {
+			totalBucketLen += len;
+		}
 
-		public void printStats(int totalBucketLen, int[] indexedZooms) {
+		public void printStats() {
 			System.out.println("=== TileIterator Skip Stats ===");
 			System.out.printf("Total bucket size  : %d\n", totalBucketLen);
 			System.out.printf("Inspected entries  : %d (%.2f%%)\n", inspectedEntries.size(),
@@ -262,9 +284,9 @@ public class HashSkipTileQuadTree<T> {
 
 	public void addObject(T obj, int[] bbox31, long externalId) {
 		long objId = externalId == -1 ? tileEntries.size() : externalId;
-		int targetZoom = MAX_ZOOM;
+		int targetZoom = maxZoom;
 		// Fit into 2x2 - maximum 4 tiles
-		while (targetZoom > MIN_ZOOM) {
+		while (targetZoom > minZoom) {
 			int shift = 31 - targetZoom;
 			int minX = bbox31[0] >> shift;
 			int maxX = bbox31[2] >> shift;
@@ -302,7 +324,7 @@ public class HashSkipTileQuadTree<T> {
 		}
 	}
 
-	public void build() {
+	public int build() {
 		tileEntries.sort((e1, e2) -> {
 			if (e1.z != e2.z)
 				return Integer.compare(e1.z, e2.z);
@@ -327,7 +349,7 @@ public class HashSkipTileQuadTree<T> {
 			if (lastZoom != tileZoom) {
 				lastZoom = tileZoom;
 				TIntArrayList indexedZooms = new TIntArrayList();
-				for (int iz : INDEXED_ZOOMS) {
+				for (int iz : indxZooms) {
 					if (iz >= tileE.z) {
 						break;
 					}
@@ -345,6 +367,7 @@ public class HashSkipTileQuadTree<T> {
 		if (lastTileIdFirstInd >= 0) {
 			tileEntries.get(lastTileIdFirstInd).skipNextTileId = index;
 		}
+		return tileEntries.size();
 	}
 
 	private static boolean intersectsTile(long parentTileId, int parentZoom, int[] queryBBox) {
@@ -426,9 +449,12 @@ public class HashSkipTileQuadTree<T> {
 
 	public List<TileEntry<T>> get(int[] queryBBox, SkipStats stats) {
 		List<TileEntry<T>> res = new ArrayList<>();
-		for (int z = MIN_ZOOM; z <= MAX_ZOOM; z++) {
+		for (int z = minZoom; z <= maxZoom; z++) {
 			ZoomBucket zoomBucket = zoomBuckets[z];
 			if (zoomBucket != null) {
+				if (stats != null) {
+					stats.totalSize(zoomBucket.len);
+				}
 				TileIterator ti = new TileIterator(zoomBucket, queryBBox, stats);
 				while (ti.hasNext()) {
 					res.add(ti.next());

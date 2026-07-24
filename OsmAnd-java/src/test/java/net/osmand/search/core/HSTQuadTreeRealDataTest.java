@@ -88,7 +88,7 @@ public class HSTQuadTreeRealDataTest {
                 queryBBox[0], queryBBox[1], queryBBox[2], queryBBox[3]);
         System.out.println("=========================================================================");
 
-        HashSkipTileQuadTree.SkipStats stats = new HashSkipTileQuadTree.SkipStats(HashSkipTileQuadTree.INDEXED_ZOOMS.length);
+        HashSkipTileQuadTree.SkipStats stats = new HashSkipTileQuadTree.SkipStats(tree);
         List<TileEntry<RealMapObject>> results = tree.get(queryBBox, stats);
 
         Set<Long> resultObjIds = new HashSet<>();
@@ -138,7 +138,7 @@ public class HSTQuadTreeRealDataTest {
         System.out.printf("Total Items Skipped     : %d\n", stats.totalElementsSkipped);
 
         for (int level = 0; level < stats.skipsPerLevel.length; level++) {
-            int zoom = HashSkipTileQuadTree.INDEXED_ZOOMS[level];
+            int zoom = stats.indexedZooms[level];
             System.out.printf("  Level %d (Z%-2d): %d skips, %d items skipped\n", 
                     level, zoom, stats.skipsPerLevel[level], stats.elementsSkippedPerLevel[level]);
         }
