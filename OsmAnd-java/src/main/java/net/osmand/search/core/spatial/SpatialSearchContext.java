@@ -439,6 +439,10 @@ public class SpatialSearchContext {
 		for (SpatialSearchToken t : tokens) {
 			if (settings.SEARCH_POI_BY_CATEGORY_ONLY && indx.poiRegion == null) {
 				continue;
+			} else if (!settings.SEARCH_POI && indx.poiRegion == null) {
+				continue;
+			} else if (!settings.SEARCH_ADDR && indx.addressRegion == null) {
+				continue;
 			}
 			List<PrefixNameValue> matchedPrefixes = indx.getMatchedPrefixes(t.word);
 			if (matchedPrefixes == null) {

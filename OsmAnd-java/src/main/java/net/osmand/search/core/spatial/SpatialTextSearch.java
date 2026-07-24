@@ -192,6 +192,19 @@ public class SpatialTextSearch {
 			}
 			return settings;
 		}
+		
+		public static SpatialTextSearchSettings searchPoiCategoriesSettings(int zoom, QuadRect r) {
+			SpatialTextSearchSettings settings = new SpatialTextSearchSettings();
+			settings.SEARCH_ADDR = false;
+			settings.SEARCH_POI = false;
+			settings.SEARCH_POI_CATEGORIES = true;
+			if (r != null) {
+				settings.SEARCH_POI_BY_CATEGORY_BBOX = new int[] { MapUtils.get31TileNumberX(r.left) >> 15,
+						MapUtils.get31TileNumberY(r.top) >> 15, MapUtils.get31TileNumberX(r.right) >> 15,
+						MapUtils.get31TileNumberY(r.bottom) >> 15 };
+			}
+			return settings;
+		}
 		 
 		public static SpatialTextSearchSettings suggestionSettings() {
 			SpatialTextSearchSettings settings = new SpatialTextSearchSettings();

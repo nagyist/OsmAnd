@@ -178,6 +178,8 @@ public class SpatialSearchTestAndDocs {
 //		query = "9 Neustädter Straße Korb";
 //		query = "14/1 J.-F.-Weishaar-Straße Korb";
 
+		settings = SpatialTextSearchSettings.searchPoiCategoriesSettings(0, null);
+		query = "Gyn.";
 		
 //		pattern = "Map";
 //		query = "5 to go";
