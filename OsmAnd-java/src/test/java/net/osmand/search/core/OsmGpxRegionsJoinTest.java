@@ -24,7 +24,7 @@ public class OsmGpxRegionsJoinTest {
 	// =========================================================================
 	// 1. FILTER & LOADING CONFIGURATION (Set to null, empty or 0 to disable)
 	// =========================================================================
-	public static final int LIMIT_TRACKS = 100_000;
+	public static final int LIMIT_TRACKS = 50_000_000;
 
 	public static Set<String> ALLOWED_ACTIVITIES = new HashSet<>();
 	static {
@@ -197,9 +197,11 @@ public class OsmGpxRegionsJoinTest {
 		System.out.println(" 📊 Skip Stats (Tracks Tree):");
 		System.out.printf("    Total Skips Count   : %d\n", stats1.totalSkipsCount);
 		System.out.printf("    Total Elements Skip : %d\n", stats1.totalElementsSkipped);
+		stats1.printStats();
 		System.out.println(" 📊 Skip Stats (Regions Tree):");
 		System.out.printf("    Total Skips Count   : %d\n", stats2.totalSkipsCount);
 		System.out.printf("    Total Elements Skip : %d\n", stats2.totalElementsSkipped);
+		stats2.printStats();
 		System.out.println("=========================================================================\n");
 
 		List<Map.Entry<String, Set<String>>> sortedRegions = new ArrayList<>(regionToTracksMap.entrySet());
@@ -238,8 +240,12 @@ public class OsmGpxRegionsJoinTest {
 			if (headerLine == null) return 0;
 
 			String line;
+			int lineNum = 0;
 			while ((line = reader.readLine()) != null && count < limit) {
 				String[] cols = parseCsvLine(line);
+				if (++lineNum % 50000 == 0) {
+					System.out.printf("Read %d lines...\n", lineNum);
+				}
 				if (cols.length < 24) continue;
 
 				try {
@@ -265,12 +271,8 @@ public class OsmGpxRegionsJoinTest {
 					int min31Y = MapUtils.get31TileNumberY(maxLat);
 					int max31Y = MapUtils.get31TileNumberY(minLat);
 
-					int[] bbox31 = new int[] {
-							Math.min(min31X, max31X),
-							Math.min(min31Y, max31Y),
-							Math.max(min31X, max31X),
-							Math.max(min31Y, max31Y)
-					};
+					int[] bbox31 = new int[] { Math.min(min31X, max31X), Math.min(min31Y, max31Y),
+							Math.max(min31X, max31X), Math.max(min31Y, max31Y) };
 
 					GpxTrackObject trackObj = new GpxTrackObject(id, name, activity, speed, tags, bbox31);
 					tree.addObject(trackObj, bbox31, id);

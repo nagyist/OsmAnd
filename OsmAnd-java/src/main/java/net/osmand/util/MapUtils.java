@@ -234,14 +234,11 @@ public class MapUtils {
 		if (longitude >= MIN_LONGITUDE && longitude <= MAX_LONGITUDE) {
 			return longitude;
 		}
-		while (longitude <= MIN_LONGITUDE || longitude > MAX_LONGITUDE) {
-			if (longitude < 0) {
-				longitude += LONGITUDE_TURN;
-			} else {
-				longitude -= LONGITUDE_TURN;
-			}
+		double mod = (longitude - MIN_LONGITUDE) % LONGITUDE_TURN;
+		if (mod < 0) {
+			mod += LONGITUDE_TURN;
 		}
-		return longitude;
+		return mod + MIN_LONGITUDE;
 	}
 
 	public static boolean isValidLatLon(double latitude, double longitude) {
@@ -253,13 +250,11 @@ public class MapUtils {
 		if (latitude >= MIN_LATITUDE && latitude <= MAX_LATITUDE) {
 			return latitude;
 		}
-		while (latitude < -90 || latitude > 90) {
-			if (latitude < 0) {
-				latitude += LATITUDE_TURN;
-			} else {
-				latitude -= LATITUDE_TURN;
-			}
+		double mod = (latitude - (-LATITUDE_TURN / 2)) % LATITUDE_TURN;
+		if (mod < 0) {
+			mod += LATITUDE_TURN;
 		}
+		latitude = mod + (-90.0);
 		if (latitude < MIN_LATITUDE) {
 			return MIN_LATITUDE;
 		} else if (latitude > MAX_LATITUDE) {
