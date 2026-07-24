@@ -40,7 +40,7 @@ public class HashSkipTileQuadTree<T> {
 		public final int[] bbox31;
 		public final int z;
 		public final long tileId;
-		public int skipNextTileId = 0;
+		public int skipNextTileId = -1;
 
 		TileEntry(long objId, T obj, int[] bbox31, int z, long tileId) {
 			this.objId = objId;
@@ -158,7 +158,9 @@ public class HashSkipTileQuadTree<T> {
 						int nextIndex = skipBlock(tree, level, level, levelEndIndex);
 						if (nextIndex > currentIndex) {
 							if (stats != null) {
-								stats.recordSkip(bucket.z, level, nextIndex - currentIndex, tree.indxZoom, 0, 0);
+								int tileX = (int) MapUtils.deinterleaveX(targetParentAtLevel);
+								int tileY = (int) MapUtils.deinterleaveY(targetParentAtLevel);
+								stats.recordSkip(bucket.z, level, nextIndex - currentIndex, tree.indxZoom, tileX, tileY);
 							}
 							return nextIndex;
 						}
@@ -307,7 +309,7 @@ public class HashSkipTileQuadTree<T> {
 		return MapUtils.interleaveBits(x, y);
 	}
 
-	private static boolean intersectsBBox(int[] a, int[] b) {
+	static boolean intersectsBBox(int[] a, int[] b) {
 		return a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1];
 	}
 
@@ -428,7 +430,9 @@ public class HashSkipTileQuadTree<T> {
 					currentIndex = newIndex;
 					continue;
 				}
-				stats.recordInspection(entry);
+				if (stats != null) {
+					stats.recordInspection(entry);
+				}
 				if (!intersectsTile(entry.tileId, entry.z, queryBBox)) {
 					currentIndex = entry.skipNextTileId > 0 ? entry.skipNextTileId : currentIndex + 1;
 					continue;

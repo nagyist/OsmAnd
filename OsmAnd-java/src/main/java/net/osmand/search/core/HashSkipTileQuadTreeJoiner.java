@@ -40,7 +40,7 @@ public class HashSkipTileQuadTreeJoiner<T, R> {
 			if (b1 == null || b1.len == 0) {
 				continue;
 			}
-			for (int z2 = tree1.minZoom; z2 <= tree2.maxZoom; z2++) {
+			for (int z2 = tree2.minZoom; z2 <= tree2.maxZoom; z2++) {
 				ZoomBucket b2 = tree2.getZoomBucket(z2);
 				if (b2 == null || b2.len == 0) {
 					continue;
@@ -65,7 +65,7 @@ public class HashSkipTileQuadTreeJoiner<T, R> {
 			stats1.totalSize(b1.len);
 		}
 		if (stats2 != null) {
-			stats2.totalSize(b1.len);
+			stats2.totalSize(b2.len);
 		}
 		ZoomBucketIndexTreeIterator itA = new ZoomBucketIndexTreeIterator(b1);
 	    ZoomBucketIndexTreeIterator itB = new ZoomBucketIndexTreeIterator(b2);
@@ -124,7 +124,7 @@ public class HashSkipTileQuadTreeJoiner<T, R> {
 
 	                for (int mB = iB; mB < endMatchB; mB++) {
 	                    TileEntry<B> entryB = entriesB.get(mB);
-	                    if (intersectsBBox(entryA.bbox31, entryB.bbox31)) {
+	                    if (HashSkipTileQuadTree.intersectsBBox(entryA.bbox31, entryB.bbox31)) {
 	                        callback.onIntersection(entryA, entryB);
 	                    }
 	                }
@@ -147,7 +147,4 @@ public class HashSkipTileQuadTreeJoiner<T, R> {
 	    }
 	}
 
-	private static boolean intersectsBBox(int[] a, int[] b) {
-		return a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1];
-	}
 }
