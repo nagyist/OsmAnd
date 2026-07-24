@@ -530,7 +530,7 @@ public class MapUtils {
 	/**
 	 * interleaves the bits of two 32-bit numbers. the result is known as a Morton code.
 	 */
-	public static long interleaveBits(long x, long y) {
+	public static long interleaveBitsSlow(long x, long y) {
 		long c = 0;
 		for (byte b = 31; b >= 0; b--) {
 			c = (c << 1) | ((x >> b) & 1);
@@ -538,7 +538,24 @@ public class MapUtils {
 		}
 		return c;
 	}
+
+	public static long interleaveBits(long x, long y) {
+		return interleaveBitsFast(x, y);
+	}
 	
+	public static long interleaveBitsFast(long x, long y) {
+	    return splitBits(x) | (splitBits(y) << 1);
+	}
+
+	private static long splitBits(long v) {
+	    v &= 0x00000000FFFFFFFFL;               
+	    v = (v | (v << 16)) & 0x0000FFFF0000FFFFL;
+	    v = (v | (v <<  8)) & 0x00FF00FF00FF00FFL;
+	    v = (v | (v <<  4)) & 0x0F0F0F0F0F0F0F0FL;
+	    v = (v | (v <<  2)) & 0x3333333333333333L;
+	    v = (v | (v <<  1)) & 0x5555555555555555L;
+	    return v;
+	}
 
 	/**
 	 * Calculate rotation diff D, that R (rotate) + D = T (targetRotate)

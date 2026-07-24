@@ -24,7 +24,7 @@ public class OsmGpxRegionsJoinTest {
 	// =========================================================================
 	// 1. FILTER & LOADING CONFIGURATION (Set to null, empty or 0 to disable)
 	// =========================================================================
-	public static final int LIMIT_TRACKS = 50_000_000;
+	public static final int LIMIT_TRACKS = 500_000;
 
 	public static Set<String> ALLOWED_ACTIVITIES = new HashSet<>();
 	static {
@@ -186,10 +186,11 @@ public class OsmGpxRegionsJoinTest {
 		Map<String, Set<String>> regionToTracksMap = new HashMap<>();
 
 		long joinStartNs = System.nanoTime();
+		int[] totalIntersections = new int[1];
 		joiner.joinAllBuckets((trackEntry, regionEntry) -> {
 			GpxTrackObject track = trackEntry.obj;
 			HSTQuadTreeJoinTest.RealMapObject region = regionEntry.obj;
-
+			totalIntersections[0]++;
 			String downloadName = region.downloadName;
 			if (downloadName != null && !downloadName.isEmpty()) {
 				regionToTracksMap.computeIfAbsent(downloadName, k -> new HashSet<>())
@@ -202,17 +203,18 @@ public class OsmGpxRegionsJoinTest {
 		System.out.println("\n=========================================================================");
 		System.out.println("                         BENCHMARK RESULTS                               ");
 		System.out.println("=========================================================================");
-		System.out.printf(" Total Tracks Processed    : %d\n", loadedTracksCount);
-		System.out.printf(" Total Intersecting Regions: %d\n", regionToTracksMap.size());
+		System.out.printf(" Total Tracks Processed    : %,d\n", loadedTracksCount);
+		System.out.printf(" Total Intersecting Regions: %,d\n", regionToTracksMap.size());
+		System.out.printf(" Total Intersections: %,d\n", totalIntersections[0]);
 		System.out.printf(" 🚀 Spatial Join Time       : %d ms\n", joinElapsedMs);
 		System.out.println("-------------------------------------------------------------------------");
 		System.out.println(" 📊 Skip Stats (Tracks Tree):");
-		System.out.printf("    Total Skips Count   : %d\n", stats1.totalSkipsCount);
-		System.out.printf("    Total Elements Skip : %d\n", stats1.totalElementsSkipped);
+		System.out.printf("    Total Skips Count   : %,d\n", stats1.totalSkipsCount);
+		System.out.printf("    Total Elements Skip : %,d\n", stats1.totalElementsSkipped);
 		stats1.printStats();
 		System.out.println(" 📊 Skip Stats (Regions Tree):");
-		System.out.printf("    Total Skips Count   : %d\n", stats2.totalSkipsCount);
-		System.out.printf("    Total Elements Skip : %d\n", stats2.totalElementsSkipped);
+		System.out.printf("    Total Skips Count   : %,d\n", stats2.totalSkipsCount);
+		System.out.printf("    Total Elements Skip : %,d\n", stats2.totalElementsSkipped);
 		stats2.printStats();
 		System.out.println("=========================================================================\n");
 

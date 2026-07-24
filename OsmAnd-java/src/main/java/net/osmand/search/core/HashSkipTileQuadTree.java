@@ -212,15 +212,15 @@ public class HashSkipTileQuadTree<T> {
 
 		public void printStats() {
 			System.out.println("=== TileIterator Skip Stats ===");
-			System.out.printf("Total bucket size  : %d\n", totalBucketLen);
-			System.out.printf("Inspected entries  : %d (%.2f%%)\n", inspectedEntries.size(),
+			System.out.printf("Total bucket size  : %,d\n", totalBucketLen);
+			System.out.printf("Inspected entries  : %,d (%.2f%%)\n", inspectedEntries.size(),
 					(double) inspectedEntries.size() / totalBucketLen * 100.0);
-			System.out.printf("Total skips count  : %d\n", totalSkipsCount);
-			System.out.printf("Total skipped items: %d\n", totalElementsSkipped);
+			System.out.printf("Total skips count  : %,d\n", totalSkipsCount);
+			System.out.printf("Total skipped items: %,d\n", totalElementsSkipped);
 
 			for (int level = 0; level < skipsPerLevel.length; level++) {
 				int zoom = (indexedZooms != null && level < indexedZooms.length) ? indexedZooms[level] : level;
-				System.out.printf("  Level %d (Z%d): %d skips, %d items skipped\n", level, zoom, skipsPerLevel[level],
+				System.out.printf("  Level %d (Z%d): %d skips, %,d items skipped\n", level, zoom, skipsPerLevel[level],
 						elementsSkippedPerLevel[level]);
 			}
 		}
